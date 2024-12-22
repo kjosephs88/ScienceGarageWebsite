@@ -166,7 +166,11 @@
     } else if (node.result) {
       const resultBox = document.createElement('div');
       resultBox.className = 'result-box';
-      resultBox.innerHTML = `<h2>${node.resultTitle}</h2><p>${node.result}</p><br><img src="ChemFormImages/${node.picture}">`;
+      resultBox.innerHTML = `
+    <h2>${node.resultTitle}</h2>
+    <p>${node.result}</p>
+    ${node.picture ? `<br><img src="ChemFormImages/${node.picture}" alt="Related Image">` : ''}
+  `;
 
       const buttonRow = document.createElement('div');
       buttonRow.className = 'button-row';
