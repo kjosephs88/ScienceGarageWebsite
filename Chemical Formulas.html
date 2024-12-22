@@ -58,6 +58,12 @@
     .result-box p {
       margin: 0;
     }
+    .result-box img {
+      max-width: 50%;
+      display: block;
+      margin: 0 auto;
+      border: 3px solid;
+    }
     .button-row {
       display: flex;
       justify-content: center;
@@ -74,7 +80,7 @@
     .answer-box:hover, .back-button:hover, .start-button:hover {
       background-color: #d8d8d8;
     }
-    @media only screen and (max-width: 600px) {
+   @media only screen and (max-width: 600px) {
     .container {
       width: 100%;
       margin: 0 auto;
@@ -93,13 +99,13 @@
     { id: 0, start: true },
     { id: 1, question: "Does the name end in –𝘪𝘥𝘦", yes: 4, no: 2 },
     { id: 2, question: "Can you find part of the name on Reference Table E?", yes: 5, no: 3 },
-    { id: 3, resultTitle: "", result: "This chart cannot be used to write the formula" },
+    { id: 3, resultTitle: "", result: `This chart cannot be used to write the formula`, picture: "image1.jpg" },
     { id: 4, question: "Does the name end in any of the following: cyanide, hydroxide, or peroxide?", yes: 5, no: 7 },
     { id: 5, question: "Can you find both parts of the name on Reference Table E?", yes: 6, no: 9 },
-    { id: 6, resultTitle: "Compound Containing Two Different Polyatomic Ions", result: "Look up the formulas and charges of each polyatomic ion on Reference Table E. Use the crisscross method to determine how many of each ion is required to make a neutral compound. If an ion is required more than once, place parentheses around it and use a subscript outside it to indicate how many of that ion is in the compound. The positive ion is written first." },
+    { id: 6, resultTitle: "Compound Containing Two Different Polyatomic Ions", result: "Look up the formulas and charges of each polyatomic ion on Reference Table E. Use the crisscross method to determine how many of each ion is required to make a neutral compound. If an ion is required more than once, place parentheses around it and use a subscript outside it to indicate how many of that ion is in the compound. The positive ion is written first.", picture: "06 twopolyatomic.gif" },
     { id: 7, question: "Are there prefixes in the name?", yes: 10, no: 8 },
-    { id: 8, resultTitle: "Compound Containing Two Different Monatomic Ions", result: "Determine the charge of each monatomic ion using the periodic table and the electron configuration of the closest noble gas. Use the crisscross method to determine how many of each ion is required to make a neutral compound. Use a subscript to indicate how many of each ion is required. The positive ion is written first." },
-    { id: 9, resultTitle: "Compound Containing a Monatomic Ion and a Polyatomic Ion", result: "Determine charge on the monatomic ion using the periodic table and the electron configuration of the closest noble gas. Look up the formula and the charges of the polyatomic ion on Reference Table E. Use the crisscross method to determine how many of each ion is required to make a neutral compound. If the polyatomic ion is required more than once, place parentheses around it and use a subscript outside it to indicate how many of that ion is in the compound. The positive ion is written first." },
+    { id: 8, resultTitle: "Compound Containing Two Different Monatomic Ions", result: "Determine the charge of each monatomic ion using the periodic table and the electron configuration of the closest noble gas (or possibly the stock system for the cation). Use the crisscross method to determine how many of each ion is required to make a neutral compound. Use a subscript to indicate how many of each ion is required. The positive ion is written first." },
+    { id: 9, resultTitle: "Compound Containing a Monatomic Ion and a Polyatomic Ion", result: "Determine the charge on the monatomic ion using the periodic table and the electron configuration of the closest noble gas (or possibly the stock system for the cation). Look up the formula and charge of the polyatomic ion on Reference Table E. Use the crisscross method to determine how many of each ion is required to make a neutral compound. If the polyatomic ion is required more than once, place parentheses around it and use a subscript outside it to indicate how many of that ion is in the compound. The positive ion is written first." },
     { id: 10, question: "Does the first part of the name have a prefix?", yes: 12, no: 11 },
     { id: 11, resultTitle: "Binary Covalent Compound with Only One Atom of First Element", result: "Write the symbol for the first element. Write the symbol for the second element with the proper number subscript based on its prefix. No subscript is written for the prefix 𝘮𝘰𝘯𝘰–." },
     { id: 12, resultTitle: "Binary Covalent Compound with Multiple Atoms of First Element", result: "Write the symbol for the first element with the proper number subscript based on its prefix. Write the symbol for the second element with the proper number subscript based on its prefix. No subscript is written for the prefix 𝘮𝘰𝘯𝘰–." }
@@ -160,7 +166,7 @@
     } else if (node.result) {
       const resultBox = document.createElement('div');
       resultBox.className = 'result-box';
-      resultBox.innerHTML = `<h2>${node.resultTitle}</h2><p>${node.result}</p>`;
+      resultBox.innerHTML = `<h2>${node.resultTitle}</h2><p>${node.result}</p><br><img src="ChemFormImages/${node.picture}">`;
 
       const buttonRow = document.createElement('div');
       buttonRow.className = 'button-row';
