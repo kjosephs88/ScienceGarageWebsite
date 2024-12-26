@@ -123,6 +123,16 @@
       color: gray;
     }
 
+    th, td {
+      border: 3px solid black;
+      text-align: center;
+      padding: 3px;
+    }
+    th {
+      background-color: #E7E6E6;
+      font-weight: bold;
+      color: black;
+    }
 
 
    @media only screen and (max-width: 600px) {
@@ -167,8 +177,64 @@
 
     { id: 9, resultTitle: "Compound Containing a Monatomic Ion and a Polyatomic Ion", result: "Determine the charge on the monatomic ion using the periodic table and the electron configuration of the closest noble gas (or possibly the stock system for the cation). Look up the formula and charge of the polyatomic ion on Reference Table E. Use the crisscross method to determine how many of each ion is required to make a neutral compound. If the polyatomic ion is required more than once, place parentheses around it and use a subscript outside it to indicate how many of that ion is in the compound. The positive ion is written first." },
     { id: 10, question: "Does the first part of the name have a prefix?", yes: 12, no: 11 },
-    { id: 11, resultTitle: "Binary Covalent Compound with Only One Atom of First Element", result: "Write the symbol for the first element. Write the symbol for the second element with the proper number subscript based on its prefix. No subscript is written for the prefix 𝘮𝘰𝘯𝘰–." },
-    { id: 12, resultTitle: "Binary Covalent Compound with Multiple Atoms of First Element", result: "Write the symbol for the first element with the proper number subscript based on its prefix. Write the symbol for the second element with the proper number subscript based on its prefix. No subscript is written for the prefix 𝘮𝘰𝘯𝘰–." }
+    { id: 11, resultTitle: "Binary Covalent Compound with Only One Atom of First Element", result: `Write the symbol for the first element. Write the symbol for the second element with the proper <span class="trigger" onclick="togglePopup()">number subscript</span> based on its prefix. No subscript is written for the prefix 𝘮𝘰𝘯𝘰–.
+
+<div class="popup" id="popup">
+    <span class="close-btn" onclick="togglePopup()">×</span>
+    <table style="border-collapse: collapse; table-layout: fixed; width: 275px; font-family: sans-serif;">
+      <!-- Title row spanning two columns -->
+      <tr>
+        <th style="border-top: none; border-left: none; border-right: none; font-size: 20px; padding: 8px; background-color: #ffffff;" colspan="2">Numerical Prefixes for Covalent Compounds</th>
+      </tr>
+      <!-- Header row -->
+      <tr>
+        <th>Numbers of Atoms</th>
+        <th>Prefixes</th>
+      </tr>
+      <!-- Data rows -->
+      <tr><td>1</td><td>mono-</td></tr>
+      <tr><td>2</td><td>di-</td></tr>
+      <tr><td>3</td><td>tri-</td></tr>
+      <tr><td>4</td><td>tetra-</td></tr>
+      <tr><td>5</td><td>penta-</td></tr>
+      <tr><td>6</td><td>hexa-</td></tr>
+      <tr><td>7</td><td>hepta-</td></tr>
+      <tr><td>8</td><td>octa-</td></tr>
+      <tr><td>9</td><td>nona-</td></tr>
+      <tr><td>10</td><td>deca-</td></tr>
+    </table>
+  </div>
+` },
+
+    { id: 12, resultTitle: "Binary Covalent Compound with Multiple Atoms of First Element", result: `Write the symbol for the first element with the proper <span class="trigger" onclick="togglePopup()">number subscript</span> based on its prefix. Write the symbol for the second element with the proper number subscript based on its prefix. No subscript is written for the prefix 𝘮𝘰𝘯𝘰–.
+
+<div class="popup" id="popup">
+    <span class="close-btn" onclick="togglePopup()">×</span>
+    <table style="border-collapse: collapse; table-layout: fixed; width: 275px; font-family: sans-serif;">
+      <!-- Title row spanning two columns -->
+      <tr>
+        <th style="border-top: none; border-left: none; border-right: none; font-size: 20px; padding: 8px; background-color: #ffffff;" colspan="2">Numerical Prefixes for Covalent Compounds</th>
+      </tr>
+      <!-- Header row -->
+      <tr>
+        <th>Numbers of Atoms</th>
+        <th>Prefixes</th>
+      </tr>
+      <!-- Data rows -->
+      <tr><td>1</td><td>mono-</td></tr>
+      <tr><td>2</td><td>di-</td></tr>
+      <tr><td>3</td><td>tri-</td></tr>
+      <tr><td>4</td><td>tetra-</td></tr>
+      <tr><td>5</td><td>penta-</td></tr>
+      <tr><td>6</td><td>hexa-</td></tr>
+      <tr><td>7</td><td>hepta-</td></tr>
+      <tr><td>8</td><td>octa-</td></tr>
+      <tr><td>9</td><td>nona-</td></tr>
+      <tr><td>10</td><td>deca-</td></tr>
+    </table>
+  </div>
+
+` }
   ];
 
   const app = document.getElementById('app');
