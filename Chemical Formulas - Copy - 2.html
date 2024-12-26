@@ -175,7 +175,14 @@
 `
 },
 
-    { id: 9, resultTitle: "Compound Containing a Monatomic Ion and a Polyatomic Ion", result: "Determine the charge on the monatomic ion using the periodic table and the electron configuration of the closest noble gas (or possibly the stock system for the cation). Look up the formula and charge of the polyatomic ion on Reference Table E. Use the crisscross method to determine how many of each ion is required to make a neutral compound. If the polyatomic ion is required more than once, place parentheses around it and use a subscript outside it to indicate how many of that ion is in the compound. The positive ion is written first." },
+    { id: 9, resultTitle: "Compound Containing a Monatomic Ion and a Polyatomic Ion", result: `Determine the charge on the monatomic ion using the periodic table and the electron configuration of the closest noble gas (or possibly the <span class="trigger" onclick="togglePopup()">stock system</span> for the cation). Look up the formula and charge of the polyatomic ion on Reference Table E. Use the crisscross method to determine how many of each ion is required to make a neutral compound. If the polyatomic ion is required more than once, place parentheses around it and use a subscript outside it to indicate how many of that ion is in the compound. The positive ion is written first.
+
+  <div class="popup" id="popup">
+    <span class="close-btn" onclick="togglePopup()">×</span>
+    <h2>Stock System</h2>
+    <p>Some metals have more than one common charge. For example, iron has common charges of +3 and +2. The name of the Fe<sup>3+</sup> ion is "iron(III)". The compound Fe<sub>2</sub>O<sub>3</sub> is named "iron(III) oxide" because it contains the Fe<sup>3+</sup> ion and the compound FeO is named "iron(II) oxide" because it contains Fe<sup>2+</sup> ion.</p>
+  </div>
+` },
     { id: 10, question: "Does the first part of the name have a prefix?", yes: 12, no: 11 },
     { id: 11, resultTitle: "Binary Covalent Compound with Only One Atom of First Element", result: `Write the symbol for the first element. Write the symbol for the second element with the proper <span class="trigger" onclick="togglePopup()">number subscript</span> based on its prefix. No subscript is written for the prefix 𝘮𝘰𝘯𝘰–.
 
