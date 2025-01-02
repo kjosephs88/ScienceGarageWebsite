@@ -16,7 +16,7 @@
       background-color: #f9f9f9;
     }
     .container {
-      width: 50%;
+      width: clamp(575px, 70%, 900px);
       margin: 0 auto;
     }
     .page-title {
@@ -26,7 +26,7 @@
       margin-bottom: 20px;
     }
     .start-box {
-      text-align: center;
+      text-align: left;
       font-size: 1.1em;
       font-weight: bold;
       padding: 20px;
@@ -48,7 +48,6 @@
     .result-box {
       background-color: #E7E6E6; /* Light gray background */
       color: black;
-      text-align: left;
     }
     .result-box h2 {
       margin: 0; /* Removes extra margin above and below */
@@ -57,9 +56,11 @@
     }
     .result-box p {
       margin: 0;
+      text-align: left;
     }
     .result-box img {
-      max-width: 50%;
+      width: 200px;
+      height: 200px;
       display: block;
       margin: 0 auto;
       border: 3px solid;
@@ -80,12 +81,68 @@
     .answer-box:hover, .back-button:hover, .start-button:hover {
       background-color: #d8d8d8;
     }
+
+.trigger {
+      cursor: pointer;
+      color: blue;
+      text-decoration: underline;
+    }
+
+.popup {
+      display: none; /* Hide by default */
+      position: absolute;
+      top: 100px; /* Nearer to the top of the page */
+      left: 50%;
+      transform: translateX(-50%);
+      width: 315px; /* 80% of the container width */
+      background: #fff;
+      border: 1px solid #ccc;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      z-index: 1000;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+ .popup.active {
+      display: block; /* Show the popup when active */
+    }
+
+.popup .close-btn {
+      position: absolute;
+      top: 10px; /* Relative to the popup */
+      right: 10px;
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: lightgray;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .popup .close-btn:hover {
+      color: gray;
+    }
+
+    th, td {
+      border: 3px solid black;
+      text-align: center;
+      padding: 3px;
+    }
+    th {
+      background-color: #E7E6E6;
+      font-weight: bold;
+      color: black;
+    }
+
+
    @media only screen and (max-width: 600px) {
     .container {
       width: 100%;
       margin: 0 auto;
     }
   }
+
+
   </style>
 </head>
 <body>
@@ -99,16 +156,92 @@
     { id: 0, start: true },
     { id: 1, question: "Does the name end in –𝘪𝘥𝘦", yes: 4, no: 2 },
     { id: 2, question: "Can you find part of the name on Reference Table E?", yes: 5, no: 3 },
-    { id: 3, resultTitle: "", result: `This chart cannot be used to write the formula`, picture: "image1.jpg" },
+    { id: 3, resultTitle: "", result: `This chart cannot be used to write the formula` },
     { id: 4, question: "Does the name end in any of the following: cyanide, hydroxide, or peroxide?", yes: 5, no: 7 },
     { id: 5, question: "Can you find both parts of the name on Reference Table E?", yes: 6, no: 9 },
     { id: 6, resultTitle: "Compound Containing Two Different Polyatomic Ions", result: "Look up the formulas and charges of each polyatomic ion on Reference Table E. Use the crisscross method to determine how many of each ion is required to make a neutral compound. If an ion is required more than once, place parentheses around it and use a subscript outside it to indicate how many of that ion is in the compound. The positive ion is written first.", picture: "06 twopolyatomic.gif" },
     { id: 7, question: "Are there prefixes in the name?", yes: 10, no: 8 },
-    { id: 8, resultTitle: "Compound Containing Two Different Monatomic Ions", result: "Determine the charge of each monatomic ion using the periodic table and the electron configuration of the closest noble gas (or possibly the stock system for the cation). Use the crisscross method to determine how many of each ion is required to make a neutral compound. Use a subscript to indicate how many of each ion is required. The positive ion is written first." },
-    { id: 9, resultTitle: "Compound Containing a Monatomic Ion and a Polyatomic Ion", result: "Determine the charge on the monatomic ion using the periodic table and the electron configuration of the closest noble gas (or possibly the stock system for the cation). Look up the formula and charge of the polyatomic ion on Reference Table E. Use the crisscross method to determine how many of each ion is required to make a neutral compound. If the polyatomic ion is required more than once, place parentheses around it and use a subscript outside it to indicate how many of that ion is in the compound. The positive ion is written first." },
+    {
+  id: 8,
+  resultTitle: "Compound Containing Two Different Monatomic Ions",
+  result: `
+    Determine the charge of each monatomic ion using the periodic table and the electron configuration of the closest noble gas (or possibly the <span class="trigger" onclick="togglePopup()">stock system</span>  for the cation). Use the crisscross method to determine how many of each ion is required to make a neutral compound. Use a subscript to indicate how many of each ion is required. The positive ion is written first.
+
+  <div class="popup" id="popup">
+    <span class="close-btn" onclick="togglePopup()">×</span>
+    <h2>Stock System</h2>
+    <p>Some metals have more than one common charge. For example, iron has common charges of +3 and +2. The name of the Fe<sup>3+</sup> ion is "iron(III)". The compound Fe<sub>2</sub>O<sub>3</sub> is named "iron(III) oxide" because it contains the Fe<sup>3+</sup> ion and the compound FeO is named "iron(II) oxide" because it contains Fe<sup>2+</sup> ion.</p>
+  </div>
+`
+},
+
+    { id: 9, resultTitle: "Compound Containing a Monatomic Ion and a Polyatomic Ion", result: `Determine the charge on the monatomic ion using the periodic table and the electron configuration of the closest noble gas (or possibly the <span class="trigger" onclick="togglePopup()">stock system</span> for the cation). Look up the formula and charge of the polyatomic ion on Reference Table E. Use the crisscross method to determine how many of each ion is required to make a neutral compound. If the polyatomic ion is required more than once, place parentheses around it and use a subscript outside it to indicate how many of that ion is in the compound. The positive ion is written first.
+
+  <div class="popup" id="popup">
+    <span class="close-btn" onclick="togglePopup()">×</span>
+    <h2>Stock System</h2>
+    <p>Some metals have more than one common charge. For example, iron has common charges of +3 and +2. The name of the Fe<sup>3+</sup> ion is "iron(III)". The compound Fe<sub>2</sub>O<sub>3</sub> is named "iron(III) oxide" because it contains the Fe<sup>3+</sup> ion and the compound FeO is named "iron(II) oxide" because it contains Fe<sup>2+</sup> ion.</p>
+  </div>
+` },
     { id: 10, question: "Does the first part of the name have a prefix?", yes: 12, no: 11 },
-    { id: 11, resultTitle: "Binary Covalent Compound with Only One Atom of First Element", result: "Write the symbol for the first element. Write the symbol for the second element with the proper number subscript based on its prefix. No subscript is written for the prefix 𝘮𝘰𝘯𝘰–." },
-    { id: 12, resultTitle: "Binary Covalent Compound with Multiple Atoms of First Element", result: "Write the symbol for the first element with the proper number subscript based on its prefix. Write the symbol for the second element with the proper number subscript based on its prefix. No subscript is written for the prefix 𝘮𝘰𝘯𝘰–." }
+    { id: 11, resultTitle: "Binary Covalent Compound with Only One Atom of First Element", result: `Write the symbol for the first element. Write the symbol for the second element with the proper <span class="trigger" onclick="togglePopup()">number subscript</span> based on its prefix. No subscript is written for the prefix 𝘮𝘰𝘯𝘰–.
+
+<div class="popup" id="popup">
+    <span class="close-btn" onclick="togglePopup()">×</span>
+    <table style="border-collapse: collapse; table-layout: fixed; width: 275px; font-family: sans-serif;">
+      <!-- Title row spanning two columns -->
+      <tr>
+        <th style="border-top: none; border-left: none; border-right: none; font-size: 20px; padding: 8px; background-color: #ffffff;" colspan="2">Numerical Prefixes for Covalent Compounds</th>
+      </tr>
+      <!-- Header row -->
+      <tr>
+        <th>Numbers of Atoms</th>
+        <th>Prefixes</th>
+      </tr>
+      <!-- Data rows -->
+      <tr><td>1</td><td>mono-</td></tr>
+      <tr><td>2</td><td>di-</td></tr>
+      <tr><td>3</td><td>tri-</td></tr>
+      <tr><td>4</td><td>tetra-</td></tr>
+      <tr><td>5</td><td>penta-</td></tr>
+      <tr><td>6</td><td>hexa-</td></tr>
+      <tr><td>7</td><td>hepta-</td></tr>
+      <tr><td>8</td><td>octa-</td></tr>
+      <tr><td>9</td><td>nona-</td></tr>
+      <tr><td>10</td><td>deca-</td></tr>
+    </table>
+  </div>
+` },
+
+    { id: 12, resultTitle: "Binary Covalent Compound with Multiple Atoms of First Element", result: `Write the symbol for the first element with the proper <span class="trigger" onclick="togglePopup()">number subscript</span> based on its prefix. Write the symbol for the second element with the proper number subscript based on its prefix. No subscript is written for the prefix 𝘮𝘰𝘯𝘰–.
+
+<div class="popup" id="popup">
+    <span class="close-btn" onclick="togglePopup()">×</span>
+    <table style="border-collapse: collapse; table-layout: fixed; width: 275px; font-family: sans-serif;">
+      <!-- Title row spanning two columns -->
+      <tr>
+        <th style="border-top: none; border-left: none; border-right: none; font-size: 20px; padding: 8px; background-color: #ffffff;" colspan="2">Numerical Prefixes for Covalent Compounds</th>
+      </tr>
+      <!-- Header row -->
+      <tr>
+        <th>Numbers of Atoms</th>
+        <th>Prefixes</th>
+      </tr>
+      <!-- Data rows -->
+      <tr><td>1</td><td>mono-</td></tr>
+      <tr><td>2</td><td>di-</td></tr>
+      <tr><td>3</td><td>tri-</td></tr>
+      <tr><td>4</td><td>tetra-</td></tr>
+      <tr><td>5</td><td>penta-</td></tr>
+      <tr><td>6</td><td>hexa-</td></tr>
+      <tr><td>7</td><td>hepta-</td></tr>
+      <tr><td>8</td><td>octa-</td></tr>
+      <tr><td>9</td><td>nona-</td></tr>
+      <tr><td>10</td><td>deca-</td></tr>
+    </table>
+  </div>
+
+` }
   ];
 
   const app = document.getElementById('app');
@@ -198,6 +331,12 @@
   }
 
   renderNode(currentNode);
+
+  function togglePopup() {
+    const popup = document.getElementById('popup');
+    popup.classList.toggle('active');
+  }
+
 </script>
 
 </body>
