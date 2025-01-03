@@ -158,7 +158,7 @@
     { id: 1, question: "Does the name end in –𝘪𝘥𝘦", yes: 4, no: 2 },
     { id: 2, question: "Can you find part of the name on Reference Table E?", yes: 5, no: 3 },
     { id: 3, resultTitle: "", result: `This chart cannot be used to write the formula.` },
-    { id: 4, question: "Does the name end in any of the following: cyanide, hydroxide, or peroxide?", yes: 5, no: 7 },
+    { id: 4, question: "Does the name end in any of the following: cyanide, hydroxide, or peroxide?", yes: 13, no: 7 },
     { id: 5, question: "Can you find both parts of the name on Reference Table E?", yes: 6, no: 9 },
     { id: 6, resultTitle: "Compound Containing Two Different Polyatomic Ions", result: "Look up the formulas and charges of each polyatomic ion on Reference Table E. Use the crisscross method to determine how many of each ion is required to make a neutral compound. If an ion is required more than once, place parentheses around it and use a subscript outside it to indicate how many of that ion is in the compound. The positive ion is written first.", picture: "06 twopolyatomic.gif" },
     { id: 7, question: "Are there prefixes in the name?", yes: 10, no: 8 },
@@ -242,6 +242,18 @@
     </table>
   </div>
 
+` },
+
+
+    { id: 13, question: "Can you find both parts of the name on Reference Table E?", yes: 14, no: 15 },
+    { id: 14, resultTitle: "Compound Containing Two Different Polyatomic Ions", result: "Look up the formulas and charges of each polyatomic ion on Reference Table E. Use the crisscross method to determine how many of each ion is required to make a neutral compound. If an ion is required more than once, place parentheses around it and use a subscript outside it to indicate how many of that ion is in the compound. The positive ion is written first.", picture: "06 twopolyatomic.gif" },
+    { id: 15, resultTitle: "Compound Containing a Monatomic Ion and a Polyatomic Ion", result: `Determine the charge on the monatomic ion using the periodic table and the electron configuration of the closest noble gas (or possibly the <span class="trigger" onclick="togglePopup()">stock system</span> for the cation). Look up the formula and charge of the polyatomic ion on Reference Table E. Use the crisscross method to determine how many of each ion is required to make a neutral compound. If the polyatomic ion is required more than once, place parentheses around it and use a subscript outside it to indicate how many of that ion is in the compound. The positive ion is written first.
+
+  <div class="popup" id="popup">
+    <span class="close-btn" onclick="togglePopup()">×</span>
+    <h2>Stock System</h2>
+    <p>Some metals have more than one common charge. For example, iron has common charges of +3 and +2. The name of the Fe<sup>3+</sup> ion is "iron(III)". The compound Fe<sub>2</sub>O<sub>3</sub> is named "iron(III) oxide" because it contains the Fe<sup>3+</sup> ion and the compound FeO is named "iron(II) oxide" because it contains Fe<sup>2+</sup> ion.</p>
+  </div>
 ` }
   ];
 
