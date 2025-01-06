@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chemistry Units</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #E7E6E6;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .instruction {
+            text-align: left;
+            font-size: 1.1em;
+            font-weight: bold;
+            padding: 20px;
+            border: 2px solid black;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            background-color: white;
+            max-width: 800px;
+            width: 90%;
+            margin: 0 auto;
+        }
+
+        .unit {
+            margin-bottom: 40px;
+        }
+
+        .unit h2 {
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .questions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(125px, 1fr));
+            grid-auto-columns: 150px;
+            max-width: calc((150px + 15px) * 5 - 15px); /* Maximum width for 5 items with spacing */
+            gap: 5px;
+            margin: 0 auto; /* Centers the grid when rows are smaller */
+        }
+
+        .question-box {
+            width: 125px;
+            height: 50px;
+            display: flex;
+            font-weight: bold;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 1.3em;
+            font-weight: bold;
+            border: 2px solid #000000;
+            border-radius: 8px;
+            background-color: #d6d6d6;
+            cursor: pointer;
+        }
+
+        .question-box a {
+            text-decoration: none;
+            color: black;
+        }
+    </style>
+</head>
+<body>
+<h1 style="text-align: center">After Winter Break 2025 Review</h1>    
+<div class="instruction">
+        Select ten questions total to answer. You must answer at least one question from each unit and work with three partners to solve them. Use the printed sheet to answer the questions. Use the links below for summarized information on each unit:
+<table style="border-collapse: collapse; text-align: left; border: 1px solid white; margin: auto">
+        <tr>
+            <td style="border: 1px solid white;"><a href="https://drive.google.com/file/d/11OuxsYQUZ4CB57cBLiymmmw8-_cKQvlv/view?usp=sharing" target="_blank">Unit 1 - Measurements and Uncertainty</a></td>
+        </tr>
+        <tr>
+            <td style="border: 1px solid white;"><a href="https://drive.google.com/file/d/1xPpbGANmSvRUjk8E8Jo-z5rTJLmL40Jc/view?usp=sharing" target="_blank">Unit 2 - Matter and Change</a></td>
+        </tr>
+        <tr>
+            <td style="border: 1px solid white;"><a href="https://drive.google.com/file/d/1hsodYUT5WCQZ2mrHozw15OYoi-oL_qEo/view?usp=sharing" target="_blank">Unit 3 - Atomic Concepts</a></td>
+        </tr>
+        <tr>
+            <td style="border: 1px solid white;"><a href="https://drive.google.com/file/d/1eZoKlWi6t2PbBN7-dnfJ0QbLJQ3fPhFd/view?usp=sharing" target="_blank">Unit 4 - Nuclear Chemistry</a></td>
+        </tr>
+        <tr>
+            <td style="border: 1px solid white;"><a href="https://drive.google.com/file/d/1mY3P_XakBfP3tgPkBSsy3P1h1-TPoIGf/view?usp=sharing" target="_blank">Unit 5 - The Periodic Table</a></td>
+        </tr>
+        <tr>
+            <td style="border: 1px solid white;"><a href="https://drive.google.com/file/d/18tEo3oA2ETw20AQqVMVs6wttglSkG1yP/view?usp=sharing" target="_blank">Unit 6 - Chemical Bonding</a></td>
+        </tr>
+    </table>
+     
+    </div>
+
+    <script>
+        const unitLinks = [
+            ["https://docs.google.com/presentation/d/1vohWHhg8Qdku1_cl8_qOQMBVv1lZUEHtGtQIXgWC36g/pub",
+             "https://docs.google.com/presentation/d/1GykqN4HYl4TE0viGSzr2f_i3T7e9zJ88uaGTjrll7rc/pub", 
+             "https://docs.google.com/presentation/d/1KQPOsyViOGc-RexxaZYblNjPB2ko9HNXBA3mHeF_1d0/pub", 
+             "https://docs.google.com/presentation/d/1Fa3Mhh6oUd5iwaNrsVLSu9UqFDDJUh9gxYYnlF3zAZQ/pub", 
+             "https://docs.google.com/presentation/d/1u8nqRfypiK3DgwAtghfEhwgpflTbQbjN0rbDHECaSkY/pub", 
+             "https://docs.google.com/presentation/d/1nxQNWf2ZkcmYu36Mnkr7Sz5DXD-4A7DKmPwqLvhxnNE/pub",
+             "https://docs.google.com/presentation/d/1jA40MV0yhWjmfQdCi38KWwvy14s9sJHy1sgjOW3hbYo/pub", 
+             "https://docs.google.com/presentation/d/1fCJJ46VMczBXCVq4JFYCysupW7-rpcFqw4-u_1UnDhs/pub", 
+             ], // Unit 1 links
+            ["#",
+             "#", 
+             "#", 
+             "#", 
+             "#", 
+             "#", 
+             "#", 
+             "#", 
+             "#", 
+             "#"
+             ], // Unit 2 links
+            ["#",
+             "#", 
+             "#", 
+             "#", 
+             "#", 
+             "#", 
+             "#", 
+             "#", 
+             "#", 
+             "#"
+             ], // Unit 3 links
+            ["#",
+             "#", 
+             "#", 
+             "#", 
+             "#", 
+             "#", 
+             "#", 
+             "#", 
+             "#", 
+             "#"
+             ], // Unit 4 links
+            ["#",
+             "#", 
+             "#", 
+             "#", 
+             "#", 
+             "#", 
+             "#", 
+             "#", 
+             "#", 
+             "#"
+             ], // Unit 5 links
+            ["#",
+             "#", 
+             "#", 
+             "#", 
+             "#", 
+             "#", 
+             "#", 
+             "#", 
+             "#", 
+             "#"
+             ],  // Unit 6 links
+        ];
+
+        function generateUnits() {
+            const unitTitles = [
+                "Unit 1 - Measurements and Uncertainty",
+                "Unit 2 - Matter and Change",
+                "Unit 3 - Atomic Concepts",
+                "Unit 4 - Nuclear Chemistry",
+                "Unit 5 - The Periodic Table",
+                "Unit 6 - Chemical Bonding"
+            ];
+
+            const container = document.createElement('div');
+
+            unitTitles.forEach((title, index) => {
+                const unitDiv = document.createElement('div');
+                unitDiv.classList.add('unit');
+
+                const heading = document.createElement('h2');
+                heading.textContent = title;
+                unitDiv.appendChild(heading);
+
+                const questionsDiv = document.createElement('div');
+                questionsDiv.classList.add('questions');
+
+                unitLinks[index].forEach((link, i) => {
+                    if (link) {
+                         const anchor = document.createElement('a');
+                         anchor.href = link;
+                         anchor.target = "_blank"; // Open the link in a new window
+                         anchor.style.display = "block"; // Ensure the anchor fills the questionDiv
+                         anchor.style.textDecoration = "none"; // Optional: Prevent underlining of text
+
+                         const questionDiv = document.createElement('div');
+                         questionDiv.classList.add('question-box');
+                         questionDiv.textContent = `Question\n${i + 1}`;
+
+        anchor.appendChild(questionDiv); // Wrap questionDiv with the anchor
+        questionsDiv.appendChild(anchor); // Append the anchor to questionsDiv
+                    }
+                });
+
+                unitDiv.appendChild(questionsDiv);
+                container.appendChild(unitDiv);
+            });
+
+            document.body.appendChild(container);
+        }
+
+        document.addEventListener('DOMContentLoaded', generateUnits);
+    </script>
+</body>
+</html>
