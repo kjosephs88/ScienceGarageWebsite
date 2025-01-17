@@ -1,0 +1,1 @@
+The files in this repository are the NYS Chemistry Regents Reference Tables. The tables are in svg format imbedded in an html file. They will be made into static html pages for the purpose of linking them in bookmarks for easy access.
