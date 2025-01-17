@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classroom Assignments</title>
+    <style>
+        body {
+            display: flex;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        .tabs {
+            display: flex;
+            flex-direction: column;
+            width: 100px;
+            background-color: #333;
+        }
+
+        .tab {
+            padding: 10px;
+            font-size: 20px;
+            color: white;
+            text-align: center;
+            cursor: pointer;
+            border: 1px solid #444;
+        }
+
+        .tab:hover {
+            background-color: #555;
+        }
+
+        .tab.active {
+            background-color: #777;
+        }
+
+        .content {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+            height: 800px;
+        }
+
+        .unit {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .unit.active {
+            display: block;
+        }
+
+        .unit-title {
+            font-size: 40px;
+            margin-bottom: 20px;
+            margin-top: 30px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .unit-table {
+            width: 800px;
+            border-collapse: collapse;
+            margin: 0 auto;
+        }
+
+        .unit-table th, .unit-table td {
+            border: 3px solid black;
+            text-align: center;
+        }
+
+        .unit-table th {
+            background-color: #7e6e6e;
+            color: white;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 5px;
+            padding: 5px;
+        }
+
+        .grid-container a {
+            text-decoration: none;
+            color: black;
+        }
+
+        .grid-item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #ccc;
+            padding: 10px;
+            background-color: #f0f0f0;
+            cursor: pointer;
+        }
+
+        .grid-item:hover {
+            background-color: #ddd;
+        }
+    </style>
+</head>
+<body>
+    <div class="tabs">
+        <div class="tab active" onclick="showUnit(0)">Unit 1</div>
+        <div class="tab" onclick="showUnit(1)">Unit 2</div>
+        <div class="tab" onclick="showUnit(2)">Unit 3</div>
+        <div class="tab" onclick="showUnit(3)">Unit 4</div>
+        <div class="tab" onclick="showUnit(4)">Unit 5</div>
+        <div class="tab" onclick="showUnit(5)">Unit 6</div>
+        <div class="tab" onclick="showUnit(6)">Unit 7</div>
+        <div class="tab" onclick="showUnit(7)">Unit 8</div>
+        <div class="tab" onclick="showUnit(8)">Unit 9</div>
+        <div class="tab" onclick="showUnit(9)">Unit 10</div>
+        <div class="tab" onclick="showUnit(10)">Unit 11</div>
+        <div class="tab" onclick="showUnit(11)">Unit 12</div>
+        <div class="tab" onclick="showUnit(12)">Unit 13</div>
+        <div class="tab" onclick="showUnit(13)">Unit 14</div>
+        <div class="tab" onclick="showUnit(14)">Unit 15</div>
+        <div class="tab" onclick="showUnit(15)">Unit 16</div>
+
+    </div>
+
+    <div class="content">
+        <div id="unit-0" class="unit active">
+            <div class="unit-title">Unit 1 - Measurements and Uncertainty</div>
+            <table class="unit-table">
+                <tr>
+                    <th>Period 2</th>
+                    <th>Period 4</th>
+                    <th>Period 9</th>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="grid-container" id="period2-0"></div>
+                    </td>
+                    <td>
+                        <div class="grid-container" id="period4-0"></div>
+                    </td>
+                    <td>
+                        <div class="grid-container" id="period9-0"></div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div id="unit-1" class="unit">
+            <div class="unit-title">Unit 2 - Matter and Change</div>
+            <table class="unit-table">
+                <tr>
+                    <th>Period 2</th>
+                    <th>Period 4</th>
+                    <th>Period 9</th>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="grid-container" id="period2-1"></div>
+                    </td>
+                    <td>
+                        <div class="grid-container" id="period4-1"></div>
+                    </td>
+                    <td>
+                        <div class="grid-container" id="period9-1"></div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div id="unit-2" class="unit">
+            <div class="unit-title">Unit 3 - Atomic Concepts</div>
+            <table class="unit-table">
+                <tr>
+                    <th>Period 2</th>
+                    <th>Period 4</th>
+                    <th>Period 9</th>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="grid-container" id="period2-2"></div>
+                    </td>
+                    <td>
+                        <div class="grid-container" id="period4-2"></div>
+                    </td>
+                    <td>
+                        <div class="grid-container" id="period9-2"></div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div id="unit-3" class="unit">
+            <div class="unit-title">Unit 4 - Nuclear Chemistry</div>
+            <table class="unit-table">
+                <tr>
+                    <th>Period 2</th>
+                    <th>Period 4</th>
+                    <th>Period 9</th>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="grid-container" id="period2-3"></div>
+                    </td>
+                    <td>
+                        <div class="grid-container" id="period4-3"></div>
+                    </td>
+                    <td>
+                        <div class="grid-container" id="period9-3"></div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div id="unit-4" class="unit">
+            <div class="unit-title">Unit 5 - The Periodic Table</div>
+            <table class="unit-table">
+                <tr>
+                    <th>Period 2</th>
+                    <th>Period 4</th>
+                    <th>Period 9</th>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="grid-container" id="period2-4"></div>
+                    </td>
+                    <td>
+                        <div class="grid-container" id="period4-4"></div>
+                    </td>
+                    <td>
+                        <div class="grid-container" id="period9-4"></div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div id="unit-5" class="unit">
+            <div class="unit-title">Unit 6 - Chemical Bonding</div>
+            <table class="unit-table">
+                <tr>
+                    <th>Period 2</th>
+                    <th>Period 4</th>
+                    <th>Period 9</th>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="grid-container" id="period2-5"></div>
+                    </td>
+                    <td>
+                        <div class="grid-container" id="period4-5"></div>
+                    </td>
+                    <td>
+                        <div class="grid-container" id="period9-5"></div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div id="unit-6" class="unit">
+            <div class="unit-title">Unit 7 - Compound Names and Formulas and The Mole</div>
+            <table class="unit-table">
+                <tr>
+                    <th>Period 2</th>
+                    <th>Period 4</th>
+                    <th>Period 9</th>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="grid-container" id="period2-6"></div>
+                    </td>
+                    <td>
+                        <div class="grid-container" id="period4-6"></div>
+                    </td>
+                    <td>
+                        <div class="grid-container" id="period9-6"></div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+       
+    </div>
+
+    <script>
+        // Function to open multiple URLs in new tabs
+        function openMultipleLinks(urls) {
+            urls.forEach(url => {
+                window.open(url, '_blank');
+            });
+        }
+
+        // Function to fetch and display the links for a unit
+        function loadUnitLinks(unitId) {
+            // Fetch the JSON data for Unit 1
+            fetch(`unit${unitId + 1}_links.json`, { cache: "no-store" })
+                .then(response => response.json())
+                .then(data => {
+                    const unit = data[`unit${unitId + 1}`];
+                    const periods = ["period2", "period4", "period9"];
+                    
+                    periods.forEach(period => {
+                        const container = document.getElementById(`${period}-${unitId}`);
+                        container.innerHTML = "";
+                        unit[period].forEach(link => {
+                            const a = document.createElement("a");
+                            const div = document.createElement("div");
+                            div.classList.add("grid-item");
+                            div.textContent = link.text;
+
+                            // If there are multiple URLs, add an event listener to open them
+                            if (link.urls.length > 1) {
+                                a.href = "javascript:void(0);"; // prevent default link action
+                                a.onclick = () => openMultipleLinks(link.urls);
+                            } else {
+                                a.href = link.urls[0];
+                                a.target = "_blank";
+                            }
+                            
+                            a.appendChild(div);
+                            container.appendChild(a);
+                        });
+                    });
+                })
+                .catch(error => console.error('Error loading unit links:', error));
+        }
+
+        // Show the active unit and load its links
+        function showUnit(unitId) {
+            const units = document.querySelectorAll(".unit");
+            const tabs = document.querySelectorAll(".tab");
+
+            units.forEach(unit => unit.classList.remove("active"));
+            tabs.forEach(tab => tab.classList.remove("active"));
+
+            document.getElementById(`unit-${unitId}`).classList.add("active");
+            tabs[unitId].classList.add("active");
+
+            loadUnitLinks(unitId);
+        }
+
+        // Initialize the first unit on page load
+        document.addEventListener("DOMContentLoaded", function() {
+            loadUnitLinks(0); // Load links for Unit 1
+        });
+    </script>
+</body>
+</html>
