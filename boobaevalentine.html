@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Valentine's Surprise</title>
+    <style>
+        body {
+            background-color: pink;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+        }
+
+        #button {
+            position: absolute;
+            font-size: 24px;
+            padding: 15px 30px;
+            border: none;
+            background-color: red;
+            color: white;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .heart {
+            position: absolute;
+            color: red;
+            opacity: 1;
+            pointer-events: none;
+            animation: fall linear forwards;
+        }
+
+        @keyframes fall {
+            from { transform: translateY(-100vh); opacity: 1; }
+            to { transform: translateY(100vh); opacity: 0; }
+        }
+
+        #message {
+            position: absolute;
+            font-size: 48px;
+            font-weight: bold;
+            color: red;
+            opacity: 0;
+            transition: opacity 2s ease-in;
+            text-align: center;
+        }
+
+        .heartbeat {
+            animation: heartbeat 1s infinite alternate;
+        }
+
+        @keyframes heartbeat {
+            from { transform: scale(1); }
+            to { transform: scale(1.1); }
+        }
+    </style>
+</head>
+<body>
+
+    <button id="button">Click Here Boobae</button>
+
+    <div id="message"></div>
+
+    <script>
+        document.getElementById("button").addEventListener("click", function() {
+            this.style.display = "none";
+            for (let i = 0; i < 100; i++) {
+                setTimeout(createHeart, Math.random() * 3000);
+            }
+            setTimeout(showMessage, 2500); // Message fades in slightly earlier
+        });
+
+        function createHeart() {
+            let heart = document.createElement("div");
+            heart.className = "heart";
+            heart.innerHTML = "❤️";
+            heart.style.left = Math.random() * 100 + "vw";
+            heart.style.fontSize = Math.floor(Math.random() * (48 - 12) + 12) + "px";
+            let duration = Math.random() * 2 + 2; // Random fall duration between 2-4 seconds
+            heart.style.animationDuration = duration + "s";
+            document.body.appendChild(heart);
+            setTimeout(() => heart.remove(), duration * 1000);
+        }
+
+        function showMessage() {
+            let message = document.getElementById("message");
+            message.innerHTML = `I Love You Boobae!<br>Here's what I got to say:<br>I'm glad you are mine,<br>my sexy Valentine.`;
+            message.style.opacity = "1";
+            message.classList.add("heartbeat");
+        }
+    </script>
+
+</body>
+</html>
