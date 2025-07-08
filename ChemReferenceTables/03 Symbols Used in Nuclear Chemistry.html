@@ -1,13 +1,50 @@
-<html>
-<body style="background-color:black;">
-<div style="text-align:center;margin-left:auto;margin-right:auto">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Full View SVG</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden; /* Prevent scrollbars from appearing */
+            display: flex;
+            justify-content: center; /* Center horizontally */
+            align-items: center; /* Center vertically */
+            background-color: #000000; /* Optional: background color for the blank space */
+        }
 
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+        .svg-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden; /* To contain the SVG during zoom */
+        }
+
+        .zoomable-svg {
+            display: block; /* Remove extra space below inline elements */
+            max-width: 100%; /* Ensure it scales down if wider than container */
+            max-height: 100%; /* Ensure it scales down if taller than container */
+            object-fit: contain; /* This is key for maintaining aspect ratio and fitting */
+            transform-origin: center center; /* Set origin for scaling */
+            transition: transform 0.05s ease-out; /* Smooth zoom transition */
+        }
+    </style>
+</head>
+<body>
+    <div class="svg-container">
+    
 <svg
+   class="zoomable-svg"
+   preserveAspectRatio="xMidYMid meet"   
+   viewBox="0 0 464 722" 
    version="1.1"
    id="body_3"
-   width="464"
-   height="722"
    xmlns="http://www.w3.org/2000/svg"
    xmlns:svg="http://www.w3.org/2000/svg">
   <defs
@@ -1375,6 +1412,76 @@ src: url("data:font/truetype;charset=utf-8;base64,AAEAAAANAIAAAwBQY21hcCGxJEcAAA
 </svg>
 
 
-</div>
+   </div>
+
+    <script>
+        const zoomableSvg = document.querySelector('.zoomable-svg');
+        let currentZoom = 1;
+        let panning = false;
+        let startX, startY;
+        let translateX = 0;
+        let translateY = 0;
+
+        zoomableSvg.addEventListener('wheel', (event) => {
+            if (event.ctrlKey) { // Check if Ctrl key is pressed
+                event.preventDefault(); // Prevent page scrolling
+                const zoomFactor = 1.1; // How much to zoom in/out
+
+                // Get mouse position relative to SVG
+                const svgRect = zoomableSvg.getBoundingClientRect();
+                const mouseX = event.clientX - svgRect.left;
+                const mouseY = event.clientY - svgRect.top;
+
+                // Calculate the new zoom level
+                const oldZoom = currentZoom;
+                if (event.deltaY < 0) {
+                    currentZoom *= zoomFactor; // Zoom in
+                } else {
+                    currentZoom /= zoomFactor; // Zoom out
+                }
+
+                // Limit zoom to prevent it from becoming too small or too large
+                currentZoom = Math.max(0.1, Math.min(10, currentZoom)); // Example limits
+
+                // Calculate translation to zoom around the mouse pointer
+                translateX = mouseX - (mouseX * (currentZoom / oldZoom));
+                translateY = mouseY - (mouseY * (currentZoom / oldZoom));
+
+                updateTransform();
+            }
+        });
+
+        // Optional: Add panning functionality (drag to move)
+        zoomableSvg.addEventListener('mousedown', (event) => {
+            if (event.button === 0 && currentZoom > 1) { // Left click and zoomed in
+                panning = true;
+                startX = event.clientX - translateX;
+                startY = event.clientY - translateY;
+                zoomableSvg.style.cursor = 'grab';
+            }
+        });
+
+        zoomableSvg.addEventListener('mousemove', (event) => {
+            if (panning) {
+                translateX = event.clientX - startX;
+                translateY = event.clientY - startY;
+                updateTransform();
+            }
+        });
+
+        zoomableSvg.addEventListener('mouseup', () => {
+            panning = false;
+            zoomableSvg.style.cursor = 'default';
+        });
+
+        zoomableSvg.addEventListener('mouseleave', () => {
+            panning = false;
+            zoomableSvg.style.cursor = 'default';
+        });
+
+        function updateTransform() {
+            zoomableSvg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${currentZoom})`;
+        }
+    </script>
 </body>
 </html>
