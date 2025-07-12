@@ -3,59 +3,210 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NYS Regents Chemistry Digital Reference Tables 2025</title>
+    <title>NYS Regents Chemistry Reference Tables One Column</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background-color: #f4f4f4;
+        body, html {
             margin: 0;
             padding: 0;
-        }
-
-        h1 {
-            margin-top: 50px;
-            font-size: 3em;
-            color: #333;
-        }
-
-        .link-container {
+            width: 100%;
+            height: 100%;
+            overflow: hidden; /* Prevent scrollbars from appearing */
             display: flex;
-            flex-direction: column;
+            justify-content: center; /* Center horizontally */
+            align-items: center; /* Center vertically */
+            background-color: #000000; /* Optional: background color for the blank space */
+        }
+
+        .svg-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
             align-items: center;
-            margin-top: 30px;
+            overflow: hidden; /* To contain the SVG during zoom */
         }
 
-        .link-box {
-            margin: 10px 0;
-            padding: 15px 30px;
-            background-color: #007BFF;
-            color: white;
-            font-size: 1.2em;
-            text-decoration: none;
-            border-radius: 8px;
-            transition: background-color 0.3s, transform 0.2s;
-            width: 300px;
-            text-align: center;
-        }
-
-        .link-box:hover {
-            background-color: #0056b3;
-            transform: scale(1.05);
+        .zoomable-svg {
+            display: block; /* Remove extra space below inline elements */
+            max-width: 100%; /* Ensure it scales down if wider than container */
+            max-height: 100%; /* Ensure it scales down if taller than container */
+            object-fit: contain; /* This is key for maintaining aspect ratio and fitting */
+            transform-origin: center center; /* Set origin for scaling */
+            transition: transform 0.05s ease-out; /* Smooth zoom transition */
         }
     </style>
 </head>
 <body>
-    <h1>NYS Regents Chemistry<br>Digital Reference Tables<br>2025</h1>
-    <div class="link-container">
-        <a href="01%20The%20Periodic%20Table%20of%20the%20Elements.html" class="link-box">The Periodic Table of the Elements</a>
-        <a href="02%20The%20Electromagnetic%20Spectrum.html" class="link-box">The Electromagnetic Spectrum</a>
-        <a href="03%20Symbols%20Used%20in%20Nuclear%20Chemistry.html" class="link-box">Symbols Used in Nuclear Chemistry</a>
-        <a href="04%20Selected%20Ions%20Forming%20Aqueous%20Solutions.html" class="link-box">Selected Ions Forming Aqueous Solutions</a>
-        <a href="05%20Mathematical%20and%20Computational%20Models.html" class="link-box">Mathematical and Computational Models</a>
-        <a href="06%20Mathematical%20Relationships.html" class="link-box">Mathematical Relationships</a>
-        <a href="07%20Selected%20Units.html" class="link-box">Selected Units</a>
-        <a href="08%20Selected%20Metric%20Prefixes" class="link-box">Selected Metric Prefixes</a>
+    <div class="svg-container">
+      
+
+<svg    class="zoomable-svg"
+     xmlns="http://www.w3.org/2000/svg"
+     xmlns:xlink="http://www.w3.org/1999/xlink"
+     viewBox="0 0 500 750"
+     preserveAspectRatio="xMidYMid meet"
+     style="background-color:#f4f4f4; font-family: Arial, sans-serif;">
+
+  <defs>
+    <!-- Drop shadow filters -->
+    <filter id="buttonShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(0, 0, 0, 0.3)" />
+    </filter>
+
+    <filter id="titleShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="rgba(0, 0, 0, 0.4)" />
+    </filter>
+  </defs>
+
+  <style>
+    .button-group {
+      transition: transform 0.2s ease-in-out;
+      transform-origin: center;
+      cursor: pointer;
+    }
+
+    a:hover .button-group {
+      transform: scale(1.05);
+    }
+  </style>
+
+  <!-- Title -->
+  <text x="250" y="50" font-size="35" text-anchor="middle" fill="#333" filter="url(#titleShadow)">
+    <tspan font-weight="bold">NYS Regents Chemistry</tspan>
+    <tspan x="250" dy="1.2em" font-weight="bold">Digital Reference Tables</tspan>
+    <tspan x="250" dy="1.2em" font-weight="bold">2025</tspan>
+  </text>
+
+  <!-- Spacing Variables -->
+  <!-- Links: background = 100, text = 250 -->
+  <!-- Start Y background = 170, Start Y text = 195, step = 70 -->
+
+  <a xlink:href="01%20The%20Periodic%20Table%20of%20the%20Elements.html">
+    <g class="button-group" filter="url(#buttonShadow)">
+      <rect x="100" y="170" width="300" height="50" rx="10" ry="10" fill="#007BFF"/>
+      <text x="250" y="195" font-size="16" fill="white" font-weight="bold" text-anchor="middle" dominant-baseline="middle">The Periodic Table of the Elements</text>
+    </g>
+  </a>
+
+  <a xlink:href="02%20The%20Electromagnetic%20Spectrum.html">
+    <g class="button-group" filter="url(#buttonShadow)">
+      <rect x="100" y="240" width="300" height="50" rx="10" ry="10" fill="#007BFF"/>
+      <text x="250" y="265" font-size="16" fill="white" font-weight="bold" text-anchor="middle" dominant-baseline="middle">The Electromagnetic Spectrum</text>
+    </g>
+  </a>
+
+  <a xlink:href="03%20Symbols%20Used%20in%20Nuclear%20Chemistry.html">
+    <g class="button-group" filter="url(#buttonShadow)">
+      <rect x="100" y="310" width="300" height="50" rx="10" ry="10" fill="#007BFF"/>
+      <text x="250" y="335" font-size="16" fill="white" font-weight="bold" text-anchor="middle" dominant-baseline="middle">Symbols Used in Nuclear Chemistry</text>
+    </g>
+  </a>
+
+  <a xlink:href="04%20Selected%20Ions%20Forming%20Aqueous%20Solutions.html">
+    <g class="button-group" filter="url(#buttonShadow)">
+      <rect x="100" y="380" width="300" height="50" rx="10" ry="10" fill="#007BFF"/>
+      <text x="250" y="405" font-size="14" fill="white" font-weight="bold" text-anchor="middle" dominant-baseline="middle">Selected Ions Forming Aqueous Solutions</text>
+    </g>
+  </a>
+
+  <a xlink:href="05%20Mathematical%20and%20Computational%20Models.html">
+    <g class="button-group" filter="url(#buttonShadow)">
+      <rect x="100" y="450" width="300" height="50" rx="10" ry="10" fill="#007BFF"/>
+      <text x="250" y="475" font-size="14" fill="white" font-weight="bold" text-anchor="middle" dominant-baseline="middle">Mathematical and Computational Models</text>
+    </g>
+  </a>
+
+  <a xlink:href="06%20Mathematical%20Relationships.html">
+    <g class="button-group" filter="url(#buttonShadow)">
+      <rect x="100" y="520" width="300" height="50" rx="10" ry="10" fill="#007BFF"/>
+      <text x="250" y="545" font-size="16" fill="white" font-weight="bold" text-anchor="middle" dominant-baseline="middle">Mathematical Relationships</text>
+    </g>
+  </a>
+
+  <a xlink:href="07%20Selected%20Units.html">
+    <g class="button-group" filter="url(#buttonShadow)">
+      <rect x="100" y="590" width="300" height="50" rx="10" ry="10" fill="#007BFF"/>
+      <text x="250" y="615" font-size="16" fill="white" font-weight="bold" text-anchor="middle" dominant-baseline="middle">Selected Units</text>
+    </g>
+  </a>
+
+  <a xlink:href="08%20Selected%20Metric%20Prefixes.html">
+    <g class="button-group" filter="url(#buttonShadow)">
+      <rect x="100" y="660" width="300" height="50" rx="10" ry="10" fill="#007BFF"/>
+      <text x="250" y="685" font-size="16" fill="white" font-weight="bold" text-anchor="middle" dominant-baseline="middle">Selected Metric Prefixes</text>
+    </g>
+  </a>
+</svg>
     </div>
+
+    <script>
+        const zoomableSvg = document.querySelector('.zoomable-svg');
+        let currentZoom = 1;
+        let panning = false;
+        let startX, startY;
+        let translateX = 0;
+        let translateY = 0;
+
+        zoomableSvg.addEventListener('wheel', (event) => {
+            if (event.ctrlKey) { // Check if Ctrl key is pressed
+                event.preventDefault(); // Prevent page scrolling
+                const zoomFactor = 1.1; // How much to zoom in/out
+
+                // Get mouse position relative to SVG
+                const svgRect = zoomableSvg.getBoundingClientRect();
+                const mouseX = event.clientX - svgRect.left;
+                const mouseY = event.clientY - svgRect.top;
+
+                // Calculate the new zoom level
+                const oldZoom = currentZoom;
+                if (event.deltaY < 0) {
+                    currentZoom *= zoomFactor; // Zoom in
+                } else {
+                    currentZoom /= zoomFactor; // Zoom out
+                }
+
+                // Limit zoom to prevent it from becoming too small or too large
+                currentZoom = Math.max(0.1, Math.min(10, currentZoom)); // Example limits
+
+                // Calculate translation to zoom around the mouse pointer
+                translateX = mouseX - (mouseX * (currentZoom / oldZoom));
+                translateY = mouseY - (mouseY * (currentZoom / oldZoom));
+
+                updateTransform();
+            }
+        });
+
+        // Optional: Add panning functionality (drag to move)
+        zoomableSvg.addEventListener('mousedown', (event) => {
+            if (event.button === 0 && currentZoom > 1) { // Left click and zoomed in
+                panning = true;
+                startX = event.clientX - translateX;
+                startY = event.clientY - translateY;
+                zoomableSvg.style.cursor = 'grab';
+            }
+        });
+
+        zoomableSvg.addEventListener('mousemove', (event) => {
+            if (panning) {
+                translateX = event.clientX - startX;
+                translateY = event.clientY - startY;
+                updateTransform();
+            }
+        });
+
+        zoomableSvg.addEventListener('mouseup', () => {
+            panning = false;
+            zoomableSvg.style.cursor = 'default';
+        });
+
+        zoomableSvg.addEventListener('mouseleave', () => {
+            panning = false;
+            zoomableSvg.style.cursor = 'default';
+        });
+
+        function updateTransform() {
+            zoomableSvg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${currentZoom})`;
+        }
+    </script>
 </body>
 </html>
