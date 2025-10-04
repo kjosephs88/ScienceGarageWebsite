@@ -9,7 +9,6 @@
 
   <script>
     async function loadLinks() {
-      // Your published CSV link
       const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSmVSBml1Qg-xiMgiV7jdtgOk05suXSlrYL7YtazbYz1O6yrEAWR2jJvUWxulLNfaWvpKHeXcGGJZ7p/pub?gid=50718769&single=true&output=csv";
       const response = await fetch(url);
       const text = await response.text();
@@ -18,14 +17,42 @@
       const container = document.getElementById("links");
 
       rows.forEach(row => {
-        // Split each row into [title, url]
-        const [title, link] = row.split(",");
+        // Split row into [title, url1, url2]
+        const cols = row.split(",");
+        const title = cols[0].replace(/"/g, "");
+        const url1 = cols[1] ? cols[1].replace(/"/g, "") : "";
+        const url2 = cols[2] ? cols[2].replace(/"/g, "") : "";
+
         const li = document.createElement("li");
-        const a = document.createElement("a");
-        a.href = link.replace(/"/g, "");
-        a.textContent = title.replace(/"/g, "");
-        a.target = "_blank"; // open in new tab
-        li.appendChild(a);
+
+        // Add title text
+        const span = document.createElement("span");
+        span.textContent = title + ": ";
+        li.appendChild(span);
+
+        // First link (if present)
+        if (url1) {
+          const a1 = document.createElement("a");
+          a1.href = url1;
+          a1.textContent = "Link 1";
+          a1.target = "_blank";
+          li.appendChild(a1);
+        }
+
+        // Space between links
+        if (url1 && url2) {
+          li.appendChild(document.createTextNode(" | "));
+        }
+
+        // Second link (if present)
+        if (url2) {
+          const a2 = document.createElement("a");
+          a2.href = url2;
+          a2.textContent = "Link 2";
+          a2.target = "_blank";
+          li.appendChild(a2);
+        }
+
         container.appendChild(li);
       });
     }
