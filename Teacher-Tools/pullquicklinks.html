@@ -104,6 +104,13 @@
     .grid-item:hover {
       background-color: #ddd;
     }
+
+    .loading {
+      text-align: center;
+      padding: 20px;
+      font-size: 18px;
+      color: #555;
+    }
   </style>
 </head>
 <body>
@@ -111,12 +118,12 @@
   <div class="content" id="content"></div>
 
   <script>
-    // Placeholder: list of sheet URLs (one per unit/labs)
+    // 🔑 Placeholder Google Sheet URLs — replace with your published CSV links
     const sheetSources = [
       "https://docs.google.com/spreadsheets/d/e/2PACX-1vQZPnXpJanPVZBYdGyrTtOUQamUqpMt_1d9mY_aYwjUeIacHjLpAFLAY6idKv2mljKQqnHA9mHfYhVW/pub?gid=32154621&single=true&output=csv",
       "https://docs.google.com/spreadsheets/d/e/2PACX-1vSmVSBml1Qg-xiMgiV7jdtgOk05suXSlrYL7YtazbYz1O6yrEAWR2jJvUWxulLNfaWvpKHeXcGGJZ7p/pub?gid=50718769&single=true&output=csv",
       "https://docs.google.com/spreadsheets/d/PLACEHOLDER_SHEET_ID_3/pub?output=csv"
-      // add more units here
+      // add more units here...
     ];
 
     async function fetchSheet(url) {
@@ -130,50 +137,52 @@
       const contentDiv = document.getElementById("content");
 
       for (let i = 0; i < sheetSources.length; i++) {
-        const rows = await fetchSheet(sheetSources[i]);
-
-        // Pull metadata from sheet
-        const tabName = rows[0][0]; // A1 = tab label
-        const unitTitle = rows[1][0]; // A2 = unit title
-        const headers = rows[1].slice(1); // B2, C2, D2... = period headers
-        const data = rows.slice(2); // starting row 3 = actual links
-
-        // Sidebar tab
-        const tab = document.createElement("div");
-        tab.className = "tab" + (i === 0 ? " active" : "");
-        tab.textContent = tabName;
-        tab.onclick = () => showUnit(i);
-        tabsDiv.appendChild(tab);
-
-        // Unit content
+        // Show "Loading..." while waiting for fetch
         const unitDiv = document.createElement("div");
         unitDiv.className = "unit" + (i === 0 ? " active" : "");
         unitDiv.id = "unit-" + i;
-
-        const titleDiv = document.createElement("div");
-        titleDiv.className = "unit-title";
-        titleDiv.textContent = unitTitle;
-        unitDiv.appendChild(titleDiv);
-
-        let tableHTML = "<table class='unit-table'><tr>";
-        headers.forEach(h => { tableHTML += `<th>${h}</th>`; });
-        tableHTML += "</tr><tr>";
-
-        for (let c = 1; c <= headers.length; c++) {
-          tableHTML += "<td><div class='grid-container'>";
-          data.forEach(row => {
-            const text = row[0];
-            const link = row[c];
-            if (link) {
-              tableHTML += `<a href="${link}" target="_blank"><div class="grid-item">${text}</div></a>`;
-            }
-          });
-          tableHTML += "</div></td>";
-        }
-        tableHTML += "</tr></table>";
-
-        unitDiv.innerHTML += tableHTML;
+        unitDiv.innerHTML = `<div class="loading">Loading links...</div>`;
         contentDiv.appendChild(unitDiv);
+
+        try {
+          const rows = await fetchSheet(sheetSources[i]);
+
+          // Metadata from sheet
+          const tabName = rows[0][0];   // A1 = tab label
+          const unitTitle = rows[0][1]; // B1 = unit title
+          const headers = rows[1].slice(1); // B2, C2, D2... = period headers
+          const data = rows.slice(2);   // starting row 3 = actual links
+
+          // Sidebar tab
+          const tab = document.createElement("div");
+          tab.className = "tab" + (i === 0 ? " active" : "");
+          tab.textContent = tabName;
+          tab.onclick = () => showUnit(i);
+          tabsDiv.appendChild(tab);
+
+          // Build unit content
+          let html = `<div class="unit-title">${unitTitle}</div>`;
+          html += "<table class='unit-table'><tr>";
+          headers.forEach(h => { html += `<th>${h}</th>`; });
+          html += "</tr><tr>";
+
+          for (let c = 1; c <= headers.length; c++) {
+            html += "<td><div class='grid-container'>";
+            data.forEach(row => {
+              const text = row[0];
+              const link = row[c];
+              if (link) {
+                html += `<a href="${link}" target="_blank"><div class="grid-item">${text}</div></a>`;
+              }
+            });
+            html += "</div></td>";
+          }
+
+          html += "</tr></table>";
+          unitDiv.innerHTML = html;
+        } catch (err) {
+          unitDiv.innerHTML = `<div class="loading">⚠️ Error loading sheet</div>`;
+        }
       }
     }
 
