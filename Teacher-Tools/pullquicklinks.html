@@ -1,63 +1,190 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Links from Google Sheets</title>
-</head>
-<body>
-  <h2>Links from Google Sheets</h2>
-  <ul id="links"></ul>
-
-  <script>
-    async function loadLinks() {
-      const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSmVSBml1Qg-xiMgiV7jdtgOk05suXSlrYL7YtazbYz1O6yrEAWR2jJvUWxulLNfaWvpKHeXcGGJZ7p/pub?gid=50718769&single=true&output=csv";
-      const response = await fetch(url);
-      const text = await response.text();
-
-      const rows = text.trim().split("\n").slice(1); // skip header row
-      const container = document.getElementById("links");
-
-      rows.forEach(row => {
-        // Split row into [title, url1, url2]
-        const cols = row.split(",");
-        const title = cols[0].replace(/"/g, "");
-        const url1 = cols[1] ? cols[1].replace(/"/g, "") : "";
-        const url2 = cols[2] ? cols[2].replace(/"/g, "") : "";
-
-        const li = document.createElement("li");
-
-        // Add title text
-        const span = document.createElement("span");
-        span.textContent = title + ": ";
-        li.appendChild(span);
-
-        // First link (if present)
-        if (url1) {
-          const a1 = document.createElement("a");
-          a1.href = url1;
-          a1.textContent = "Link 1";
-          a1.target = "_blank";
-          li.appendChild(a1);
-        }
-
-        // Space between links
-        if (url1 && url2) {
-          li.appendChild(document.createTextNode(" | "));
-        }
-
-        // Second link (if present)
-        if (url2) {
-          const a2 = document.createElement("a");
-          a2.href = url2;
-          a2.textContent = "Link 2";
-          a2.target = "_blank";
-          li.appendChild(a2);
-        }
-
-        container.appendChild(li);
-      });
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quick Links</title>
+  <style>
+    body {
+      display: flex;
+      margin: 0;
+      font-family: Arial, sans-serif;
     }
 
-    loadLinks();
+    .tabs {
+      display: flex;
+      flex-direction: column;
+      width: 120px;
+      background-color: #333;
+    }
+
+    .tab {
+      padding: 10px;
+      font-size: 18px;
+      color: white;
+      text-align: center;
+      cursor: pointer;
+      border: 1px solid #444;
+    }
+
+    .tab:hover {
+      background-color: #555;
+    }
+
+    .tab.active {
+      background-color: #777;
+    }
+
+    .content {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      height: 800px;
+    }
+
+    .unit {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .unit.active {
+      display: block;
+    }
+
+    .unit-title {
+      font-size: 40px;
+      margin-bottom: 20px;
+      margin-top: 30px;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    .unit-table {
+      width: 800px;
+      border-collapse: collapse;
+      margin: 0 auto;
+    }
+
+    .unit-table th, .unit-table td {
+      border: 3px solid black;
+      text-align: center;
+    }
+
+    .unit-table th {
+      background-color: #7e6e6e;
+      color: white;
+    }
+
+    .grid-container {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 5px;
+      padding: 5px;
+    }
+
+    .grid-container a {
+      text-decoration: none;
+      color: black;
+    }
+
+    .grid-item {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #ccc;
+      padding: 10px;
+      background-color: #f0f0f0;
+      cursor: pointer;
+    }
+
+    .grid-item:hover {
+      background-color: #ddd;
+    }
+  </style>
+</head>
+<body>
+  <div class="tabs" id="tabs"></div>
+  <div class="content" id="content"></div>
+
+  <script>
+    // Placeholder: list of sheet URLs (one per unit/labs)
+    const sheetSources = [
+      "https://docs.google.com/spreadsheets/d/e/2PACX-1vQZPnXpJanPVZBYdGyrTtOUQamUqpMt_1d9mY_aYwjUeIacHjLpAFLAY6idKv2mljKQqnHA9mHfYhVW/pub?gid=32154621&single=true&output=csv",
+      "https://docs.google.com/spreadsheets/d/e/2PACX-1vSmVSBml1Qg-xiMgiV7jdtgOk05suXSlrYL7YtazbYz1O6yrEAWR2jJvUWxulLNfaWvpKHeXcGGJZ7p/pub?gid=50718769&single=true&output=csv",
+      "https://docs.google.com/spreadsheets/d/PLACEHOLDER_SHEET_ID_3/pub?output=csv"
+      // add more units here
+    ];
+
+    async function fetchSheet(url) {
+      const response = await fetch(url);
+      const text = await response.text();
+      return text.trim().split("\n").map(r => r.split(","));
+    }
+
+    async function buildPage() {
+      const tabsDiv = document.getElementById("tabs");
+      const contentDiv = document.getElementById("content");
+
+      for (let i = 0; i < sheetSources.length; i++) {
+        const rows = await fetchSheet(sheetSources[i]);
+
+        // Pull metadata from sheet
+        const tabName = rows[0][0]; // A1 = tab label
+        const unitTitle = rows[1][0]; // A2 = unit title
+        const headers = rows[1].slice(1); // B2, C2, D2... = period headers
+        const data = rows.slice(2); // starting row 3 = actual links
+
+        // Sidebar tab
+        const tab = document.createElement("div");
+        tab.className = "tab" + (i === 0 ? " active" : "");
+        tab.textContent = tabName;
+        tab.onclick = () => showUnit(i);
+        tabsDiv.appendChild(tab);
+
+        // Unit content
+        const unitDiv = document.createElement("div");
+        unitDiv.className = "unit" + (i === 0 ? " active" : "");
+        unitDiv.id = "unit-" + i;
+
+        const titleDiv = document.createElement("div");
+        titleDiv.className = "unit-title";
+        titleDiv.textContent = unitTitle;
+        unitDiv.appendChild(titleDiv);
+
+        let tableHTML = "<table class='unit-table'><tr>";
+        headers.forEach(h => { tableHTML += `<th>${h}</th>`; });
+        tableHTML += "</tr><tr>";
+
+        for (let c = 1; c <= headers.length; c++) {
+          tableHTML += "<td><div class='grid-container'>";
+          data.forEach(row => {
+            const text = row[0];
+            const link = row[c];
+            if (link) {
+              tableHTML += `<a href="${link}" target="_blank"><div class="grid-item">${text}</div></a>`;
+            }
+          });
+          tableHTML += "</div></td>";
+        }
+        tableHTML += "</tr></table>";
+
+        unitDiv.innerHTML += tableHTML;
+        contentDiv.appendChild(unitDiv);
+      }
+    }
+
+    function showUnit(index) {
+      const tabs = document.querySelectorAll(".tab");
+      const units = document.querySelectorAll(".unit");
+      tabs.forEach((t, i) => t.classList.toggle("active", i === index));
+      units.forEach((u, i) => u.classList.toggle("active", i === index));
+    }
+
+    buildPage();
   </script>
 </body>
 </html>
