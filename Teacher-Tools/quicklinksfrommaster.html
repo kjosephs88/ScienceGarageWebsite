@@ -29,17 +29,15 @@
   <div class="content" id="content"></div>
 
 <script>
-// ---- CONFIG ----
 const masterSheetURL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vTZgAuU2ZDrAgRVQ1XY4Cma3VmvGnABV2MfUHEanSfGvQbq6aMkNgWPm_2YOwHgUmVHCET9uet78AGE/pub?output=csv";
 const baseCSV =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vTZgAuU2ZDrAgRVQ1XY4Cma3VmvGnABV2MfUHEanSfGvQbq6aMkNgWPm_2YOwHgUmVHCET9uet78AGE/pub?gid=";
 
 const sheetCache = {};
-const tabInfo = []; // [{title, gid}]
+const tabInfo = [];
 
-// ---- CSV PARSER ----
-// Properly handles commas and quotes inside cells
+// Robust CSV parser
 function parseCSV(text) {
   const rows = [];
   let current = [''];
@@ -47,19 +45,13 @@ function parseCSV(text) {
 
   for (let i = 0; i < text.length; i++) {
     const c = text[i], next = text[i+1];
-    if (c === '"' && inQuotes && next === '"') { // escaped quote
-      current[current.length-1] += '"';
-      i++;
-    } else if (c === '"') {
-      inQuotes = !inQuotes;
-    } else if (c === ',' && !inQuotes) {
-      current.push('');
-    } else if ((c === '\n' || c === '\r') && !inQuotes) {
+    if (c === '"' && inQuotes && next === '"') { current[current.length-1] += '"'; i++; }
+    else if (c === '"') inQuotes = !inQuotes;
+    else if (c === ',' && !inQuotes) current.push('');
+    else if ((c === '\n' || c === '\r') && !inQuotes) {
       if (current.length > 1 || current[0] !== '') rows.push(current);
       current = [''];
-    } else {
-      current[current.length-1] += c;
-    }
+    } else current[current.length-1] += c;
   }
   if (current.length > 1 || current[0] !== '') rows.push(current);
   return rows;
@@ -71,17 +63,16 @@ async function fetchCSV(url) {
   return parseCSV(text.trim());
 }
 
-// ---- BUILD PAGE ----
 async function buildTabs() {
   const rows = await fetchCSV(masterSheetURL);
   const tabsDiv = document.getElementById("tabs");
   const contentDiv = document.getElementById("content");
 
-  // read col C (index 2) and D (index 3)
+  // Read titles and GIDs
   for (let i = 1; i < rows.length; i++) {
     const title = rows[i][2];
     const gid = rows[i][3];
-    if (title && gid) tabInfo.push({ title, gid });
+    if (title) tabInfo.push({ title, gid });
   }
 
   tabInfo.forEach((info, i) => {
@@ -109,6 +100,11 @@ async function loadUnit(index) {
   const { gid } = tabInfo[index];
   const unitDiv = document.getElementById("unit-" + index);
 
+  if (!gid) {
+    unitDiv.innerHTML = "<div class='loading'>Content coming soon...</div>";
+    return;
+  }
+
   if (sheetCache[gid]) {
     unitDiv.innerHTML = sheetCache[gid];
     return;
@@ -120,8 +116,8 @@ async function loadUnit(index) {
     const rows = await fetchCSV(baseCSV + gid + "&single=true&output=csv");
     if (rows.length < 3) throw new Error("Not enough rows");
 
-    const tabName = rows[0][0];   // A1
-    const unitTitle = rows[0][1]; // B1
+    const tabName = rows[0][0];
+    const unitTitle = rows[0][1];
     const headers = rows[1].slice(1);
     const data = rows.slice(2);
 
