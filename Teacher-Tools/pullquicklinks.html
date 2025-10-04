@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Links from Google Sheets</title>
+</head>
+<body>
+  <h2>Links from Google Sheets</h2>
+  <ul id="links"></ul>
+
+  <script>
+    async function loadLinks() {
+      // Your published CSV link
+      const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSmVSBml1Qg-xiMgiV7jdtgOk05suXSlrYL7YtazbYz1O6yrEAWR2jJvUWxulLNfaWvpKHeXcGGJZ7p/pub?gid=50718769&single=true&output=csv";
+      const response = await fetch(url);
+      const text = await response.text();
+
+      const rows = text.trim().split("\n").slice(1); // skip header row
+      const container = document.getElementById("links");
+
+      rows.forEach(row => {
+        // Split each row into [title, url]
+        const [title, link] = row.split(",");
+        const li = document.createElement("li");
+        const a = document.createElement("a");
+        a.href = link.replace(/"/g, "");
+        a.textContent = title.replace(/"/g, "");
+        a.target = "_blank"; // open in new tab
+        li.appendChild(a);
+        container.appendChild(li);
+      });
+    }
+
+    loadLinks();
+  </script>
+</body>
+</html>
