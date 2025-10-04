@@ -29,26 +29,55 @@
   <div class="content" id="content"></div>
 
 <script>
+// ---- CONFIG ----
 const masterSheetURL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vTZgAuU2ZDrAgRVQ1XY4Cma3VmvGnABV2MfUHEanSfGvQbq6aMkNgWPm_2YOwHgUmVHCET9uet78AGE/pub?output=csv";
 const baseCSV =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vTZgAuU2ZDrAgRVQ1XY4Cma3VmvGnABV2MfUHEanSfGvQbq6aMkNgWPm_2YOwHgUmVHCET9uet78AGE/pub?gid=";
 
 const sheetCache = {};
-const tabInfo = []; // [{title, gid}, …]
+const tabInfo = []; // [{title, gid}]
+
+// ---- CSV PARSER ----
+// Properly handles commas and quotes inside cells
+function parseCSV(text) {
+  const rows = [];
+  let current = [''];
+  let inQuotes = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i], next = text[i+1];
+    if (c === '"' && inQuotes && next === '"') { // escaped quote
+      current[current.length-1] += '"';
+      i++;
+    } else if (c === '"') {
+      inQuotes = !inQuotes;
+    } else if (c === ',' && !inQuotes) {
+      current.push('');
+    } else if ((c === '\n' || c === '\r') && !inQuotes) {
+      if (current.length > 1 || current[0] !== '') rows.push(current);
+      current = [''];
+    } else {
+      current[current.length-1] += c;
+    }
+  }
+  if (current.length > 1 || current[0] !== '') rows.push(current);
+  return rows;
+}
 
 async function fetchCSV(url) {
   const res = await fetch(url);
   const text = await res.text();
-  return text.trim().split("\n").map(r => r.split(","));
+  return parseCSV(text.trim());
 }
 
+// ---- BUILD PAGE ----
 async function buildTabs() {
   const rows = await fetchCSV(masterSheetURL);
   const tabsDiv = document.getElementById("tabs");
   const contentDiv = document.getElementById("content");
 
-  // read from col C (index 2) and D (index 3)
+  // read col C (index 2) and D (index 3)
   for (let i = 1; i < rows.length; i++) {
     const title = rows[i][2];
     const gid = rows[i][3];
@@ -73,14 +102,12 @@ async function buildTabs() {
     contentDiv.appendChild(unitDiv);
   });
 
-  // load only first unit initially
   if (tabInfo.length) await loadUnit(0);
 }
 
 async function loadUnit(index) {
-  const { gid, title } = tabInfo[index];
+  const { gid } = tabInfo[index];
   const unitDiv = document.getElementById("unit-" + index);
-  const tab = document.getElementById("tab-" + index);
 
   if (sheetCache[gid]) {
     unitDiv.innerHTML = sheetCache[gid];
@@ -91,12 +118,14 @@ async function loadUnit(index) {
 
   try {
     const rows = await fetchCSV(baseCSV + gid + "&single=true&output=csv");
+    if (rows.length < 3) throw new Error("Not enough rows");
+
     const tabName = rows[0][0];   // A1
     const unitTitle = rows[0][1]; // B1
     const headers = rows[1].slice(1);
     const data = rows.slice(2);
 
-    let html = `<div class="unit-title">${unitTitle}</div>`;
+    let html = `<div class="unit-title">${unitTitle || tabName}</div>`;
     html += "<table class='unit-table'><tr>";
     headers.forEach(h => (html += `<th>${h}</th>`));
     html += "</tr><tr>";
@@ -106,7 +135,7 @@ async function loadUnit(index) {
       data.forEach(row => {
         const text = row[0];
         const link = row[c];
-        if (link) {
+        if (link && link.startsWith("http")) {
           html += `<a href="${link}" target="_blank"><div class="grid-item">${text}</div></a>`;
         }
       });
@@ -117,6 +146,7 @@ async function loadUnit(index) {
     sheetCache[gid] = html;
     unitDiv.innerHTML = html;
   } catch (err) {
+    console.error("Error loading unit", err);
     unitDiv.innerHTML =
       "<div class='loading'>⚠️ Error loading this unit.</div>";
   }
