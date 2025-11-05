@@ -165,12 +165,13 @@ function fallbackCopy(text) {
 /**
  * Insert "P6 " or "P8 " into the 14th–16th positions (1-based),
  * which is index 13 (0-based). If the text is shorter than that,
- * just append.
+ * append instead — but include a space before it.
  */
 function insertPeriodTag(baseText, periodCode) {
   const inject = periodCode + " ";
   if (baseText.length <= INSERT_POS) {
-    return baseText + inject;
+    // Add a space before appending the code
+    return baseText.trimEnd() + " " + inject;
   }
   return baseText.slice(0, INSERT_POS) + inject + baseText.slice(INSERT_POS);
 }
