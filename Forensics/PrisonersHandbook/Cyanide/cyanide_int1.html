@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+	<meta charset="UTF-8">
+	<link rel="stylesheet" type="text/css" href="css/main.css" />
+
+	<script type="text/javascript" src="js/easeljs-0.7.0.min.js"></script>
+	<script type="text/javascript" src="js/preloadjs-0.4.0.min.js"></script>
+	<script type="text/javascript" src="js/shared.js"></script>
+	<script type="text/javascript" src="js/cyanide_int1.js"></script>
+</head>
+<body onload="init();">
+	<canvas id="fgCanvas" width="778" height="488"></canvas>
+	<div id="loader" class="loader"></div>
+	<div id="instruct" unselectable="on" class="unselectable">&nbsp;</div>
+	<a id="btnHome" href="home.html">Home</a>
+	<button id="btnPrev" onclick="return goPrevScreen();">Previous</button>
+	<button id="btnNext" onclick="return goNextScreen();">Next</button>
+
+	<script type="text/javascript" src="js/tweenjs-0.5.0.min.js"></script>
+</body>
+</html>
