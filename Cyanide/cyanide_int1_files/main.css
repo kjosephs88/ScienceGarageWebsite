@@ -80,12 +80,7 @@ a, button {
 }
 
 #btnHome {
-	width: 42px;
-	height: 123px;
-	left: 14px;
-	top: 7px;
-	background: url(../img/nav_btns2.png);
-	background-position: -80px -125px;
+    display: none !important;
 }
 
 #btnPrev {
