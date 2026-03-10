@@ -3,20 +3,37 @@
 <head>
 <meta charset="UTF-8">
 <title>First Period Assembly Schedule</title>
+<style>
+  /* This CSS locks the webpage to the exact height of the browser window and removes default margins */
+  body {
+    margin: 0;
+    height: 100vh;
+    overflow: hidden; 
+  }
+  .container {
+    height: 100%;
+    text-align: center;
+  }
+  svg {
+    height: 100%; /* Forces the SVG to match the container's height */
+    width: auto;  /* Keeps the aspect ratio perfectly intact */
+  }
+  
+  /* Text and color formatting for the schedule */
+  text { font-family: Aptos, Aptos_MSFontService, sans-serif; fill: #000000; }
+  .title { font-weight: 700; font-size: 88px; }
+  .cell { font-weight: 400; font-size: 83px; }
+  .sup { font-size: 55px; baseline-shift: super; }
+  .bg-white { fill: #FFFFFF; }
+  .bg-blue { fill: #DCEAF7; }
+  .border-black { stroke: #000000; stroke-width: 4.58; fill: none; }
+  .border-white { stroke: #FFFFFF; stroke-width: 6.875; fill: none; }
+</style>
 </head>
 <body>
-<div class="container" style="text-align:center; margin-left:auto; margin-right:auto; max-width:1427px;">
-<svg width="100%" height="100%" viewBox="0 0 1427 2041" xmlns="http://www.w3.org/2000/svg">
-  <style>
-    text { font-family: Aptos, Aptos_MSFontService, sans-serif; fill: #000000; }
-    .title { font-weight: 700; font-size: 88px; }
-    .cell { font-weight: 400; font-size: 83px; }
-    .sup { font-size: 55px; baseline-shift: super; }
-    .bg-white { fill: #FFFFFF; }
-    .bg-blue { fill: #DCEAF7; }
-    .border-black { stroke: #000000; stroke-width: 4.58; fill: none; }
-    .border-white { stroke: #FFFFFF; stroke-width: 6.875; fill: none; }
-  </style>
+
+<div class="container">
+<svg viewBox="0 0 1427 2041" xmlns="http://www.w3.org/2000/svg">
 
   <rect x="0" y="0" width="1427" height="165" class="bg-white" />
   <rect x="0" y="165" width="1427" height="134" class="bg-blue" />
@@ -67,6 +84,7 @@
   <text x="33" y="1734" class="cell">9<tspan class="sup">th</tspan> Period</text><text x="842" y="1734" class="cell">1:40 - 2:17</text>
   <text x="33" y="1868" class="cell">Announcements</text><text x="842" y="1868" class="cell">2:14</text>
   <text x="33" y="2002" class="cell">10<tspan class="sup">th</tspan> Period</text><text x="842" y="2002" class="cell">2:25 - 3:03</text>
+
 </svg>
 </div>
 </body>
