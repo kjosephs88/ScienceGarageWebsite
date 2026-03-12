@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stopwatch Timer</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: white;
+      font-family: Arial, sans-serif;
+    }
+
+    /* Wrapper to shift everything slightly higher than the middle */
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      transform: translateY(-10vh);
+    }
+
+    .timer {
+      font-size: 15vw;
+      font-weight: bold;
+      color: black;
+      margin-bottom: 20px;
+      /* Tabular nums keep the rapidly changing digits from shifting horizontally */
+      font-variant-numeric: tabular-nums; 
+    }
+
+    .buttons-container {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      width: 90%;
+      max-width: 800px;
+    }
+
+    .box {
+      background: lightgray;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.5rem;
+      font-weight: bold;
+      padding: 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.3s;
+      flex: 1; /* Makes the three buttons equal width */
+      text-align: center;
+    }
+
+    .box:hover {
+      background: gray;
+      color: white;
+    }
+
+    .laps-container {
+      margin-top: 30px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+      height: 150px; /* Reserves space so layout doesn't jump */
+    }
+
+    .lap-item {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #555;
+      font-variant-numeric: tabular-nums;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="timer" id="display">0.00</div>
+
+    <div class="buttons-container">
+      <div class="box" id="startStopBtn">START / STOP</div>
+      <div class="box" id="lapBtn">LAP</div>
+      <div class="box" id="clearBtn">CLEAR</div>
+    </div>
+
+    <div class="laps-container" id="lapsContainer">
+      </div>
+  </div>
+
+  <script>
+    let startTime = 0;
+    let elapsedTime = 0;
+    let animationFrameId = null;
+    let isRunning = false;
+    let laps = [];
+    let lapCount = 0;
+
+    const display = document.getElementById('display');
+    const startStopBtn = document.getElementById('startStopBtn');
+    const lapBtn = document.getElementById('lapBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const lapsContainer = document.getElementById('lapsContainer');
+
+    // Formats milliseconds into [MM:]SS.ms
+    function formatTime(ms) {
+      const totalCenti = Math.floor(ms / 10);
+      const centi = totalCenti % 100;
+      const totalSec = Math.floor(totalCenti / 100);
+      const minutes = Math.floor(totalSec / 60);
+      const seconds = totalSec % 60;
+
+      const formattedCenti = centi < 10 ? '0' + centi : centi;
+
+      if (minutes > 0) {
+        const formattedSecs = seconds < 10 ? '0' + seconds : seconds;
+        return `${minutes}:${formattedSecs}.${formattedCenti}`;
+      } else {
+        return `${seconds}.${formattedCenti}`;
+      }
+    }
+
+    function updateDisplay() {
+      const now = Date.now();
+      const currentMs = isRunning ? (elapsedTime + (now - startTime)) : elapsedTime;
+      display.textContent = formatTime(currentMs);
+    }
+
+    function tick() {
+      if (isRunning) {
+        updateDisplay();
+        animationFrameId = requestAnimationFrame(tick);
+      }
+    }
+
+    function toggleStartStop() {
+      if (isRunning) {
+        // Stop the timer
+        elapsedTime += Date.now() - startTime;
+        cancelAnimationFrame(animationFrameId);
+        isRunning = false;
+      } else {
+        // Start the timer
+        startTime = Date.now();
+        isRunning = true;
+        animationFrameId = requestAnimationFrame(tick);
+      }
+    }
+
+    function recordLap() {
+      lapCount++;
+      const currentMs = isRunning ? (elapsedTime + (Date.now() - startTime)) : elapsedTime;
+      const timeStr = formatTime(currentMs);
+
+      // Add new lap to the beginning of the array so it displays at the top
+      laps.unshift({ num: lapCount, time: timeStr });
+
+      // Keep only a maximum of 3 laps
+      if (laps.length > 3) {
+        laps.pop();
+      }
+
+      renderLaps();
+    }
+
+    function renderLaps() {
+      lapsContainer.innerHTML = '';
+      laps.forEach(lap => {
+        const div = document.createElement('div');
+        div.className = 'lap-item';
+        div.textContent = `Lap ${lap.num} — ${lap.time}`;
+        lapsContainer.appendChild(div);
+      });
+    }
+
+    function clearTimer() {
+      // Clear lap records
+      laps = [];
+      lapCount = 0;
+      renderLaps();
+
+      if (isRunning) {
+        // If running, keep it running but reset the start time to now
+        elapsedTime = 0;
+        startTime = Date.now();
+      } else {
+        // If stopped, just reset the display back to 0.00
+        elapsedTime = 0;
+        updateDisplay();
+      }
+    }
+
+    // Event Listeners
+    startStopBtn.addEventListener('click', toggleStartStop);
+    lapBtn.addEventListener('click', recordLap);
+    clearBtn.addEventListener('click', clearTimer);
+
+  </script>
+</body>
+</html>
