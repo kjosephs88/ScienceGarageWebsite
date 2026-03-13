@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>4-Quadrant Lab Timers</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      width: 100vw;
+      /* Use CSS Grid to perfectly divide the screen into 4 quadrants */
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      /* The background color and gap create the crosshair grid lines */
+      background-color: #ccc; 
+      gap: 2px;
+      font-family: Arial, sans-serif;
+      overflow: hidden; /* Prevents accidental scrolling on touchscreens */
+    }
+
+    .quadrant {
+      background-color: white;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .timer {
+      font-size: 10vw; /* Scales automatically with the screen size */
+      font-weight: bold;
+      color: black;
+      margin-bottom: 5vh;
+      font-variant-numeric: tabular-nums; /* Stops digits from shifting left/right */
+    }
+
+    .buttons-container {
+      display: flex;
+      gap: 20px;
+      width: 90%;
+      max-width: 450px;
+      justify-content: center;
+    }
+
+    .btn {
+      background: #e0e0e0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 2rem;
+      font-weight: bold;
+      padding: 20px;
+      border-radius: 12px;
+      cursor: pointer;
+      user-select: none;
+      flex: 1; /* Makes buttons equal width */
+      text-align: center;
+      /* Crucial for touch screens: disables double-tap to zoom on the buttons */
+      touch-action: manipulation; 
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      transition: background 0.1s, transform 0.1s;
+    }
+
+    .btn:active {
+      background: #c0c0c0;
+      transform: translateY(2px); /* Gives a satisfying physical "press" effect */
+      box-shadow: 0 2px 3px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="quadrant">
+    <div class="timer" id="display1">0.00</div>
+    <div class="buttons-container">
+      <div class="btn" id="startStop1">START / STOP</div>
+      <div class="btn" id="clear1">CLEAR</div>
+    </div>
+  </div>
+
+  <div class="quadrant">
+    <div class="timer" id="display2">0.00</div>
+    <div class="buttons-container">
+      <div class="btn" id="startStop2">START / STOP</div>
+      <div class="btn" id="clear2">CLEAR</div>
+    </div>
+  </div>
+
+  <div class="quadrant">
+    <div class="timer" id="display3">0.00</div>
+    <div class="buttons-container">
+      <div class="btn" id="startStop3">START / STOP</div>
+      <div class="btn" id="clear3">CLEAR</div>
+    </div>
+  </div>
+
+  <div class="quadrant">
+    <div class="timer" id="display4">0.00</div>
+    <div class="buttons-container">
+      <div class="btn" id="startStop4">START / STOP</div>
+      <div class="btn" id="clear4">CLEAR</div>
+    </div>
+  </div>
+
+  <script>
+    // Creating a Stopwatch class allows us to easily make 4 independent timers
+    // without copying and pasting the logic four times.
+    class Stopwatch {
+      constructor(displayId, startStopId, clearId) {
+        this.display = document.getElementById(displayId);
+        this.startStopBtn = document.getElementById(startStopId);
+        this.clearBtn = document.getElementById(clearId);
+        
+        this.startTime = 0;
+        this.elapsedTime = 0;
+        this.animationFrameId = null;
+        this.isRunning = false;
+        
+        // Bind the buttons
+        this.startStopBtn.addEventListener('click', () => this.toggleStartStop());
+        this.clearBtn.addEventListener('click', () => this.clearTimer());
+      }
+      
+      formatTime(ms) {
+        const totalCenti = Math.floor(ms / 10);
+        const centi = totalCenti % 100;
+        const totalSec = Math.floor(totalCenti / 100);
+        const minutes = Math.floor(totalSec / 60);
+        const seconds = totalSec % 60;
+
+        const formattedCenti = centi < 10 ? '0' + centi : centi;
+
+        if (minutes > 0) {
+          const formattedSecs = seconds < 10 ? '0' + seconds : seconds;
+          return `${minutes}:${formattedSecs}.${formattedCenti}`;
+        } else {
+          return `${seconds}.${formattedCenti}`;
+        }
+      }
+      
+      updateDisplay() {
+        const now = Date.now();
+        const currentMs = this.isRunning ? (this.elapsedTime + (now - this.startTime)) : this.elapsedTime;
+        this.display.textContent = this.formatTime(currentMs);
+      }
+      
+      // Arrow function preserves 'this' context for requestAnimationFrame
+      tick = () => {
+        if (this.isRunning) {
+          this.updateDisplay();
+          this.animationFrameId = requestAnimationFrame(this.tick);
+        }
+      }
+      
+      toggleStartStop() {
+        if (this.isRunning) {
+          // Pause logic
+          this.elapsedTime += Date.now() - this.startTime;
+          cancelAnimationFrame(this.animationFrameId);
+          this.isRunning = false;
+        } else {
+          // Start logic
+          this.startTime = Date.now();
+          this.isRunning = true;
+          this.animationFrameId = requestAnimationFrame(this.tick);
+        }
+      }
+      
+      clearTimer() {
+        if (this.isRunning) {
+          // If cleared while running, restart from zero immediately
+          this.elapsedTime = 0;
+          this.startTime = Date.now();
+        } else {
+          // If stopped, just reset to 0.00
+          this.elapsedTime = 0;
+          this.updateDisplay();
+        }
+      }
+    }
+
+    // Initialize all four independent timers
+    const timer1 = new Stopwatch('display1', 'startStop1', 'clear1');
+    const timer2 = new Stopwatch('display2', 'startStop2', 'clear2');
+    const timer3 = new Stopwatch('display3', 'startStop3', 'clear3');
+    const timer4 = new Stopwatch('display4', 'startStop4', 'clear4');
+
+  </script>
+</body>
+</html>
