@@ -9,7 +9,7 @@ function getSubscript(num) {
     return num.toString().split('').map(d => subs[d]).join('');
 }
 
-// NEW: Calculates the Greatest Common Divisor to enforce empirical formulas
+// Calculates the Greatest Common Divisor to enforce empirical formulas
 function getGCD(a, b) {
     return b === 0 ? a : getGCD(b, a % b);
 }
@@ -104,17 +104,11 @@ function createIonShape(chargeStr, symbol) {
     return svg;
 }
 
-// --- DRAG FROM MENU TO BOARD ---
-interact('.ion-menu-item').draggable({
-    listeners: { start(event) {} }
-});
-
-interact('#playing-field').dropzone({
-    accept: '.ion-menu-item',
-    ondrop: function (event) {
-        const item = event.relatedTarget;
-        const charge = parseInt(item.dataset.charge);
-        const symbol = item.dataset.symbol;
+// --- CLICK TO SPAWN LOGIC ---
+document.querySelectorAll('.ion-menu-item').forEach(item => {
+    item.addEventListener('click', function(event) {
+        const charge = parseInt(this.dataset.charge);
+        const symbol = this.dataset.symbol;
         const isCation = charge > 0;
 
         if (isCation) {
@@ -132,14 +126,32 @@ interact('#playing-field').dropzone({
         }
 
         const newIon = createIonShape(charge, symbol);
-        newIon.setAttribute('data-base', item.dataset.base);
-        newIon.setAttribute('data-poly', item.dataset.poly);
+        newIon.setAttribute('data-base', this.dataset.base);
+        newIon.setAttribute('data-poly', this.dataset.poly);
+        newIon.setAttribute('data-symbol', symbol); 
         
         resetWinUI();
 
-        const fieldRect = document.getElementById('playing-field').getBoundingClientRect();
-        const startX = event.dragEvent.clientX - fieldRect.left - 50;
-        const startY = event.dragEvent.clientY - fieldRect.top - 40; 
+        const existingSameType = document.querySelectorAll(`.ion-piece[data-symbol="${symbol}"]`).length;
+        const offset = (existingSameType * 20) % 120; 
+
+        const leftSidebar = document.getElementById('left-sidebar');
+        const rightSidebar = document.getElementById('right-sidebar');
+        const leftOffset = leftSidebar.classList.contains('collapsed') ? 0 : 150;
+        const rightOffset = rightSidebar.classList.contains('collapsed') ? 0 : 150;
+
+        let startX;
+        if (isCation) {
+            startX = leftOffset + 20 + offset;
+        } else {
+            const ionWidth = 140; 
+            startX = window.innerWidth - rightOffset - ionWidth - 20 - offset;
+        }
+        
+        // --- NEW: Calculate vertical center ---
+        const fieldHeight = document.getElementById('playing-field').offsetHeight;
+        const ionHeight = Math.abs(charge) * 80; // 80px per charge unit
+        const startY = (fieldHeight / 2) - (ionHeight / 2) + offset;
         
         newIon.style.transform = `translate(${startX}px, ${startY}px)`;
         newIon.setAttribute('data-x', startX);
@@ -148,7 +160,7 @@ interact('#playing-field').dropzone({
         
         document.getElementById('playing-field').appendChild(newIon);
         makePieceDraggable(newIon);
-    }
+    });
 });
 
 // --- MOVEMENT, BOUNDARIES, AND SNAPPING ---
@@ -323,11 +335,9 @@ function checkWinCondition(groupId) {
     if (netCharge !== 0) return;
     if (cations.length === 0 || anions.length === 0) return;
 
-    // --- NEW: EMPIRICAL FORMULA CHECK ---
     const catCount = cations.length;
     const anCount = anions.length;
     if (getGCD(catCount, anCount) > 1) {
-        // The ratio can be reduced (e.g., 2:2 or 2:4). Not a valid compound!
         return; 
     }
 
