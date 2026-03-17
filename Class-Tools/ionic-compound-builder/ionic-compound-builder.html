@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ionic Compound Builder</title>
+<style>
+  body {
+    margin: 0;
+    overflow: hidden; 
+    font-family: sans-serif;
+    background-color: #f4f4f9;
+  }
+
+  /* --- Top Bar Layout --- */
+  #top-bar {
+    position: absolute;
+    top: 0; 
+    left: 0;
+    width: 100vw; 
+    height: 150px; 
+    background-color: white; 
+    border-bottom: 2px solid #e0e0e0;
+    display: flex;
+    flex-direction: column; 
+    justify-content: center; 
+    align-items: center;
+    z-index: 100;
+    box-sizing: border-box;
+    padding-top: 10px;
+  }
+
+  #app-title {
+    font-size: 28px;
+    font-weight: bold;
+    color: #2c3e50;
+    margin: 0 0 15px 0;
+  }
+
+  /* Center Anchor: Holds the buttons securely in the exact middle */
+  #center-anchor {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .buttons-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  #clear-btn {
+    padding: 10px 20px;
+    font-size: 18px;
+    font-weight: bold;
+    color: white;
+    background-color: #e74c3c; 
+    border: none;
+    border-radius: 25px; 
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: background-color 0.2s;
+  }
+  #clear-btn:hover { background-color: #c0392b; }
+
+  #success-description {
+    font-size: 16px;
+    font-weight: bold;
+    color: white;
+    background-color: #2ecc71; 
+    padding: 6px 16px;
+    border-radius: 20px; 
+    margin-top: 10px;
+    visibility: hidden; 
+    opacity: 0; 
+    transition: opacity 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  /* --- NEW: Instructions List Absolutely Positioned to the LEFT --- */
+  .instructions-list {
+    position: absolute;
+    right: 100%; /* Pushes it directly left of the center buttons */
+    margin: 0 40px 0 0; /* 40px gap between text and clear button */
+    padding: 0;
+    color: #333;
+    white-space: nowrap; /* Forces text to stay on one line */
+    list-style-position: inside;
+  }
+
+  .instructions-list li {
+    font-weight: bold;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  /* Formula UI - Absolutely positioned to the RIGHT */
+  #formula-section {
+    display: none; 
+    position: absolute;
+    left: 100%; /* Pushes it directly right of the center buttons */
+    margin-left: 40px; 
+    align-items: center;
+    gap: 15px;
+    white-space: nowrap; 
+  }
+  
+  .checkbox-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+
+  .checkbox-label {
+    font-size: 18px;
+    color: #000;
+    line-height: 1.2;
+    text-align: center;
+  }
+
+  #formula-checkbox {
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+    border: 2px solid #000;
+  }
+
+  #formula-display {
+    font-size: 32px;
+    font-weight: bold;
+    color: #000;
+    text-align: center;
+    display: none; 
+  }
+
+  /* --- Playing Field & Sidebars --- */
+  #playing-field {
+    position: absolute;
+    top: 150px; 
+    left: 0;
+    width: 100vw;
+    height: calc(100vh - 150px); 
+    overflow: hidden; 
+  }
+
+  .sidebar {
+    position: absolute;
+    top: 150px; 
+    height: calc(100vh - 150px);
+    width: 150px;
+    background-color: white;
+    box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 20px; 
+    z-index: 50;
+    overflow-y: auto; 
+    overflow-x: hidden; 
+  }
+
+  #left-sidebar { left: 0; transform: translateX(0); }
+  #left-sidebar.collapsed { transform: translateX(-150px); }
+
+  #right-sidebar { right: 0; transform: translateX(0); }
+  #right-sidebar.collapsed { transform: translateX(150px); }
+
+  .toggle-btn {
+    position: absolute;
+    top: 170px; 
+    width: 40px;
+    height: 40px;
+    background-color: white;
+    border: 1px solid #dcdde1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: #333;
+    z-index: 51;
+    transition: left 0.3s cubic-bezier(0.4, 0.0, 0.2, 1), right 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+  }
+  .toggle-btn:hover { background-color: #f4f4f9; }
+
+  .toggle-left {
+    left: 150px; 
+    border-radius: 0 8px 8px 0;
+    border-left: none;
+    box-shadow: 4px 0 6px rgba(0,0,0,0.05);
+  }
+  .toggle-left.collapsed { left: 0; }
+  
+  .toggle-right {
+    right: 150px; 
+    border-radius: 8px 0 0 8px;
+    border-right: none;
+    box-shadow: -4px 0 6px rgba(0,0,0,0.05);
+  }
+  .toggle-right.collapsed { right: 0; }
+
+  .ion-menu-item {
+    padding: 15px;
+    margin: 10px;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: grab;
+    user-select: none;
+    border-radius: 8px;
+  }
+  .cation-text { color: #3498db; }
+  .anion-text { color: #e67e22; }
+
+  .ion-piece {
+    position: absolute;
+    cursor: grab;
+    filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3));
+    touch-action: none;
+    will-change: transform;
+  }
+</style>
+</head>
+<body>
+
+  <div id="top-bar">
+    <div id="app-title">Ionic Compound Builder</div>
+    <div id="center-anchor">
+        
+        <ul class="instructions-list">
+            <li>Drag and snap ions together to form compounds</li>
+            <li>Double-click an ion to remove it</li>
+            <li>Click and hold an ion to detach it</li>
+        </ul>
+
+        <div class="buttons-col">
+            <button id="clear-btn">Clear Board</button>
+            <div id="success-description">Perfect Compound! ✅</div>
+        </div>
+        
+        <div id="formula-section">
+          <div class="checkbox-wrapper">
+            <div class="checkbox-label">
+              <strong>Check</strong><br>
+              <strong>Compound</strong><br>
+              <strong>Formula</strong>
+            </div>
+            <input type="checkbox" id="formula-checkbox">
+          </div>
+          <div id="formula-display"></div>
+        </div>
+    </div>
+  </div>
+
+  <div id="playing-field"></div>
+
+  <div id="left-sidebar" class="sidebar">
+    <div class="ion-menu-item cation-text" data-charge="+1" data-symbol="Li⁺" data-base="Li" data-poly="false">Li⁺</div>
+    <div class="ion-menu-item cation-text" data-charge="+1" data-symbol="K⁺" data-base="K" data-poly="false">K⁺</div>
+    <div class="ion-menu-item cation-text" data-charge="+1" data-symbol="Na⁺" data-base="Na" data-poly="false">Na⁺</div>
+    <div class="ion-menu-item cation-text" data-charge="+1" data-symbol="Rb⁺" data-base="Rb" data-poly="false">Rb⁺</div>
+    <div class="ion-menu-item cation-text" data-charge="+2" data-symbol="Mg²⁺" data-base="Mg" data-poly="false">Mg²⁺</div>
+    <div class="ion-menu-item cation-text" data-charge="+2" data-symbol="Ca²⁺" data-base="Ca" data-poly="false">Ca²⁺</div>
+    <div class="ion-menu-item cation-text" data-charge="+2" data-symbol="Sr²⁺" data-base="Sr" data-poly="false">Sr²⁺</div>
+    <div class="ion-menu-item cation-text" data-charge="+3" data-symbol="Al³⁺" data-base="Al" data-poly="false">Al³⁺</div>
+    <div class="ion-menu-item cation-text" data-charge="+3" data-symbol="Ga³⁺" data-base="Ga" data-poly="false">Ga³⁺</div>
+    <div class="ion-menu-item cation-text" data-charge="+1" data-symbol="NH₄⁺" data-base="NH₄" data-poly="true">NH₄⁺</div>
+    <div class="ion-menu-item cation-text" data-charge="+2" data-symbol="Hg₂²⁺" data-base="Hg₂" data-poly="true">Hg₂²⁺</div>
+    <div class="ion-menu-item cation-text" data-charge="+2" data-symbol="Fe²⁺" data-base="Fe" data-poly="false">Fe²⁺</div>
+    <div class="ion-menu-item cation-text" data-charge="+3" data-symbol="Fe³⁺" data-base="Fe" data-poly="false">Fe³⁺</div>
+    <div class="ion-menu-item cation-text" data-charge="+1" data-symbol="Cu⁺" data-base="Cu" data-poly="false">Cu⁺</div>
+    <div class="ion-menu-item cation-text" data-charge="+2" data-symbol="Cu²⁺" data-base="Cu" data-poly="false">Cu²⁺</div>
+    <div class="ion-menu-item cation-text" data-charge="+2" data-symbol="Zn²⁺" data-base="Zn" data-poly="false">Zn²⁺</div>
+
+
+  </div>
+  <button id="left-toggle" class="toggle-btn toggle-left">☰</button>
+
+  <div id="right-sidebar" class="sidebar">
+    <div class="ion-menu-item anion-text" data-charge="-1" data-symbol="F⁻" data-base="F" data-poly="false">F⁻</div>
+    <div class="ion-menu-item anion-text" data-charge="-1" data-symbol="Cl⁻" data-base="Cl" data-poly="false">Cl⁻</div>
+    <div class="ion-menu-item anion-text" data-charge="-1" data-symbol="Br⁻" data-base="Br" data-poly="false">Br⁻</div>
+    <div class="ion-menu-item anion-text" data-charge="-1" data-symbol="I⁻" data-base="I" data-poly="false">I⁻</div>
+    <div class="ion-menu-item anion-text" data-charge="-2" data-symbol="O²⁻" data-base="O" data-poly="false">O²⁻</div>
+    <div class="ion-menu-item anion-text" data-charge="-2" data-symbol="S²⁻" data-base="S" data-poly="false">S²⁻</div>
+    <div class="ion-menu-item anion-text" data-charge="-3" data-symbol="N³⁻" data-base="N" data-poly="false">N³⁻</div>
+    <div class="ion-menu-item anion-text" data-charge="-3" data-symbol="P³⁻" data-base="P" data-poly="false">P³⁻</div>
+    <div class="ion-menu-item anion-text" data-charge="-1" data-symbol="C₂H₃O₂⁻" data-base="C₂H₃O₂" data-poly="true">C₂H₃O₂⁻</div>
+    <div class="ion-menu-item anion-text" data-charge="-1" data-symbol="CN⁻" data-base="CN" data-poly="true">CN⁻</div>
+    <div class="ion-menu-item anion-text" data-charge="-1" data-symbol="HCO₃⁻" data-base="HCO₃" data-poly="true">HCO₃⁻</div>
+    <div class="ion-menu-item anion-text" data-charge="-1" data-symbol="ClO⁻" data-base="ClO" data-poly="true">ClO⁻</div>
+    <div class="ion-menu-item anion-text" data-charge="-1" data-symbol="ClO₂⁻" data-base="ClO₂" data-poly="true">ClO₂⁻</div>
+    <div class="ion-menu-item anion-text" data-charge="-1" data-symbol="ClO₃⁻" data-base="ClO₃" data-poly="true">ClO₃⁻</div>
+    <div class="ion-menu-item anion-text" data-charge="-1" data-symbol="ClO₄⁻" data-base="ClO₄" data-poly="true">ClO₄⁻</div>
+    <div class="ion-menu-item anion-text" data-charge="-1" data-symbol="MnO₄⁻" data-base="MnO₄" data-poly="true">MnO₄⁻</div>
+    <div class="ion-menu-item anion-text" data-charge="-1" data-symbol="NO₂⁻" data-base="NO₂" data-poly="true">NO₂⁻</div>
+    <div class="ion-menu-item anion-text" data-charge="-1" data-symbol="NO₃⁻" data-base="NO₃" data-poly="true">NO₃⁻</div>
+    <div class="ion-menu-item anion-text" data-charge="-1" data-symbol="OH⁻" data-base="OH" data-poly="true">OH⁻</div>
+    <div class="ion-menu-item anion-text" data-charge="-1" data-symbol="SCN⁻" data-base="SCN" data-poly="true">SCN⁻</div>
+    <div class="ion-menu-item anion-text" data-charge="-1" data-symbol="HSO₄⁻" data-base="HSO₄" data-poly="true">HSO₄⁻</div>
+    <div class="ion-menu-item anion-text" data-charge="-2" data-symbol="CO₃²⁻" data-base="CO₃" data-poly="true">CO₃²⁻</div>
+    <div class="ion-menu-item anion-text" data-charge="-2" data-symbol="C₂O₄²⁻" data-base="C₂O₄" data-poly="true">C₂O₄²⁻</div>
+    <div class="ion-menu-item anion-text" data-charge="-2" data-symbol="CrO₄²⁻" data-base="CrO₄" data-poly="true">CrO₄²⁻</div>
+    <div class="ion-menu-item anion-text" data-charge="-2" data-symbol="Cr₂O₇²⁻" data-base="Cr₂O₇" data-poly="true">Cr₂O₇²⁻</div>
+    <div class="ion-menu-item anion-text" data-charge="-2" data-symbol="O₂²⁻" data-base="O₂" data-poly="true">O₂²⁻</div>
+    <div class="ion-menu-item anion-text" data-charge="-2" data-symbol="SO₃²⁻" data-base="SO₃" data-poly="true">SO₃²⁻</div>
+    <div class="ion-menu-item anion-text" data-charge="-2" data-symbol="SO₄²⁻" data-base="SO₄" data-poly="true">SO₄²⁻</div>
+    <div class="ion-menu-item anion-text" data-charge="-2" data-symbol="S₂O₃²⁻" data-base="S₂O₃" data-poly="true">S₂O₃²⁻</div>
+    <div class="ion-menu-item anion-text" data-charge="-3" data-symbol="PO₄³⁻" data-base="PO₄" data-poly="true">PO₄³⁻</div>
+  </div>
+  <button id="right-toggle" class="toggle-btn toggle-right">☰</button>
+
+  <script src="interact.min.js"></script>
+  <script src="app.js"></script>
+
+</body>
+</html>
