@@ -3,10 +3,15 @@ let activeCation = null;
 let activeAnion = null;
 let groupIdCounter = 0;
 
-// --- UTILITY: Number to Subscript ---
+// --- UTILITIES ---
 function getSubscript(num) {
     const subs = ['₀','₁','₂','₃','₄','₅','₆','₇','₈','₉'];
     return num.toString().split('').map(d => subs[d]).join('');
+}
+
+// NEW: Calculates the Greatest Common Divisor to enforce empirical formulas
+function getGCD(a, b) {
+    return b === 0 ? a : getGCD(b, a % b);
 }
 
 // --- UI LOGIC ---
@@ -133,8 +138,6 @@ interact('#playing-field').dropzone({
         resetWinUI();
 
         const fieldRect = document.getElementById('playing-field').getBoundingClientRect();
-        
-        // Accurate placement calculation mapping viewport to local space
         const startX = event.dragEvent.clientX - fieldRect.left - 50;
         const startY = event.dragEvent.clientY - fieldRect.top - 40; 
         
@@ -197,18 +200,15 @@ function makePieceDraggable(element) {
                 let allowedDx = event.dx;
                 let allowedDy = event.dy;
 
-                // --- NEW BULLETPROOF BOUNDARY MATH ---
                 const leftSidebar = document.getElementById('left-sidebar');
                 const rightSidebar = document.getElementById('right-sidebar');
                 const pfRect = document.getElementById('playing-field').getBoundingClientRect();
                 
-                // Calculates boundaries based on exact viewport pixels
                 const leftBoundary = leftSidebar.classList.contains('collapsed') ? pfRect.left : pfRect.left + 150;
                 const rightBoundary = rightSidebar.classList.contains('collapsed') ? pfRect.right : pfRect.right - 150;
                 const topBoundary = pfRect.top; 
                 const bottomBoundary = pfRect.bottom;
 
-                // Test every member of the dragged group against the strict walls
                 groupMembers.forEach(member => {
                     const rect = member.getBoundingClientRect();
 
@@ -323,6 +323,14 @@ function checkWinCondition(groupId) {
     if (netCharge !== 0) return;
     if (cations.length === 0 || anions.length === 0) return;
 
+    // --- NEW: EMPIRICAL FORMULA CHECK ---
+    const catCount = cations.length;
+    const anCount = anions.length;
+    if (getGCD(catCount, anCount) > 1) {
+        // The ratio can be reduced (e.g., 2:2 or 2:4). Not a valid compound!
+        return; 
+    }
+
     const getBounds = (pieces) => {
         let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
         let totalHeight = 0;
@@ -352,11 +360,9 @@ function checkWinCondition(groupId) {
         
         const catBase = cations[0].getAttribute('data-base');
         const catPoly = cations[0].getAttribute('data-poly') === 'true';
-        const catCount = cations.length;
 
         const anBase = anions[0].getAttribute('data-base');
         const anPoly = anions[0].getAttribute('data-poly') === 'true';
-        const anCount = anions.length;
 
         let catStr = catBase;
         if (catCount > 1) {
