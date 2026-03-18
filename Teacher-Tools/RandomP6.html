@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Work Generator - Chemistry Period 6</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 10px;
+        }
+        #main-container {
+            display: flex;
+            gap: 20px; /* Space between the table and output boxes */
+	    flex-direction: row;
+	    align-items: start;
+        }
+        #word-selection {
+            margin-bottom: 20px;
+            flex-shrink: 0; /* Prevent shrinking of the table */
+        }
+        #group-container {
+            display: flex;
+            flex-wrap: wrap; /* Allow the output boxes to form a grid */
+            gap: 15px; /* Space between boxes in the grid */
+            margin-top: 20px;
+	    flex-direction: row;
+	    align-items: start;
+        }
+        table {
+            border-collapse: collapse;
+            width: auto;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+        }
+        th {
+            text-align: center; /* Center the table headings */
+        }
+        td:first-child {
+            width: 75px;
+	    text-align: center;
+        }
+        td:last-child {
+            width: 100px;
+        }
+        .group {
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #d4d4d4;
+            border: 2px solid #000000;
+            border-radius: 5px;
+            text-align: left;
+            width: 200px; /* Restrict group box width */
+        }
+        .group-title {
+            font-weight: bold;
+            text-align: center;
+            font-size: 40px;
+            margin-bottom: 8px;
+        }
+        .group-words {
+            margin: 0;
+            padding: 0;
+            list-style-type: none;
+            font-size: 40px;
+        }
+        .group-words li {
+            margin: 2px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Random Partner Team Generator - Chemistry Period 6</h1>
+      <label for="group-count">Number of Teams:</label>
+      <input type="number" id="group-count" min="1" max="7" value="7">
+      <button id="generate-button">Generate Teams</button>
+    <br>
+    <br>
+    <div id="main-container">
+        <div id="word-selection">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Students Present</th>
+                        <th>Name</th>
+                    </tr>
+                </thead>
+                <tbody id="word-list"></tbody>
+            </table>	    
+        </div>
+        <div id="group-container"></div>
+    </div>
+
+    <script>
+        const words = ["Zack C.", "Anthony", "Brian", "Lilly", "Jacob", "Tyler", "Claire", "Catrin", "Molly", "Gabriella", "Nayelih", "Zack S.", "Howie", "Ariel"];
+
+       // Populate the word list in the original order with checkboxes
+        const wordListContainer = document.getElementById('word-list');
+        words.forEach(word => {
+            const row = document.createElement('tr');
+            
+            const checkboxCell = document.createElement('td');
+            const checkbox = document.createElement('input');
+            checkbox.type = "checkbox";
+            checkbox.value = word;
+            checkbox.checked = true; // Default: all words selected
+            checkboxCell.appendChild(checkbox);
+            row.appendChild(checkboxCell);
+            
+            const wordCell = document.createElement('td');
+            wordCell.textContent = word;
+            row.appendChild(wordCell);
+
+            wordListContainer.appendChild(row);
+        });
+
+        document.getElementById('generate-button').addEventListener('click', () => {
+            const groupCount = parseInt(document.getElementById('group-count').value);
+            if (groupCount < 1) {
+                alert("Please enter a valid number of teams (at least 1).");
+                return;
+            }
+
+            // Collect selected words
+            const selectedWords = [];
+            const checkboxes = document.querySelectorAll('#word-list input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                    selectedWords.push(checkbox.value);
+                }
+            });
+
+            if (selectedWords.length === 0) {
+                alert("Please select at least one word.");
+                return;
+            }
+
+            if (groupCount > selectedWords.length) {
+                alert("Number of teams cannot exceed the number of selected words.");
+                return;
+            }
+
+            const shuffledWords = [...selectedWords].sort(() => Math.random() - 0.5);
+            const groups = Array.from({ length: groupCount }, () => []);
+
+            // Distribute words into groups as evenly as possible
+            shuffledWords.forEach((word, index) => {
+                groups[index % groupCount].push(word);
+            });
+
+            const groupContainer = document.getElementById('group-container');
+            groupContainer.innerHTML = ""; // Clear previous groups
+
+            groups.forEach((group, index) => {
+                const groupDiv = document.createElement('div');
+                groupDiv.className = "group";
+
+                const groupTitle = document.createElement('div');
+                groupTitle.className = "group-title";
+                groupTitle.textContent = `Team ${index + 1}`;
+                groupDiv.appendChild(groupTitle);
+
+                const groupWords = document.createElement('ul');
+                groupWords.className = "group-words";
+                group.forEach(word => {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = word;
+                    groupWords.appendChild(listItem);
+                });
+
+                groupDiv.appendChild(groupWords);
+                groupContainer.appendChild(groupDiv);
+            });
+        });
+    </script>
+</body>
+</html>
