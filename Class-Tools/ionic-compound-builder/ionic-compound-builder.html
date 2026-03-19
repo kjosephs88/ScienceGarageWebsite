@@ -79,14 +79,14 @@
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   }
 
-  /* --- NEW: Instructions List Absolutely Positioned to the LEFT --- */
+  /* Instructions List Absolutely Positioned to the LEFT */
   .instructions-list {
     position: absolute;
-    right: 100%; /* Pushes it directly left of the center buttons */
-    margin: 0 40px 0 0; /* 40px gap between text and clear button */
+    right: 100%; 
+    margin: 0 40px 0 0; 
     padding: 0;
     color: #333;
-    white-space: nowrap; /* Forces text to stay on one line */
+    white-space: nowrap; 
     list-style-position: inside;
   }
 
@@ -100,7 +100,7 @@
   #formula-section {
     display: none; 
     position: absolute;
-    left: 100%; /* Pushes it directly right of the center buttons */
+    left: 100%; 
     margin-left: 40px; 
     align-items: center;
     gap: 15px;
@@ -134,6 +134,71 @@
     text-align: center;
     display: none; 
   }
+
+  /* --- NEW: Modal Overlay & Box --- */
+  #formula-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5); /* Dims the background */
+    z-index: 200; /* Stays above everything else */
+    display: none; /* Hidden by default */
+    align-items: center;
+    justify-content: center;
+  }
+
+  #formula-modal {
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    text-align: center;
+    max-width: 400px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+  }
+
+  #formula-modal h2 {
+    margin-top: 0;
+    color: #e74c3c;
+    font-size: 28px;
+  }
+
+  #formula-modal p {
+    font-size: 16px;
+    line-height: 1.5;
+    color: #333;
+    margin-bottom: 25px;
+    font-weight: bold;
+  }
+
+  .modal-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+  }
+
+  .modal-btn {
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+
+  #btn-not-ready {
+    background-color: #bdc3c7;
+    color: #333;
+  }
+  #btn-not-ready:hover { background-color: #95a5a6; }
+
+  #btn-ready {
+    background-color: #3498db;
+    color: white;
+  }
+  #btn-ready:hover { background-color: #2980b9; }
 
   /* --- Playing Field & Sidebars --- */
   #playing-field {
@@ -207,7 +272,7 @@
     margin: 10px;
     font-size: 24px;
     font-weight: bold;
-    cursor: pointer;
+    cursor: pointer; /* Changed from grab since it's click-to-spawn now */
     user-select: none;
     border-radius: 8px;
   }
@@ -225,12 +290,23 @@
 </head>
 <body>
 
+  <div id="formula-modal-overlay">
+    <div id="formula-modal">
+      <h2>Hold on!</h2>
+      <p>Before revealing the formula, you should attempt to write it yourself. Make sure you have written your answer down before proceeding.</p>
+      <div class="modal-buttons">
+        <button id="btn-not-ready" class="modal-btn">Wait, let me try first</button>
+        <button id="btn-ready" class="modal-btn">I've written it, show me!</button>
+      </div>
+    </div>
+  </div>
+
   <div id="top-bar">
     <div id="app-title">Ionic Compound Builder</div>
     <div id="center-anchor">
         
         <ul class="instructions-list">
-            <li>Click ions you wish to use.</li>
+            <li>Click ions to add them to the field</li>
             <li>Drag and snap ions together to form compounds</li>
             <li>Double-click an ion to remove it</li>
             <li>Click and hold an ion to detach it</li>
@@ -274,8 +350,6 @@
     <div class="ion-menu-item cation-text" data-charge="+1" data-symbol="Cu⁺" data-base="Cu" data-poly="false">Cu⁺</div>
     <div class="ion-menu-item cation-text" data-charge="+2" data-symbol="Cu²⁺" data-base="Cu" data-poly="false">Cu²⁺</div>
     <div class="ion-menu-item cation-text" data-charge="+2" data-symbol="Zn²⁺" data-base="Zn" data-poly="false">Zn²⁺</div>
-
-
   </div>
   <button id="left-toggle" class="toggle-btn toggle-left">☰</button>
 
