@@ -34,6 +34,9 @@ function resetWinUI() {
     document.getElementById('formula-checkbox').checked = false;
     document.getElementById('formula-display').style.display = 'none';
     document.getElementById('formula-display').textContent = '';
+    
+    // Also hide the modal just in case the board is cleared while it is open
+    document.getElementById('formula-modal-overlay').style.display = 'none';
 }
 
 document.getElementById('clear-btn').addEventListener('click', function() {
@@ -43,9 +46,31 @@ document.getElementById('clear-btn').addEventListener('click', function() {
     resetWinUI();
 });
 
-document.getElementById('formula-checkbox').addEventListener('change', function() {
-    document.getElementById('formula-display').style.display = this.checked ? 'block' : 'none';
+// --- NEW: Modal Checkbox Interception Logic ---
+document.getElementById('formula-checkbox').addEventListener('change', function(e) {
+    if (this.checked) {
+        // Prevent formula from showing instantly
+        document.getElementById('formula-display').style.display = 'none';
+        // Pop up the warning modal
+        document.getElementById('formula-modal-overlay').style.display = 'flex';
+    } else {
+        // If unchecking, just hide the formula
+        document.getElementById('formula-display').style.display = 'none';
+    }
 });
+
+// Modal "Not Ready" Button -> Closes modal, unchecks box
+document.getElementById('btn-not-ready').addEventListener('click', function() {
+    document.getElementById('formula-modal-overlay').style.display = 'none';
+    document.getElementById('formula-checkbox').checked = false;
+});
+
+// Modal "Ready" Button -> Closes modal, shows formula
+document.getElementById('btn-ready').addEventListener('click', function() {
+    document.getElementById('formula-modal-overlay').style.display = 'none';
+    document.getElementById('formula-display').style.display = 'block';
+});
+
 
 // --- SVG FACTORY ---
 function createIonShape(chargeStr, symbol) {
@@ -148,7 +173,6 @@ document.querySelectorAll('.ion-menu-item').forEach(item => {
             startX = window.innerWidth - rightOffset - ionWidth - 20 - offset;
         }
         
-        // --- NEW: Calculate vertical center ---
         const fieldHeight = document.getElementById('playing-field').offsetHeight;
         const ionHeight = Math.abs(charge) * 80; // 80px per charge unit
         const startY = (fieldHeight / 2) - (ionHeight / 2) + offset;
