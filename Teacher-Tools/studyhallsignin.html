@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Study Hall Sign-Out</title>
+    <style>
+        /* Base Reset & iPad Optimizations */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            user-select: none; 
+            -webkit-user-select: none;
+        }
+
+        body {
+            background-color: #f0f2f5;
+            overflow: hidden; 
+        }
+
+        /* 3D Flip Container */
+        .flip-container {
+            perspective: 1000px;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .flipper {
+            transition: 0.8s cubic-bezier(0.4, 0.2, 0.2, 1);
+            transform-style: preserve-3d;
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .flipper.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .front, .back {
+            backface-visibility: hidden;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Front: Student Facing */
+        .front {
+            background-color: #f0f2f5;
+            z-index: 2;
+            transform: rotateY(0deg);
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 36px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        /* Fullscreen Toggle Button */
+        #fullscreen-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 44px;
+            height: 44px;
+            background-color: transparent;
+            border: none;
+            color: #888;
+            cursor: pointer;
+            transition: color 0.2s, transform 0.2s;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #fullscreen-btn:hover {
+            color: #333;
+            transform: scale(1.1);
+        }
+
+        /* Student Grid */
+        #student-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(6, 1fr);
+            gap: 15px;
+            flex-grow: 1;
+            padding-bottom: 20px;
+        }
+
+        .student-btn {
+            background-color: #e0e0e0;
+            border: 2px solid #ccc;
+            border-radius: 16px;
+            font-size: 30px; 
+            font-weight: 600;
+            color: #333;
+            cursor: pointer;
+            transition: background-color 0.1s, transform 0.1s, opacity 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .student-btn:active {
+            transform: scale(0.96);
+            background-color: #d0d0d0;
+        }
+
+        .student-btn.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Teacher Access Button */
+        #teacher-access-btn {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background-color: transparent;
+            border: none;
+            font-size: 30px;
+            color: #ccc;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        #teacher-access-btn:hover {
+            color: #888;
+        }
+
+        /* Modal Styles */
+        #location-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background-color: rgba(0, 0, 0, 0.6);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 40px;
+            border-radius: 20px;
+            width: 80%;
+            max-width: 600px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .modal-title {
+            font-size: 32px;
+            margin-bottom: 30px;
+            color: #333;
+        }
+
+        .location-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .loc-btn {
+            background-color: #0056b3;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 25px;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.1s, transform 0.1s;
+        }
+
+        .loc-btn:active {
+            transform: scale(0.95);
+            background-color: #004494;
+        }
+
+        .cancel-btn {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 15px 40px;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        /* Back: Teacher Dashboard */
+        .back {
+            background-color: #e3f2fd;
+            transform: rotateY(180deg);
+        }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #bbdefb;
+        }
+
+        .control-btns {
+            display: flex;
+            gap: 15px;
+        }
+
+        .dash-btn {
+            padding: 12px 24px;
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            color: white;
+        }
+        .dash-btn:active { opacity: 0.8; }
+        
+        .btn-copy-all { background-color: #28a745; }
+        .btn-back { background-color: #6c757d; }
+
+        /* Dashboard Grid Layout */
+        .locations-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            overflow-y: auto;
+            align-items: start;
+            align-content: start;
+            flex-grow: 1;
+            padding-bottom: 20px;
+        }
+
+        .location-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border-top: 5px solid #0056b3;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .location-card.absent-card {
+            border-top: 5px solid #dc3545; /* Red border for absent students */
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #eee;
+        }
+
+        .card-header h3 {
+            font-size: 20px;
+            margin: 0;
+            color: #333;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .mini-copy-btn {
+            background: #e9ecef;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mini-copy-btn:hover {
+            background: #dee2e6;
+        }
+
+        .card-body {
+            padding: 20px;
+            min-height: 80px;
+        }
+
+        .student-list-item {
+            font-size: 20px;
+            padding: 6px 0;
+            color: #555;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="flip-container">
+    <div class="flipper" id="flipper">
+        
+        <div class="front">
+            <button id="fullscreen-btn" title="Toggle Fullscreen" onclick="toggleFullScreen()">
+                <svg viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+                </svg>
+            </button>
+
+            <h1>Where are you heading?</h1>
+            <div id="student-grid"></div>
+            <button id="teacher-access-btn" title="Teacher Dashboard">⚙️</button>
+        </div>
+
+        <div class="back">
+            <div class="dashboard-header">
+                <h2>Teacher Dashboard</h2>
+                <div class="control-btns">
+                    <button class="dash-btn btn-copy-all" onclick="copyAll()">Copy All Data Table</button>
+                    <button class="dash-btn btn-back" onclick="flipScreen()">Return to Front</button>
+                </div>
+            </div>
+            <div class="locations-container" id="locations-container">
+                </div>
+        </div>
+
+    </div>
+</div>
+
+<div id="location-modal">
+    <div class="modal-content">
+        <div class="modal-title">Where are you going, <span id="current-student-name"></span>?</div>
+        <div class="location-grid" id="location-grid">
+            </div>
+        <button class="cancel-btn" onclick="closeModal()">Cancel</button>
+    </div>
+</div>
+
+<script>
+    // Configuration
+    const studentCount = 24;
+    
+    // baseLocations are what the students see in the popup
+    const baseLocations = ["Staying in Classroom", "Library", "Gym", "McKay", "Band Room", "Senior Lounge"];
+    
+    // exportLocations are what the teacher sees on the dashboard (includes the automatic "Absent" list)
+    const exportLocations = [...baseLocations, "Absent"];
+    
+    // State
+    let students = [];
+    let activeStudentDiv = null;
+    let locationData = {}; 
+
+    // Initialize State
+    exportLocations.forEach(loc => locationData[loc] = []);
+    for(let i = 1; i <= studentCount; i++) {
+        students.push(`Student ${i}`);
+    }
+
+    // DOM Elements
+    const studentGrid = document.getElementById('student-grid');
+    const locationGrid = document.getElementById('location-grid');
+    const modal = document.getElementById('location-modal');
+    const nameDisplay = document.getElementById('current-student-name');
+    const flipper = document.getElementById('flipper');
+    const locationsContainer = document.getElementById('locations-container');
+
+    // 0. Fullscreen Logic
+    function toggleFullScreen() {
+        const doc = window.document;
+        const docEl = doc.documentElement;
+
+        const requestFullScreen = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen;
+        const cancelFullScreen = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen;
+
+        if(!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
+            if(requestFullScreen) {
+                requestFullScreen.call(docEl).catch(err => {
+                    alert("Fullscreen is blocked by your browser settings. Try adding this page to your home screen first.");
+                });
+            }
+        }
+        else {
+            if(cancelFullScreen) {
+                cancelFullScreen.call(doc);
+            }
+        }
+    }
+
+    // Auto-exit fullscreen when flipping to dashboard to fix clipboard bug
+    function forceExitFullscreen() {
+        const doc = window.document;
+        const cancelFullScreen = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen;
+        if(doc.fullscreenElement || doc.mozFullScreenElement || doc.webkitFullscreenElement || doc.msFullscreenElement) {
+            if(cancelFullScreen) {
+                cancelFullScreen.call(doc).catch(() => {}); 
+            }
+        }
+    }
+
+    // 1. Build Student Grid
+    students.forEach(student => {
+        const btn = document.createElement('button');
+        btn.className = 'student-btn';
+        btn.textContent = student;
+        btn.onclick = () => openModal(student, btn);
+        studentGrid.appendChild(btn);
+    });
+
+    // 2. Build Location Buttons in Modal (Only uses baseLocations)
+    baseLocations.forEach(loc => {
+        const btn = document.createElement('button');
+        btn.className = 'loc-btn';
+        btn.textContent = loc;
+        btn.onclick = () => assignLocation(loc);
+        locationGrid.appendChild(btn);
+    });
+
+    // 3. Modal Logic
+    function openModal(studentName, btnElement) {
+        nameDisplay.textContent = studentName;
+        activeStudentDiv = btnElement;
+        modal.style.display = 'flex';
+    }
+
+    function closeModal() {
+        modal.style.display = 'none';
+        activeStudentDiv = null;
+    }
+
+    function assignLocation(location) {
+        const studentName = nameDisplay.textContent;
+        locationData[location].push(studentName);
+        
+        if(activeStudentDiv) {
+            activeStudentDiv.classList.add('hidden');
+        }
+        closeModal();
+    }
+
+    // Dynamic calculation for students still left on the board
+    function updateAbsentStudents() {
+        let assignedStudents = [];
+        baseLocations.forEach(loc => {
+            assignedStudents = assignedStudents.concat(locationData[loc]);
+        });
+        
+        // Find students who are in the main array but NOT in the assigned array
+        locationData["Absent"] = students.filter(student => !assignedStudents.includes(student));
+    }
+
+    // 4. Teacher Dashboard Logic
+    document.getElementById('teacher-access-btn').addEventListener('click', flipScreen);
+
+    function flipScreen() {
+        const isFlippingToBack = !flipper.classList.contains('flipped');
+        
+        if (isFlippingToBack) {
+            forceExitFullscreen(); 
+            updateAbsentStudents(); // Calculate who is missing right before showing dashboard
+            renderDashboard();
+        }
+        flipper.classList.toggle('flipped');
+    }
+
+    function renderDashboard() {
+        locationsContainer.innerHTML = '';
+        exportLocations.forEach(loc => {
+            const card = document.createElement('div');
+            card.className = 'location-card';
+            if (loc === "Absent") {
+                card.classList.add('absent-card'); // Adds a red accent color to the absent card
+            }
+            
+            // Build the card header with copy clips
+            let html = `
+                <div class="card-header">
+                    <h3>${loc} (${locationData[loc].length})</h3>
+                    <div class="card-actions">
+                        <button class="mini-copy-btn" onclick="copyCategory('${loc}', false)" title="Copy Names Only">📋</button>
+                        <button class="mini-copy-btn" onclick="copyCategory('${loc}', true)" title="Copy with Title">📝</button>
+                    </div>
+                </div>
+                <div class="card-body">
+            `;
+            
+            // Build the student list
+            if (locationData[loc].length === 0) {
+                html += `<div class="student-list-item"><em>Empty</em></div>`;
+            } else {
+                locationData[loc].forEach(student => {
+                    html += `<div class="student-list-item">• ${student}</div>`;
+                });
+            }
+            
+            html += `</div>`; 
+            card.innerHTML = html;
+            locationsContainer.appendChild(card);
+        });
+    }
+
+    // 5. Copy & Export Logic
+    
+    function copyAll() {
+        updateAbsentStudents(); // Ensure absent array is fresh just in case
+        
+        let maxRows = 0;
+        exportLocations.forEach(loc => {
+            if (locationData[loc].length > maxRows) {
+                maxRows = locationData[loc].length;
+            }
+        });
+
+        let exportText = exportLocations.join("\t") + "\n";
+
+        for (let i = 0; i < maxRows; i++) {
+            let rowData = exportLocations.map(loc => {
+                return locationData[loc][i] || ""; 
+            });
+            exportText += rowData.join("\t") + "\n";
+        }
+
+        writeToClipboard(exportText, "All data (including Absences) copied as a table!");
+    }
+
+    // Dynamic category copy function
+    function copyCategory(locationName, includeTitle) {
+        updateAbsentStudents(); // Ensure fresh data
+        let exportText = "";
+        
+        if (includeTitle) {
+            exportText += `${locationName}\n`;
+        }
+        
+        if (locationData[locationName].length > 0) {
+            locationData[locationName].forEach(student => {
+                exportText += `${student}\n`;
+            });
+        } else {
+            exportText += "(None)\n";
+        }
+
+        const msg = includeTitle ? `Copied ${locationName} with title!` : `Copied ${locationName} names only!`;
+        writeToClipboard(exportText, msg);
+    }
+
+    function writeToClipboard(text, successMsg) {
+        navigator.clipboard.writeText(text).then(() => {
+            alert(successMsg);
+        }).catch(err => {
+            alert("Clipboard access denied. Please ensure you are not in Fullscreen mode.");
+            console.error(err);
+        });
+    }
+</script>
+</body>
+</html>
