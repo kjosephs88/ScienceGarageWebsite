@@ -26,14 +26,15 @@
             overflow: hidden; /* To contain the SVG during zoom */
         }
 
-        .zoomable-svg {
-            display: block; /* Remove extra space below inline elements */
-            max-width: 100%; /* Ensure it scales down if wider than container */
-            max-height: 100%; /* Ensure it scales down if taller than container */
-            object-fit: contain; /* This is key for maintaining aspect ratio and fitting */
-            transform-origin: center center; /* Set origin for scaling */
-            transition: transform 0.05s ease-out; /* Smooth zoom transition */
-        }
+.zoomable-svg {
+    display: block; 
+    max-width: 100%; 
+    max-height: 100%; 
+    object-fit: contain; 
+    transform-origin: center center; 
+    /* REMOVE or comment out the line below: */
+    /* transition: transform 0.05s ease-out; */
+}
     </style>
 </head>
 <body>
@@ -2346,74 +2347,114 @@
 
    </div>
 
-    <script>
-        const zoomableSvg = document.querySelector('.zoomable-svg');
-        let currentZoom = 1;
-        let panning = false;
-        let startX, startY;
-        let translateX = 0;
-        let translateY = 0;
+   <script>
+    let currentZoom = 1;
+    let translateX = 0;
+    let translateY = 0;
+    let panning = false;
+    let startX = 0;
+    let startY = 0;
 
-        zoomableSvg.addEventListener('wheel', (event) => {
-            if (event.ctrlKey) { // Check if Ctrl key is pressed
-                event.preventDefault(); // Prevent page scrolling
-                const zoomFactor = 1.1; // How much to zoom in/out
+    const zoomableSvg = document.querySelector('.zoomable-svg');
+    const container = document.querySelector('.svg-container');
 
-                // Get mouse position relative to SVG
-                const svgRect = zoomableSvg.getBoundingClientRect();
-                const mouseX = event.clientX - svgRect.left;
-                const mouseY = event.clientY - svgRect.top;
+    // Builds invisible walls so you can't pan off into the black void
+    function clampTranslation() {
+        // FIX: Use clientWidth/Height to get the raw, unscaled size of the element.
+        // This stops the boundary walls from fighting the zoom-to-cursor math!
+        const baseW = zoomableSvg.clientWidth || container.clientWidth;
+        const baseH = zoomableSvg.clientHeight || container.clientHeight;
 
-                // Calculate the new zoom level
-                const oldZoom = currentZoom;
-                if (event.deltaY < 0) {
-                    currentZoom *= zoomFactor; // Zoom in
-                } else {
-                    currentZoom /= zoomFactor; // Zoom out
-                }
+        const scaledW = baseW * currentZoom;
+        const scaledH = baseH * currentZoom;
 
-                // Limit zoom to prevent it from becoming too small or too large
-                currentZoom = Math.max(0.1, Math.min(10, currentZoom)); // Example limits
+        const containerW = container.clientWidth;
+        const containerH = container.clientHeight;
 
-                // Calculate translation to zoom around the mouse pointer
-                translateX = mouseX - (mouseX * (currentZoom / oldZoom));
-                translateY = mouseY - (mouseY * (currentZoom / oldZoom));
+        // Calculate the maximum allowed distance from the center
+        const limitX = Math.max(0, (scaledW - containerW) / 2);
+        const limitY = Math.max(0, (scaledH - containerH) / 2);
 
-                updateTransform();
+        // Force the translation coordinates to stay within those limits
+        translateX = Math.max(-limitX, Math.min(limitX, translateX));
+        translateY = Math.max(-limitY, Math.min(limitY, translateY));
+    }
+
+    function updateTransform() {
+        clampTranslation(); // Always check boundaries before moving!
+        zoomableSvg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${currentZoom})`;
+    }
+
+    container.addEventListener('wheel', (event) => {
+        event.preventDefault();
+
+        if (event.ctrlKey) {
+            // FASTER ZOOM
+            const zoomSpeed = 0.04; 
+            const zoomAmount = event.deltaY * -zoomSpeed;
+            const newZoom = Math.min(Math.max(1, currentZoom + zoomAmount), 10);
+
+            // Calculate exact mouse position relative to center
+            const rect = container.getBoundingClientRect();
+            const mouseX = event.clientX - rect.left - (rect.width / 2);
+            const mouseY = event.clientY - rect.top - (rect.height / 2);
+
+            // Shift the translation to keep the pixel under the cursor exact
+            translateX = mouseX - (mouseX - translateX) * (newZoom / currentZoom);
+            translateY = mouseY - (mouseY - translateY) * (newZoom / currentZoom);
+
+            currentZoom = newZoom;
+
+            if (currentZoom === 1) {
+                translateX = 0;
+                translateY = 0;
             }
-        });
-
-        // Optional: Add panning functionality (drag to move)
-        zoomableSvg.addEventListener('mousedown', (event) => {
-            if (event.button === 0 && currentZoom > 1) { // Left click and zoomed in
-                panning = true;
-                startX = event.clientX - translateX;
-                startY = event.clientY - translateY;
-                zoomableSvg.style.cursor = 'grab';
+        } else {
+            // SWIPE TO PAN
+            if (currentZoom > 1) {
+                translateX -= event.deltaX;
+                translateY -= event.deltaY;
             }
-        });
-
-        zoomableSvg.addEventListener('mousemove', (event) => {
-            if (panning) {
-                translateX = event.clientX - startX;
-                translateY = event.clientY - startY;
-                updateTransform();
-            }
-        });
-
-        zoomableSvg.addEventListener('mouseup', () => {
-            panning = false;
-            zoomableSvg.style.cursor = 'default';
-        });
-
-        zoomableSvg.addEventListener('mouseleave', () => {
-            panning = false;
-            zoomableSvg.style.cursor = 'default';
-        });
-
-        function updateTransform() {
-            zoomableSvg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${currentZoom})`;
         }
-    </script>
+        
+        updateTransform();
+    }, { passive: false });
+
+    // Double-click or double-tap trackpad to snap back to 100%
+    container.addEventListener('dblclick', () => {
+        currentZoom = 1;
+        translateX = 0;
+        translateY = 0;
+        updateTransform();
+    });
+
+    // Handle Mouse / Touch drag for panning
+    container.addEventListener('mousedown', (event) => {
+        if (event.button === 0 && currentZoom > 1) {
+            panning = true;
+            startX = event.clientX - translateX;
+            startY = event.clientY - translateY;
+            zoomableSvg.style.cursor = 'grabbing';
+        }
+    });
+
+    window.addEventListener('mousemove', (event) => {
+        if (panning) {
+            translateX = event.clientX - startX;
+            translateY = event.clientY - startY;
+            updateTransform();
+        }
+    });
+
+    window.addEventListener('mouseup', () => {
+        panning = false;
+        zoomableSvg.style.cursor = currentZoom > 1 ? 'grab' : 'default';
+    });
+
+    container.addEventListener('mouseleave', () => {
+        panning = false;
+        zoomableSvg.style.cursor = currentZoom > 1 ? 'grab' : 'default';
+    });
+</script>
 </body>
 </html>
