@@ -17,6 +17,7 @@ body, html {
     justify-content: center;
     align-items: center;
     overflow: hidden; /* To contain the SVG during zoom */
+    touch-action: none;
 }
 
 .zoomable-svg {
