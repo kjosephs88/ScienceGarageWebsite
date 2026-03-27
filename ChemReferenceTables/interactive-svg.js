@@ -248,3 +248,101 @@ container.addEventListener('mouseleave', () => {
     panning = false;
     zoomableSvg.style.cursor = currentZoom > 1 ? 'grab' : 'default';
 });
+
+// ==========================================
+// 4. TOUCHSCREEN GESTURES (PHONES, IPADS, CHROMEBOOKS)
+// ==========================================
+let initialPinchDistance = null;
+let initialTouchZoom = 1;
+let touchCenterX = 0;
+let touchCenterY = 0;
+let lastTouchX = 0;
+let lastTouchY = 0;
+
+container.addEventListener('touchstart', (event) => {
+    // Stop any double-click morph animations if the user touches the screen
+    cancelAnimationFrame(animationFrameId);
+
+    if (event.touches.length === 1 && currentZoom > 1) {
+        // ONE FINGER: Start panning
+        panning = true;
+        lastTouchX = event.touches[0].clientX;
+        lastTouchY = event.touches[0].clientY;
+    } else if (event.touches.length === 2) {
+        // TWO FINGERS: Start pinching
+        panning = false; // Stop panning to focus on the zoom
+        
+        // Calculate the physical distance between the two fingers
+        const dx = event.touches[0].clientX - event.touches[1].clientX;
+        const dy = event.touches[0].clientY - event.touches[1].clientY;
+        initialPinchDistance = Math.hypot(dx, dy);
+        initialTouchZoom = currentZoom;
+
+        // Find the exact center point between the two fingers
+        const rect = container.getBoundingClientRect();
+        const screenCenterX = (event.touches[0].clientX + event.touches[1].clientX) / 2;
+        const screenCenterY = (event.touches[0].clientY + event.touches[1].clientY) / 2;
+        
+        touchCenterX = screenCenterX - rect.left - (rect.width / 2);
+        touchCenterY = screenCenterY - rect.top - (rect.height / 2);
+        
+        // Lock onto the SVG coordinate right between the fingers
+        targetSvgX = (touchCenterX - translateX) / currentZoom;
+        targetSvgY = (touchCenterY - translateY) / currentZoom;
+    }
+}, { passive: false });
+
+container.addEventListener('touchmove', (event) => {
+    // CRUCIAL: Prevent the phone from trying to native-scroll or "pull-to-refresh"
+    event.preventDefault(); 
+
+    if (event.touches.length === 1 && panning) {
+        // ONE FINGER PANNING: Move the image with the finger
+        const touchX = event.touches[0].clientX;
+        const touchY = event.touches[0].clientY;
+        
+        translateX += touchX - lastTouchX;
+        translateY += touchY - lastTouchY;
+        
+        lastTouchX = touchX;
+        lastTouchY = touchY;
+        
+        updateTransform();
+    } else if (event.touches.length === 2 && initialPinchDistance) {
+        // TWO FINGER PINCHING: Scale the image
+        const dx = event.touches[0].clientX - event.touches[1].clientX;
+        const dy = event.touches[0].clientY - event.touches[1].clientY;
+        const currentPinchDistance = Math.hypot(dx, dy);
+        
+        // Calculate how much the fingers moved apart/together
+        const pinchRatio = currentPinchDistance / initialPinchDistance;
+        const newZoom = Math.min(Math.max(1, initialTouchZoom * pinchRatio), 10);
+        
+        // Keep the center point of the pinch perfectly locked in place
+        translateX = touchCenterX - (targetSvgX * newZoom);
+        translateY = touchCenterY - (targetSvgY * newZoom);
+        
+        currentZoom = newZoom;
+        
+        if (currentZoom === 1) {
+            translateX = 0;
+            translateY = 0;
+        }
+        
+        updateTransform();
+    }
+}, { passive: false });
+
+container.addEventListener('touchend', (event) => {
+    if (event.touches.length < 2) {
+        initialPinchDistance = null; // Finger lifted, stop pinching
+    }
+    if (event.touches.length === 0) {
+        panning = false; // All fingers lifted, stop panning
+    } else if (event.touches.length === 1 && currentZoom > 1) {
+        // If you lift one finger from a two-finger pinch, seamlessly switch back to panning
+        panning = true;
+        lastTouchX = event.touches[0].clientX;
+        lastTouchY = event.touches[0].clientY;
+    }
+});
