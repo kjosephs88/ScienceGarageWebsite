@@ -1,0 +1,110 @@
+:root {
+  --primary-blue: #1a3a5f;
+  --accent-teal: #2a9d8f;
+  --light-grey: #f8f9fa;
+  --text-dark: #333;
+  --white: #ffffff;
+  --sidebar-width: 250px;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.6;
+  color: var(--text-dark);
+  background-color: var(--white);
+  margin: 0;
+  padding: 0;
+}
+
+/* Sidebar Styling */
+.hamburger-menu {
+  font-size: 30px;
+  cursor: pointer;
+  padding: 15px 20px;
+  color: var(--primary-blue);
+  display: inline-block;
+}
+
+.sidebar {
+  height: 100%;
+  width: 0;
+  position: fixed;
+  z-index: 1000;
+  top: 0;
+  left: 0;
+  background-color: var(--primary-blue);
+  overflow-x: hidden;
+  transition: 0.3s;
+  padding-top: 60px;
+}
+
+.sidebar.open { width: var(--sidebar-width); }
+
+.sidebar a {
+  padding: 10px 15px 10px 30px;
+  text-decoration: none;
+  font-size: 1.2rem;
+  color: var(--light-grey);
+  display: block;
+  transition: 0.3s;
+}
+
+.sidebar a:hover { color: var(--white); background-color: #214b7a; }
+
+.sidebar .close-btn {
+  position: absolute;
+  top: 0;
+  right: 25px;
+  font-size: 36px;
+  margin-left: 50px;
+}
+
+/* Base Layout Container */
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 20px;
+  transition: margin-left .3s; /* Smooth push effect if desired */
+}
+
+/* View Section Control */
+.view-section {
+  animation: fadeIn 0.4s;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Grid & Content Styling (from your original styles) */
+.hero { background-color: var(--primary-blue); color: var(--white); padding: 40px 20px; border-radius: 8px; text-align: center; margin-bottom: 30px; }
+.hero h1 { margin: 0; font-size: 2.5rem; }
+.hero p { font-style: italic; opacity: 0.9; }
+
+.main-layout { display: flex; flex-wrap: wrap; gap: 30px; }
+.content-left { flex: 2; min-width: 300px; }
+.content-right { flex: 1; min-width: 250px; background-color: var(--light-grey); padding: 20px; border-radius: 8px; border-top: 5px solid var(--accent-teal); }
+
+h2 { color: var(--primary-blue); border-bottom: 2px solid var(--light-grey); padding-bottom: 10px; }
+
+.image-placeholder, .profile-pic-container { width: 100%; display: flex; align-items: center; justify-content: center; border-radius: 8px; margin-bottom: 15px; border: 1px dashed #999; overflow: hidden; }
+.image-placeholder { background-color: #ddd; color: #666; font-style: italic; }
+.profile-pic-container { background-color: var(--white); padding: 5px; }
+.profile-pic-container img { width: 100%; height: auto; border-radius: 4px; }
+
+.btn { display: inline-block; background-color: var(--accent-teal); color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 10px; transition: background 0.3s; box-sizing: border-box; cursor: pointer; border: none; font-size: 1rem;}
+.btn:hover { background-color: #21867a; }
+
+.unit-list { list-style: none; padding: 0; }
+.unit-list li { padding: 10px; border-bottom: 1px solid #ddd; }
+.unit-list li:last-child { border-bottom: none; }
+
+/* Contact Form Styling */
+.form-input { width: 100%; padding: 10px; margin-top: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-family: inherit; }
+
+/* Sleek Toast Notification */
+#toast-notification {
+  visibility: hidden; min-width: 250px; background-color: var(--primary-blue); color: var(--white); text-align: center; border-radius: 8px; padding: 15px 20px; position: fixed; z-index: 3000; bottom: 20px; left: 50%; transform: translateX(-50%); box-shadow: 0px 4px 10px rgba(0,0,0,0.2); opacity: 0; transition: opacity 0.3s ease, bottom 0.3s ease; font-weight: bold;
+}
+#toast-notification.show { visibility: visible; opacity: 1; bottom: 40px; }
