@@ -64,7 +64,7 @@ body {
   max-width: 1100px;
   margin: 0 auto;
   padding: 20px;
-  transition: margin-left .3s; /* Smooth push effect if desired */
+  transition: margin-left .3s; 
 }
 
 /* View Section Control */
@@ -77,7 +77,7 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Grid & Content Styling (from your original styles) */
+/* Grid & Content Styling */
 .hero { background-color: var(--primary-blue); color: var(--white); padding: 40px 20px; border-radius: 8px; text-align: center; margin-bottom: 30px; }
 .hero h1 { margin: 0; font-size: 2.5rem; }
 .hero p { font-style: italic; opacity: 0.9; }
@@ -89,7 +89,10 @@ body {
 h2 { color: var(--primary-blue); border-bottom: 2px solid var(--light-grey); padding-bottom: 10px; }
 
 .image-placeholder, .profile-pic-container { width: 100%; display: flex; align-items: center; justify-content: center; border-radius: 8px; margin-bottom: 15px; border: 1px dashed #999; overflow: hidden; }
-.image-placeholder { background-color: #ddd; color: #666; font-style: italic; }
+
+/* THE FIX: Added 'height: 200px;' back so the images crop beautifully */
+.image-placeholder { height: 200px; background-color: #ddd; color: #666; font-style: italic; }
+
 .profile-pic-container { background-color: var(--white); padding: 5px; }
 .profile-pic-container img { width: 100%; height: auto; border-radius: 4px; }
 
@@ -102,11 +105,7 @@ h2 { color: var(--primary-blue); border-bottom: 2px solid var(--light-grey); pad
 
 /* Contact Form Styling */
 .form-input { width: 100%; padding: 10px; margin-top: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-family: inherit; }
-
-/* Locks horizontal resizing on the text area */
-textarea.form-input {
-  resize: vertical;
-}
+textarea.form-input { resize: vertical; }
 
 /* Sleek Toast Notification */
 #toast-notification {
@@ -115,15 +114,13 @@ textarea.form-input {
 #toast-notification.show { visibility: visible; opacity: 1; bottom: 40px; }
 
 /* ========================================= */
-/* RESPONSIVE DESKTOP LAYOUT (TOGGLEABLE)    */
+/* RESPONSIVE DESKTOP LAYOUT                 */
+/* lowered breakpoint to 768px for laptops   */
 /* ========================================= */
-@media (min-width: 850px) {
-  /* When the sidebar is open, push the main container to the right */
+@media (min-width: 768px) {
   .sidebar.open ~ .container {
     margin-left: var(--sidebar-width);
   }
-  
-  /* Add a subtle shadow to the sidebar to separate it from content */
   .sidebar {
     box-shadow: 2px 0 10px rgba(0,0,0,0.1);
   }
