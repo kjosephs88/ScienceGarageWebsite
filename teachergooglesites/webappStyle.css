@@ -103,7 +103,7 @@ h2 { color: var(--primary-blue); border-bottom: 2px solid var(--light-grey); pad
 /* Contact Form Styling */
 .form-input { width: 100%; padding: 10px; margin-top: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-family: inherit; }
 
-/* Add this new rule to lock horizontal resizing */
+/* Locks horizontal resizing on the text area */
 textarea.form-input {
   resize: vertical;
 }
@@ -113,3 +113,18 @@ textarea.form-input {
   visibility: hidden; min-width: 250px; background-color: var(--primary-blue); color: var(--white); text-align: center; border-radius: 8px; padding: 15px 20px; position: fixed; z-index: 3000; bottom: 20px; left: 50%; transform: translateX(-50%); box-shadow: 0px 4px 10px rgba(0,0,0,0.2); opacity: 0; transition: opacity 0.3s ease, bottom 0.3s ease; font-weight: bold;
 }
 #toast-notification.show { visibility: visible; opacity: 1; bottom: 40px; }
+
+/* ========================================= */
+/* RESPONSIVE DESKTOP LAYOUT (TOGGLEABLE)    */
+/* ========================================= */
+@media (min-width: 850px) {
+  /* When the sidebar is open, push the main container to the right */
+  .sidebar.open ~ .container {
+    margin-left: var(--sidebar-width);
+  }
+  
+  /* Add a subtle shadow to the sidebar to separate it from content */
+  .sidebar {
+    box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+  }
+}
