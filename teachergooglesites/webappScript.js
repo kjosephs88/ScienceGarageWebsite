@@ -19,27 +19,28 @@ function switchView(viewName) {
   history.pushState(null, '', '?mode=' + viewName);
 }
 
-// Function to handle the Contact Form
 function handleFormSubmit(event) {
   event.preventDefault(); // Stop page refresh
   
   const btn = document.getElementById('submitBtn');
   const status = document.getElementById('formStatus');
   const nameInput = document.getElementById('contactName');
+  const emailInput = document.getElementById('contactEmail'); // Grab the new email field
   const msgInput = document.getElementById('contactMessage');
   
   // UI Update
   btn.innerText = "Sending...";
   btn.disabled = true;
   status.innerText = "";
-  status.style.color = "#333";
   
+  // Package the data, including the email
   const data = {
     name: nameInput.value,
+    email: emailInput.value,
     message: msgInput.value
   };
   
-  // This sends the data directly to your Code.gs file!
+  // Send data to Code.gs
   google.script.run
     .withSuccessHandler(function(response) {
       status.innerText = "✓ Message Sent!";
@@ -47,6 +48,7 @@ function handleFormSubmit(event) {
       btn.innerText = "Send Message";
       btn.disabled = false;
       nameInput.value = "";
+      emailInput.value = ""; // Clear the email field
       msgInput.value = "";
     })
     .withFailureHandler(function(error) {
@@ -57,7 +59,6 @@ function handleFormSubmit(event) {
     })
     .submitContactForm(data);
 }
-
 // Event Listeners for DOM Load
 document.addEventListener("DOMContentLoaded", function() {
   
