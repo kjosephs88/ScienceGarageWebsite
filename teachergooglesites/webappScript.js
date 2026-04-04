@@ -1,5 +1,4 @@
 // Function to swap the visible page natively
-// Added 'isHistoryEvent' flag so the back button doesn't trap you in a loop
 function switchView(viewName, isHistoryEvent = false) {
   // 1. Hide all views
   const allViews = document.querySelectorAll('.view-section');
@@ -13,8 +12,8 @@ function switchView(viewName, isHistoryEvent = false) {
     targetView.style.display = 'block';
   }
   
-  // 3. Close the sidebar automatically (ONLY on mobile screens)
-  if (window.innerWidth < 850) {
+  // 3. Close the sidebar automatically (ONLY on mobile screens < 768px)
+  if (window.innerWidth < 768) {
     document.getElementById("mySidebar").classList.remove("open");
   }
   
@@ -27,38 +26,33 @@ function switchView(viewName, isHistoryEvent = false) {
   window.scrollTo(0, 0);
 }
 
-// Listen for the browser's Back/Forward buttons!
+// Listen for the browser's Back/Forward buttons
 window.addEventListener('popstate', function(event) {
-  // If the browser remembers the state, use it. Otherwise, go home.
   const mode = (event.state && event.state.mode) ? event.state.mode : (window.initialAppMode || 'home');
-  // Switch the view, passing 'true' so we don't mess up the history chain
   switchView(mode, true); 
 });
 
 // Function to handle the Contact Form
 function handleFormSubmit(event) {
-  event.preventDefault(); // Stop page refresh
+  event.preventDefault(); 
   
   const btn = document.getElementById('submitBtn');
   const status = document.getElementById('formStatus');
   const nameInput = document.getElementById('contactName');
-  const emailInput = document.getElementById('contactEmail'); // Grab the new email field
+  const emailInput = document.getElementById('contactEmail'); 
   const msgInput = document.getElementById('contactMessage');
   
-  // UI Update
   btn.innerText = "Sending...";
   btn.disabled = true;
   status.innerText = "";
   status.style.color = "#333";
   
-  // Package the data, including the email
   const data = {
     name: nameInput.value,
     email: emailInput.value,
     message: msgInput.value
   };
   
-  // Send data to Code.gs
   google.script.run
     .withSuccessHandler(function(response) {
       status.innerText = "✓ Message Sent!";
@@ -66,7 +60,7 @@ function handleFormSubmit(event) {
       btn.innerText = "Send Message";
       btn.disabled = false;
       nameInput.value = "";
-      emailInput.value = ""; // Clear the email field
+      emailInput.value = ""; 
       msgInput.value = "";
     })
     .withFailureHandler(function(error) {
@@ -81,15 +75,17 @@ function handleFormSubmit(event) {
 // Event Listeners for DOM Load
 document.addEventListener("DOMContentLoaded", function() {
   
-  // Initialize the first view and replace the blank history state
   const mode = window.initialAppMode || 'home';
   history.replaceState({ mode: mode }, '', '?mode=' + mode);
   switchView(mode, true);
 
-  // Auto-open the sidebar on desktop when the site first loads
-  if (window.innerWidth >= 850) {
-    document.getElementById("mySidebar").classList.add("open");
-  }
+  // Auto-open the sidebar on desktop (using 768px to catch smaller laptops)
+  // Wrapped in a tiny timeout to ensure the browser has fully calculated widths
+  setTimeout(function() {
+    if (window.innerWidth >= 768) {
+      document.getElementById("mySidebar").classList.add("open");
+    }
+  }, 50);
 
   // Sidebar Controls
   const sidebar = document.getElementById("mySidebar");
@@ -109,7 +105,7 @@ document.addEventListener("DOMContentLoaded", function() {
     });
   }
   
-  // Toast Notification Logic for Unit Links
+  // Toast Notification Logic
   const toast = document.getElementById("toast-notification");
   const unitLinks = document.querySelectorAll(".major-units a");
 
