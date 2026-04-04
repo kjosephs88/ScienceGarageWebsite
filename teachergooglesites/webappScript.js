@@ -1,5 +1,6 @@
 // Function to swap the visible page natively
-function switchView(viewName) {
+// Added 'isHistoryEvent' flag so the back button doesn't trap you in a loop
+function switchView(viewName, isHistoryEvent = false) {
   // 1. Hide all views
   const allViews = document.querySelectorAll('.view-section');
   allViews.forEach(view => {
@@ -12,13 +13,29 @@ function switchView(viewName) {
     targetView.style.display = 'block';
   }
   
-  // 3. Close the sidebar automatically
-  document.getElementById("mySidebar").classList.remove("open");
+  // 3. Close the sidebar automatically (ONLY on mobile screens)
+  if (window.innerWidth < 850) {
+    document.getElementById("mySidebar").classList.remove("open");
+  }
   
-  // 4. Update the URL locally without reloading (Optional, but looks pro!)
-  history.pushState(null, '', '?mode=' + viewName);
+  // 4. Update the URL locally so the Back button remembers where we were
+  if (!isHistoryEvent) {
+    history.pushState({ mode: viewName }, '', '?mode=' + viewName);
+  }
+  
+  // 5. Scroll to the top of the page on view switch
+  window.scrollTo(0, 0);
 }
 
+// Listen for the browser's Back/Forward buttons!
+window.addEventListener('popstate', function(event) {
+  // If the browser remembers the state, use it. Otherwise, go home.
+  const mode = (event.state && event.state.mode) ? event.state.mode : (window.initialAppMode || 'home');
+  // Switch the view, passing 'true' so we don't mess up the history chain
+  switchView(mode, true); 
+});
+
+// Function to handle the Contact Form
 function handleFormSubmit(event) {
   event.preventDefault(); // Stop page refresh
   
@@ -32,6 +49,7 @@ function handleFormSubmit(event) {
   btn.innerText = "Sending...";
   btn.disabled = true;
   status.innerText = "";
+  status.style.color = "#333";
   
   // Package the data, including the email
   const data = {
@@ -59,12 +77,19 @@ function handleFormSubmit(event) {
     })
     .submitContactForm(data);
 }
+
 // Event Listeners for DOM Load
 document.addEventListener("DOMContentLoaded", function() {
   
-  // Initialize the correct view based on the URL parameter injected by GAS
+  // Initialize the first view and replace the blank history state
   const mode = window.initialAppMode || 'home';
-  switchView(mode);
+  history.replaceState({ mode: mode }, '', '?mode=' + mode);
+  switchView(mode, true);
+
+  // Auto-open the sidebar on desktop when the site first loads
+  if (window.innerWidth >= 850) {
+    document.getElementById("mySidebar").classList.add("open");
+  }
 
   // Sidebar Controls
   const sidebar = document.getElementById("mySidebar");
