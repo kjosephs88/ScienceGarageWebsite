@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Scheduler Admin - V26 (Order Preservation)</title>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    
+    <style>
+        html, body { margin: 0; padding: 0; height: 100vh; width: 100vw; background-color: #f4f6f9; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; display: flex; overflow: hidden; }
+        .sidebar { width: 320px; min-width: 320px; background-color: #ffffff; border-right: 1px solid #ddd; display: flex; flex-direction: column; padding: 20px; box-shadow: 2px 0 10px rgba(0,0,0,0.05); z-index: 10; }
+        .main-content { flex-grow: 1; display: flex; flex-direction: column; padding: 20px; overflow-y: auto; overflow-x: hidden; }
+        
+        .control-group { margin-bottom: 15px; } 
+        .control-group label { display: block; font-size: 0.85rem; color: #666; margin-bottom: 5px; font-weight: bold; text-transform: uppercase;} 
+        select { width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 1rem; } 
+        .sidebar hr { width: 100%; border: 0; border-top: 1px solid #eee; margin: 15px 0; }
+        
+        .toolbar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; background: white; padding: 10px 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .view-controls { justify-self: start; } 
+        .week-nav { justify-self: center; display: flex; align-items: center; gap: 15px; } 
+        .week-nav button { padding: 6px 12px; border: 1px solid #ccc; background: white; border-radius: 4px; cursor: pointer;} 
+        .week-nav h2 { margin: 0; font-size: 1.2rem; color: #333; text-align: center; } 
+        .gear-btn { background: none; border: none; cursor: pointer; font-size: 1.2rem; padding: 0; transition: transform 0.2s ease; }
+        .gear-btn:hover { transform: rotate(45deg); }
+        
+        .auth-container { justify-self: end; display: flex; align-items: center; gap: 15px;} 
+        .auth-status { font-size: 0.9rem; color: #555; }
+        #auth-btn { background: #007bff; color: white; border: none; padding: 6px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;} 
+        #auth-btn:hover { background: #0056b3; }
+        
+        #calendar-container { display: flex; flex-direction: column; gap: 20px; }
+        .week-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; align-items: stretch; }
+        .day-column { background-color: #e9ecef; border-radius: 6px; display: flex; flex-direction: column; min-height: 280px; height: 100%; border: 1px solid #dee2e6; position: relative; }
+        
+        .day-header { background-color: #dde2e6; padding: 12px 5px; border-bottom: 1px solid #ced4da; border-top-left-radius: 6px; border-top-right-radius: 6px; text-align: center; } 
+        .day-name { font-weight: bold; font-size: 1.1rem; color: #333; display: block; margin-bottom: 2px;} 
+        .day-date { font-size: 0.85rem; color: #666; }
+        
+        .bellringer-container { text-align: center; padding: 8px 5px; background: #f8f9fa; border-bottom: 1px solid #ced4da; position: relative; min-height: 20px; } 
+        
+        .special-day-banner { background-color: #ffc107; color: #856404; text-align: center; font-weight: bold; padding: 5px; font-size: 0.85rem; border-bottom: 1px solid #ffeeba; }
+        .day-off-banner { flex-grow: 1; display: flex; align-items: center; justify-content: center; background-color: #f1f3f5; color: #adb5bd; font-size: 1.3rem; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; text-align: center; padding: 10px; border-top: 1px solid #dee2e6; border-bottom-left-radius: 6px; border-bottom-right-radius: 6px; line-height: 1.3; overflow-wrap: break-word; word-break: break-word; box-sizing: border-box; }
+
+        .day-footer { padding: 8px; display: flex; justify-content: space-between; align-items: center; margin-top: auto; }
+        .period-badge-container { display: inline-flex; align-items: center; gap: 5px; background: #fff; border: 1px solid #adb5bd; padding: 4px 10px; border-radius: 12px; } 
+        .period-text { font-size: 0.75rem; font-weight: bold; color: #495057; } 
+        .swap-btn { cursor: pointer; color: #007bff; border: none; background: none; padding: 0; font-size: 0.9rem; margin-left: 4px; font-weight: bold; transition: transform 0.2s;}
+        .swap-btn:hover { transform: scale(1.2); }
+        .add-note-btn { cursor: pointer; color: #6c757d; border: none; background: none; font-size: 1.2rem; transition: transform 0.2s; padding: 0 5px; margin-left: auto; }
+        .add-note-btn:hover { transform: scale(1.2); color: #343a40; }
+        
+        .sortable-list { flex-grow: 1; padding: 10px; display: flex; flex-direction: column; gap: 8px; min-height: 50px; } 
+        .holding-tank { background-color: #fdfdfd; border: 2px dashed #ccc; border-radius: 4px; padding: 10px; overflow-y: auto; flex-grow: 1;}
+        .assignment-item { background-color: #ffffff; border-left: 4px solid #17a2b8; padding: 8px; border-radius: 4px; cursor: grab; box-shadow: 0 1px 2px rgba(0,0,0,0.1); font-size: 0.85rem; line-height: 1.3; display: flex; flex-direction: column; gap: 3px; transition: background-color 0.3s; } 
+        .assignment-item:active { cursor: grabbing; } 
+        .sortable-ghost { opacity: 0.4; background-color: #d1ecf1; border-color: #bee5eb; }
+        
+        .custom-note-item { background-color: #fff3cd !important; border-left: 4px solid #ffc107 !important; color: #856404; }
+
+        .item-prefix { font-weight: bold; color: #d9534f; font-size: 0.75rem; text-transform: uppercase; } 
+        .item-title { color: #333; font-weight: 500; }
+        .item-note { display: block; font-style: italic; color: #666; font-size: 0.8rem; margin-top: 4px; padding-left: 5px; border-left: 2px solid #ddd; }
+        
+        .item-actions { display: flex; justify-content: flex-end; gap: 5px; border-top: 1px dashed #eee; margin-top: 4px; padding-top: 4px; } 
+        .action-btn { background: none; border: none; cursor: pointer; font-size: 0.9rem; padding: 2px; border-radius: 3px; transition: opacity 0.2s;} 
+        .action-btn:hover:not(:disabled) { background: #e9ecef; } 
+        .delete-btn { color: #dc3545; } 
+        .action-btn:disabled { opacity: 0.2; cursor: not-allowed; filter: grayscale(100%); }
+
+        .swap-btn, .item-actions, .add-note-btn { display: none; } 
+        .edit-mode .swap-btn, .edit-mode .item-actions, .edit-mode .add-note-btn { display: flex; } 
+        .hide-for-forensics .bellringer-container, .hide-for-forensics .period-badge-container { display: none !important; }
+
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 100; }
+        .modal-content { background: white; padding: 25px; border-radius: 8px; width: 450px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); max-height: 90vh; display: flex; flex-direction: column;}
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 20px; }
+        .modal-header h3 { margin: 0; color: #333; }
+        .close-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #999; }
+        .close-btn:hover { color: #333; }
+        .modal-body label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; font-size: 0.9rem; }
+        .modal-body input[type="date"], .modal-body input[type="text"], .modal-body select { width: 100%; padding: 8px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .save-btn { width: 100%; padding: 10px; background: #28a745; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 1rem; margin-top: 10px;}
+        .save-btn:hover { background: #218838; }
+        .config-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; flex-grow: 1; border: 1px solid #eee; border-radius: 4px; margin-top: 15px;}
+        .config-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #eee; font-size: 0.9rem;}
+        .config-item:nth-child(even) { background: #f9f9f9; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar" id="teacher-sidebar" style="display: none;">
+        <div class="control-group">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                <label style="margin-bottom: 0;">Select Class</label>
+                <button onclick="openSettingsModal()" class="gear-btn" title="Calendar Settings">⚙️</button>
+            </div>
+            <select id="class-select" onchange="fetchClassData()">
+                <option>Loading...</option> 
+            </select>
+        </div>
+        
+        <div class="control-group">
+            <label>Select Topic</label>
+            <select id="topic-select" onchange="handleTopicFilter()">
+                <option value="all">All Topics</option>
+            </select>
+        </div>
+        
+        <hr>
+        
+        <div class="control-group" style="flex-grow: 1; display: flex; flex-direction: column; min-height: 0;">
+            <label>Unscheduled Assignments</label>
+            <div id="holding-tank" class="sortable-list holding-tank"></div>
+        </div>
+    </div>
+
+    <div class="main-content" id="main-view">
+        <div class="toolbar">
+            <div class="view-controls">
+                <select id="week-view-select" onchange="renderCalendar()">
+                    <option value="1">1 Week</option>
+                    <option value="2" selected>2 Weeks</option>
+                    <option value="3">3 Weeks</option>
+                </select>
+            </div>
+            
+            <div class="week-nav">
+                <button onclick="changeWeek(-1)">&lt; Prev</button>
+                <h2 id="date-range-display">Loading...</h2>
+                <button onclick="changeWeek(1)">Next &gt;</button>
+            </div>
+            
+            <div class="auth-container">
+                <div id="auth-status" class="auth-status">Checking auth...</div>
+                <button id="auth-btn">Teacher Login</button>
+            </div>
+        </div>
+        
+        <div id="calendar-container"></div>
+    </div>
+
+    <div class="modal-overlay" id="settings-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Calendar Settings</h3>
+                <button class="close-btn" onclick="closeSettingsModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; height: 100%;">
+                
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid #ddd;">
+                    <label style="display: flex; align-items: center; gap: 8px; background: #e2e3e5; padding: 10px; border-radius: 4px; border: 1px solid #ced4da; margin-bottom: 15px; color: #333; cursor: pointer;">
+                        <input type="checkbox" id="apply-all-checkbox" checked style="width: 18px; height: 18px; margin: 0;">
+                        Apply to ALL classes (P1, P3, P6, P8)
+                    </label>
+
+                    <div style="display: flex; gap: 10px; background: #fff; padding: 10px; border-radius: 4px; margin-bottom: 15px; border: 1px solid #ced4da;">
+                        <div style="flex: 1;">
+                            <label style="color: #333;">Start Date</label>
+                            <input type="date" id="special-date-start" style="border: 2px solid #007bff; margin-bottom: 0;">
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="color: #333;">End Date <span style="font-weight: normal; color: #888;">(Optional)</span></label>
+                            <input type="date" id="special-date-end" style="margin-bottom: 0;">
+                        </div>
+                    </div>
+
+                    <label>Day Type</label>
+                    <select id="special-day-type">
+                        <option value="Day Off">Day Off (No Classes, Shifts Sequence)</option>
+                        <option value="Class Drop">Class Dropped (No Classes, Sequence Continues)</option>
+                        <option value="Custom Banner">Special Banner Only (Classes Meet Normally)</option>
+                    </select>
+                    
+                    <label style="margin-top: 15px;">Event Name</label>
+                    <input type="text" id="custom-type-input" placeholder="e.g., Snow Day, Assembly, Spirit Week">
+                    
+                    <button class="save-btn" onclick="saveCalendarConfig()">Save Rule(s) & Shift</button>
+                </div>
+
+                <label style="margin-top: 15px;">Saved Overrides for <span id="current-period-label"></span></label>
+                <ul id="saved-days-list" class="config-list"></ul>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { getDatabase, ref, query, orderByChild, equalTo, get, update, remove, push, set } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+        // 🛑🛑🛑 FIREBASE CONFIG 🛑🛑🛑
+        const firebaseConfig = {
+            apiKey: "AIzaSyCcpjuH1qv9IUDJJQR_5ms18TBRS8UFaV8",
+            authDomain: "scigarage.firebaseapp.com",
+            databaseURL: "https://scigarage-default-rtdb.firebaseio.com",
+            projectId: "scigarage",
+            storageBucket: "scigarage.firebasestorage.app",
+            messagingSenderId: "768658065204",
+            appId: "1:768658065204:web:31e0386ee9c9edfe3ac761",
+            measurementId: "G-SJ48L43TZ2"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+        const provider = new GoogleAuthProvider();
+
+        let currentMonday = (function() {
+            let now = new Date();
+            now.setHours(12, 0, 0, 0); 
+            let day = now.getDay();    
+            let diff = 1 - day;        
+            now.setDate(now.getDate() + diff);
+            return now;
+        })();
+
+        const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+        let currentClassData = {}; 
+        let currentCalendarConfig = {}; 
+        let currentBellringers = {}; 
+        let activePeriod = ""; 
+
+        function formatDateLocal(dateObj) {
+            const y = dateObj.getFullYear();
+            const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const d = String(dateObj.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        onAuthStateChanged(auth, (user) => {
+            const authStatus = document.getElementById('auth-status');
+            const authBtn = document.getElementById('auth-btn');
+            const sidebar = document.getElementById('teacher-sidebar');
+            const mainView = document.getElementById('main-view');
+
+            if (user) {
+                authStatus.innerHTML = `Logged in: <b>${user.email}</b>`;
+                authBtn.innerText = "Log Out";
+                authBtn.onclick = window.logoutTeacher;
+                sidebar.style.display = "flex";
+                mainView.classList.add('edit-mode');
+                loadInitialClasses();
+            } else {
+                authStatus.innerHTML = `Mode: View Only`;
+                authBtn.innerText = "Teacher Login";
+                authBtn.onclick = window.loginTeacher;
+                sidebar.style.display = "none";
+                mainView.classList.remove('edit-mode');
+                document.getElementById('calendar-container').innerHTML = '';
+                document.getElementById('date-range-display').innerText = "Please Log In";
+            }
+        });
+
+        async function loadInitialClasses() {
+            document.getElementById('date-range-display').innerText = "Syncing...";
+            const classSelect = document.getElementById('class-select');
+            
+            try {
+                const snapshot = await get(ref(db, 'assignments'));
+                if (snapshot.exists()) {
+                    const allData = snapshot.val();
+                    const uniqueClasses = new Set();
+                    Object.values(allData).forEach(a => { if (a.className) uniqueClasses.add(a.className); });
+
+                    classSelect.innerHTML = ''; 
+                    uniqueClasses.forEach(className => {
+                        const opt = document.createElement('option');
+                        opt.value = className;
+                        opt.innerText = className;
+                        classSelect.appendChild(opt);
+                    });
+                    window.fetchClassData(); 
+                } else {
+                    classSelect.innerHTML = '<option>No classes found</option>';
+                    document.getElementById('date-range-display').innerText = "Database empty.";
+                }
+            } catch (error) { console.error("Error:", error); }
+        }
+
+        window.fetchClassData = async function() {
+            const className = document.getElementById('class-select').value;
+            if(!className || className === "Loading...") return;
+
+            const periodMatch = className.match(/(P\d)/i);
+            activePeriod = periodMatch ? periodMatch[0].toUpperCase() : "DEFAULT";
+            
+            document.getElementById('modal-title').innerText = `${activePeriod} Calendar Settings`;
+            document.getElementById('current-period-label').innerText = activePeriod;
+            
+            const mainView = document.getElementById('main-view');
+            const lowerClassName = className.toLowerCase();
+            
+            const isForensics = lowerClassName.includes('forensics') || activePeriod === 'P1';
+            if (isForensics) {
+                mainView.classList.add('hide-for-forensics');
+            } else {
+                mainView.classList.remove('hide-for-forensics');
+            }
+
+            let subject = null;
+            if (lowerClassName.includes('chemistry')) {
+                subject = 'Chemistry';
+            } else if (lowerClassName.includes('physics')) {
+                subject = 'Physics';
+            }
+
+            try {
+                const assignmentsRef = query(ref(db, 'assignments'), orderByChild('className'), equalTo(className));
+                const assigSnap = await get(assignmentsRef);
+                currentClassData = assigSnap.exists() ? assigSnap.val() : {};
+
+                const configSnap = await get(ref(db, `calendarConfig/${activePeriod}`));
+                currentCalendarConfig = configSnap.exists() ? configSnap.val() : {};
+
+                if (subject) {
+                    const bellringerSnap = await get(ref(db, `bellringers/${subject}`));
+                    currentBellringers = bellringerSnap.exists() ? bellringerSnap.val() : {};
+                } else {
+                    currentBellringers = {};
+                }
+
+                buildTopicDropdown();
+                renderCalendar(); 
+            } catch (error) { console.error("Error:", error); }
+        }
+
+        function buildTopicDropdown() {
+            const topicSelect = document.getElementById('topic-select');
+            topicSelect.innerHTML = '<option value="all">All Topics</option>'; 
+            const uniqueTopics = new Set();
+            Object.values(currentClassData).forEach(a => { if (a.topicName && !a.isCustomNote) uniqueTopics.add(a.topicName); });
+            uniqueTopics.forEach(topic => {
+                const opt = document.createElement('option'); opt.value = topic; opt.innerText = topic; topicSelect.appendChild(opt);
+            });
+        }
+
+        window.renderCalendar = function() {
+            const container = document.getElementById('calendar-container');
+            const holdingTank = document.getElementById('holding-tank');
+            
+            container.innerHTML = ''; 
+            holdingTank.innerHTML = ''; 
+            
+            const numWeeks = parseInt(document.getElementById('week-view-select').value) || 1;
+            let renderDate = new Date(currentMonday);
+            let isNextDouble = true; 
+
+            const endDate = new Date(currentMonday);
+            endDate.setDate(currentMonday.getDate() + (numWeeks * 7) - 3); 
+            document.getElementById('date-range-display').innerText = 
+                `${currentMonday.toLocaleDateString('en-US', {month:'short', day:'numeric'})} - ${endDate.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})}`;
+
+            for (let w = 0; w < numWeeks; w++) {
+                const weekGrid = document.createElement('div');
+                weekGrid.className = 'week-grid';
+
+                for (let d = 0; d < 5; d++) {
+                    const dateStr = formatDateLocal(renderDate);
+                    const dayConfig = currentCalendarConfig[dateStr];
+                    
+                    if (dayConfig && dayConfig.flipped) {
+                        isNextDouble = !isNextDouble;
+                    }
+                    
+                    weekGrid.appendChild(createDayColumn(renderDate, isNextDouble, dateStr, dayConfig));
+                    
+                    if (!dayConfig || !dayConfig.isDayOff) {
+                        isNextDouble = !isNextDouble;
+                    }
+
+                    renderDate.setDate(renderDate.getDate() + 1);
+                }
+                container.appendChild(weekGrid);
+                renderDate.setDate(renderDate.getDate() + 2); 
+            }
+
+            initSortables();
+            placeAssignments();
+        }
+
+        function createDayColumn(dateObj, isDouble, dateStr, dayConfig) {
+            const col = document.createElement('div');
+            col.className = 'day-column';
+            const displayDate = `${dateObj.toLocaleString('en-US', { month: 'short' })} ${dateObj.getDate()}`;
+            
+            if (dayConfig && (dayConfig.isDayOff || dayConfig.isClassDrop)) {
+                col.innerHTML = `
+                    <div class="day-header">
+                        <span class="day-name">${dayNames[dateObj.getDay() - 1]}</span>
+                        <div class="day-date">${displayDate}</div>
+                    </div>
+                    <div class="day-off-banner">${dayConfig.name}</div>
+                    <div class="sortable-list day-list" id="${dateStr}" style="display: none;"></div>
+                `;
+            } else {
+                let bannerHTML = '';
+                if (dayConfig && dayConfig.name) {
+                    bannerHTML = `<div class="special-day-banner">${dayConfig.name}</div>`;
+                }
+
+                let bellringerHTML = '';
+                const bellringerUrl = currentBellringers[dateStr];
+                if (bellringerUrl) {
+                    bellringerHTML = `<div class="bellringer-container"><span onclick="window.open('${bellringerUrl}', '_blank')" style="color: #0056b3; font-weight: bold; text-decoration: underline; cursor: pointer;" title="Click to open Bellringer">BELLRINGER</span></div>`;
+                } else {
+                    bellringerHTML = `<div class="bellringer-container"></div>`;
+                }
+
+                col.innerHTML = `
+                    <div class="day-header">
+                        <span class="day-name">${dayNames[dateObj.getDay() - 1]}</span>
+                        <div class="day-date">${displayDate}</div>
+                    </div>
+                    ${bannerHTML}
+                    ${bellringerHTML}
+                    <div class="sortable-list day-list" id="${dateStr}"></div>
+                    <div class="day-footer">
+                        <div class="period-badge-container">
+                            <span class="period-text">${isDouble ? 'Double period' : 'Single period'}</span>
+                            <button class="swap-btn" onclick="toggleFlip('${dateStr}')" title="Flip Sequence from here forward">⟳</button>
+                        </div>
+                        <button class="add-note-btn" onclick="addCustomNote('${dateStr}')" title="Add Draggable Note">➕📝</button>
+                    </div>
+                `;
+            }
+            return col;
+        }
+
+        // --- V26: Global Order Indexer (Saves DOM Order to Firebase) ---
+        window.saveAllListOrders = async function() {
+            const updates = {};
+            document.querySelectorAll('.sortable-list').forEach(list => {
+                const listId = list.id === 'holding-tank' ? 'holding-tank' : list.id;
+                Array.from(list.children).forEach((item, index) => {
+                    const dbKey = item.getAttribute('data-db-key');
+                    updates[`/assignments/${dbKey}/dayOrder/${listId}`] = index;
+                    
+                    // Update Local State so it doesn't jump before refresh
+                    if (currentClassData[dbKey]) {
+                        if (!currentClassData[dbKey].dayOrder) currentClassData[dbKey].dayOrder = {};
+                        currentClassData[dbKey].dayOrder[listId] = index;
+                    }
+                });
+            });
+            try {
+                if(Object.keys(updates).length > 0) {
+                    await update(ref(db), updates);
+                }
+            } catch (e) { console.error("Order save failed", e); }
+        };
+
+        window.addCustomNote = async function(dateStr) {
+            const text = prompt("Enter text for this draggable note:");
+            if (!text || text.trim() === "") return;
+
+            const currentClass = document.getElementById('class-select').value;
+            const newNoteRef = push(ref(db, 'assignments')); 
+            
+            const noteData = {
+                title: text.trim(),
+                className: currentClass,
+                topicName: "Custom Notes", 
+                scheduledDates: [dateStr],
+                isCustomNote: true,
+                timestampCreated: Date.now()
+            };
+
+            try {
+                await set(newNoteRef, noteData);
+                window.fetchClassData(); 
+            } catch (err) { console.error("Error adding note:", err); }
+        }
+
+        window.toggleFlip = async function(dateStr) {
+            let isCurrentlyFlipped = false;
+            if (currentCalendarConfig[dateStr] && currentCalendarConfig[dateStr].flipped) {
+                isCurrentlyFlipped = true;
+            }
+            try {
+                await update(ref(db), { [`/calendarConfig/${activePeriod}/${dateStr}/flipped`]: !isCurrentlyFlipped });
+                if (!currentCalendarConfig[dateStr]) currentCalendarConfig[dateStr] = {};
+                currentCalendarConfig[dateStr].flipped = !isCurrentlyFlipped;
+                renderCalendar(); 
+            } catch (err) { console.error("Error saving flip:", err); }
+        };
+
+        // V26: Updated placeAssignments to read order from Firebase queues
+        function placeAssignments() {
+            const holdingTank = document.getElementById('holding-tank');
+            const selectedTopic = document.getElementById('topic-select').value;
+
+            // Prepare sorting queues
+            const queues = { "holding-tank": [] };
+            document.querySelectorAll('.day-list').forEach(list => queues[list.id] = []);
+
+            Object.entries(currentClassData).forEach(([dbKey, assignment]) => {
+                if (selectedTopic !== 'all' && assignment.topicName !== selectedTopic && !assignment.isCustomNote) return;
+                const dates = assignment.scheduledDates || ["unassigned"];
+                
+                let itemHTML = '';
+
+                if (assignment.isCustomNote) {
+                    itemHTML = `
+                        <div class="assignment-item custom-note-item" data-db-key="${dbKey}">
+                            <span class="item-title" style="font-weight: bold;">${assignment.title}</span>
+                            <div class="item-actions">
+                                <button class="action-btn edit-custom-note-btn" title="Edit Note">✏️</button>
+                                <button class="action-btn delete-btn" title="Delete Note">❌</button>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    const urlAttr = assignment.encodedUrl ? `data-url="${assignment.encodedUrl}"` : '';
+                    const titleAttr = assignment.encodedUrl ? `title="Click to open in Google Classroom, drag to move"` : `title="Drag to schedule"`;
+                    
+                    itemHTML = `
+                        <div class="assignment-item" data-db-key="${dbKey}" ${urlAttr} ${titleAttr} style="${assignment.encodedUrl ? 'cursor: pointer;' : ''}">
+                            <span class="item-prefix">Complete assignment:</span>
+                            <span class="item-title">${assignment.title}</span>
+                            <span class="item-note" style="display: none;"></span> 
+                            <div class="item-actions">
+                                <button class="action-btn note-btn" title="Add/Edit Inline Note">📝</button>
+                                <button class="action-btn delete-btn" title="Remove">❌</button>
+                                <button class="action-btn duplicate-btn" title="Duplicate">➡️</button>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                if (dates.includes("unassigned") || dates.length === 0) {
+                    let blockHTML = itemHTML;
+                    if (!assignment.isCustomNote && assignment.notes && assignment.notes["unassigned"]) {
+                        blockHTML = blockHTML.replace('<span class="item-note" style="display: none;"></span>', `<span class="item-note">Note: ${assignment.notes["unassigned"]}</span>`);
+                    }
+                    let order = (assignment.dayOrder && assignment.dayOrder["holding-tank"]) !== undefined ? assignment.dayOrder["holding-tank"] : 999;
+                    queues["holding-tank"].push({ html: blockHTML, order: order, key: dbKey });
+                } else {
+                    dates.forEach(dateString => {
+                        if (queues[dateString]) { 
+                            let blockHTML = itemHTML;
+                            if (!assignment.isCustomNote && assignment.notes && assignment.notes[dateString]) {
+                                blockHTML = blockHTML.replace('<span class="item-note" style="display: none;"></span>', `<span class="item-note">Note: ${assignment.notes[dateString]}</span>`);
+                            }
+                            let order = (assignment.dayOrder && assignment.dayOrder[dateString]) !== undefined ? assignment.dayOrder[dateString] : 999;
+                            queues[dateString].push({ html: blockHTML, order: order, key: dbKey });
+                        }
+                    });
+                }
+            });
+
+            // Render queues in sorted order
+            Object.keys(queues).forEach(qId => {
+                const targetList = document.getElementById(qId);
+                if (targetList) {
+                    queues[qId].sort((a, b) => a.order - b.order).forEach(item => {
+                        targetList.insertAdjacentHTML('beforeend', item.html);
+                    });
+                }
+            });
+
+            Object.keys(currentClassData).forEach(dbKey => {
+                if (!currentClassData[dbKey].isCustomNote) updatePrefixes(dbKey);
+            });
+        }
+
+        function initSortables() {
+            const sortableOptions = {
+                group: 'shared', animation: 150, ghostClass: 'sortable-ghost',
+                onEnd: function (evt) { syncAssignmentToFirebase(evt.item.getAttribute('data-db-key'), evt.item); }
+            };
+            new Sortable(document.getElementById('holding-tank'), sortableOptions);
+            document.querySelectorAll('.day-list').forEach(list => new Sortable(list, sortableOptions));
+        }
+
+        async function syncAssignmentToFirebase(dbKey, visualItem = null) {
+            const visibleDatesOnGrid = Array.from(document.querySelectorAll('.day-list')).map(list => list.id);
+            const oldDates = currentClassData[dbKey].scheduledDates || ["unassigned"];
+            const preservedOffScreenDates = oldDates.filter(d => d !== "unassigned" && !visibleDatesOnGrid.includes(d));
+
+            const allInstances = Array.from(document.querySelectorAll(`.assignment-item[data-db-key="${dbKey}"]`));
+            let domDates = allInstances.map(inst => inst.closest('.sortable-list').id === 'holding-tank' ? 'unassigned' : inst.closest('.sortable-list').id);
+            
+            let newDatesArray = [...preservedOffScreenDates, ...domDates];
+            newDatesArray = [...new Set(newDatesArray)].sort();
+            
+            if (newDatesArray.length > 1 && newDatesArray.includes("unassigned")) newDatesArray = newDatesArray.filter(d => d !== "unassigned");
+            if (newDatesArray.length === 0) newDatesArray = ["unassigned"];
+
+            if(currentClassData[dbKey]) currentClassData[dbKey].scheduledDates = newDatesArray;
+            if(!currentClassData[dbKey].isCustomNote) updatePrefixes(dbKey);
+
+            try {
+                // Update Date Tags AND Re-Save entire order indexing
+                await update(ref(db), { [`/assignments/${dbKey}/scheduledDates`]: newDatesArray });
+                await window.saveAllListOrders(); 
+                if (visualItem) { visualItem.style.backgroundColor = '#d4edda'; setTimeout(() => visualItem.style.backgroundColor = visualItem.classList.contains('custom-note-item') ? '#fff3cd' : '#ffffff', 500); }
+            } catch (error) { console.error("Save failed:", error); }
+        }
+
+        function updatePrefixes(dbKey) {
+            const instances = Array.from(document.querySelectorAll(`.day-list .assignment-item[data-db-key="${dbKey}"]`))
+                .sort((a, b) => a.closest('.day-list').id.localeCompare(b.closest('.day-list').id));
+            
+            if (instances.length === 1) instances[0].querySelector('.item-prefix').innerText = 'Complete assignment:';
+            else if (instances.length === 2) { instances[0].querySelector('.item-prefix').innerText = 'Begin assignment:'; instances[1].querySelector('.item-prefix').innerText = 'Finish assignment:'; }
+            else if (instances.length > 2) {
+                instances[0].querySelector('.item-prefix').innerText = 'Begin assignment:';
+                instances[instances.length - 1].querySelector('.item-prefix').innerText = 'Finish assignment:';
+                for (let i = 1; i < instances.length - 1; i++) instances[i].querySelector('.item-prefix').innerText = 'Continue assignment:';
+            }
+            instances.forEach((inst, index) => { const dupBtn = inst.querySelector('.duplicate-btn'); if (dupBtn) dupBtn.disabled = (index < instances.length - 1); });
+            
+            const holdingInstance = document.querySelector(`#holding-tank .assignment-item[data-db-key="${dbKey}"]`);
+            if (holdingInstance) holdingInstance.querySelector('.item-prefix').innerText = 'Complete assignment:';
+        }
+
+        document.body.addEventListener('click', function(e) {
+            const btn = e.target.closest('.action-btn'); 
+            
+            if (btn && btn.classList.contains('delete-btn')) {
+                const item = btn.closest('.assignment-item');
+                const dbKey = item.getAttribute('data-db-key');
+                
+                if (currentClassData[dbKey] && currentClassData[dbKey].isCustomNote) {
+                    if(confirm("Delete this custom note permanently?")) {
+                        remove(ref(db, `/assignments/${dbKey}`));
+                        delete currentClassData[dbKey];
+                        item.remove();
+                        window.saveAllListOrders(); // Save new order without the deleted block
+                    }
+                    return;
+                }
+
+                if (item.closest('#holding-tank')) return; 
+                item.remove(); 
+                if (document.querySelectorAll(`.day-list .assignment-item[data-db-key="${dbKey}"]`).length === 0) {
+                    document.getElementById('holding-tank').appendChild(item.cloneNode(true));
+                }
+                syncAssignmentToFirebase(dbKey); 
+                return; 
+            }
+            
+            if (btn && btn.classList.contains('edit-custom-note-btn')) {
+                const item = btn.closest('.assignment-item');
+                const dbKey = item.getAttribute('data-db-key');
+                const currentText = currentClassData[dbKey].title;
+                
+                const newText = prompt("Edit note:", currentText);
+                if (newText !== null && newText.trim() !== "") {
+                    update(ref(db), { [`/assignments/${dbKey}/title`]: newText.trim() }).then(() => {
+                        currentClassData[dbKey].title = newText.trim();
+                        document.querySelectorAll('.assignment-item').forEach(el => el.remove());
+                        placeAssignments();
+                    });
+                }
+                return;
+            }
+
+            if (btn && btn.classList.contains('duplicate-btn') && !btn.disabled) {
+                const item = btn.closest('.assignment-item');
+                const currentList = item.closest('.day-list');
+                if (!currentList) return;
+                const allDays = Array.from(document.querySelectorAll('.day-list'));
+                const currentIndex = allDays.indexOf(currentList);
+                if (currentIndex >= 0 && currentIndex < allDays.length - 1) {
+                    allDays[currentIndex + 1].appendChild(item.cloneNode(true));
+                    syncAssignmentToFirebase(item.getAttribute('data-db-key'), allDays[currentIndex + 1].lastChild); 
+                } else alert("No visible days left to duplicate into.");
+                return; 
+            }
+
+            if (btn && btn.classList.contains('note-btn')) {
+                const item = btn.closest('.assignment-item');
+                const dbKey = item.getAttribute('data-db-key');
+                const listId = item.closest('.sortable-list').id === 'holding-tank' ? 'unassigned' : item.closest('.sortable-list').id;
+                
+                const currentNotesObj = currentClassData[dbKey].notes || {};
+                const currentNoteStr = currentNotesObj[listId] || "";
+                
+                const newNote = prompt("Add an inline note for this specific block (leave blank to remove):", currentNoteStr);
+                
+                if (newNote !== null) {
+                    const finalNote = newNote.trim();
+                    if (!currentClassData[dbKey].notes) currentClassData[dbKey].notes = {};
+                    currentClassData[dbKey].notes[listId] = finalNote;
+                    
+                    const updatePayload = {};
+                    if (finalNote === "") {
+                        updatePayload[`/assignments/${dbKey}/notes/${listId}`] = null; 
+                    } else {
+                        updatePayload[`/assignments/${dbKey}/notes/${listId}`] = finalNote;
+                    }
+
+                    update(ref(db), updatePayload).then(() => {
+                        document.querySelectorAll('.assignment-item').forEach(el => el.remove());
+                        placeAssignments();
+                    }).catch(err => console.error("Error saving note:", err));
+                }
+                return; 
+            }
+
+            const item = e.target.closest('.assignment-item');
+            if (item && !btn && !item.classList.contains('custom-note-item')) { 
+                const url = item.getAttribute('data-url');
+                if (url) { window.open(url, '_blank'); }
+            }
+        });
+
+        window.changeWeek = function(offset) { currentMonday.setDate(currentMonday.getDate() + (offset * 7)); renderCalendar(); }
+        window.handleTopicFilter = function() { document.querySelectorAll('.assignment-item').forEach(el => el.remove()); placeAssignments(); }
+
+        window.openSettingsModal = function() {
+            document.getElementById('settings-modal').style.display = 'flex';
+            populateConfigList();
+        }
+        window.closeSettingsModal = function() {
+            document.getElementById('settings-modal').style.display = 'none';
+        }
+
+        window.saveCalendarConfig = async function() {
+            const startStr = document.getElementById('special-date-start').value;
+            const endStr = document.getElementById('special-date-end').value || startStr; 
+            const typeSelect = document.getElementById('special-day-type').value;
+            const applyAll = document.getElementById('apply-all-checkbox').checked;
+            
+            const finalName = document.getElementById('custom-type-input').value.trim();
+            
+            if (!startStr) return alert("Please select a Start Date.");
+            if (!finalName) return alert("Please type an Event Name.");
+
+            const isDayOff = (typeSelect === 'Day Off');
+            const isClassDrop = (typeSelect === 'Class Drop');
+
+            let currDate = new Date(startStr + 'T12:00:00'); 
+            let endDateObj = new Date(endStr + 'T12:00:00');
+            if (currDate > endDateObj) return alert("End Date must be after Start Date.");
+
+            const configUpdates = {};
+            const newlyCreatedOffDays = []; 
+            const targetPeriods = applyAll ? ['P1', 'P3', 'P6', 'P8'] : [activePeriod];
+            
+            while (currDate <= endDateObj) {
+                if (currDate.getDay() !== 0 && currDate.getDay() !== 6) {
+                    const dateStr = formatDateLocal(currDate);
+                    let wasAlreadyOff = currentCalendarConfig[dateStr] && currentCalendarConfig[dateStr].isDayOff;
+                    
+                    targetPeriods.forEach(p => {
+                        configUpdates[`/calendarConfig/${p}/${dateStr}/name`] = finalName;
+                        configUpdates[`/calendarConfig/${p}/${dateStr}/isDayOff`] = isDayOff;
+                        configUpdates[`/calendarConfig/${p}/${dateStr}/isClassDrop`] = isClassDrop;
+                    });
+                    
+                    if (isDayOff && !wasAlreadyOff) newlyCreatedOffDays.push(dateStr);
+                    
+                    if (!currentCalendarConfig[dateStr]) currentCalendarConfig[dateStr] = {};
+                    currentCalendarConfig[dateStr].name = finalName;
+                    currentCalendarConfig[dateStr].isDayOff = isDayOff;
+                    currentCalendarConfig[dateStr].isClassDrop = isClassDrop;
+                }
+                currDate.setDate(currDate.getDate() + 1);
+            }
+            
+            try {
+                await update(ref(db), configUpdates);
+                
+                if (newlyCreatedOffDays.length > 0) {
+                    const shiftAmount = newlyCreatedOffDays.length;
+                    const assignmentUpdates = {};
+                    let assignmentsShifted = false;
+
+                    const allOffDays = Object.keys(currentCalendarConfig).filter(k => currentCalendarConfig[k].isDayOff);
+
+                    Object.entries(currentClassData).forEach(([dbKey, assignment]) => {
+                        if (assignment.scheduledDates && assignment.scheduledDates.length > 0) {
+                            let newDates = [];
+                            let changed = false;
+
+                            assignment.scheduledDates.forEach(dateStr => {
+                                if (dateStr !== "unassigned" && dateStr >= startStr) {
+                                    let shiftDate = new Date(dateStr + 'T12:00:00');
+                                    let validDaysAdded = 0;
+                                    
+                                    while (validDaysAdded < shiftAmount) {
+                                        shiftDate.setDate(shiftDate.getDate() + 1);
+                                        let checkStr = formatDateLocal(shiftDate);
+                                        let isWeekend = (shiftDate.getDay() === 0 || shiftDate.getDay() === 6);
+                                        let isOff = allOffDays.includes(checkStr);
+                                        
+                                        if (!isWeekend && !isOff) { validDaysAdded++; }
+                                    }
+                                    newDates.push(formatDateLocal(shiftDate));
+                                    changed = true;
+                                } else { newDates.push(dateStr); }
+                            });
+
+                            if (changed) {
+                                newDates = [...new Set(newDates)].sort();
+                                assignmentUpdates[`/assignments/${dbKey}/scheduledDates`] = newDates;
+                                currentClassData[dbKey].scheduledDates = newDates; 
+                                assignmentsShifted = true;
+                            }
+                        }
+                    });
+
+                    if (assignmentsShifted) {
+                        await update(ref(db), assignmentUpdates);
+                    }
+                }
+
+                document.getElementById('special-date-start').value = '';
+                document.getElementById('special-date-end').value = '';
+                document.getElementById('custom-type-input').value = '';
+                
+                populateConfigList();
+                renderCalendar(); 
+            } catch (error) { console.error("Config save failed", error); }
+        }
+
+        window.deleteConfig = async function(dateStr) {
+            const wasDayOff = currentCalendarConfig[dateStr] && currentCalendarConfig[dateStr].isDayOff;
+
+            try {
+                const targetPeriods = ['P1', 'P3', 'P6', 'P8'];
+                const deletePayload = {};
+                targetPeriods.forEach(p => {
+                    deletePayload[`/calendarConfig/${p}/${dateStr}`] = null;
+                });
+                
+                await update(ref(db), deletePayload);
+                delete currentCalendarConfig[dateStr];
+
+                if (wasDayOff) {
+                    const allOffDays = Object.keys(currentCalendarConfig).filter(k => currentCalendarConfig[k].isDayOff);
+                    const assignmentUpdates = {};
+                    let assignmentsShifted = false;
+
+                    Object.entries(currentClassData).forEach(([dbKey, assignment]) => {
+                        if (assignment.scheduledDates && assignment.scheduledDates.length > 0) {
+                            let newDates = [];
+                            let changed = false;
+
+                            assignment.scheduledDates.forEach(aDateStr => {
+                                if (aDateStr !== "unassigned" && aDateStr > dateStr) {
+                                    let shiftDate = new Date(aDateStr + 'T12:00:00');
+                                    let validDaysSubtracted = 0;
+
+                                    while (validDaysSubtracted < 1) {
+                                        shiftDate.setDate(shiftDate.getDate() - 1);
+                                        let checkStr = formatDateLocal(shiftDate);
+                                        let isWeekend = (shiftDate.getDay() === 0 || shiftDate.getDay() === 6);
+                                        let isOff = allOffDays.includes(checkStr);
+
+                                        if (!isWeekend && !isOff) { validDaysSubtracted++; }
+                                    }
+                                    newDates.push(formatDateLocal(shiftDate));
+                                    changed = true;
+                                } else { 
+                                    newDates.push(aDateStr); 
+                                }
+                            });
+
+                            if (changed) {
+                                newDates = [...new Set(newDates)].sort();
+                                assignmentUpdates[`/assignments/${dbKey}/scheduledDates`] = newDates;
+                                currentClassData[dbKey].scheduledDates = newDates; 
+                                assignmentsShifted = true;
+                            }
+                        }
+                    });
+
+                    if (assignmentsShifted) {
+                        await update(ref(db), assignmentUpdates);
+                    }
+                }
+
+                populateConfigList();
+                renderCalendar();
+            } catch (error) { console.error("Config delete failed", error); }
+        }
+
+        function populateConfigList() {
+            const list = document.getElementById('saved-days-list');
+            list.innerHTML = '';
+            
+            const sortedDates = Object.keys(currentCalendarConfig).sort();
+            if(sortedDates.length === 0) {
+                list.innerHTML = '<li style="padding: 10px; color: #888;">No special days saved yet.</li>';
+                return;
+            }
+
+            sortedDates.forEach(dateStr => {
+                const config = currentCalendarConfig[dateStr];
+                const flipBadge = config.flipped ? '<span style="background: #007bff; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; margin-left: 5px;">FLIPPED</span>' : '';
+                list.innerHTML += `
+                    <li class="config-item">
+                        <span><strong>${dateStr}</strong>: ${config.name || "Rule"} ${flipBadge}</span>
+                        <button class="action-btn delete-btn" onclick="deleteConfig('${dateStr}')" style="color: #dc3545; font-size: 1.1rem;">🗑️</button>
+                    </li>
+                `;
+            });
+        }
+
+    </script>
+</body>
+</html>

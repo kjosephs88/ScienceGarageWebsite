@@ -1,76 +1,416 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<title>Forensics Schedule</title>
-<link rel="shortcut icon" href="https://thesciencegarage.com/SGfavicon.ico">
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-html, body {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    width: 100%;
-    overflow: hidden;
-    background: #000;
-}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Class Schedule</title>
+    
+    <style>
+        /* --- 1. Base Layout & Fixed Canvas Engine --- */
+        /* Body is black. It only shows if the screen is wider than 1400px */
+        body { margin: 0; padding: 0; background-color: #000; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; overflow-x: hidden; overflow-y: scroll; }
+        
+        /* The invisible wrapper that controls the edges and height */
+        #scale-wrapper { 
+            width: 100%; 
+            max-width: 1400px; /* Caps the physical size at 1400px */
+            margin: 0 auto;    /* Centers the 1400px box on massive monitors */
+            position: relative; 
+            overflow: hidden;  /* Traps the unscaled canvas from creating horizontal scrollbars */
+        }
+        
+        /* The Fixed Canvas: ALWAYS 1400px wide. JS applies a "zoom out" lens to this box */
+        #scaled-content { 
+            width: 1400px; 
+            background-color: #f4f6f9; 
+            transform-origin: top left; /* V7 Fix: Anchors to the left edge to prevent gap math errors */
+            padding: 40px; 
+            box-sizing: border-box; 
+            min-height: 100vh; 
+        }
 
-/* Wrapper: centered horizontally, top-aligned vertically */
-.iframe-wrapper {
-    display: flex;
-    justify-content: center;   /* center horizontally */
-    align-items: flex-start;   /* stick to top */
-    width: 100%;
-    height: 100vh;
-    background: #000;
-}
+        /* --- 2. Headers & Toolbars --- */
+        .page-title { text-align: center; color: #2c3e50; margin-top: 0; margin-bottom: 25px; font-size: 36px; font-weight: 800; letter-spacing: 1px;}
+        
+        .toolbar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; background: white; padding: 15px 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 25px; border: 1px solid #e9ecef;}
+        .view-controls { justify-self: start; } 
+        select { padding: 10px; border-radius: 4px; border: 1px solid #ccc; font-size: 16px; background: #f8f9fa; cursor: pointer; } 
+        
+        .week-nav { justify-self: center; display: flex; align-items: center; gap: 15px; } 
+        .week-nav button { padding: 10px 20px; border: 1px solid #ccc; background: white; border-radius: 4px; cursor: pointer; font-weight: bold; color: #495057; transition: background 0.2s; font-size: 16px;} 
+        .week-nav button:hover { background: #e9ecef; }
+        .week-nav h2 { margin: 0; font-size: 22px; color: #333; text-align: center; min-width: 300px; } 
+        
+        /* --- 3. The Grid & Banners --- */
+        #calendar-container { display: flex; flex-direction: column; gap: 25px; }
+        .week-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 15px; align-items: stretch; }
+        
+        .day-column { background-color: #ffffff; border-radius: 8px; display: flex; flex-direction: column; min-height: 180px; height: 100%; border: 1px solid #dee2e6; position: relative; box-shadow: 0 1px 3px rgba(0,0,0,0.02);}
+        
+        .day-header { background-color: #f8f9fa; padding: 15px 10px; border-bottom: 1px solid #e9ecef; border-top-left-radius: 8px; border-top-right-radius: 8px; text-align: center; } 
+        .day-name { font-weight: 800; font-size: 20px; color: #343a40; display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;} 
+        .day-date { font-size: 16px; color: #6c757d; font-weight: 500;}
+        
+        .bellringer-container { text-align: center; padding: 12px 10px; background: #fff; border-bottom: 1px solid #e9ecef; min-height: 24px; } 
+        
+        .special-day-banner { background-color: #ffc107; color: #856404; text-align: center; font-weight: bold; padding: 8px; font-size: 14px; border-bottom: 1px solid #ffeeba; }
+        
+        .day-off-banner { flex-grow: 1; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa; color: #adb5bd; text-transform: uppercase; letter-spacing: 1px; text-align: center; padding: 20px 10px; border-top: 1px solid #e9ecef; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; line-height: 1.4; box-sizing: border-box; overflow: hidden; }
+        .banner-text { font-weight: 900; word-break: normal; white-space: normal; display: inline-block; max-width: 100%; }
 
-/* Container that scales */
-.scaled-container {
-    transform-origin: top center; /* scale from top center */
-    transition: transform 0.25s ease;
-}
+        .day-footer { padding: 12px; display: flex; justify-content: center; align-items: center; margin-top: auto; background: #f8f9fa; border-top: 1px solid #e9ecef; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px;}
+        .period-badge-container { display: inline-flex; align-items: center; background: #fff; border: 1px solid #ced4da; padding: 6px 15px; border-radius: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);} 
+        .period-text { font-size: 13px; font-weight: bold; color: #495057; text-transform: uppercase; letter-spacing: 0.5px;} 
+        
+        /* --- 4. Lists & Items --- */
+        .day-list { flex-grow: 1; padding: 15px; display: flex; flex-direction: column; gap: 12px; } 
+        
+        .assignment-item { background-color: #ffffff; border-left: 5px solid #17a2b8; padding: 15px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); font-size: 16px; line-height: 1.4; display: flex; flex-direction: column; gap: 6px; border-top: 1px solid #f1f3f5; border-right: 1px solid #f1f3f5; border-bottom: 1px solid #f1f3f5;} 
+        
+        .assignment-item[data-url] { transition: transform 0.2s, box-shadow 0.2s; }
+        .assignment-item[data-url]:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-left-color: #007bff;}
+        
+        .custom-note-item { background-color: #fff3cd !important; border-left: 5px solid #ffc107 !important; color: #856404; border: 1px solid #ffeeba;}
 
-/* Iframe dimensions — adjust these as your “base size” */
-iframe {
-    border: none;
-    width: 1100px;   /* <-- adjust base width */
-    height: 700px;   /* <-- adjust base height */
-    display: block;
-}
-</style>
+        .item-prefix { font-weight: 800; color: #d9534f; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;} 
+        .item-title { color: #212529; font-weight: 600; }
+        .item-note { display: block; font-style: italic; color: #6c757d; font-size: 14px; margin-top: 8px; padding-left: 10px; border-left: 3px solid #dee2e6; }
+        
+        /* --- 5. Forensics Hiding --- */
+        .hide-for-forensics .bellringer-container, .hide-for-forensics .day-footer { display: none !important; }
+
+    </style>
 </head>
 <body>
-<div class="iframe-wrapper">
-    <div class="scaled-container" id="scaled-container">
-        <iframe 
-            src="https://docs.google.com/spreadsheets/d/e/2PACX-1vTJ7cZzGf91YKNSCZdPPYDjQLEhVA5YRJ_JM95gtqeLvA3QVHwOwE4vYzs-8R8yvZhECOVZDl9QtjeC/pubhtml?gridlines=false&widget=false&output=html&headers=false&single=true&gid=1053921241&chrome=false&range=A1:H30" 
-            allowfullscreen>
-        </iframe>
+
+    <div id="scale-wrapper">
+        <div id="scaled-content">
+            <h1 class="page-title" id="calendar-title">Loading Class Data...</h1>
+
+            <div class="toolbar">
+                <div class="view-controls">
+                    <select id="week-view-select" onchange="renderCalendar()">
+                        <option value="1" selected>1 Week</option>
+                        <option value="2">2 Weeks</option>
+                        <option value="3">3 Weeks</option>
+                    </select>
+                </div>
+                
+                <div class="week-nav">
+                    <button onclick="changeWeek(-1)">&lt; Prev</button>
+                    <h2 id="date-range-display">Loading...</h2>
+                    <button onclick="changeWeek(1)">Next &gt;</button>
+                </div>
+                
+                <div></div>
+            </div>
+            
+            <div id="calendar-container"></div>
+        </div>
     </div>
-</div>
 
-<script>
-function scaleIframe() {
-    const baseWidth = 1100;   // same as iframe width
-    const baseHeight = 700;   // same as iframe height
-    const wrapper = document.querySelector('.iframe-wrapper');
-    const container = document.getElementById('scaled-container');
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
-    const availableWidth = wrapper.clientWidth;
-    const availableHeight = wrapper.clientHeight;
+// 🛑🛑🛑 1. CHANGE THESE THREE LINES FOR EACH FILE 🛑🛑🛑
+        const CONFIG = {
+    period: "P1",
+    subject: "Forensics", 
+    title: "Forensics P1 2025-2026"
+};
+        // 🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑
 
-    // Compute uniform scale to fit both dimensions
-    const scale = Math.min(availableWidth / baseWidth, availableHeight / baseHeight);
+        document.getElementById('calendar-title').innerText = CONFIG.title;
+        document.title = CONFIG.title; 
 
-    // Apply scaling (no translation needed because top-center origin)
-    container.style.transform = `scale(${scale})`;
-}
+        // --- V7: FLAWLESS TOP-LEFT SCALING ENGINE ---
+        function scaleUI() {
+            const baseWidth = 1400; 
+            const wrapper = document.getElementById('scale-wrapper');
+            const content = document.getElementById('scaled-content');
+            
+            // The wrapper naturally scales from 0 to 1400px.
+            const availableWidth = wrapper.clientWidth;
+            let scale = availableWidth / baseWidth;
+            
+            // Never scale larger than 100% on massive monitors
+            if (scale > 1) scale = 1; 
 
-window.addEventListener('resize', scaleIframe);
-window.addEventListener('load', scaleIframe);
-</script>
+            // Apply scale anchored to the top-left edge
+            content.style.transform = `scale(${scale})`;
+            
+            // Because transform doesn't change the physical DOM height, 
+            // we calculate the visual height and force the wrapper to match it perfectly.
+            setTimeout(() => {
+                const scaledHeight = content.getBoundingClientRect().height;
+                wrapper.style.height = `${scaledHeight}px`;
+            }, 10);
+        }
+        window.addEventListener('resize', scaleUI);
+
+        // --- DYNAMIC TEXT SHRINKER ---
+        function fitDayOffText() {
+            document.querySelectorAll('.day-off-banner').forEach(banner => {
+                const textSpan = banner.querySelector('.banner-text');
+                if(!textSpan) return;
+                
+                let fontSize = 24; 
+                textSpan.style.fontSize = fontSize + 'px';
+                
+                while (textSpan.scrollWidth > (banner.clientWidth - 20)) {
+                    if (fontSize <= 1) break; // Prevent infinite loop
+                    fontSize--;
+                    textSpan.style.fontSize = fontSize + 'px';
+                }
+            });
+        }
+
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCcpjuH1qv9IUDJJQR_5ms18TBRS8UFaV8",
+            authDomain: "scigarage.firebaseapp.com",
+            databaseURL: "https://scigarage-default-rtdb.firebaseio.com",
+            projectId: "scigarage",
+            storageBucket: "scigarage.firebasestorage.app",
+            messagingSenderId: "768658065204",
+            appId: "1:768658065204:web:31e0386ee9c9edfe3ac761"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        let currentMonday = (function() {
+            let now = new Date();
+            now.setHours(12, 0, 0, 0); 
+            let day = now.getDay();    
+            let diff = 1 - day;        
+            now.setDate(now.getDate() + diff);
+            return now;
+        })();
+
+        const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+        let currentClassData = {}; 
+        let currentCalendarConfig = {}; 
+        let currentBellringers = {}; 
+
+        function formatDateLocal(dateObj) {
+            const y = dateObj.getFullYear();
+            const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const d = String(dateObj.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        async function fetchStudentData() {
+            const scaledContent = document.getElementById('scaled-content');
+            
+            if (CONFIG.period === 'P1' || CONFIG.subject === 'Forensics') {
+                scaledContent.classList.add('hide-for-forensics');
+            }
+
+            try {
+                const assigSnap = await get(ref(db, 'assignments'));
+                if (assigSnap.exists()) {
+                    const allData = assigSnap.val();
+                    currentClassData = {};
+                    
+                    Object.entries(allData).forEach(([key, val]) => {
+                        if (val.className && val.className.includes(CONFIG.period)) {
+                            currentClassData[key] = val;
+                        }
+                    });
+                }
+
+                const configSnap = await get(ref(db, `calendarConfig/${CONFIG.period}`));
+                currentCalendarConfig = configSnap.exists() ? configSnap.val() : {};
+
+                if (CONFIG.subject === 'Chemistry' || CONFIG.subject === 'Physics') {
+                    const bellringerSnap = await get(ref(db, `bellringers/${CONFIG.subject}`));
+                    currentBellringers = bellringerSnap.exists() ? bellringerSnap.val() : {};
+                }
+
+                renderCalendar(); 
+            } catch (error) { 
+                console.error("Error fetching data:", error);
+                document.getElementById('date-range-display').innerText = "Error loading schedule.";
+            }
+        }
+
+        window.renderCalendar = function() {
+            const container = document.getElementById('calendar-container');
+            container.innerHTML = ''; 
+            
+            const numWeeks = parseInt(document.getElementById('week-view-select').value) || 1;
+            let renderDate = new Date(currentMonday);
+            let isNextDouble = true; 
+
+            const endDate = new Date(currentMonday);
+            endDate.setDate(currentMonday.getDate() + (numWeeks * 7) - 3); 
+            document.getElementById('date-range-display').innerText = 
+                `${currentMonday.toLocaleDateString('en-US', {month:'short', day:'numeric'})} - ${endDate.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})}`;
+
+            for (let w = 0; w < numWeeks; w++) {
+                const weekGrid = document.createElement('div');
+                weekGrid.className = 'week-grid';
+
+                for (let d = 0; d < 5; d++) {
+                    const dateStr = formatDateLocal(renderDate);
+                    const dayConfig = currentCalendarConfig[dateStr];
+                    
+                    if (dayConfig && dayConfig.flipped) {
+                        isNextDouble = !isNextDouble;
+                    }
+                    
+                    weekGrid.appendChild(createDayColumn(renderDate, isNextDouble, dateStr, dayConfig));
+                    
+                    if (!dayConfig || !dayConfig.isDayOff) {
+                        isNextDouble = !isNextDouble;
+                    }
+
+                    renderDate.setDate(renderDate.getDate() + 1);
+                }
+                container.appendChild(weekGrid);
+                renderDate.setDate(renderDate.getDate() + 2); 
+            }
+
+            placeAssignments();
+        }
+
+        function createDayColumn(dateObj, isDouble, dateStr, dayConfig) {
+            const col = document.createElement('div');
+            col.className = 'day-column';
+            const displayDate = `${dateObj.toLocaleString('en-US', { month: 'short' })} ${dateObj.getDate()}`;
+            
+            if (dayConfig && (dayConfig.isDayOff || dayConfig.isClassDrop)) {
+                col.innerHTML = `
+                    <div class="day-header">
+                        <span class="day-name">${dayNames[dateObj.getDay() - 1]}</span>
+                        <div class="day-date">${displayDate}</div>
+                    </div>
+                    <div class="day-off-banner"><span class="banner-text">${dayConfig.name}</span></div>
+                    <div class="day-list" id="${dateStr}" style="display: none;"></div>
+                `;
+            } else {
+                let bannerHTML = '';
+                if (dayConfig && dayConfig.name) {
+                    bannerHTML = `<div class="special-day-banner">${dayConfig.name}</div>`;
+                }
+
+                let bellringerHTML = '';
+                const bellringerUrl = currentBellringers[dateStr];
+                if (bellringerUrl) {
+                    bellringerHTML = `<div class="bellringer-container"><span onclick="window.open('${bellringerUrl}', '_blank')" style="color: #0056b3; font-weight: bold; text-decoration: underline; cursor: pointer;" title="Click to open Bellringer">BELLRINGER</span></div>`;
+                } else {
+                    bellringerHTML = `<div class="bellringer-container"></div>`;
+                }
+
+                col.innerHTML = `
+                    <div class="day-header">
+                        <span class="day-name">${dayNames[dateObj.getDay() - 1]}</span>
+                        <div class="day-date">${displayDate}</div>
+                    </div>
+                    ${bannerHTML}
+                    ${bellringerHTML}
+                    <div class="day-list" id="${dateStr}"></div>
+                    <div class="day-footer">
+                        <div class="period-badge-container">
+                            <span class="period-text">${isDouble ? 'Double period' : 'Single period'}</span>
+                        </div>
+                    </div>
+                `;
+            }
+            return col;
+        }
+
+        function placeAssignments() {
+            const queues = {};
+            document.querySelectorAll('.day-list').forEach(list => queues[list.id] = []);
+
+            Object.entries(currentClassData).forEach(([dbKey, assignment]) => {
+                const dates = assignment.scheduledDates || ["unassigned"];
+                
+                if (!dates.includes("unassigned") && dates.length > 0) {
+                    let itemHTML = '';
+
+                    if (assignment.isCustomNote) {
+                        itemHTML = `
+                            <div class="assignment-item custom-note-item" data-db-key="${dbKey}">
+                                <span class="item-title" style="font-weight: bold;">${assignment.title}</span>
+                            </div>
+                        `;
+                    } else {
+                        const urlAttr = assignment.encodedUrl ? `data-url="${assignment.encodedUrl}"` : '';
+                        const titleAttr = assignment.encodedUrl ? `title="Click to open in Google Classroom"` : ``;
+                        
+                        itemHTML = `
+                            <div class="assignment-item" data-db-key="${dbKey}" ${urlAttr} ${titleAttr} style="${assignment.encodedUrl ? 'cursor: pointer;' : ''}">
+                                <span class="item-prefix">Complete assignment:</span>
+                                <span class="item-title">${assignment.title}</span>
+                                <span class="item-note" style="display: none;"></span> 
+                            </div>
+                        `;
+                    }
+
+                    dates.forEach(dateString => {
+                        if (queues[dateString]) {
+                            let blockHTML = itemHTML;
+                            if (!assignment.isCustomNote && assignment.notes && assignment.notes[dateString]) {
+                                blockHTML = blockHTML.replace('<span class="item-note" style="display: none;"></span>', `<span class="item-note">Note: ${assignment.notes[dateString]}</span>`);
+                            }
+                            
+                            let order = (assignment.dayOrder && assignment.dayOrder[dateString]) !== undefined ? assignment.dayOrder[dateString] : 999;
+                            queues[dateString].push({ html: blockHTML, order: order, key: dbKey });
+                        }
+                    });
+                }
+            });
+
+            Object.keys(queues).forEach(qId => {
+                const targetList = document.getElementById(qId);
+                if (targetList) {
+                    queues[qId].sort((a, b) => a.order - b.order).forEach(item => {
+                        targetList.insertAdjacentHTML('beforeend', item.html);
+                    });
+                }
+            });
+
+            Object.keys(currentClassData).forEach(dbKey => {
+                if (!currentClassData[dbKey].isCustomNote) updatePrefixes(dbKey);
+            });
+
+            scaleUI(); 
+            setTimeout(fitDayOffText, 50); 
+        }
+
+        function updatePrefixes(dbKey) {
+            const instances = Array.from(document.querySelectorAll(`.day-list .assignment-item[data-db-key="${dbKey}"]`))
+                .sort((a, b) => a.closest('.day-list').id.localeCompare(b.closest('.day-list').id));
+            
+            if (instances.length === 1) instances[0].querySelector('.item-prefix').innerText = 'Complete assignment:';
+            else if (instances.length === 2) { instances[0].querySelector('.item-prefix').innerText = 'Begin assignment:'; instances[1].querySelector('.item-prefix').innerText = 'Finish assignment:'; }
+            else if (instances.length > 2) {
+                instances[0].querySelector('.item-prefix').innerText = 'Begin assignment:';
+                instances[instances.length - 1].querySelector('.item-prefix').innerText = 'Finish assignment:';
+                for (let i = 1; i < instances.length - 1; i++) instances[i].querySelector('.item-prefix').innerText = 'Continue assignment:';
+            }
+        }
+
+        document.body.addEventListener('click', function(e) {
+            const item = e.target.closest('.assignment-item');
+            if (item && !item.classList.contains('custom-note-item')) { 
+                const url = item.getAttribute('data-url');
+                if (url) { window.open(url, '_blank'); }
+            }
+        });
+
+        window.changeWeek = function(offset) { 
+            currentMonday.setDate(currentMonday.getDate() + (offset * 7)); 
+            renderCalendar(); 
+        }
+
+        fetchStudentData();
+        scaleUI(); 
+
+    </script>
 </body>
 </html>
-
-
