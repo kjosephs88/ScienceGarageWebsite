@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teacher Scheduler Admin - V26 (Order Preservation)</title>
+    <title>Teacher Scheduler Admin - V28 (Simplified & Flawless Shift)</title>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     
     <style>
@@ -164,18 +164,11 @@
                             <input type="date" id="special-date-end" style="margin-bottom: 0;">
                         </div>
                     </div>
-
-                    <label>Day Type</label>
-                    <select id="special-day-type">
-                        <option value="Day Off">Day Off (No Classes, Shifts Sequence)</option>
-                        <option value="Class Drop">Class Dropped (No Classes, Sequence Continues)</option>
-                        <option value="Custom Banner">Special Banner Only (Classes Meet Normally)</option>
-                    </select>
                     
-                    <label style="margin-top: 15px;">Event Name</label>
-                    <input type="text" id="custom-type-input" placeholder="e.g., Snow Day, Assembly, Spirit Week">
+                    <label style="margin-top: 5px;">Event Name</label>
+                    <input type="text" id="custom-type-input" placeholder="e.g., Snow Day, Spring Break, Assembly">
                     
-                    <button class="save-btn" onclick="saveCalendarConfig()">Save Rule(s) & Shift</button>
+                    <button class="save-btn" onclick="saveCalendarConfig()">Save Event & Shift Schedule</button>
                 </div>
 
                 <label style="margin-top: 15px;">Saved Overrides for <span id="current-period-label"></span></label>
@@ -206,7 +199,6 @@
         const db = getDatabase(app);
         const provider = new GoogleAuthProvider();
 
-        // --- MISSING LOGIN/LOGOUT FUNCTIONS ---
         window.loginTeacher = function() {
             signInWithPopup(auth, provider).catch((error) => {
                 console.error("Login error:", error);
@@ -217,7 +209,6 @@
         window.logoutTeacher = function() {
             signOut(auth).catch((error) => console.error("Logout error:", error));
         };
-        // --------------------------------------
 
         let currentMonday = (function() {
             let now = new Date();
@@ -397,7 +388,7 @@
             col.className = 'day-column';
             const displayDate = `${dateObj.toLocaleString('en-US', { month: 'short' })} ${dateObj.getDate()}`;
             
-            if (dayConfig && (dayConfig.isDayOff || dayConfig.isClassDrop)) {
+            if (dayConfig && dayConfig.isDayOff) {
                 col.innerHTML = `
                     <div class="day-header">
                         <span class="day-name">${dayNames[dateObj.getDay() - 1]}</span>
@@ -440,7 +431,6 @@
             return col;
         }
 
-        // --- V26: Global Order Indexer (Saves DOM Order to Firebase) ---
         window.saveAllListOrders = async function() {
             const updates = {};
             document.querySelectorAll('.sortable-list').forEach(list => {
@@ -449,7 +439,6 @@
                     const dbKey = item.getAttribute('data-db-key');
                     updates[`/assignments/${dbKey}/dayOrder/${listId}`] = index;
                     
-                    // Update Local State so it doesn't jump before refresh
                     if (currentClassData[dbKey]) {
                         if (!currentClassData[dbKey].dayOrder) currentClassData[dbKey].dayOrder = {};
                         currentClassData[dbKey].dayOrder[listId] = index;
@@ -498,12 +487,10 @@
             } catch (err) { console.error("Error saving flip:", err); }
         };
 
-        // V26: Updated placeAssignments to read order from Firebase queues
         function placeAssignments() {
             const holdingTank = document.getElementById('holding-tank');
             const selectedTopic = document.getElementById('topic-select').value;
 
-            // Prepare sorting queues
             const queues = { "holding-tank": [] };
             document.querySelectorAll('.day-list').forEach(list => queues[list.id] = []);
 
@@ -516,7 +503,7 @@
                 if (assignment.isCustomNote) {
                     itemHTML = `
                         <div class="assignment-item custom-note-item" data-db-key="${dbKey}">
-                            <span class="item-title" style="font-weight: bold;">${assignment.title}</span>
+                            <span class="item-title" style="font-weight: bold;">📝 ${assignment.title}</span>
                             <div class="item-actions">
                                 <button class="action-btn edit-custom-note-btn" title="Edit Note">✏️</button>
                                 <button class="action-btn delete-btn" title="Delete Note">❌</button>
@@ -562,7 +549,6 @@
                 }
             });
 
-            // Render queues in sorted order
             Object.keys(queues).forEach(qId => {
                 const targetList = document.getElementById(qId);
                 if (targetList) {
@@ -604,7 +590,6 @@
             if(!currentClassData[dbKey].isCustomNote) updatePrefixes(dbKey);
 
             try {
-                // Update Date Tags AND Re-Save entire order indexing
                 await update(ref(db), { [`/assignments/${dbKey}/scheduledDates`]: newDatesArray });
                 await window.saveAllListOrders(); 
                 if (visualItem) { visualItem.style.backgroundColor = '#d4edda'; setTimeout(() => visualItem.style.backgroundColor = visualItem.classList.contains('custom-note-item') ? '#fff3cd' : '#ffffff', 500); }
@@ -640,7 +625,7 @@
                         remove(ref(db, `/assignments/${dbKey}`));
                         delete currentClassData[dbKey];
                         item.remove();
-                        window.saveAllListOrders(); // Save new order without the deleted block
+                        window.saveAllListOrders(); 
                     }
                     return;
                 }
@@ -674,12 +659,15 @@
                 const item = btn.closest('.assignment-item');
                 const currentList = item.closest('.day-list');
                 if (!currentList) return;
-                const allDays = Array.from(document.querySelectorAll('.day-list'));
-                const currentIndex = allDays.indexOf(currentList);
-                if (currentIndex >= 0 && currentIndex < allDays.length - 1) {
-                    allDays[currentIndex + 1].appendChild(item.cloneNode(true));
-                    syncAssignmentToFirebase(item.getAttribute('data-db-key'), allDays[currentIndex + 1].lastChild); 
-                } else alert("No visible days left to duplicate into.");
+                
+                // V28 FIX: Flawlessly leaps over days hidden by banners
+                const allVisibleDays = Array.from(document.querySelectorAll('.day-list')).filter(list => list.style.display !== 'none');
+                const currentIndex = allVisibleDays.indexOf(currentList);
+                
+                if (currentIndex >= 0 && currentIndex < allVisibleDays.length - 1) {
+                    allVisibleDays[currentIndex + 1].appendChild(item.cloneNode(true));
+                    syncAssignmentToFirebase(item.getAttribute('data-db-key'), allVisibleDays[currentIndex + 1].lastChild); 
+                } else alert("No visible days left on the screen to duplicate into.");
                 return; 
             }
 
@@ -731,24 +719,98 @@
             document.getElementById('settings-modal').style.display = 'none';
         }
 
+        // --- V28: INSTRUCTIONAL DAY INDEXER ---
+        function getValidDaysArray(configObj, startDateStr, numDays = 800) {
+            let validDays = [];
+            let currDate = new Date(startDateStr + 'T12:00:00');
+            while (validDays.length < numDays) {
+                let dStr = formatDateLocal(currDate);
+                let dayOfWeek = currDate.getDay();
+                let isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+                let isOff = configObj[dStr] && configObj[dStr].isDayOff;
+                if (!isWeekend && !isOff) validDays.push(dStr);
+                currDate.setDate(currDate.getDate() + 1);
+            }
+            return validDays;
+        }
+
+        function shiftAssignments(oldValidDays, newValidDays, startStr) {
+            const assignmentUpdates = {};
+            let assignmentsShifted = false;
+
+            Object.entries(currentClassData).forEach(([dbKey, assignment]) => {
+                if (assignment.scheduledDates && assignment.scheduledDates.length > 0) {
+                    let newDates = [];
+                    let changed = false;
+
+                    assignment.scheduledDates.forEach(dateStr => {
+                        if (dateStr !== "unassigned" && dateStr >= startStr) {
+                            let oldIndex = oldValidDays.indexOf(dateStr);
+                            if (oldIndex !== -1 && oldIndex < newValidDays.length) {
+                                newDates.push(newValidDays[oldIndex]);
+                                changed = true;
+                            } else { newDates.push(dateStr); }
+                        } else { newDates.push(dateStr); }
+                    });
+
+                    if (changed) {
+                        newDates = [...new Set(newDates)].sort();
+                        assignmentUpdates[`/assignments/${dbKey}/scheduledDates`] = newDates;
+                        currentClassData[dbKey].scheduledDates = newDates;
+
+                        if (assignment.notes) {
+                            let newNotes = {};
+                            Object.keys(assignment.notes).forEach(oldKey => {
+                                if (oldKey !== "unassigned" && oldKey >= startStr) {
+                                    let oldIndex = oldValidDays.indexOf(oldKey);
+                                    if (oldIndex !== -1 && oldIndex < newValidDays.length) {
+                                        newNotes[newValidDays[oldIndex]] = assignment.notes[oldKey];
+                                        assignmentUpdates[`/assignments/${dbKey}/notes/${oldKey}`] = null;
+                                        assignmentUpdates[`/assignments/${dbKey}/notes/${newValidDays[oldIndex]}`] = assignment.notes[oldKey];
+                                    } else { newNotes[oldKey] = assignment.notes[oldKey]; }
+                                } else { newNotes[oldKey] = assignment.notes[oldKey]; }
+                            });
+                            currentClassData[dbKey].notes = newNotes;
+                        }
+
+                        if (assignment.dayOrder) {
+                            let newOrder = {};
+                            Object.keys(assignment.dayOrder).forEach(oldKey => {
+                                if (oldKey !== "holding-tank" && oldKey !== "unassigned" && oldKey >= startStr) {
+                                    let oldIndex = oldValidDays.indexOf(oldKey);
+                                    if (oldIndex !== -1 && oldIndex < newValidDays.length) {
+                                        newOrder[newValidDays[oldIndex]] = assignment.dayOrder[oldKey];
+                                        assignmentUpdates[`/assignments/${dbKey}/dayOrder/${oldKey}`] = null;
+                                        assignmentUpdates[`/assignments/${dbKey}/dayOrder/${newValidDays[oldIndex]}`] = assignment.dayOrder[oldKey];
+                                    } else { newOrder[oldKey] = assignment.dayOrder[oldKey]; }
+                                } else { newOrder[oldKey] = assignment.dayOrder[oldKey]; }
+                            });
+                            currentClassData[dbKey].dayOrder = newOrder;
+                        }
+                        assignmentsShifted = true;
+                    }
+                }
+            });
+            return { updates: assignmentUpdates, shifted: assignmentsShifted };
+        }
+
         window.saveCalendarConfig = async function() {
             const startStr = document.getElementById('special-date-start').value;
             const endStr = document.getElementById('special-date-end').value || startStr; 
-            const typeSelect = document.getElementById('special-day-type').value;
             const applyAll = document.getElementById('apply-all-checkbox').checked;
-            
             const finalName = document.getElementById('custom-type-input').value.trim();
             
             if (!startStr) return alert("Please select a Start Date.");
             if (!finalName) return alert("Please type an Event Name.");
 
-            const isDayOff = (typeSelect === 'Day Off');
-            const isClassDrop = (typeSelect === 'Class Drop');
+            // V28 Logic Simplification: Every event is a Day Off that properly shifts the sequence
+            const isDayOff = true;
 
             let currDate = new Date(startStr + 'T12:00:00'); 
             let endDateObj = new Date(endStr + 'T12:00:00');
             if (currDate > endDateObj) return alert("End Date must be after Start Date.");
 
+            const oldValidDays = getValidDaysArray(currentCalendarConfig, "2024-07-01", 800);
             const configUpdates = {};
             const newlyCreatedOffDays = []; 
             const targetPeriods = applyAll ? ['P1', 'P3', 'P6', 'P8'] : [activePeriod];
@@ -761,7 +823,6 @@
                     targetPeriods.forEach(p => {
                         configUpdates[`/calendarConfig/${p}/${dateStr}/name`] = finalName;
                         configUpdates[`/calendarConfig/${p}/${dateStr}/isDayOff`] = isDayOff;
-                        configUpdates[`/calendarConfig/${p}/${dateStr}/isClassDrop`] = isClassDrop;
                     });
                     
                     if (isDayOff && !wasAlreadyOff) newlyCreatedOffDays.push(dateStr);
@@ -769,7 +830,6 @@
                     if (!currentCalendarConfig[dateStr]) currentCalendarConfig[dateStr] = {};
                     currentCalendarConfig[dateStr].name = finalName;
                     currentCalendarConfig[dateStr].isDayOff = isDayOff;
-                    currentCalendarConfig[dateStr].isClassDrop = isClassDrop;
                 }
                 currDate.setDate(currDate.getDate() + 1);
             }
@@ -778,46 +838,11 @@
                 await update(ref(db), configUpdates);
                 
                 if (newlyCreatedOffDays.length > 0) {
-                    const shiftAmount = newlyCreatedOffDays.length;
-                    const assignmentUpdates = {};
-                    let assignmentsShifted = false;
+                    const newValidDays = getValidDaysArray(currentCalendarConfig, "2024-07-01", 800);
+                    const shiftResult = shiftAssignments(oldValidDays, newValidDays, startStr);
 
-                    const allOffDays = Object.keys(currentCalendarConfig).filter(k => currentCalendarConfig[k].isDayOff);
-
-                    Object.entries(currentClassData).forEach(([dbKey, assignment]) => {
-                        if (assignment.scheduledDates && assignment.scheduledDates.length > 0) {
-                            let newDates = [];
-                            let changed = false;
-
-                            assignment.scheduledDates.forEach(dateStr => {
-                                if (dateStr !== "unassigned" && dateStr >= startStr) {
-                                    let shiftDate = new Date(dateStr + 'T12:00:00');
-                                    let validDaysAdded = 0;
-                                    
-                                    while (validDaysAdded < shiftAmount) {
-                                        shiftDate.setDate(shiftDate.getDate() + 1);
-                                        let checkStr = formatDateLocal(shiftDate);
-                                        let isWeekend = (shiftDate.getDay() === 0 || shiftDate.getDay() === 6);
-                                        let isOff = allOffDays.includes(checkStr);
-                                        
-                                        if (!isWeekend && !isOff) { validDaysAdded++; }
-                                    }
-                                    newDates.push(formatDateLocal(shiftDate));
-                                    changed = true;
-                                } else { newDates.push(dateStr); }
-                            });
-
-                            if (changed) {
-                                newDates = [...new Set(newDates)].sort();
-                                assignmentUpdates[`/assignments/${dbKey}/scheduledDates`] = newDates;
-                                currentClassData[dbKey].scheduledDates = newDates; 
-                                assignmentsShifted = true;
-                            }
-                        }
-                    });
-
-                    if (assignmentsShifted) {
-                        await update(ref(db), assignmentUpdates);
+                    if (shiftResult.shifted) {
+                        await update(ref(db), shiftResult.updates);
                     }
                 }
 
@@ -832,6 +857,8 @@
 
         window.deleteConfig = async function(dateStr) {
             const wasDayOff = currentCalendarConfig[dateStr] && currentCalendarConfig[dateStr].isDayOff;
+            
+            const oldValidDays = getValidDaysArray(currentCalendarConfig, "2024-07-01", 800);
 
             try {
                 const targetPeriods = ['P1', 'P3', 'P6', 'P8'];
@@ -844,46 +871,11 @@
                 delete currentCalendarConfig[dateStr];
 
                 if (wasDayOff) {
-                    const allOffDays = Object.keys(currentCalendarConfig).filter(k => currentCalendarConfig[k].isDayOff);
-                    const assignmentUpdates = {};
-                    let assignmentsShifted = false;
+                    const newValidDays = getValidDaysArray(currentCalendarConfig, "2024-07-01", 800);
+                    const shiftResult = shiftAssignments(oldValidDays, newValidDays, dateStr);
 
-                    Object.entries(currentClassData).forEach(([dbKey, assignment]) => {
-                        if (assignment.scheduledDates && assignment.scheduledDates.length > 0) {
-                            let newDates = [];
-                            let changed = false;
-
-                            assignment.scheduledDates.forEach(aDateStr => {
-                                if (aDateStr !== "unassigned" && aDateStr > dateStr) {
-                                    let shiftDate = new Date(aDateStr + 'T12:00:00');
-                                    let validDaysSubtracted = 0;
-
-                                    while (validDaysSubtracted < 1) {
-                                        shiftDate.setDate(shiftDate.getDate() - 1);
-                                        let checkStr = formatDateLocal(shiftDate);
-                                        let isWeekend = (shiftDate.getDay() === 0 || shiftDate.getDay() === 6);
-                                        let isOff = allOffDays.includes(checkStr);
-
-                                        if (!isWeekend && !isOff) { validDaysSubtracted++; }
-                                    }
-                                    newDates.push(formatDateLocal(shiftDate));
-                                    changed = true;
-                                } else { 
-                                    newDates.push(aDateStr); 
-                                }
-                            });
-
-                            if (changed) {
-                                newDates = [...new Set(newDates)].sort();
-                                assignmentUpdates[`/assignments/${dbKey}/scheduledDates`] = newDates;
-                                currentClassData[dbKey].scheduledDates = newDates; 
-                                assignmentsShifted = true;
-                            }
-                        }
-                    });
-
-                    if (assignmentsShifted) {
-                        await update(ref(db), assignmentUpdates);
+                    if (shiftResult.shifted) {
+                        await update(ref(db), shiftResult.updates);
                     }
                 }
 
