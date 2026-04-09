@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teacher Scheduler Admin - V29 (Fixed Topic Filter)</title>
+    <title>Teacher Scheduler Admin - V31 (Hybrid Filtering)</title>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     
     <style>
@@ -30,7 +30,19 @@
         #auth-btn:hover { background: #0056b3; }
         
         #calendar-container { display: flex; flex-direction: column; gap: 20px; }
-        .week-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; align-items: stretch; }
+        .week-grid { 
+            display: grid; 
+            grid-template-columns: repeat(5, minmax(0, 1fr)); 
+            gap: 12px; 
+            align-items: stretch; 
+            
+            /* -- NEW VISUAL UPGRADES -- */
+            background-color: #85e7ec; /* Pure white background for the week */
+            padding: 15px; /* Gives the grid some breathing room inside the box */
+            border-radius: 10px; /* Softly rounded corners */
+            border: 1px solid #dee2e6; /* A subtle gray outline */
+            box-shadow: 0 4px 6px rgba(0,0,0,0.03); /* A very faint, modern drop shadow */
+        }
         .day-column { background-color: #e9ecef; border-radius: 6px; display: flex; flex-direction: column; min-height: 280px; height: 100%; border: 1px solid #dee2e6; position: relative; }
         
         .day-header { background-color: #dde2e6; padding: 12px 5px; border-bottom: 1px solid #ced4da; border-top-left-radius: 6px; border-top-right-radius: 6px; text-align: center; } 
@@ -232,6 +244,9 @@
             return `${y}-${m}-${d}`;
         }
 
+        // --- SECURE AUTHENTICATION LISTENER ---
+        const allowedAdmins = ['pianodemon88@gmail.com', 'kjosephs@ocsdny.org'];
+
         onAuthStateChanged(auth, (user) => {
             const authStatus = document.getElementById('auth-status');
             const authBtn = document.getElementById('auth-btn');
@@ -239,13 +254,22 @@
             const mainView = document.getElementById('main-view');
 
             if (user) {
-                authStatus.innerHTML = `Logged in: <b>${user.email}</b>`;
-                authBtn.innerText = "Log Out";
-                authBtn.onclick = window.logoutTeacher;
-                sidebar.style.display = "flex";
-                mainView.classList.add('edit-mode');
-                loadInitialClasses();
+                // Check if the logged-in user is on the VIP list
+                if (allowedAdmins.includes(user.email)) {
+                    // VIP Access Granted
+                    authStatus.innerHTML = `Logged in: <b>${user.email}</b>`;
+                    authBtn.innerText = "Log Out";
+                    authBtn.onclick = window.logoutTeacher;
+                    sidebar.style.display = "flex";
+                    mainView.classList.add('edit-mode');
+                    loadInitialClasses();
+                } else {
+                    // Unauthorized User - Boot them immediately
+                    alert(`Access Denied: The account (${user.email}) does not have admin privileges.`);
+                    window.logoutTeacher(); 
+                }
             } else {
+                // Not logged in (View Only Mode)
                 authStatus.innerHTML = `Mode: View Only`;
                 authBtn.innerText = "Teacher Login";
                 authBtn.onclick = window.loginTeacher;
@@ -255,7 +279,8 @@
                 document.getElementById('date-range-display').innerText = "Please Log In";
             }
         });
-
+        
+        // --- V31: Restored exact class names in dropdown ---
         async function loadInitialClasses() {
             document.getElementById('date-range-display').innerText = "Syncing...";
             const classSelect = document.getElementById('class-select');
@@ -268,7 +293,7 @@
                     Object.values(allData).forEach(a => { if (a.className) uniqueClasses.add(a.className); });
 
                     classSelect.innerHTML = ''; 
-                    uniqueClasses.forEach(className => {
+                    Array.from(uniqueClasses).sort().forEach(className => {
                         const opt = document.createElement('option');
                         opt.value = className;
                         opt.innerText = className;
@@ -282,6 +307,7 @@
             } catch (error) { console.error("Error:", error); }
         }
 
+        // --- V31: Fetch ALL assignments for the Period to populate the grid ---
         window.fetchClassData = async function() {
             const className = document.getElementById('class-select').value;
             if(!className || className === "Loading...") return;
@@ -310,9 +336,19 @@
             }
 
             try {
-                const assignmentsRef = query(ref(db, 'assignments'), orderByChild('className'), equalTo(className));
-                const assigSnap = await get(assignmentsRef);
-                currentClassData = assigSnap.exists() ? assigSnap.val() : {};
+                // Fetch ALL assignments from Firebase, then locally filter for the entire Period 
+                // so the grid shows everything scheduled for P6, not just the selected Q3/Q4.
+                const assigSnap = await get(ref(db, 'assignments'));
+                currentClassData = {};
+                
+                if (assigSnap.exists()) {
+                    const allData = assigSnap.val();
+                    Object.entries(allData).forEach(([key, val]) => {
+                        if (val.className && val.className.includes(activePeriod)) {
+                            currentClassData[key] = val;
+                        }
+                    });
+                }
 
                 const configSnap = await get(ref(db, `calendarConfig/${activePeriod}`));
                 currentCalendarConfig = configSnap.exists() ? configSnap.val() : {};
@@ -329,12 +365,21 @@
             } catch (error) { console.error("Error:", error); }
         }
 
+        // --- V31: Topics filter is based ONLY on the currently selected exact Google Classroom ---
         function buildTopicDropdown() {
             const topicSelect = document.getElementById('topic-select');
+            const selectedClass = document.getElementById('class-select').value;
+            
             topicSelect.innerHTML = '<option value="all">All Topics</option>'; 
             const uniqueTopics = new Set();
-            Object.values(currentClassData).forEach(a => { if (a.topicName && !a.isCustomNote) uniqueTopics.add(a.topicName); });
-            uniqueTopics.forEach(topic => {
+            
+            Object.values(currentClassData).forEach(a => { 
+                if (a.className === selectedClass && a.topicName && !a.isCustomNote) {
+                    uniqueTopics.add(a.topicName); 
+                }
+            });
+            
+            Array.from(uniqueTopics).sort().forEach(topic => {
                 const opt = document.createElement('option'); opt.value = topic; opt.innerText = topic; topicSelect.appendChild(opt);
             });
         }
@@ -487,9 +532,11 @@
             } catch (err) { console.error("Error saving flip:", err); }
         };
 
+        // --- V31: HYBRID PLACEMENT LOGIC ---
         function placeAssignments() {
             const holdingTank = document.getElementById('holding-tank');
             const selectedTopic = document.getElementById('topic-select').value;
+            const selectedClass = document.getElementById('class-select').value;
 
             const queues = { "holding-tank": [] };
             document.querySelectorAll('.day-list').forEach(list => queues[list.id] = []);
@@ -498,9 +545,11 @@
                 const dates = assignment.scheduledDates || ["unassigned"];
                 const isUnassigned = dates.includes("unassigned") || dates.length === 0;
 
-                // --- V29 FIX: Apply topic filter ONLY to the holding tank items ---
-                if (isUnassigned && selectedTopic !== 'all' && assignment.topicName !== selectedTopic && !assignment.isCustomNote) {
-                    return; // Skip rendering in holding tank
+                // HYBRID FILTER: If an item is in the Holding Tank, it MUST match the exact class & topic.
+                // But if it is scheduled on a date, IGNORE filters so it stays on the calendar forever.
+                if (isUnassigned) {
+                    if (assignment.className !== selectedClass) return; 
+                    if (selectedTopic !== 'all' && assignment.topicName !== selectedTopic && !assignment.isCustomNote) return; 
                 }
                 
                 let itemHTML = '';
@@ -597,7 +646,18 @@
             try {
                 await update(ref(db), { [`/assignments/${dbKey}/scheduledDates`]: newDatesArray });
                 await window.saveAllListOrders(); 
-                if (visualItem) { visualItem.style.backgroundColor = '#d4edda'; setTimeout(() => visualItem.style.backgroundColor = visualItem.classList.contains('custom-note-item') ? '#fff3cd' : '#ffffff', 500); }
+                
+                // V31 Smart Return: If you drag an item to the holding tank that doesn't match the current filters, hide it immediately!
+                if (newDatesArray.length === 1 && newDatesArray[0] === "unassigned") {
+                    const selectedClass = document.getElementById('class-select').value;
+                    const selectedTopic = document.getElementById('topic-select').value;
+                    const assignment = currentClassData[dbKey];
+                    if (assignment.className !== selectedClass || (selectedTopic !== 'all' && assignment.topicName !== selectedTopic && !assignment.isCustomNote)) {
+                        if (visualItem) visualItem.remove(); 
+                    }
+                }
+
+                if (visualItem && document.body.contains(visualItem)) { visualItem.style.backgroundColor = '#d4edda'; setTimeout(() => visualItem.style.backgroundColor = visualItem.classList.contains('custom-note-item') ? '#fff3cd' : '#ffffff', 500); }
             } catch (error) { console.error("Save failed:", error); }
         }
 
@@ -621,6 +681,7 @@
         document.body.addEventListener('click', function(e) {
             const btn = e.target.closest('.action-btn'); 
             
+            // V31 Smart Return (Clicking 'X')
             if (btn && btn.classList.contains('delete-btn')) {
                 const item = btn.closest('.assignment-item');
                 const dbKey = item.getAttribute('data-db-key');
@@ -637,8 +698,15 @@
 
                 if (item.closest('#holding-tank')) return; 
                 item.remove(); 
+                
+                // Only visually drop it in the holding tank if it matches the current view!
                 if (document.querySelectorAll(`.day-list .assignment-item[data-db-key="${dbKey}"]`).length === 0) {
-                    document.getElementById('holding-tank').appendChild(item.cloneNode(true));
+                    const selectedClass = document.getElementById('class-select').value;
+                    const selectedTopic = document.getElementById('topic-select').value;
+                    const assignment = currentClassData[dbKey];
+                    if (assignment.className === selectedClass && (selectedTopic === 'all' || assignment.topicName === selectedTopic || assignment.isCustomNote)) {
+                        document.getElementById('holding-tank').appendChild(item.cloneNode(true));
+                    }
                 }
                 syncAssignmentToFirebase(dbKey); 
                 return; 
@@ -723,7 +791,6 @@
             document.getElementById('settings-modal').style.display = 'none';
         }
 
-        // --- V28: INSTRUCTIONAL DAY INDEXER ---
         function getValidDaysArray(configObj, startDateStr, numDays = 800) {
             let validDays = [];
             let currDate = new Date(startDateStr + 'T12:00:00');

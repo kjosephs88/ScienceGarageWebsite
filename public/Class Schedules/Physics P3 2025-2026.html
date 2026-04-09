@@ -43,7 +43,19 @@
         
         /* --- 3. The Grid & Banners --- */
         #calendar-container { display: flex; flex-direction: column; gap: 25px; }
-        .week-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 15px; align-items: stretch; }
+        .week-grid { 
+            display: grid; 
+            grid-template-columns: repeat(5, minmax(0, 1fr)); 
+            gap: 12px; 
+            align-items: stretch; 
+            
+            /* -- NEW VISUAL UPGRADES -- */
+            background-color: #85e7ec; /* Pure white background for the week */
+            padding: 15px; /* Gives the grid some breathing room inside the box */
+            border-radius: 10px; /* Softly rounded corners */
+            border: 1px solid #dee2e6; /* A subtle gray outline */
+            box-shadow: 0 4px 6px rgba(0,0,0,0.03); /* A very faint, modern drop shadow */
+        }
         
         .day-column { background-color: #ffffff; border-radius: 8px; display: flex; flex-direction: column; min-height: 180px; height: 100%; border: 1px solid #dee2e6; position: relative; box-shadow: 0 1px 3px rgba(0,0,0,0.02);}
         
