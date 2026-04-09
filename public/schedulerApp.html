@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teacher Scheduler Admin - V28 (Simplified & Flawless Shift)</title>
+    <title>Teacher Scheduler Admin - V29 (Fixed Topic Filter)</title>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     
     <style>
@@ -495,8 +495,13 @@
             document.querySelectorAll('.day-list').forEach(list => queues[list.id] = []);
 
             Object.entries(currentClassData).forEach(([dbKey, assignment]) => {
-                if (selectedTopic !== 'all' && assignment.topicName !== selectedTopic && !assignment.isCustomNote) return;
                 const dates = assignment.scheduledDates || ["unassigned"];
+                const isUnassigned = dates.includes("unassigned") || dates.length === 0;
+
+                // --- V29 FIX: Apply topic filter ONLY to the holding tank items ---
+                if (isUnassigned && selectedTopic !== 'all' && assignment.topicName !== selectedTopic && !assignment.isCustomNote) {
+                    return; // Skip rendering in holding tank
+                }
                 
                 let itemHTML = '';
 
@@ -528,7 +533,7 @@
                     `;
                 }
 
-                if (dates.includes("unassigned") || dates.length === 0) {
+                if (isUnassigned) {
                     let blockHTML = itemHTML;
                     if (!assignment.isCustomNote && assignment.notes && assignment.notes["unassigned"]) {
                         blockHTML = blockHTML.replace('<span class="item-note" style="display: none;"></span>', `<span class="item-note">Note: ${assignment.notes["unassigned"]}</span>`);
@@ -660,7 +665,6 @@
                 const currentList = item.closest('.day-list');
                 if (!currentList) return;
                 
-                // V28 FIX: Flawlessly leaps over days hidden by banners
                 const allVisibleDays = Array.from(document.querySelectorAll('.day-list')).filter(list => list.style.display !== 'none');
                 const currentIndex = allVisibleDays.indexOf(currentList);
                 
@@ -803,7 +807,6 @@
             if (!startStr) return alert("Please select a Start Date.");
             if (!finalName) return alert("Please type an Event Name.");
 
-            // V28 Logic Simplification: Every event is a Day Off that properly shifts the sequence
             const isDayOff = true;
 
             let currDate = new Date(startStr + 'T12:00:00'); 
