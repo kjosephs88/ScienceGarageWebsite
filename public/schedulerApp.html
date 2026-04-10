@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teacher Scheduler Admin - V31 (Hybrid Filtering)</title>
+    <title>Teacher Scheduler Admin - V32 (Data-Driven Timeline)</title>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     
     <style>
@@ -256,7 +256,6 @@
             return `${y}-${m}-${d}`;
         }
 
-        // --- SECURE AUTHENTICATION LISTENER ---
         const allowedAdmins = ['pianodemon88@gmail.com', 'kjosephs@ocsdny.org'];
 
         onAuthStateChanged(auth, (user) => {
@@ -266,9 +265,7 @@
             const mainView = document.getElementById('main-view');
 
             if (user) {
-                // Check if the logged-in user is on the VIP list
                 if (allowedAdmins.includes(user.email)) {
-                    // VIP Access Granted
                     authStatus.innerHTML = `Logged in: <b>${user.email}</b>`;
                     authBtn.innerText = "Log Out";
                     authBtn.onclick = window.logoutTeacher;
@@ -276,12 +273,10 @@
                     mainView.classList.add('edit-mode');
                     loadInitialClasses();
                 } else {
-                    // Unauthorized User - Boot them immediately
                     alert(`Access Denied: The account (${user.email}) does not have admin privileges.`);
                     window.logoutTeacher(); 
                 }
             } else {
-                // Not logged in (View Only Mode)
                 authStatus.innerHTML = `Mode: View Only`;
                 authBtn.innerText = "Teacher Login";
                 authBtn.onclick = window.loginTeacher;
@@ -292,7 +287,6 @@
             }
         });
         
-        // --- V31: Restored exact class names in dropdown ---
         async function loadInitialClasses() {
             document.getElementById('date-range-display').innerText = "Syncing...";
             const classSelect = document.getElementById('class-select');
@@ -319,7 +313,6 @@
             } catch (error) { console.error("Error:", error); }
         }
 
-        // --- V31: Fetch ALL assignments for the Period to populate the grid ---
         window.fetchClassData = async function() {
             const className = document.getElementById('class-select').value;
             if(!className || className === "Loading...") return;
@@ -348,8 +341,6 @@
             }
 
             try {
-                // Fetch ALL assignments from Firebase, then locally filter for the entire Period 
-                // so the grid shows everything scheduled for P6, not just the selected Q3/Q4.
                 const assigSnap = await get(ref(db, 'assignments'));
                 currentClassData = {};
                 
@@ -377,7 +368,6 @@
             } catch (error) { console.error("Error:", error); }
         }
 
-        // --- V31: Topics filter is based ONLY on the currently selected exact Google Classroom ---
         function buildTopicDropdown() {
             const topicSelect = document.getElementById('topic-select');
             const selectedClass = document.getElementById('class-select').value;
@@ -544,7 +534,6 @@
             } catch (err) { console.error("Error saving flip:", err); }
         };
 
-        // --- V31: HYBRID PLACEMENT LOGIC ---
         function placeAssignments() {
             const holdingTank = document.getElementById('holding-tank');
             const selectedTopic = document.getElementById('topic-select').value;
@@ -557,8 +546,6 @@
                 const dates = assignment.scheduledDates || ["unassigned"];
                 const isUnassigned = dates.includes("unassigned") || dates.length === 0;
 
-                // HYBRID FILTER: If an item is in the Holding Tank, it MUST match the exact class & topic.
-                // But if it is scheduled on a date, IGNORE filters so it stays on the calendar forever.
                 if (isUnassigned) {
                     if (assignment.className !== selectedClass) return; 
                     if (selectedTopic !== 'all' && assignment.topicName !== selectedTopic && !assignment.isCustomNote) return; 
@@ -659,7 +646,6 @@
                 await update(ref(db), { [`/assignments/${dbKey}/scheduledDates`]: newDatesArray });
                 await window.saveAllListOrders(); 
                 
-                // V31 Smart Return: If you drag an item to the holding tank that doesn't match the current filters, hide it immediately!
                 if (newDatesArray.length === 1 && newDatesArray[0] === "unassigned") {
                     const selectedClass = document.getElementById('class-select').value;
                     const selectedTopic = document.getElementById('topic-select').value;
@@ -673,27 +659,64 @@
             } catch (error) { console.error("Save failed:", error); }
         }
 
+        // --- V32: Data-Driven Prefix Updater ---
         function updatePrefixes(dbKey) {
-            const instances = Array.from(document.querySelectorAll(`.day-list .assignment-item[data-db-key="${dbKey}"]`))
-                .sort((a, b) => a.closest('.day-list').id.localeCompare(b.closest('.day-list').id));
+            const assignment = currentClassData[dbKey];
+            if (!assignment || assignment.isCustomNote) return;
+
+            // Look directly at the database's master timeline for this assignment
+            let dates = (assignment.scheduledDates || []).filter(d => d !== "unassigned").sort();
             
-            if (instances.length === 1) instances[0].querySelector('.item-prefix').innerText = 'Complete assignment:';
-            else if (instances.length === 2) { instances[0].querySelector('.item-prefix').innerText = 'Begin assignment:'; instances[1].querySelector('.item-prefix').innerText = 'Finish assignment:'; }
-            else if (instances.length > 2) {
-                instances[0].querySelector('.item-prefix').innerText = 'Begin assignment:';
-                instances[instances.length - 1].querySelector('.item-prefix').innerText = 'Finish assignment:';
-                for (let i = 1; i < instances.length - 1; i++) instances[i].querySelector('.item-prefix').innerText = 'Continue assignment:';
+            const instances = document.querySelectorAll(`.assignment-item[data-db-key="${dbKey}"]`);
+            instances.forEach(inst => {
+                const list = inst.closest('.sortable-list');
+                if (!list) return;
+                const listId = list.id;
+                const prefixSpan = inst.querySelector('.item-prefix');
+                const dupBtn = inst.querySelector('.duplicate-btn');
+                
+                if (listId === 'holding-tank') {
+                    prefixSpan.innerText = 'Complete assignment:';
+                    if (dupBtn) dupBtn.disabled = true; // Never duplicate from the holding tank
+                } else {
+                    // It knows its exact place in the timeline, even if other days are hidden!
+                    if (dates.length <= 1) {
+                        prefixSpan.innerText = 'Complete assignment:';
+                    } else if (listId === dates[0]) {
+                        prefixSpan.innerText = 'Begin assignment:';
+                    } else if (listId === dates[dates.length - 1]) {
+                        prefixSpan.innerText = 'Finish assignment:';
+                    } else {
+                        prefixSpan.innerText = 'Continue assignment:';
+                    }
+                    
+                    if (dupBtn) {
+                        // Only the final instance in the timeline gets the active duplicate arrow
+                        dupBtn.disabled = (dates.length > 0 && listId !== dates[dates.length - 1]);
+                    }
+                }
+            });
+        }
+
+        // --- V32: Helper to calculate the absolute next instructional day ---
+        function getNextValidDay(currentDateStr) {
+            let currDate = new Date(currentDateStr + 'T12:00:00');
+            currDate.setDate(currDate.getDate() + 1); // Start looking at tomorrow
+            
+            while (true) {
+                let dStr = formatDateLocal(currDate);
+                let dayOfWeek = currDate.getDay();
+                let isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+                let isOff = currentCalendarConfig[dStr] && currentCalendarConfig[dStr].isDayOff;
+                
+                if (!isWeekend && !isOff) return dStr;
+                currDate.setDate(currDate.getDate() + 1);
             }
-            instances.forEach((inst, index) => { const dupBtn = inst.querySelector('.duplicate-btn'); if (dupBtn) dupBtn.disabled = (index < instances.length - 1); });
-            
-            const holdingInstance = document.querySelector(`#holding-tank .assignment-item[data-db-key="${dbKey}"]`);
-            if (holdingInstance) holdingInstance.querySelector('.item-prefix').innerText = 'Complete assignment:';
         }
 
         document.body.addEventListener('click', function(e) {
             const btn = e.target.closest('.action-btn'); 
             
-            // V31 Smart Return (Clicking 'X')
             if (btn && btn.classList.contains('delete-btn')) {
                 const item = btn.closest('.assignment-item');
                 const dbKey = item.getAttribute('data-db-key');
@@ -711,7 +734,6 @@
                 if (item.closest('#holding-tank')) return; 
                 item.remove(); 
                 
-                // Only visually drop it in the holding tank if it matches the current view!
                 if (document.querySelectorAll(`.day-list .assignment-item[data-db-key="${dbKey}"]`).length === 0) {
                     const selectedClass = document.getElementById('class-select').value;
                     const selectedTopic = document.getElementById('topic-select').value;
@@ -740,18 +762,31 @@
                 return;
             }
 
+            // --- V32: Blind Duplication (Saves directly to database regardless of visibility) ---
             if (btn && btn.classList.contains('duplicate-btn') && !btn.disabled) {
                 const item = btn.closest('.assignment-item');
                 const currentList = item.closest('.day-list');
                 if (!currentList) return;
                 
-                const allVisibleDays = Array.from(document.querySelectorAll('.day-list')).filter(list => list.style.display !== 'none');
-                const currentIndex = allVisibleDays.indexOf(currentList);
+                const dbKey = item.getAttribute('data-db-key');
+                const currentDateStr = currentList.id; 
                 
-                if (currentIndex >= 0 && currentIndex < allVisibleDays.length - 1) {
-                    allVisibleDays[currentIndex + 1].appendChild(item.cloneNode(true));
-                    syncAssignmentToFirebase(item.getAttribute('data-db-key'), allVisibleDays[currentIndex + 1].lastChild); 
-                } else alert("No visible days left on the screen to duplicate into.");
+                const nextDayStr = getNextValidDay(currentDateStr);
+                
+                let dates = currentClassData[dbKey].scheduledDates || [];
+                if (!dates.includes(nextDayStr)) {
+                    dates.push(nextDayStr);
+                    dates.sort();
+                }
+                
+                currentClassData[dbKey].scheduledDates = dates;
+                
+                update(ref(db), { [`/assignments/${dbKey}/scheduledDates`]: dates }).then(() => {
+                    // Clear the screen and instantly redraw it based on the new database timeline!
+                    document.querySelectorAll('.assignment-item').forEach(el => el.remove());
+                    placeAssignments();
+                }).catch(err => console.error("Error duplicating:", err));
+                
                 return; 
             }
 
@@ -886,7 +921,6 @@
             if (!startStr) return alert("Please select a Start Date.");
             if (!finalName) return alert("Please type an Event Name.");
 
-            // Check which radio button the user selected
             const isDayOff = document.querySelector('input[name="event-type"]:checked').value === "dayOff";
 
             let currDate = new Date(startStr + 'T12:00:00'); 
