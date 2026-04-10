@@ -7,23 +7,20 @@
     
     <style>
         /* --- 1. Base Layout & Fixed Canvas Engine --- */
-        /* Body is black. It only shows if the screen is wider than 1400px */
         body { margin: 0; padding: 0; background-color: #000; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; overflow-x: hidden; overflow-y: scroll; }
         
-        /* The invisible wrapper that controls the edges and height */
         #scale-wrapper { 
             width: 100%; 
-            max-width: 1400px; /* Caps the physical size at 1400px */
-            margin: 0 auto;    /* Centers the 1400px box on massive monitors */
+            max-width: 1400px; 
+            margin: 0 auto;    
             position: relative; 
-            overflow: hidden;  /* Traps the unscaled canvas from creating horizontal scrollbars */
+            overflow: hidden;  
         }
         
-        /* The Fixed Canvas: ALWAYS 1400px wide. JS applies a "zoom out" lens to this box */
         #scaled-content { 
             width: 1400px; 
             background-color: #f4f6f9; 
-            transform-origin: top left; /* V7 Fix: Anchors to the left edge to prevent gap math errors */
+            transform-origin: top left; 
             padding: 40px; 
             box-sizing: border-box; 
             min-height: 100vh; 
@@ -48,13 +45,11 @@
             grid-template-columns: repeat(5, minmax(0, 1fr)); 
             gap: 12px; 
             align-items: stretch; 
-            
-            /* -- NEW VISUAL UPGRADES -- */
-            background-color: #85e7ec; /* Pure white background for the week */
-            padding: 15px; /* Gives the grid some breathing room inside the box */
-            border-radius: 10px; /* Softly rounded corners */
-            border: 1px solid #dee2e6; /* A subtle gray outline */
-            box-shadow: 0 4px 6px rgba(0,0,0,0.03); /* A very faint, modern drop shadow */
+            background-color: #85e7ec; 
+            padding: 15px; 
+            border-radius: 10px; 
+            border: 1px solid #dee2e6; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.03); 
         }
         
         .day-column { background-color: #ffffff; border-radius: 8px; display: flex; flex-direction: column; min-height: 180px; height: 100%; border: 1px solid #dee2e6; position: relative; box-shadow: 0 1px 3px rgba(0,0,0,0.02);}
@@ -125,35 +120,29 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
- // 🛑🛑🛑 1. CHANGE THESE THREE LINES FOR EACH FILE 🛑🛑🛑
+        // 🛑🛑🛑 1. CHANGE THESE THREE LINES FOR EACH FILE 🛑🛑🛑
         const CONFIG = {
-    period: "P6",
-    subject: "Chemistry", 
-    title: "Chemistry P6 2025-2026"
-};
+            period: "P6",
+            subject: "Chemistry", 
+            title: "Chemistry P6 2025-2026"
+        };
         // 🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑🛑
 
         document.getElementById('calendar-title').innerText = CONFIG.title;
         document.title = CONFIG.title; 
 
-        // --- V7: FLAWLESS TOP-LEFT SCALING ENGINE ---
         function scaleUI() {
             const baseWidth = 1400; 
             const wrapper = document.getElementById('scale-wrapper');
             const content = document.getElementById('scaled-content');
             
-            // The wrapper naturally scales from 0 to 1400px.
             const availableWidth = wrapper.clientWidth;
             let scale = availableWidth / baseWidth;
             
-            // Never scale larger than 100% on massive monitors
             if (scale > 1) scale = 1; 
 
-            // Apply scale anchored to the top-left edge
             content.style.transform = `scale(${scale})`;
             
-            // Because transform doesn't change the physical DOM height, 
-            // we calculate the visual height and force the wrapper to match it perfectly.
             setTimeout(() => {
                 const scaledHeight = content.getBoundingClientRect().height;
                 wrapper.style.height = `${scaledHeight}px`;
@@ -161,7 +150,6 @@
         }
         window.addEventListener('resize', scaleUI);
 
-        // --- DYNAMIC TEXT SHRINKER ---
         function fitDayOffText() {
             document.querySelectorAll('.day-off-banner').forEach(banner => {
                 const textSpan = banner.querySelector('.banner-text');
@@ -171,13 +159,12 @@
                 textSpan.style.fontSize = fontSize + 'px';
                 
                 while (textSpan.scrollWidth > (banner.clientWidth - 20)) {
-                    if (fontSize <= 1) break; // Prevent infinite loop
+                    if (fontSize <= 1) break; 
                     fontSize--;
                     textSpan.style.fontSize = fontSize + 'px';
                 }
             });
         }
-
 
         const firebaseConfig = {
             apiKey: "AIzaSyCcpjuH1qv9IUDJJQR_5ms18TBRS8UFaV8",
@@ -394,17 +381,32 @@
             setTimeout(fitDayOffText, 50); 
         }
 
+        // --- DATA-DRIVEN PREFIX UPDATER (Matches V32 Admin Logic) ---
         function updatePrefixes(dbKey) {
-            const instances = Array.from(document.querySelectorAll(`.day-list .assignment-item[data-db-key="${dbKey}"]`))
-                .sort((a, b) => a.closest('.day-list').id.localeCompare(b.closest('.day-list').id));
+            const assignment = currentClassData[dbKey];
+            if (!assignment || assignment.isCustomNote) return;
+
+            // Look directly at the database's master timeline for this assignment
+            let dates = (assignment.scheduledDates || []).filter(d => d !== "unassigned").sort();
             
-            if (instances.length === 1) instances[0].querySelector('.item-prefix').innerText = 'Complete assignment:';
-            else if (instances.length === 2) { instances[0].querySelector('.item-prefix').innerText = 'Begin assignment:'; instances[1].querySelector('.item-prefix').innerText = 'Finish assignment:'; }
-            else if (instances.length > 2) {
-                instances[0].querySelector('.item-prefix').innerText = 'Begin assignment:';
-                instances[instances.length - 1].querySelector('.item-prefix').innerText = 'Finish assignment:';
-                for (let i = 1; i < instances.length - 1; i++) instances[i].querySelector('.item-prefix').innerText = 'Continue assignment:';
-            }
+            const instances = document.querySelectorAll(`.assignment-item[data-db-key="${dbKey}"]`);
+            instances.forEach(inst => {
+                const list = inst.closest('.day-list');
+                if (!list) return;
+                const listId = list.id;
+                const prefixSpan = inst.querySelector('.item-prefix');
+                
+                // It knows its exact place in the timeline, even if other days are hidden!
+                if (dates.length <= 1) {
+                    prefixSpan.innerText = 'Complete assignment:';
+                } else if (listId === dates[0]) {
+                    prefixSpan.innerText = 'Begin assignment:';
+                } else if (listId === dates[dates.length - 1]) {
+                    prefixSpan.innerText = 'Finish assignment:';
+                } else {
+                    prefixSpan.innerText = 'Continue assignment:';
+                }
+            });
         }
 
         document.body.addEventListener('click', function(e) {
