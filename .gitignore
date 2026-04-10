@@ -1,3 +1,11 @@
+# System Files
+.DS_Store
+Thumbs.db
+.AppleDouble
+.LSOverride
+
+
+
 # Logs
 logs
 *.log
