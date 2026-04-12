@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-import { getDatabase, ref, query, orderByChild, equalTo, get, update, remove, push, set } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+import { getDatabase, ref, query, orderByChild, equalTo, get, update, remove, push, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
 // 🛑🛑🛑 FIREBASE CONFIG 🛑🛑🛑
 const firebaseConfig = {
@@ -44,6 +44,8 @@ let currentClassData = {};
 let currentCalendarConfig = {}; 
 let currentBellringers = {}; 
 let activePeriod = ""; 
+let unsubscribeAssignments = null; // Holds the live pipeline open
+window.isDragging = false;         // Prevents the screen from glitching while you drag
 
 function formatDateLocal(dateObj) {
     const y = dateObj.getFullYear();
@@ -137,18 +139,7 @@ window.fetchClassData = async function() {
     }
 
     try {
-        const assigSnap = await get(ref(db, 'assignments'));
-        currentClassData = {};
-        
-        if (assigSnap.exists()) {
-            const allData = assigSnap.val();
-            Object.entries(allData).forEach(([key, val]) => {
-                if (val.className && val.className.includes(activePeriod)) {
-                    currentClassData[key] = val;
-                }
-            });
-        }
-
+        // Fetch static configuration data (Settings & Bellringers)
         const configSnap = await get(ref(db, `calendarConfig/${activePeriod}`));
         currentCalendarConfig = configSnap.exists() ? configSnap.val() : {};
 
@@ -159,8 +150,30 @@ window.fetchClassData = async function() {
             currentBellringers = {};
         }
 
-        window.buildTopicDropdown();
-        window.renderCalendar(); 
+        // --- THE REAL-TIME PIPELINE ---
+        // Turn off the old pipeline if you switched to a different class
+        if (unsubscribeAssignments) unsubscribeAssignments();
+
+        const assignmentsRef = ref(db, 'assignments');
+        unsubscribeAssignments = onValue(assignmentsRef, (assigSnap) => {
+            currentClassData = {};
+            
+            if (assigSnap.exists()) {
+                const allData = assigSnap.val();
+                Object.entries(allData).forEach(([key, val]) => {
+                    if (val.className && val.className.includes(activePeriod)) {
+                        currentClassData[key] = val;
+                    }
+                });
+            }
+
+            // ONLY redraw the screen if the teacher isn't currently dragging a block!
+            if (!window.isDragging) {
+                window.buildTopicDropdown();
+                window.renderCalendar(); 
+            }
+        });
+
     } catch (error) { console.error("Error:", error); }
 }
 
@@ -415,6 +428,7 @@ window.placeAssignments = function() {
 window.initSortables = function() {
     const sortableOptions = {
         group: 'shared', animation: 150, ghostClass: 'sortable-ghost',
+        onStart: function () { window.isDragging = true; }, // LOCK THE SCREEN
         onEnd: function (evt) { window.syncAssignmentToFirebase(evt.item.getAttribute('data-db-key'), evt.item); }
     };
     new Sortable(document.getElementById('holding-tank'), sortableOptions);
@@ -451,8 +465,16 @@ window.syncAssignmentToFirebase = async function(dbKey, visualItem = null) {
             }
         }
 
-        if (visualItem && document.body.contains(visualItem)) { visualItem.style.backgroundColor = '#d4edda'; setTimeout(() => visualItem.style.backgroundColor = visualItem.classList.contains('custom-note-item') ? '#fff3cd' : '#ffffff', 500); }
-    } catch (error) { console.error("Save failed:", error); }
+        if (visualItem && document.body.contains(visualItem)) { 
+            visualItem.style.backgroundColor = '#d4edda'; 
+            setTimeout(() => visualItem.style.backgroundColor = visualItem.classList.contains('custom-note-item') ? '#fff3cd' : '#ffffff', 500); 
+        }
+    } catch (error) { 
+        console.error("Save failed:", error); 
+    } finally {
+        // UNLOCK THE SCREEN 500ms after saving so the green flash has time to finish
+        setTimeout(() => { window.isDragging = false; }, 500);
+    }
 }
 
 window.updatePrefixes = function(dbKey) {
