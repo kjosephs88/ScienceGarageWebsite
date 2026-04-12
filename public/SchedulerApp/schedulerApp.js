@@ -181,6 +181,10 @@ window.buildTopicDropdown = function() {
     const topicSelect = document.getElementById('topic-select');
     const selectedClass = document.getElementById('class-select').value;
     
+    // 1. Take a snapshot of the currently selected topic
+    const currentSelection = topicSelect.value;
+    
+    // 2. Destroy and rebuild the list
     topicSelect.innerHTML = '<option value="all">All Topics</option>'; 
     const uniqueTopics = new Set();
     
@@ -191,8 +195,20 @@ window.buildTopicDropdown = function() {
     });
     
     Array.from(uniqueTopics).sort().forEach(topic => {
-        const opt = document.createElement('option'); opt.value = topic; opt.innerText = topic; topicSelect.appendChild(opt);
+        const opt = document.createElement('option'); 
+        opt.value = topic; 
+        opt.innerText = topic; 
+        topicSelect.appendChild(opt);
     });
+
+    // 3. Restore the snapshot (if the topic still exists)
+    // We check if it exists just in case you deleted the very last assignment of a topic!
+    const topicStillExists = Array.from(topicSelect.options).some(opt => opt.value === currentSelection);
+    if (currentSelection && topicStillExists) {
+        topicSelect.value = currentSelection;
+    } else {
+        topicSelect.value = 'all'; 
+    }
 }
 
 window.renderCalendar = function() {
