@@ -54,7 +54,7 @@ function formatDateLocal(dateObj) {
     return `${y}-${m}-${d}`;
 }
 
-// --- NEW: THE MASTER CALENDAR ENGINE ---
+// --- NEW: THE OPTIMIZED MASTER CALENDAR ENGINE ---
 window.updateMasterCalendarState = async function(periodsToUpdate = [activePeriod]) {
     const updates = {};
     
@@ -79,13 +79,15 @@ window.updateMasterCalendarState = async function(periodsToUpdate = [activePerio
                 // Apply manual flips
                 if (dayConfig.flipped) isDouble = !isDouble;
                 
-                // Package the absolute state for the database
-                updates[`/calendarConfig/${period}/${dStr}/isDouble`] = isDouble;
-                
-                // Update local memory so we don't have to refresh
-                if (period === activePeriod) {
-                    if (!currentCalendarConfig[dStr]) currentCalendarConfig[dStr] = {};
-                    currentCalendarConfig[dStr].isDouble = isDouble;
+                // --- THE SPEED UP: ONLY UPDATE IF THE VALUE CHANGED ---
+                if (dayConfig.isDouble !== isDouble) {
+                    updates[`/calendarConfig/${period}/${dStr}/isDouble`] = isDouble;
+                    
+                    // Update local memory so we don't have to refresh
+                    if (period === activePeriod) {
+                        if (!currentCalendarConfig[dStr]) currentCalendarConfig[dStr] = {};
+                        currentCalendarConfig[dStr].isDouble = isDouble;
+                    }
                 }
 
                 // If it isn't a day off, toggle the sequence for tomorrow
@@ -95,7 +97,10 @@ window.updateMasterCalendarState = async function(periodsToUpdate = [activePerio
         }
     }
     try {
-        if (Object.keys(updates).length > 0) await update(ref(db), updates);
+        // Only ping the Firebase servers if there is actual new data to save!
+        if (Object.keys(updates).length > 0) {
+            await update(ref(db), updates);
+        }
     } catch (error) { console.error("Master calendar sync failed", error); }
 }
 
