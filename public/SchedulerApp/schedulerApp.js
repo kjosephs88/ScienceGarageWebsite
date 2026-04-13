@@ -271,7 +271,6 @@ window.renderCalendar = function() {
     
     const numWeeks = parseInt(document.getElementById('week-view-select').value) || 1;
     let renderDate = new Date(currentMonday);
-    let isNextDouble = true; 
 
     const endDate = new Date(currentMonday);
     endDate.setDate(currentMonday.getDate() + (numWeeks * 7) - 3); 
@@ -289,6 +288,7 @@ window.renderCalendar = function() {
             // THE BRAINLESS READ: Just check the database label!
             let isDouble = dayConfig.isDouble !== undefined ? dayConfig.isDouble : true;
             
+            // Note: Admin app needs the 'window.' prefix here!
             weekGrid.appendChild(window.createDayColumn(renderDate, isDouble, dateStr, dayConfig));
             
             renderDate.setDate(renderDate.getDate() + 1);
