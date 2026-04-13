@@ -44,8 +44,8 @@ let currentClassData = {};
 let currentCalendarConfig = {}; 
 let currentBellringers = {}; 
 let activePeriod = ""; 
-let unsubscribeAssignments = null; // Holds the live pipeline open
-window.isDragging = false;         // Prevents the screen from glitching while you drag
+let unsubscribeAssignments = null; 
+window.isDragging = false;         
 
 function formatDateLocal(dateObj) {
     const y = dateObj.getFullYear();
@@ -65,8 +65,8 @@ window.updateMasterCalendarState = async function(periodsToUpdate = [activePerio
             configToUpdate = snap.exists() ? snap.val() : {};
         }
 
-        let currDate = new Date('2025-07-01T12:00:00'); // Start of School Year
-        let endDate = new Date('2026-06-30T12:00:00'); // End of School Year
+        let currDate = new Date('2025-07-01T12:00:00'); 
+        let endDate = new Date('2026-06-30T12:00:00'); 
         let isDouble = true; 
 
         while (currDate <= endDate) {
@@ -76,36 +76,28 @@ window.updateMasterCalendarState = async function(periodsToUpdate = [activePerio
             let dayConfig = configToUpdate[dStr] || {};
 
             if (!isWeekend) {
-                // Apply manual flips
                 if (dayConfig.flipped) isDouble = !isDouble;
                 
-                // --- THE SPEED UP: ONLY UPDATE IF THE VALUE CHANGED ---
                 if (dayConfig.isDouble !== isDouble) {
                     updates[`/calendarConfig/${period}/${dStr}/isDouble`] = isDouble;
                     
-                    // Update local memory so we don't have to refresh
                     if (period === activePeriod) {
                         if (!currentCalendarConfig[dStr]) currentCalendarConfig[dStr] = {};
                         currentCalendarConfig[dStr].isDouble = isDouble;
                     }
                 }
 
-                // If it isn't a day off, toggle the sequence for tomorrow
                 if (!dayConfig.isDayOff) isDouble = !isDouble; 
             }
             currDate.setDate(currDate.getDate() + 1);
         }
     }
     try {
-        // Only ping the Firebase servers if there is actual new data to save!
         if (Object.keys(updates).length > 0) {
             await update(ref(db), updates);
         }
     } catch (error) { console.error("Master calendar sync failed", error); }
 }
-
-
-
 
 const allowedAdmins = ['pianodemon88@gmail.com', 'kjosephs@ocsdny.org'];
 
@@ -192,7 +184,6 @@ window.fetchClassData = async function() {
     }
 
     try {
-        // Fetch static configuration data (Settings & Bellringers)
         const configSnap = await get(ref(db, `calendarConfig/${activePeriod}`));
         currentCalendarConfig = configSnap.exists() ? configSnap.val() : {};
 
@@ -203,11 +194,8 @@ window.fetchClassData = async function() {
             currentBellringers = {};
         }
 
-        // ADD THIS LINE HERE:
         await window.updateMasterCalendarState([activePeriod]);
 
-        // --- THE REAL-TIME PIPELINE ---
-        // Turn off the old pipeline if you switched to a different class
         if (unsubscribeAssignments) unsubscribeAssignments();
 
         const assignmentsRef = ref(db, 'assignments');
@@ -223,7 +211,6 @@ window.fetchClassData = async function() {
                 });
             }
 
-            // ONLY redraw the screen if the teacher isn't currently dragging a block!
             if (!window.isDragging) {
                 window.buildTopicDropdown();
                 window.renderCalendar(); 
@@ -237,10 +224,8 @@ window.buildTopicDropdown = function() {
     const topicSelect = document.getElementById('topic-select');
     const selectedClass = document.getElementById('class-select').value;
     
-    // 1. Take a snapshot of the currently selected topic
     const currentSelection = topicSelect.value;
     
-    // 2. Destroy and rebuild the list
     topicSelect.innerHTML = '<option value="all">All Topics</option>'; 
     const uniqueTopics = new Set();
     
@@ -257,8 +242,6 @@ window.buildTopicDropdown = function() {
         topicSelect.appendChild(opt);
     });
 
-    // 3. Restore the snapshot (if the topic still exists)
-    // We check if it exists just in case you deleted the very last assignment of a topic!
     const topicStillExists = Array.from(topicSelect.options).some(opt => opt.value === currentSelection);
     if (currentSelection && topicStillExists) {
         topicSelect.value = currentSelection;
@@ -290,10 +273,8 @@ window.renderCalendar = function() {
             const dateStr = formatDateLocal(renderDate);
             const dayConfig = currentCalendarConfig[dateStr] || {};
             
-            // THE BRAINLESS READ: Just check the database label!
             let isDouble = dayConfig.isDouble !== undefined ? dayConfig.isDouble : true;
             
-            // Note: Admin app needs the 'window.' prefix here!
             weekGrid.appendChild(window.createDayColumn(renderDate, isDouble, dateStr, dayConfig));
             
             renderDate.setDate(renderDate.getDate() + 1);
@@ -493,17 +474,24 @@ window.placeAssignments = function() {
     });
 }
 
+// --- UPDATED: Sortable logic captures fromId and toId for "The Mover" ---
 window.initSortables = function() {
     const sortableOptions = {
         group: 'shared', animation: 150, ghostClass: 'sortable-ghost',
-        onStart: function () { window.isDragging = true; }, // LOCK THE SCREEN
-        onEnd: function (evt) { window.syncAssignmentToFirebase(evt.item.getAttribute('data-db-key'), evt.item); }
+        onStart: function () { window.isDragging = true; }, 
+        onEnd: function (evt) { 
+            const dbKey = evt.item.getAttribute('data-db-key');
+            const fromId = evt.from.id === 'holding-tank' ? 'unassigned' : evt.from.id;
+            const toId = evt.to.id === 'holding-tank' ? 'unassigned' : evt.to.id;
+            window.syncAssignmentToFirebase(dbKey, evt.item, fromId, toId); 
+        }
     };
     new Sortable(document.getElementById('holding-tank'), sortableOptions);
     document.querySelectorAll('.day-list').forEach(list => new Sortable(list, sortableOptions));
 }
 
-window.syncAssignmentToFirebase = async function(dbKey, visualItem = null) {
+// --- UPDATED: The Mover and The Janitor applied directly to the sync function ---
+window.syncAssignmentToFirebase = async function(dbKey, visualItem = null, fromId = null, toId = null) {
     const visibleDatesOnGrid = Array.from(document.querySelectorAll('.day-list')).map(list => list.id);
     const oldDates = currentClassData[dbKey].scheduledDates || ["unassigned"];
     const preservedOffScreenDates = oldDates.filter(d => d !== "unassigned" && !visibleDatesOnGrid.includes(d));
@@ -521,7 +509,47 @@ window.syncAssignmentToFirebase = async function(dbKey, visualItem = null) {
     if(!currentClassData[dbKey].isCustomNote) window.updatePrefixes(dbKey);
 
     try {
-        await update(ref(db), { [`/assignments/${dbKey}/scheduledDates`]: newDatesArray });
+        const updatePayload = {
+            [`/assignments/${dbKey}/scheduledDates`]: newDatesArray
+        };
+
+        // --- THE MOVER: Transfer notes when dragged to a new day ---
+        if (fromId && toId && fromId !== toId) {
+            if (!currentClassData[dbKey].notes) currentClassData[dbKey].notes = {};
+            
+            if (currentClassData[dbKey].notes[fromId]) {
+                const noteText = currentClassData[dbKey].notes[fromId];
+                updatePayload[`/assignments/${dbKey}/notes/${toId}`] = noteText;
+                currentClassData[dbKey].notes[toId] = noteText;
+            } else {
+                updatePayload[`/assignments/${dbKey}/notes/${toId}`] = null;
+                delete currentClassData[dbKey].notes[toId];
+            }
+            updatePayload[`/assignments/${dbKey}/notes/${fromId}`] = null;
+            delete currentClassData[dbKey].notes[fromId];
+        }
+
+        // --- THE JANITOR: Sweep up orphan dayOrder keys ---
+        if (currentClassData[dbKey] && currentClassData[dbKey].dayOrder) {
+            Object.keys(currentClassData[dbKey].dayOrder).forEach(dateKey => {
+                if (dateKey !== 'holding-tank' && !newDatesArray.includes(dateKey)) {
+                    updatePayload[`/assignments/${dbKey}/dayOrder/${dateKey}`] = null; 
+                    delete currentClassData[dbKey].dayOrder[dateKey]; 
+                }
+            });
+        }
+        
+        // --- THE JANITOR: Sweep up orphan notes keys ---
+        if (currentClassData[dbKey] && currentClassData[dbKey].notes) {
+            Object.keys(currentClassData[dbKey].notes).forEach(dateKey => {
+                if (dateKey !== 'unassigned' && !newDatesArray.includes(dateKey)) {
+                    updatePayload[`/assignments/${dbKey}/notes/${dateKey}`] = null; 
+                    delete currentClassData[dbKey].notes[dateKey]; 
+                }
+            });
+        }
+
+        await update(ref(db), updatePayload);
         await window.saveAllListOrders(); 
         
         if (newDatesArray.length === 1 && newDatesArray[0] === "unassigned") {
@@ -540,7 +568,6 @@ window.syncAssignmentToFirebase = async function(dbKey, visualItem = null) {
     } catch (error) { 
         console.error("Save failed:", error); 
     } finally {
-        // UNLOCK THE SCREEN 500ms after saving so the green flash has time to finish
         setTimeout(() => { window.isDragging = false; }, 500);
     }
 }
