@@ -54,6 +54,54 @@ function formatDateLocal(dateObj) {
     return `${y}-${m}-${d}`;
 }
 
+// --- NEW: THE MASTER CALENDAR ENGINE ---
+window.updateMasterCalendarState = async function(periodsToUpdate = [activePeriod]) {
+    const updates = {};
+    
+    for (const period of periodsToUpdate) {
+        let configToUpdate = currentCalendarConfig;
+        if (period !== activePeriod) {
+            const snap = await get(ref(db, `calendarConfig/${period}`));
+            configToUpdate = snap.exists() ? snap.val() : {};
+        }
+
+        let currDate = new Date('2025-07-01T12:00:00'); // Start of School Year
+        let endDate = new Date('2026-06-30T12:00:00'); // End of School Year
+        let isDouble = true; 
+
+        while (currDate <= endDate) {
+            let dStr = formatDateLocal(currDate);
+            let dayOfWeek = currDate.getDay();
+            let isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+            let dayConfig = configToUpdate[dStr] || {};
+
+            if (!isWeekend) {
+                // Apply manual flips
+                if (dayConfig.flipped) isDouble = !isDouble;
+                
+                // Package the absolute state for the database
+                updates[`/calendarConfig/${period}/${dStr}/isDouble`] = isDouble;
+                
+                // Update local memory so we don't have to refresh
+                if (period === activePeriod) {
+                    if (!currentCalendarConfig[dStr]) currentCalendarConfig[dStr] = {};
+                    currentCalendarConfig[dStr].isDouble = isDouble;
+                }
+
+                // If it isn't a day off, toggle the sequence for tomorrow
+                if (!dayConfig.isDayOff) isDouble = !isDouble; 
+            }
+            currDate.setDate(currDate.getDate() + 1);
+        }
+    }
+    try {
+        if (Object.keys(updates).length > 0) await update(ref(db), updates);
+    } catch (error) { console.error("Master calendar sync failed", error); }
+}
+
+
+
+
 const allowedAdmins = ['pianodemon88@gmail.com', 'kjosephs@ocsdny.org'];
 
 onAuthStateChanged(auth, (user) => {
@@ -150,6 +198,9 @@ window.fetchClassData = async function() {
             currentBellringers = {};
         }
 
+        // ADD THIS LINE HERE:
+        await window.updateMasterCalendarState([activePeriod]);
+
         // --- THE REAL-TIME PIPELINE ---
         // Turn off the old pipeline if you switched to a different class
         if (unsubscribeAssignments) unsubscribeAssignments();
@@ -233,18 +284,13 @@ window.renderCalendar = function() {
 
         for (let d = 0; d < 5; d++) {
             const dateStr = formatDateLocal(renderDate);
-            const dayConfig = currentCalendarConfig[dateStr];
+            const dayConfig = currentCalendarConfig[dateStr] || {};
             
-            if (dayConfig && dayConfig.flipped) {
-                isNextDouble = !isNextDouble;
-            }
+            // THE BRAINLESS READ: Just check the database label!
+            let isDouble = dayConfig.isDouble !== undefined ? dayConfig.isDouble : true;
             
-            weekGrid.appendChild(window.createDayColumn(renderDate, isNextDouble, dateStr, dayConfig));
+            weekGrid.appendChild(window.createDayColumn(renderDate, isDouble, dateStr, dayConfig));
             
-            if (!dayConfig || !dayConfig.isDayOff) {
-                isNextDouble = !isNextDouble;
-            }
-
             renderDate.setDate(renderDate.getDate() + 1);
         }
         container.appendChild(weekGrid);
@@ -355,6 +401,7 @@ window.toggleFlip = async function(dateStr) {
         await update(ref(db), { [`/calendarConfig/${activePeriod}/${dateStr}/flipped`]: !isCurrentlyFlipped });
         if (!currentCalendarConfig[dateStr]) currentCalendarConfig[dateStr] = {};
         currentCalendarConfig[dateStr].flipped = !isCurrentlyFlipped;
+        await window.updateMasterCalendarState([activePeriod]);
         window.renderCalendar(); 
     } catch (err) { console.error("Error saving flip:", err); }
 };
@@ -789,7 +836,8 @@ window.saveCalendarConfig = async function() {
                 await update(ref(db), shiftResult.updates);
             }
         }
-
+        
+        await window.updateMasterCalendarState(targetPeriods);
         document.getElementById('special-date-start').value = '';
         document.getElementById('special-date-end').value = '';
         document.getElementById('custom-type-input').value = '';
@@ -823,6 +871,7 @@ window.deleteConfig = async function(dateStr) {
             }
         }
 
+        await window.updateMasterCalendarState(['P1', 'P3', 'P6', 'P8']);
         window.populateConfigList();
         window.renderCalendar();
     } catch (error) { console.error("Config delete failed", error); }
