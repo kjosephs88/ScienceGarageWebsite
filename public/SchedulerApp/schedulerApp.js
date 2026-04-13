@@ -563,7 +563,7 @@ window.syncAssignmentToFirebase = async function(dbKey, visualItem = null, fromI
 
         if (visualItem && document.body.contains(visualItem)) { 
             visualItem.style.backgroundColor = '#d4edda'; 
-            setTimeout(() => visualItem.style.backgroundColor = visualItem.classList.contains('custom-note-item') ? '#fff3cd' : '#ffffff', 500); 
+            setTimeout(() => visualItem.style.backgroundColor = visualItem.classList.contains('custom-note-item') ? '#fff3cd' : '#dfdfdf', 500); 
         }
     } catch (error) { 
         console.error("Save failed:", error); 
