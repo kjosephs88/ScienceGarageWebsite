@@ -241,7 +241,6 @@
             
             const numWeeks = parseInt(document.getElementById('week-view-select').value) || 1;
             let renderDate = new Date(currentMonday);
-            let isNextDouble = true; 
 
             const endDate = new Date(currentMonday);
             endDate.setDate(currentMonday.getDate() + (numWeeks * 7) - 3); 
@@ -249,28 +248,23 @@
                 `${currentMonday.toLocaleDateString('en-US', {month:'short', day:'numeric'})} - ${endDate.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})}`;
 
             for (let w = 0; w < numWeeks; w++) {
-                const weekGrid = document.createElement('div');
-                weekGrid.className = 'week-grid';
+        const weekGrid = document.createElement('div');
+        weekGrid.className = 'week-grid';
 
-                for (let d = 0; d < 5; d++) {
-                    const dateStr = formatDateLocal(renderDate);
-                    const dayConfig = currentCalendarConfig[dateStr];
-                    
-                    if (dayConfig && dayConfig.flipped) {
-                        isNextDouble = !isNextDouble;
-                    }
-                    
-                    weekGrid.appendChild(createDayColumn(renderDate, isNextDouble, dateStr, dayConfig));
-                    
-                    if (!dayConfig || !dayConfig.isDayOff) {
-                        isNextDouble = !isNextDouble;
-                    }
-
-                    renderDate.setDate(renderDate.getDate() + 1);
-                }
-                container.appendChild(weekGrid);
-                renderDate.setDate(renderDate.getDate() + 2); 
-            }
+        for (let d = 0; d < 5; d++) {
+            const dateStr = formatDateLocal(renderDate);
+            const dayConfig = currentCalendarConfig[dateStr] || {};
+            
+            // THE BRAINLESS READ: Just check the database label!
+            let isDouble = dayConfig.isDouble !== undefined ? dayConfig.isDouble : true;
+            
+            weekGrid.appendChild(createDayColumn(renderDate, isDouble, dateStr, dayConfig));
+            
+            renderDate.setDate(renderDate.getDate() + 1);
+        }
+        container.appendChild(weekGrid);
+        renderDate.setDate(renderDate.getDate() + 2); 
+    }
 
             placeAssignments();
         }
