@@ -3,14 +3,14 @@ body { margin: 0; padding: 0; background-color: #000; font-family: -apple-system
 
 #scale-wrapper { 
     width: 100%; 
-    max-width: 1400px; 
+    max-width: 1900px; /* Increased from 1400 */
     margin: 0 auto;    
     position: relative; 
     overflow: hidden;  
 }
 
 #scaled-content { 
-    width: 1400px; 
+    width: 1900px; /* This is the "Native Canvas" size now */
     background-color: #f4f6f9; 
     transform-origin: top left; 
     padding: 40px; 

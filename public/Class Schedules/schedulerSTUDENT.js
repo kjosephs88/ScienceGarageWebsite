@@ -8,13 +8,14 @@ document.getElementById('calendar-title').innerText = CONFIG.title;
 document.title = CONFIG.title; 
 
 function scaleUI() {
-    const baseWidth = 1400; 
+    const baseWidth = 1900; // Change this from 1400
     const wrapper = document.getElementById('scale-wrapper');
     const content = document.getElementById('scaled-content');
     
     const availableWidth = wrapper.clientWidth;
     let scale = availableWidth / baseWidth;
     
+    // If the screen is wider than 1900px, don't keep growing (optional)
     if (scale > 1) scale = 1; 
 
     content.style.transform = `scale(${scale})`;
