@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Graduated Cylinder</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #f4f4f9;
+            margin: 0;
+        }
+        .widget-container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        svg {
+            display: block;
+            margin-bottom: 20px;
+        }
+        .controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 300px;
+        }
+        input[type="range"] {
+            width: 100%;
+            margin: 15px 0;
+            cursor: pointer;
+        }
+        .readout {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            font-variant-numeric: tabular-nums;
+        }
+        .copy-btn {
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+            background-color: #007bff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background-color 0.2s;
+        }
+        .copy-btn:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+
+<div class="widget-container">
+    <svg width="200" height="500" viewBox="0 0 200 500" id="cylinderSvg">
+        <style>
+            .glass { fill: none; stroke: #222; stroke-width: 3; stroke-linecap: square; }
+            .base { fill: #777; stroke: #222; stroke-width: 2; }
+            .water { fill: #48fafa; }
+            .mark-major { stroke: #222; stroke-width: 2; }
+            .mark-minor { stroke: #222; stroke-width: 1; }
+            .label-number { fill: #222; font-size: 16px; font-weight: 600; text-anchor: end; alignment-baseline: middle; user-select: none; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+            .label-unit { fill: #222; font-size: 18px; font-weight: bold; user-select: none; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        </style>
+        
+        <rect class="base" x="40" y="450" width="120" height="30" />
+        <path class="water" id="waterPath" d="" />
+        <polyline class="glass" points="60,40 60,450 140,450 140,40" />
+        <g id="graduationsGroup"></g>
+        <text class="label-unit" x="68" y="100">mL</text>
+    </svg>
+
+    <div class="controls">
+        <div class="readout" id="volumeReadout">25.0 mL</div>
+        <input type="range" id="volumeSlider" min="0" max="50" step="0.1" value="25">
+        <button id="copyBtn" class="copy-btn">Copy Image</button>
+    </div>
+</div>
+
+<script>
+    const slider = document.getElementById('volumeSlider');
+    const readout = document.getElementById('volumeReadout');
+    const waterPath = document.getElementById('waterPath');
+    const graduationsGroup = document.getElementById('graduationsGroup');
+    const copyBtn = document.getElementById('copyBtn');
+
+    // Cylinder Geometry Constants
+    const Y_BOTTOM = 450;
+    const Y_TOP = 50;
+    const PIXELS_PER_ML = (Y_BOTTOM - Y_TOP) / 50; 
+    const CYLINDER_LEFT = 60;
+    const CYLINDER_RIGHT = 140;
+    const MENISCUS_RISE = 5; 
+
+    // Generate Graduations and Numbers
+    function drawScale() {
+        for (let i = 0; i <= 50; i++) {
+            const yPos = Y_BOTTOM - (i * PIXELS_PER_ML);
+            
+            if (i % 10 === 0) {
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', CYLINDER_RIGHT - 15);
+                line.setAttribute('y1', yPos);
+                line.setAttribute('x2', CYLINDER_RIGHT);
+                line.setAttribute('y2', yPos);
+                line.setAttribute('class', 'mark-major');
+                graduationsGroup.appendChild(line);
+
+                // Start numbering at 10, skipping 0
+                if (i > 0) {
+                    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    text.setAttribute('x', CYLINDER_RIGHT - 20); 
+                    text.setAttribute('y', yPos + 1); 
+                    text.setAttribute('class', 'label-number');
+                    text.textContent = i;
+                    graduationsGroup.appendChild(text);
+                }
+            } else {
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', CYLINDER_RIGHT - 8);
+                line.setAttribute('y1', yPos);
+                line.setAttribute('x2', CYLINDER_RIGHT);
+                line.setAttribute('y2', yPos);
+                line.setAttribute('class', 'mark-minor');
+                graduationsGroup.appendChild(line);
+            }
+        }
+    }
+
+    // Update the water volume and meniscus shape
+    function updateWater() {
+        const volume = parseFloat(slider.value);
+        readout.textContent = volume.toFixed(1) + ' mL';
+
+        if (volume === 0) {
+            waterPath.setAttribute('d', ''); 
+            return;
+        }
+
+        const vertexY = Y_BOTTOM - (volume * PIXELS_PER_ML);
+        const edgeY = vertexY - MENISCUS_RISE;
+        const controlY = vertexY + MENISCUS_RISE;
+
+        const pathData = `
+            M ${CYLINDER_LEFT} ${Y_BOTTOM}
+            L ${CYLINDER_RIGHT} ${Y_BOTTOM}
+            L ${CYLINDER_RIGHT} ${edgeY}
+            Q 100 ${controlY} ${CYLINDER_LEFT} ${edgeY}
+            Z
+        `;
+        
+        waterPath.setAttribute('d', pathData.trim());
+    }
+
+    // Copy SVG as PNG Image to Clipboard
+    copyBtn.addEventListener('click', () => {
+        const svg = document.getElementById('cylinderSvg');
+        const serializer = new XMLSerializer();
+        let svgString = serializer.serializeToString(svg);
+        
+        // Ensure the SVG namespace is explicitly declared
+        if (!svgString.includes('xmlns="http://www.w3.org/2000/svg"')) {
+            svgString = svgString.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+        }
+
+        // Create a blob from the SVG string
+        const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(svgBlob);
+        
+        const img = new Image();
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            
+            // --- 1. RESOLUTION SCALING ---
+            // Change this number to make the image even larger/sharper (e.g., 3, 4, 5)
+            const scaleFactor = 4; 
+            
+            // --- 2. EXACT CROPPING COORDINATES (Fixed for borders) ---
+            // Added a 2px padding to account for the SVG stroke-width spilling outside the shape
+            const padding = 2; 
+            const cropX = 40.8 - padding;  
+            const cropY = 40.8 - padding;  
+            const cropW = 120 + (padding * 1.2); 
+            const cropH = 440 + (padding * 1.2);
+            
+            // Set canvas size to the scaled cropped area
+            canvas.width = cropW * scaleFactor;
+            canvas.height = cropH * scaleFactor;
+            const ctx = canvas.getContext('2d');
+            
+            // Add a solid white background
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // --- 3. DRAW WITH CROPPING AND SCALING ---
+            // ctx.drawImage(image, sourceX, sourceY, sourceW, sourceH, destX, destY, destW, destH)
+            ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, canvas.width, canvas.height);
+            
+            URL.revokeObjectURL(url);
+
+            // Convert canvas to a PNG and write to clipboard
+            canvas.toBlob((blob) => {
+                if (!blob) return;
+                try {
+                    navigator.clipboard.write([
+                        new ClipboardItem({ 'image/png': blob })
+                    ]).then(() => {
+                        const originalText = copyBtn.innerText;
+                        copyBtn.innerText = 'Copied!';
+                        setTimeout(() => copyBtn.innerText = originalText, 2000);
+                    }).catch(err => {
+                        console.error('Clipboard write failed:', err);
+                        alert('Could not copy image to clipboard.');
+                    });
+                } catch (err) {
+                    console.error('Clipboard API error:', err);
+                    alert('Your browser does not support copying directly to the clipboard.');
+                }
+            }, 'image/png');
+        };
+        img.src = url;
+    });
+
+    // Initialize
+    drawScale();
+    updateWater();
+
+    // Event Listeners
+    slider.addEventListener('input', updateWater);
+
+</script>
+</body>
+</html>
