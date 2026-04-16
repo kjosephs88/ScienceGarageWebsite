@@ -75,3 +75,8 @@ node_modules/
 
 # dataconnect generated files
 .dataconnect
+
+# Local GAS and Node configs
+gas/
+package.json
+package-lock.json
