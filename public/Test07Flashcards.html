@@ -15,7 +15,6 @@
             --text-muted: #94a3b8;
         }
 
-        /* Critical Fix: Prevent horizontal shifts during 3D swing */
         html, body { 
             box-sizing: border-box; 
             margin: 0; 
@@ -42,7 +41,7 @@
             background: #0f172a;
             border-bottom: 1px solid #1e293b;
             z-index: 100;
-            flex-shrink: 0; /* Prevents header from resizing */
+            flex-shrink: 0;
         }
         
         h1 { font-size: 1.4rem; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 1px; margin: 0; }
@@ -70,14 +69,14 @@
             justify-content: center;
             padding: 20px;
             position: relative;
-            overflow: hidden; /* Contains the 3D swing */
+            overflow: hidden;
         }
 
         .scene {
             width: 100%;
             max-width: 380px;
             height: 360px;
-            perspective: 1500px; /* Higher perspective reduces edge distortion */
+            perspective: 1500px; 
             margin-bottom: 30px;
         }
 
@@ -88,7 +87,7 @@
             transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
             transform-style: preserve-3d;
             cursor: pointer;
-            will-change: transform; /* Helps iOS prepare for GPU animation */
+            will-change: transform; 
         }
 
         .card.is-flipped { transform: rotateY(180deg); }
@@ -248,7 +247,12 @@
         let mastered = [];
         let currentCard = null;
         let isFlipped = false;
-        let hasBeenFlipped = false;
+
+        const cardEl = document.getElementById('flashcard');
+        const frontText = document.getElementById('card-front-text');
+        const backText = document.getElementById('card-back-text');
+        const actionsEl = document.getElementById('action-buttons');
+        const sceneEl = document.getElementById('card-scene');
 
         function initApp() {
             const saved = sessionStorage.getItem('chemDeck');
@@ -270,10 +274,12 @@
                 return;
             }
             currentCard = (unseen.length > 0) ? unseen.shift() : learning.shift();
+            
+            // Reset state for the new card
             isFlipped = false;
-            hasBeenFlipped = false;
             cardEl.classList.remove('is-flipped');
             actionsEl.classList.remove('visible');
+            
             setTimeout(() => {
                 frontText.innerHTML = currentCard.q;
                 backText.innerHTML = currentCard.a;
@@ -281,15 +287,25 @@
         }
 
         function flipCard() {
+            // Toggle the flip state
             isFlipped = !isFlipped;
-            hasBeenFlipped = true;
             cardEl.classList.toggle('is-flipped');
-            if (hasBeenFlipped) actionsEl.classList.add('visible');
+            
+            // Show buttons ONLY when the back of the card is visible
+            if (isFlipped) {
+                actionsEl.classList.add('visible');
+            } else {
+                actionsEl.classList.remove('visible');
+            }
         }
 
         function markCard(status) {
+            // Prevent marking if buttons are hidden but somehow clicked
+            if (!isFlipped) return; 
+
             if (status === 'mastered') mastered.push(currentCard);
             else learning.push(currentCard);
+            
             save();
             updateUI();
             
