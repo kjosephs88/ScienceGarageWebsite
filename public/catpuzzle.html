@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Classic Cat Jigsaw Puzzle</title>
 
-    <script src="https://cdn.jsdelivr.net/npm/fabric@latest/dist/index.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
 
     <style>
         body {
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background-color: #f0f4f8;
+            background-color: #1e272e; 
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -18,93 +18,87 @@
             min-height: 100vh;
             margin: 0;
             padding-top: 10px;
-            overflow: hidden; /* Prevents whole-page scrolling on iPad during drag */
+            overflow: hidden; 
         }
 
         h1 {
-            color: #333;
+            color: #fff;
             margin: 5px 0;
             font-size: 1.5rem;
         }
 
         #message {
             height: 24px;
-            color: #27ae60;
+            color: #0be881;
             font-weight: bold;
             font-size: 1.2rem;
             margin-bottom: 10px;
         }
 
-        /* Container ensures the canvas maintains a neat border */
         .canvas-container {
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             border-radius: 8px;
-            overflow: hidden;
-            background: white;
-            padding: 5px;
+            background: #f0f4f8; 
+            max-width: 95vw;
+            max-height: 80vh; 
         }
 
         canvas {
-            border: 1px solid #ccc;
             border-radius: 4px;
-            touch-action: none; /* Crucial for iPad to disable standard gestures */
+            touch-action: none; 
         }
     </style>
 </head>
 <body>
 
     <h1>Classic Cat Jigsaw</h1>
-    <div id="message"></div>
+    <div id="message">Loading Puzzle...</div>
 
-    <div id="puzzle-wrapper" class="canvas-container">
-        <canvas id="puzzleCanvas" width="360" height="360"></canvas>
+    <img id="source-image" src="data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20400%20400%22%3E%3Crect%20width%3D%22400%22%20height%3D%22400%22%20fill%3D%22%2381ecec%22%2F%3E%3Cpath%20d%3D%22M100%20300%20C100%20150%2C%20300%20150%2C%20300%20300%20Z%22%20fill%3D%22%232d3436%22%2F%3E%3Cpolygon%20points%3D%22110%2C180%2090%2C80%20170%2C140%22%20fill%3D%22%232d3436%22%2F%3E%3Cpolygon%20points%3D%22290%2C180%20310%2C80%20230%2C140%22%20fill%3D%22%232d3436%22%2F%3E%3Cpolygon%20points%3D%22115%2C165%20100%2C100%20155%2C145%22%20fill%3D%22%23fd79a8%22%2F%3E%3Cpolygon%20points%3D%22285%2C165%20300%2C100%20245%2C145%22%20fill%3D%22%23fd79a8%22%2F%3E%3Ccircle%20cx%3D%22160%22%20cy%3D%22200%22%20r%3D%2225%22%20fill%3D%22%23ffeaa7%22%2F%3E%3Ccircle%20cx%3D%22240%22%20cy%3D%22200%22%20r%3D%2225%22%20fill%3D%22%23ffeaa7%22%2F%3E%3Ccircle%20cx%3D%22160%22%20cy%3D%22200%22%20r%3D%2210%22%20fill%3D%22%23000%22%2F%3E%3Ccircle%20cx%3D%22240%22%20cy%3D%22200%22%20r%3D%2210%22%20fill%3D%22%23000%22%2F%3E%3Cpolygon%20points%3D%22190%2C230%20210%2C230%20200%2C245%22%20fill%3D%22%23fd79a8%22%2F%3E%3Cpath%20d%3D%22M170%20230%20L100%20220%20M170%20240%20L100%20240%20M170%20250%20L100%20260%22%20stroke%3D%22%23fff%22%20stroke-width%3D%223%22%2F%3E%3Cpath%20d%3D%22M230%20230%20L300%20220%20M230%20240%20L300%20240%20M230%20250%20L300%20260%22%20stroke%3D%22%23fff%22%20stroke-width%3D%223%22%2F%3E%3C%2Fsvg%3E" style="display: none;">
+
+    <div class="canvas-container">
+        <canvas id="puzzleCanvas" width="800" height="800"></canvas>
     </div>
 
     <script>
-        // --- Setup Constants ---
+        const playFieldSize = 800; 
+        const canvasSize = 400; 
         const rows = 3;
         const cols = 3;
-        const canvasSize = 360; // Total size of the solved puzzle image
-        const spreadMultiplier = 1.6; // How far pieces scatter
-        const snapThreshold = 30; // Distance in pixels within which pieces snap
+        const snapThreshold = 30; 
+
+        const solveOffsetX = (playFieldSize - canvasSize) / 2;
+        const solveOffsetY = (playFieldSize - canvasSize) / 2;
 
         const canvas = new fabric.Canvas('puzzleCanvas');
         const message = document.getElementById('message');
         let piecesArray = [];
         let numSnapped = 0;
 
-        // Path definitions for classic curved jigsaw edges.
-        // T=Male Tab, F=Female Blank, S=Straight edge
-        // M = Move, c = Bezier Curve
-        const tabSize = 25; // How big the curves are
-        const L = 100 - (tabSize/2); // Linear segment before curve
+        const tabSize = 28; 
+        const L = (canvasSize / cols) - (tabSize / 2); 
 
-        // A standard shape "stub" used for both male and female edges
-        const curveStub = "c 0 -15, 10 -25, 25 -25 s 25 10, 25 25";
-        const reverseCurveStub = "c 0 15, 10 25, 25 25 s 25 -10, 25 -25";
+        const curveStub = "c 0 -15, 10 -28, 28 -28 s 28 10, 28 28";
+        const reverseCurveStub = "c 0 15, 10 28, 28 28 s 28 -10, 28 -28";
 
         const paths = {
             rightMale:   `l ${L} 0 ${curveStub} l ${L} 0`,
             rightFemale: `l ${L} 0 ${reverseCurveStub} l ${L} 0`,
             downMale:    `l 0 ${L} ${reverseCurveStub} l 0 ${L}`,
             downFemale:  `l 0 ${L} ${curveStub} l 0 ${L}`,
-            // Top/Left are always inverse of Bottom/Right of previous piece
             topMale:    `l ${-L} 0 ${curveStub} l ${-L} 0`,
             topFemale:  `l ${-L} 0 ${reverseCurveStub} l ${-L} 0`,
             leftMale:   `l 0 ${-L} ${reverseCurveStub} l 0 ${-L}`,
             leftFemale: `l 0 ${-L} ${curveStub} l 0 ${-L}`,
-            // Straight Edges
-            S_h: `l 200 0`,
-            S_v: `l 0 200`,
-            S_h_rev: `l -200 0`,
-            S_v_rev: `l 0 -200`,
+            S_h: `l ${canvasSize/cols} 0`,
+            S_v: `l 0 ${canvasSize/rows}`,
+            S_h_rev: `l ${-canvasSize/cols} 0`,
+            S_v_rev: `l 0 ${-canvasSize/rows}`,
         };
 
-        // --- Step 1: Create the shapes dynamically ---
-        // A helper to generate the 3x3 path strings for interlocking
         const edgeTypes = [
-            ['S', 'T', 'T', 'S'], // Piece 0,0: Top=S, Right=T, Down=T, Left=S
-            ['S', 'F', 'T', 'F'], // Piece 0,1: Right connects to 0,0 Left, Bottom to 1,1
+            ['S', 'T', 'T', 'S'], 
+            ['S', 'F', 'T', 'F'], 
             ['S', 'S', 'F', 'T'],
             ['F', 'F', 'F', 'S'],
             ['T', 'T', 'T', 'T'],
@@ -119,82 +113,74 @@
             const edges = edgeTypes[index];
             const p = paths;
 
-            let pathString = `M 0 0 `; // Start at origin
+            let pathString = `M 0 0 `; 
 
-            // Top Edge
             pathString += (row === 0) ? p.S_h : (edges[0] === 'T' ? p.topMale : p.topFemale);
-            // Right Edge
             pathString += (col === cols - 1) ? p.S_v : (edges[1] === 'T' ? p.rightMale : p.rightFemale);
-            // Down Edge
             pathString += (row === rows - 1) ? p.S_h_rev : (edges[2] === 'F' ? p.downFemale : p.downMale);
-            // Left Edge
             pathString += (col === 0) ? p.S_v_rev : (edges[3] === 'T' ? p.leftMale : p.leftFemale);
 
-            pathString += " z"; // Close path
+            pathString += " z"; 
             return pathString;
         }
 
-        // --- Step 2: Load the Cat & Make Pieces ---
-        fabric.Image.fromURL('https://images.unsplash.com/photo-1514888286974-8c23e18d79b8?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=600&q=80', function(img) {
+        // Initialize immediately once the DOM is ready
+        window.addEventListener('DOMContentLoaded', function() {
+            const imgElement = document.getElementById('source-image');
             
-            // Adjust original cat image size to fit solve area
+            const img = new fabric.Image(imgElement);
             img.scaleToWidth(canvasSize);
             img.scaleToHeight(canvasSize);
 
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c < cols; c++) {
                     const id = r * cols + c;
-                    
-                    // Create the classic jigsaw path outline
                     const pathData = getPiecePath(c, r);
+                    
                     const shapePath = new fabric.Path(pathData, {
-                        fill: 'white', // Placeholder
+                        fill: 'white', 
                         stroke: '#999',
                         strokeWidth: 1,
                         objectCaching: false
                     });
 
-                    // Create the cat image for THIS piece
-                    const pieceImg = new fabric.Image(img.getElement(), {
-                        left: -c * (canvasSize/cols), // Offset to show right part of cat
-                        top: -r * (canvasSize/rows),
-                        scaleX: img.scaleX,
-                        scaleY: img.scaleY,
+                    img.clone(function(pieceImg) {
+                        pieceImg.set({
+                            left: -c * (canvasSize/cols), 
+                            top: -r * (canvasSize/rows)
+                        });
+
+                        const pieceGroup = new fabric.Group([shapePath, pieceImg], {
+                            left: 0, 
+                            top: 0,
+                            id: id,
+                            hasControls: false, 
+                            hasBorders: false,
+                            solveX: c * (canvasSize/cols) + solveOffsetX, 
+                            solveY: r * (canvasSize/rows) + solveOffsetY,
+                            isSnapped: false
+                        });
+
+                        const maskPath = new fabric.Path(pathData, { absolutePositioned: true });
+                        pieceGroup.clipPath = maskPath;
+
+                        piecesArray.push(pieceGroup);
+
+                        if (piecesArray.length === rows * cols) {
+                            scatterPieces();
+                        }
                     });
-
-                    // Clip the cat image INSIDE the jigsaw shape
-                    const pieceGroup = new fabric.Group([shapePath, pieceImg], {
-                        left: 0, 
-                        top: 0,
-                        id: id,
-                        hasControls: false, // Disables resizing/rotating
-                        hasBorders: false,
-                        originalPath: shapePath, // Keep ref
-                        solveX: c * (canvasSize/cols), // Solve coordinates
-                        solveY: r * (canvasSize/rows),
-                        isSnapped: false
-                    });
-
-                    // Apply standard mask (using a duplicate of the path)
-                    const maskPath = new fabric.Path(pathData, { absolutePositioned: true });
-                    pieceGroup.clipPath = maskPath;
-
-                    piecesArray.push(pieceGroup);
                 }
             }
-
-            scatterPieces();
         });
 
-        // --- Step 3: Spread the Pieces Across Canvas ---
         function scatterPieces() {
-            canvas.clear(); // Clear placeholder loading state
-            message.innerText = 'Drag the curved pieces!';
+            canvas.clear(); 
+            message.innerText = 'Drag the pieces to the center!';
 
             piecesArray.forEach(p => {
-                // Randomly spread pieces outside the 360x360 solve area
-                const randomX = Math.random() * (canvasSize * spreadMultiplier);
-                const randomY = Math.random() * (canvasSize * spreadMultiplier);
+                const randomX = Math.random() * (playFieldSize - 200) + 50; 
+                const randomY = Math.random() * (playFieldSize - 200) + 50;
 
                 p.set({ left: randomX, top: randomY, isSnapped: false });
                 canvas.add(p);
@@ -203,33 +189,29 @@
             canvas.renderAll();
         }
 
-        // --- Step 4: Handle Snap Logic ---
         canvas.on('object:moving', function(e) {
             const piece = e.target;
-            if (piece.isSnapped) return; // Cannot move snapped pieces
+            if (piece.isSnapped) return; 
 
-            // Check distance from solve position
             const distX = Math.abs(piece.left - piece.solveX);
             const distY = Math.abs(piece.top - piece.solveY);
 
             if (distX < snapThreshold && distY < snapThreshold) {
-                // Perform the Snap
                 piece.set({
                     left: piece.solveX,
                     top: piece.solveY,
                     isSnapped: true,
-                    selectable: false, // Lock it
-                    evented: false, // Make it pass-through
+                    selectable: false, 
+                    evented: false, 
                     opacity: 1
                 });
                 
                 numSnapped++;
-                piece.sendToBack(); // So newer pieces can drag over it
+                piece.sendToBack(); 
                 canvas.renderAll();
                 checkWin();
-            } else if (distX < snapThreshold + 10 || distY < snapThreshold + 10) {
-                // Provide visual "magnetic" feedback when very close
-                piece.set({ opacity: 0.8 });
+            } else if (distX < snapThreshold + 15 || distY < snapThreshold + 15) {
+                piece.set({ opacity: 0.7 });
             } else {
                 piece.set({ opacity: 1 });
             }
