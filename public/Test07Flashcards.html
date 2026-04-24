@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -16,43 +15,52 @@
             --text-muted: #94a3b8;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        /* Critical Fix: Prevent horizontal shifts during 3D swing */
+        html, body { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+            overflow: hidden; 
+            width: 100vw; 
+            height: 100vh;
+            background-color: var(--bg-color);
+            -webkit-tap-highlight-color: transparent;
+        }
 
         body {
             font-family: 'Poppins', sans-serif;
-            background-color: var(--bg-color);
             background-image: radial-gradient(circle at 50% -20%, #1e1b4b, #0f172a);
             color: var(--text-main);
-            height: 100vh;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
         }
 
         header {
+            width: 100%;
             padding: 20px;
             text-align: center;
             background: #0f172a;
             border-bottom: 1px solid #1e293b;
-            z-index: 10;
+            z-index: 100;
+            flex-shrink: 0; /* Prevents header from resizing */
         }
-        h1 { font-size: 1.5rem; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 1px; }
+        
+        h1 { font-size: 1.4rem; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 1px; margin: 0; }
         
         .stats {
             display: flex;
             justify-content: center;
-            gap: 20px;
+            gap: 15px;
             margin-top: 10px;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: 600;
         }
         .stat-badge { padding: 4px 10px; border-radius: 20px; background: #1e293b; border: 1px solid #334155; }
         .stat-mastered { color: var(--success); }
         .stat-learning { color: #f59e0b; }
-        .stat-unseen { color: var(--text-main); }
 
         .progress-container { width: 100%; height: 4px; background: #1e293b; }
-        .progress-bar { height: 100%; background: var(--primary); width: 0%; transition: width 0.3s ease; box-shadow: 0 0 10px var(--primary); }
+        .progress-bar { height: 100%; background: var(--primary); width: 0%; transition: width 0.3s ease; }
 
         main {
             flex: 1;
@@ -62,13 +70,14 @@
             justify-content: center;
             padding: 20px;
             position: relative;
+            overflow: hidden; /* Contains the 3D swing */
         }
 
         .scene {
             width: 100%;
-            max-width: 400px;
-            height: 350px;
-            perspective: 1200px;
+            max-width: 380px;
+            height: 360px;
+            perspective: 1500px; /* Higher perspective reduces edge distortion */
             margin-bottom: 30px;
         }
 
@@ -79,6 +88,7 @@
             transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
             transform-style: preserve-3d;
             cursor: pointer;
+            will-change: transform; /* Helps iOS prepare for GPU animation */
         }
 
         .card.is-flipped { transform: rotateY(180deg); }
@@ -89,7 +99,7 @@
             height: 100%;
             backface-visibility: hidden;
             -webkit-backface-visibility: hidden;
-            border-radius: 20px;
+            border-radius: 24px;
             padding: 30px;
             display: flex;
             flex-direction: column;
@@ -97,39 +107,37 @@
             align-items: center;
             text-align: center;
             border: 1px solid #334155;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
         }
 
         .card-face-front { background: linear-gradient(145deg, #1e293b, #0f172a); }
         .card-face-back { background: linear-gradient(145deg, #064e3b, #0f172a); transform: rotateY(180deg); }
 
-        .tag, .card-text, .hint { transform: translateZ(1px); -webkit-transform: translateZ(1px); }
-        .tag { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; color: var(--primary); margin-bottom: 15px; }
-        .card-text { font-size: 1.25rem; font-weight: 600; line-height: 1.5; }
+        .tag, .card-text, .hint { transform: translateZ(20px); -webkit-transform: translateZ(20px); }
+        .tag { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; color: var(--primary); margin-bottom: 15px; }
+        .card-text { font-size: 1.2rem; font-weight: 600; line-height: 1.5; }
         .card-face-back .tag { color: var(--success); }
-        .card-face-back .card-text { font-size: 1.15rem; font-weight: 400; }
 
-        .hint { margin-top: auto; font-size: 0.8rem; color: var(--text-muted); opacity: 0.7; animation: pulse 2s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+        .hint { margin-top: auto; font-size: 0.75rem; color: var(--text-muted); opacity: 0.6; }
 
         .actions {
             display: flex;
             gap: 15px;
             width: 100%;
-            max-width: 400px;
+            max-width: 380px;
             opacity: 0;
             pointer-events: none;
-            transform: translateY(20px);
-            transition: all 0.4s ease;
+            transform: translateY(15px);
+            transition: all 0.3s ease;
         }
         .actions.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
 
         button {
             flex: 1;
-            padding: 15px;
-            border-radius: 12px;
+            padding: 16px;
+            border-radius: 14px;
             border: none;
-            font-size: 1rem;
+            font-size: 0.95rem;
             font-weight: 800;
             cursor: pointer;
             text-transform: uppercase;
@@ -138,27 +146,27 @@
         .btn-fail { background: linear-gradient(135deg, #f43f5e, #be123c); }
         .btn-pass { background: linear-gradient(135deg, #10b981, #047857); }
 
-        #end-screen { display: none; flex-direction: column; align-items: center; text-align: center; z-index: 20; }
-        #end-screen h2 { font-size: 2.5rem; color: var(--success); margin-bottom: 10px; }
-        .btn-reset { margin-top: 30px; background: var(--primary); padding: 15px 30px; }
+        #end-screen { display: none; flex-direction: column; align-items: center; text-align: center; }
+        #end-screen h2 { font-size: 2.2rem; color: var(--success); margin-bottom: 10px; }
+        .btn-reset { margin-top: 30px; background: var(--primary); padding: 15px 30px; width: auto; }
     </style>
 </head>
 <body>
 
     <header>
         <h1>Chemistry Mastery</h1>
-        <div class="progress-container"><div class="progress-bar" id="progress-bar"></div></div>
         <div class="stats">
             <span class="stat-badge stat-unseen">New: <span id="count-unseen">0</span></span>
-            <span class="stat-badge stat-learning">Learning: <span id="count-learning">0</span></span>
-            <span class="stat-badge stat-mastered">Mastered: <span id="count-mastered">0</span></span>
+            <span class="stat-badge stat-learning">Try Again: <span id="count-learning">0</span></span>
+            <span class="stat-badge stat-mastered">Known: <span id="count-mastered">0</span></span>
         </div>
+        <div class="progress-container"><div class="progress-bar" id="progress-bar"></div></div>
     </header>
 
     <main>
         <div id="end-screen">
-            <h2>Deck Complete! 🎉</h2>
-            <p>You've reviewed all points.</p>
+            <h2>Session Done! 🎉</h2>
+            <p>You've cleared the deck.</p>
             <button class="btn-reset" onclick="resetDeck()">Restart Deck</button>
         </div>
 
@@ -167,11 +175,12 @@
                 <div class="card-face card-face-front">
                     <div class="tag">Question</div>
                     <div class="card-text" id="card-front-text">Loading...</div>
-                    <div class="hint">Tap to reveal answer</div>
+                    <div class="hint">Tap to flip</div>
                 </div>
                 <div class="card-face card-face-back">
                     <div class="tag">Answer</div>
                     <div class="card-text" id="card-back-text">Loading...</div>
+                    <div class="hint">Tap to flip back</div>
                 </div>
             </div>
         </div>
@@ -195,53 +204,43 @@
             { q: "When is the Stock System required?", a: "For metallic atoms that can form multiple types of ions with various charges." },
             { q: "What does the name of a binary covalent compound depend on?", a: "The number of atoms for each element, denoted by prefixes." },
             { q: "What are the covalent prefixes for numbers 1 through 8?", a: "1-mono, 2-di, 3-tri, 4-tetra, 5-penta, 6-hexa, 7-hepta, 8-octo." },
-            { q: "What is a polyatomic ion?", a: "A group of covalently bonded atoms with a net charge (due to gain or loss of electrons)." },
+            { q: "What is a polyatomic ion?", a: "A group of covalently bonded atoms with a net charge." },
             { q: "Where can you find a list of common polyatomic ions?", a: "Reference Table E." },
             { q: "What is a hydrate?", a: "An ionic compound that contains water molecules locked away in its crystalline structure." },
             { q: "Can a hydrate have more than one water molecule per formula unit?", a: "Yes, it may have a single molecule or multiple." },
-            { q: "What does CuSO<sub>4</sub> &bull; 5H<sub>2</sub>O mean?", a: "There are five water molecules for every formula unit of copper sulfate." },
-            { q: "What does the 'dot' in a hydrate formula represent?", a: "It separates the ionic formula unit and the water molecule; it does NOT mean multiplication." },
+            { q: "What does CuSO<sub>4</sub> &bull; 5H<sub>2</sub>O mean?", a: "Five water molecules for every formula unit of copper sulfate." },
             { q: "What does an empirical formula express?", a: "The atoms within a compound in the lowest whole number ratio." },
             { q: "Which type of compound is always represented by an empirical formula?", a: "Ionic compounds." },
-            { q: "Are molecular compounds always empirical?", a: "No, they may or may not be empirical." },
-            { q: "Why is H<sub>2</sub>O considered both empirical and molecular?", a: "Because the actual 2:1 ratio of hydrogen to oxygen cannot be reduced any further." },
-            { q: "What is the empirical formula for the molecular compound H<sub>2</sub>O<sub>2</sub>?", a: "HO." },
-            { q: "What does a chemical equation describe?", a: "The changes that occur during a chemical reaction." },
-            { q: "What is a reactant?", a: "A chemical that is reacting (found on the left side of the arrow)." },
-            { q: "What is a product?", a: "Something that is produced from a reaction (found on the right side of the arrow)." },
-            { q: "Why must chemical equations be balanced with coefficients?", a: "To satisfy the Law of Conservation of Mass." },
-            { q: "What do the phase indicators (s), (g), (l), and (aq) stand for?", a: "Solid, gas, liquid, and aqueous (dissolved in water)." },
+            { q: "Why is H<sub>2</sub>O considered both empirical and molecular?", a: "Actual 2:1 ratio cannot be reduced further." },
+            { q: "What is the empirical formula for H<sub>2</sub>O<sub>2</sub>?", a: "HO." },
+            { q: "What does a chemical equation describe?", a: "Changes that occur during a chemical reaction." },
+            { q: "Reactants are on which side of the arrow?", a: "The left side." },
+            { q: "Products are on which side of the arrow?", a: "The right side." },
+            { q: "Why must chemical equations be balanced?", a: "To satisfy the Law of Conservation of Mass." },
+            { q: "What does (aq) stand for in an equation?", a: "Aqueous (dissolved in water)." },
             { q: "What are the four basic types of chemical reactions?", a: "Synthesis, decomposition, single replacement, and double replacement." },
-            { q: "Describe a synthesis reaction.", a: "Two reactants combine chemically to form a single product." },
-            { q: "Describe a decomposition reaction.", a: "A single reactant decomposes to form two products." },
+            { q: "Describe a synthesis reaction.", a: "Two reactants combine to form a single product." },
+            { q: "Describe a decomposition reaction.", a: "A single reactant breaks down into two or more products." },
             { q: "Describe a single replacement reaction.", a: "A metal replaces another metal (or hydrogen) in an ionic compound or acid." },
             { q: "Describe a double replacement reaction.", a: "Ionic compounds switch their ions." },
-            { q: "What is used to predict if a single replacement reaction will occur?", a: "The Activity Series (Table J)." },
-            { q: "When will a metal replace another metal in a compound?", a: "Only if it is higher on the activity series." },
+            { q: "What predicts if a single replacement reaction will occur?", a: "The Activity Series (Table J)." },
+            { q: "A metal replaces another metal only if it is ______ on Table J.", a: "Higher." },
             { q: "What is an exothermic process?", a: "A process that releases energy (energy is a product)." },
             { q: "What is an endothermic process?", a: "A process that absorbs energy (energy is a reactant)." },
-            { q: "How can you determine the mass of a missing product or reactant?", a: "If the masses of all other products and reactants are known." },
-            { q: "What format should be used when determining missing mass?", a: "A word equation (Mass of Reactants = Mass of Products)." },
-            { q: "According to the Law of Conservation of Mass, what cannot change in a reaction?", a: "The total mass." },
-            { q: "What is a molar ratio?", a: "The ratio between coefficients in a balanced chemical equation." },
-            { q: "How can you calculate required moles of products/reactants if given the moles of one compound?", a: "By setting up a proportion using the balanced equation." },
-            { q: "Where can most oxidation numbers be found?", a: "On the periodic table in your reference tables." },
-            { q: "What happens to a species during oxidation?", a: "It loses electrons, causing an increase in oxidation state/number." },
-            { q: "What happens to a species during reduction?", a: "It gains electrons, causing a decrease in oxidation state/number." },
-            { q: "What does 'LEO the lion says GER' stand for?", a: "Losing Electrons is Oxidation / Gaining Electrons is Reduction." },
-            { q: "What does the phrase 'OIL RIG' stand for?", a: "Oxidation It Loses, Reduction It Gains." },
-            { q: "What is an Oxidizing Agent?", a: "The species that causes oxidation in another substance and is itself reduced." },
-            { q: "What is a Reducing Agent?", a: "The species that causes reduction in another substance and is itself oxidized." },
-            { q: "Identify the process: Sn<sup>2+</sup>(aq) &rarr; Sn<sup>4+</sup>(aq) + 2e<sup>-</sup>", a: "Oxidation (oxidation number increases)." },
-            { q: "Identify the process: Fe<sup>3+</sup>(aq) + 3e<sup>-</sup> &rarr; Fe(s)", a: "Reduction (oxidation number decreases)." },
-            { q: "What must be balanced during a redox reaction regarding electrons?", a: "The number of electrons lost by oxidation must equal the number gained by reduction." },
-            { q: "What are the two types of Electrochemical Cells?", a: "Voltaic and Electrolytic." },
-            { q: "What characterizes a voltaic cell?", a: "It has spontaneous chemical reactions that produce electrical current (a battery)." },
-            { q: "In a voltaic cell, where does oxidation occur?", a: "At the more reactive metal (higher on Table J)." },
-            { q: "In a voltaic cell, where does reduction occur?", a: "At the less reactive metal (lower on Table J)." },
-            { q: "What characterizes an electrolytic cell?", a: "It is not spontaneous and needs an external energy source (like a battery)." },
-            { q: "At which electrodes do reduction and oxidation occur? (Hint: RED CAT / AN OX)", a: "Reduction occurs at the CAThode; Oxidation occurs at the ANode." },
-            { q: "What is the purpose of a salt bridge in a voltaic cell?", a: "It is a path that allows ions to flow between the two half-cells." }
+            { q: "How do you find the mass of a missing reactant?", a: "Mass of Reactants = Mass of Products." },
+            { q: "What is a molar ratio?", a: "Ratio between coefficients in a balanced equation." },
+            { q: "Oxidation is the _______ of electrons.", a: "Loss." },
+            { q: "Reduction is the _______ of electrons.", a: "Gain." },
+            { q: "LEO says GER stands for...?", a: "Losing Electrons is Oxidation / Gaining Electrons is Reduction." },
+            { q: "OIL RIG stands for...?", a: "Oxidation It Loses / Reduction It Gains." },
+            { q: "What does an Oxidizing Agent do?", a: "Causes oxidation in another substance; it is reduced itself." },
+            { q: "What does a Reducing Agent do?", a: "Causes reduction in another substance; it is oxidized itself." },
+            { q: "In redox, electrons lost must ______ electrons gained.", a: "Equal." },
+            { q: "Voltaic cells produce current ______.", a: "Spontaneously (like a battery)." },
+            { q: "Electrolytic cells require an ______ power source.", a: "External." },
+            { q: "RED CAT means...?", a: "REDuction occurs at the CAThode." },
+            { q: "AN OX means...?", a: "ANode is the site of OXidation." },
+            { q: "What allows ions to flow in a voltaic cell?", a: "The salt bridge." }
         ];
 
         let unseen = [];
@@ -249,23 +248,13 @@
         let mastered = [];
         let currentCard = null;
         let isFlipped = false;
+        let hasBeenFlipped = false;
 
-        const TOTAL_CARDS = rawDeckData.length;
-
-        const cardEl = document.getElementById('flashcard');
-        const frontText = document.getElementById('card-front-text');
-        const backText = document.getElementById('card-back-text');
-        const actionsEl = document.getElementById('action-buttons');
-        const sceneEl = document.getElementById('card-scene');
-        const endScreen = document.getElementById('end-screen');
-        
         function initApp() {
-            const savedState = sessionStorage.getItem('chemistryDeckState');
-            if (savedState) {
-                const parsed = JSON.parse(savedState);
-                unseen = parsed.unseen;
-                learning = parsed.learning;
-                mastered = parsed.mastered;
+            const saved = sessionStorage.getItem('chemDeck');
+            if (saved) {
+                const p = JSON.parse(saved);
+                unseen = p.unseen; learning = p.learning; mastered = p.mastered;
             } else {
                 unseen = rawDeckData.map((c, i) => ({ ...c, id: i })).sort(() => Math.random() - 0.5);
             }
@@ -275,21 +264,16 @@
 
         function drawNextCard() {
             if (unseen.length === 0 && learning.length === 0) {
-                showEndScreen();
+                document.getElementById('card-scene').style.display = 'none';
+                document.getElementById('action-buttons').style.display = 'none';
+                document.getElementById('end-screen').style.display = 'flex';
                 return;
             }
-
-            // MODIFIED LOGIC: Always pull from unseen first until empty
-            if (unseen.length > 0) {
-                currentCard = unseen.shift();
-            } else {
-                currentCard = learning.shift();
-            }
-
+            currentCard = (unseen.length > 0) ? unseen.shift() : learning.shift();
             isFlipped = false;
+            hasBeenFlipped = false;
             cardEl.classList.remove('is-flipped');
             actionsEl.classList.remove('visible');
-            
             setTimeout(() => {
                 frontText.innerHTML = currentCard.q;
                 backText.innerHTML = currentCard.a;
@@ -297,30 +281,29 @@
         }
 
         function flipCard() {
-            if (isFlipped) return; 
-            isFlipped = true;
-            cardEl.classList.add('is-flipped');
-            actionsEl.classList.add('visible');
+            isFlipped = !isFlipped;
+            hasBeenFlipped = true;
+            cardEl.classList.toggle('is-flipped');
+            if (hasBeenFlipped) actionsEl.classList.add('visible');
         }
 
         function markCard(status) {
             if (status === 'mastered') mastered.push(currentCard);
             else learning.push(currentCard);
-            
-            saveState();
+            save();
             updateUI();
             
-            sceneEl.style.transform = 'scale(0.9) translateX(-100vw)';
+            sceneEl.style.transition = 'all 0.3s ease';
+            sceneEl.style.transform = 'translateX(-100vw) rotate(-10deg)';
             sceneEl.style.opacity = '0';
             
             setTimeout(() => {
                 drawNextCard();
                 sceneEl.style.transition = 'none';
-                sceneEl.style.transform = 'scale(0.9) translateX(100vw)';
-                
+                sceneEl.style.transform = 'translateX(100vw)';
                 setTimeout(() => {
                     sceneEl.style.transition = 'all 0.4s ease';
-                    sceneEl.style.transform = 'scale(1) translateX(0)';
+                    sceneEl.style.transform = 'translateX(0)';
                     sceneEl.style.opacity = '1';
                 }, 50);
             }, 300);
@@ -330,24 +313,16 @@
             document.getElementById('count-unseen').innerText = unseen.length;
             document.getElementById('count-learning').innerText = learning.length;
             document.getElementById('count-mastered').innerText = mastered.length;
-            document.getElementById('progress-bar').style.width = `${(mastered.length / TOTAL_CARDS) * 100}%`;
-        }
-
-        function showEndScreen() {
-            sceneEl.style.display = 'none';
-            actionsEl.style.display = 'none';
-            endScreen.style.display = 'flex';
+            document.getElementById('progress-bar').style.width = `${(mastered.length / rawDeckData.length) * 100}%`;
         }
 
         function resetDeck() {
-            sessionStorage.removeItem('chemistryDeckState');
-            sceneEl.style.display = 'block';
-            endScreen.style.display = 'none';
-            initApp();
+            sessionStorage.removeItem('chemDeck');
+            location.reload();
         }
 
-        function saveState() {
-            sessionStorage.setItem('chemistryDeckState', JSON.stringify({ unseen, learning, mastered }));
+        function save() {
+            sessionStorage.setItem('chemDeck', JSON.stringify({ unseen, learning, mastered }));
         }
 
         window.addEventListener('DOMContentLoaded', initApp);
