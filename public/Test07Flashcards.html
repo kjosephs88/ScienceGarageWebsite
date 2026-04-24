@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Chemistry Mastery Deck</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: rgba(255, 255, 255, 0.1);
+            --card-border: rgba(255, 255, 255, 0.2);
+            --primary: #38bdf8;
+            --success: #10b981;
+            --danger: #ef4444;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(circle at 50% -20%, #1e1b4b, #0f172a);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* HEADER & STATS */
+        header {
+            padding: 20px;
+            text-align: center;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--card-border);
+            z-index: 10;
+        }
+        h1 { font-size: 1.5rem; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 1px; }
+        
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        .stat-badge { padding: 4px 10px; border-radius: 20px; background: rgba(0,0,0,0.3); border: 1px solid var(--card-border); }
+        .stat-mastered { color: var(--success); }
+        .stat-learning { color: #f59e0b; }
+        .stat-unseen { color: var(--text-main); }
+
+        /* PROGRESS BAR */
+        .progress-container { width: 100%; height: 4px; background: rgba(255,255,255,0.1); }
+        .progress-bar { height: 100%; background: var(--primary); width: 0%; transition: width 0.3s ease; box-shadow: 0 0 10px var(--primary); }
+
+        /* MAIN APP AREA */
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+        }
+
+        /* CARD FLIP LOGIC */
+        .scene {
+            width: 100%;
+            max-width: 400px;
+            height: 350px;
+            perspective: 1000px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+            transform-style: preserve-3d;
+            cursor: pointer;
+        }
+
+        .card.is-flipped { transform: rotateY(180deg); }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            border-radius: 20px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--card-border);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .card-face-front {
+            background: linear-gradient(145deg, rgba(56,189,248,0.1), rgba(15,23,42,0.4));
+        }
+
+        .card-face-back {
+            background: linear-gradient(145deg, rgba(16,185,129,0.1), rgba(15,23,42,0.4));
+            transform: rotateY(180deg);
+        }
+
+        .tag { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; color: var(--primary); margin-bottom: 15px; }
+        .card-text { font-size: 1.25rem; font-weight: 600; line-height: 1.5; }
+        .card-face-back .tag { color: var(--success); }
+        .card-face-back .card-text { font-size: 1.15rem; font-weight: 400; }
+
+        .hint { margin-top: auto; font-size: 0.8rem; color: var(--text-muted); opacity: 0.7; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+
+        /* ACTION BUTTONS */
+        .actions {
+            display: flex;
+            gap: 15px;
+            width: 100%;
+            max-width: 400px;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(20px);
+            transition: all 0.4s ease;
+        }
+        .actions.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
+
+        button {
+            flex: 1;
+            padding: 15px;
+            border-radius: 12px;
+            border: none;
+            font-size: 1rem;
+            font-weight: 800;
+            cursor: pointer;
+            text-transform: uppercase;
+            color: #fff;
+            transition: transform 0.1s, filter 0.2s;
+        }
+        button:active { transform: scale(0.95); }
+        button:hover { filter: brightness(1.2); }
+        
+        .btn-fail { background: linear-gradient(135deg, #f43f5e, #be123c); box-shadow: 0 4px 15px rgba(244, 63, 94, 0.4); }
+        .btn-pass { background: linear-gradient(135deg, #10b981, #047857); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4); }
+
+        /* END SCREEN */
+        #end-screen { display: none; flex-direction: column; align-items: center; text-align: center; z-index: 20; }
+        #end-screen h2 { font-size: 2.5rem; color: var(--success); margin-bottom: 10px; }
+        .btn-reset { margin-top: 30px; background: var(--primary); padding: 15px 30px; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Chemistry Mastery</h1>
+        <div class="progress-container"><div class="progress-bar" id="progress-bar"></div></div>
+        <div class="stats">
+            <span class="stat-badge stat-unseen">New: <span id="count-unseen">0</span></span>
+            <span class="stat-badge stat-learning">Learning: <span id="count-learning">0</span></span>
+            <span class="stat-badge stat-mastered">Mastered: <span id="count-mastered">0</span></span>
+        </div>
+    </header>
+
+    <main>
+        <div id="end-screen">
+            <h2>Deck Complete! 🎉</h2>
+            <p>You've mastered all 57 review points.</p>
+            <button class="btn-reset" onclick="resetDeck()">Restart Deck</button>
+        </div>
+
+        <div class="scene" id="card-scene">
+            <div class="card" id="flashcard" onclick="flipCard()">
+                <div class="card-face card-face-front">
+                    <div class="tag">Question</div>
+                    <div class="card-text" id="card-front-text">Loading...</div>
+                    <div class="hint">Tap to reveal answer</div>
+                </div>
+                <div class="card-face card-face-back">
+                    <div class="tag">Answer</div>
+                    <div class="card-text" id="card-back-text">Loading...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="actions" id="action-buttons">
+            <button class="btn-fail" onclick="markCard('learning')">Needs Work</button>
+            <button class="btn-pass" onclick="markCard('mastered')">Got It</button>
+        </div>
+    </main>
+
+    <script>
+        // The 57 Points Formatted as Q&A Pairs
+        const rawDeckData = [
+            { q: "What are the two main types of compounds in chemistry?", a: "Ionic compounds (ionic bonds) and molecular compounds (covalent bonds)." },
+            { q: "Between what types of elements does an ionic bond occur?", a: "A metal and a non-metal." },
+            { q: "Between what types of elements does a covalent bond occur?", a: "A nonmetal and a nonmetal." },
+            { q: "How do you name a binary ionic compound?", a: "Name of the positive metal ion followed by the nonmetal negative ion ending in '-ide'." },
+            { q: "Does the number of elements affect the naming of a binary ionic compound?", a: "No, it does not matter." },
+            { q: "How do you write the formula of an ionic compound?", a: "Place the absolute value of the charge on the first ion as the subscript for the second ion and vice versa (criss-cross)." },
+            { q: "What rule applies to the ratios of atoms in an ionic compound formula?", a: "They must be reduced to the lowest whole number." },
+            { q: "What does the Stock System use to show the charge on a positive metal ion?", a: "Roman numerals (e.g., iron(III))." },
+            { q: "When is the Stock System required?", a: "For metallic atoms that can form multiple types of ions with various charges." },
+            { q: "What does the name of a binary covalent compound depend on?", a: "The number of atoms for each element, denoted by prefixes." },
+            { q: "What are the covalent prefixes for numbers 1 through 8?", a: "1-mono, 2-di, 3-tri, 4-tetra, 5-penta, 6-hexa, 7-hepta, 8-octo." },
+            { q: "What is a polyatomic ion?", a: "A group of covalently bonded atoms with a net charge (due to gain or loss of electrons)." },
+            { q: "Where can you find a list of common polyatomic ions?", a: "Reference Table E." },
+            { q: "What is a hydrate?", a: "An ionic compound that contains water molecules locked away in its crystalline structure." },
+            { q: "Can a hydrate have more than one water molecule per formula unit?", a: "Yes, it may have a single molecule or multiple." },
+            { q: "What does CuSO₄•5H₂O mean?", a: "There are five water molecules for every formula unit of copper sulfate." },
+            { q: "What does the 'dot' in a hydrate formula represent?", a: "It separates the ionic formula unit and the water molecule; it does NOT mean multiplication." },
+            { q: "What does an empirical formula express?", a: "The atoms within a compound in the lowest whole number ratio." },
+            { q: "Which type of compound is always represented by an empirical formula?", a: "Ionic compounds." },
+            { q: "Are molecular compounds always empirical?", a: "No, they may or may not be empirical." },
+            { q: "Why is H₂O considered both empirical and molecular?", a: "Because the actual 2:1 ratio of hydrogen to oxygen cannot be reduced any further." },
+            { q: "What is the empirical formula for the molecular compound H₂O₂?", a: "HO." },
+            { q: "What does a chemical equation describe?", a: "The changes that occur during a chemical reaction." },
+            { q: "What is a reactant?", a: "A chemical that is reacting (found on the left side of the arrow)." },
+            { q: "What is a product?", a: "Something that is produced from a reaction (found on the right side of the arrow)." },
+            { q: "Why must chemical equations be balanced with coefficients?", a: "To satisfy the Law of Conservation of Mass." },
+            { q: "What do the phase indicators (s), (g), (l), and (aq) stand for?", a: "Solid, gas, liquid, and aqueous (dissolved in water)." },
+            { q: "What are the four basic types of chemical reactions?", a: "Synthesis, decomposition, single replacement, and double replacement." },
+            { q: "Describe a synthesis reaction.", a: "Two reactants combine chemically to form a single product." },
+            { q: "Describe a decomposition reaction.", a: "A single reactant decomposes to form two products." },
+            { q: "Describe a single replacement reaction.", a: "A metal replaces another metal (or hydrogen) in an ionic compound or acid." },
+            { q: "Describe a double replacement reaction.", a: "Ionic compounds switch their ions." },
+            { q: "What is used to predict if a single replacement reaction will occur?", a: "The Activity Series (Table J)." },
+            { q: "When will a metal replace another metal in a compound?", a: "Only if it is higher on the activity series." },
+            { q: "What is an exothermic process?", a: "A process that releases energy (energy is a product)." },
+            { q: "What is an endothermic process?", a: "A process that absorbs energy (energy is a reactant)." },
+            { q: "How can you determine the mass of a missing product or reactant?", a: "If the masses of all other products and reactants are known." },
+            { q: "What format should be used when determining missing mass?", a: "A word equation (Mass of Reactants = Mass of Products)." },
+            { q: "According to the Law of Conservation of Mass, what cannot change in a reaction?", a: "The total mass." },
+            { q: "What is a molar ratio?", a: "The ratio between coefficients in a balanced chemical equation." },
+            { q: "How can you calculate required moles of products/reactants if given the moles of one compound?", a: "By setting up a proportion using the balanced equation." },
+            { q: "Where can most oxidation numbers be found?", a: "On the periodic table in your reference tables." },
+            { q: "What happens to a species during oxidation?", a: "It loses electrons, causing an increase in oxidation state/number." },
+            { q: "What happens to a species during reduction?", a: "It gains electrons, causing a decrease in oxidation state/number." },
+            { q: "What does 'LEO the lion says GER' stand for?", a: "Losing Electrons is Oxidation / Gaining Electrons is Reduction." },
+            { q: "What does the phrase 'OIL RIG' stand for?", a: "Oxidation It Loses, Reduction It Gains." },
+            { q: "What is an Oxidizing Agent?", a: "The species that causes oxidation in another substance and is itself reduced." },
+            { q: "What is a Reducing Agent?", a: "The species that causes reduction in another substance and is itself oxidized." },
+            { q: "Identify the process: Sn²⁺(aq) → Sn⁴⁺(aq) + 2e⁻", a: "Oxidation (oxidation number increases)." },
+            { q: "Identify the process: Fe³⁺(aq) + 3e⁻ → Fe(s)", a: "Reduction (oxidation number decreases)." },
+            { q: "What must be balanced during a redox reaction regarding electrons?", a: "The number of electrons lost by oxidation must equal the number gained by reduction." },
+            { q: "What are the two types of Electrochemical Cells?", a: "Voltaic and Electrolytic." },
+            { q: "What characterizes a voltaic cell?", a: "It has spontaneous chemical reactions that produce electrical current (a battery)." },
+            { q: "In a voltaic cell, where does oxidation occur?", a: "At the more reactive metal (higher on Table J)." },
+            { q: "In a voltaic cell, where does reduction occur?", a: "At the less reactive metal (lower on Table J)." },
+            { q: "What characterizes an electrolytic cell?", a: "It is not spontaneous and needs an external energy source (like a battery)." },
+            { q: "At which electrodes do reduction and oxidation occur? (Hint: RED CAT / AN OX)", a: "Reduction occurs at the CAThode; Oxidation occurs at the ANode." },
+            { q: "What is the purpose of a salt bridge in a voltaic cell?", a: "It is a path that allows ions to flow between the two half-cells." }
+        ];
+
+        // ENGINE STATE
+        let deck = [];
+        let unseen = [];
+        let learning = [];
+        let mastered = [];
+        let currentCard = null;
+        let isFlipped = false;
+
+        const TOTAL_CARDS = rawDeckData.length;
+
+        // DOM ELEMENTS
+        const cardEl = document.getElementById('flashcard');
+        const frontText = document.getElementById('card-front-text');
+        const backText = document.getElementById('card-back-text');
+        const actionsEl = document.getElementById('action-buttons');
+        const sceneEl = document.getElementById('card-scene');
+        const endScreen = document.getElementById('end-screen');
+        
+        // INIT
+        function initApp() {
+            // Check Session Storage (Active Browser Session Only)
+            const savedState = sessionStorage.getItem('chemistryDeckState');
+            
+            if (savedState) {
+                const parsed = JSON.parse(savedState);
+                unseen = parsed.unseen;
+                learning = parsed.learning;
+                mastered = parsed.mastered;
+            } else {
+                // Initialize fresh deck with IDs
+                unseen = rawDeckData.map((c, i) => ({ ...c, id: i }));
+                // Optional: Shuffle the new deck
+                unseen = unseen.sort(() => Math.random() - 0.5);
+            }
+            
+            updateUI();
+            drawNextCard();
+        }
+
+        function drawNextCard() {
+            if (unseen.length === 0 && learning.length === 0) {
+                showEndScreen();
+                return;
+            }
+
+            // Anki-lite logic: 40% chance to review a learning card, otherwise pull new
+            // If unseen is empty, 100% learning. If learning is empty, 100% unseen.
+            let pullFromLearning = false;
+            
+            if (learning.length > 0 && unseen.length > 0) {
+                pullFromLearning = Math.random() < 0.4;
+            } else if (unseen.length === 0) {
+                pullFromLearning = true;
+            }
+
+            if (pullFromLearning) {
+                // Pull oldest learning card
+                currentCard = learning.shift();
+            } else {
+                currentCard = unseen.shift();
+            }
+
+            // Render Card
+            isFlipped = false;
+            cardEl.classList.remove('is-flipped');
+            actionsEl.classList.remove('visible');
+            
+            setTimeout(() => {
+                frontText.innerText = currentCard.q;
+                backText.innerText = currentCard.a;
+            }, 200); // Wait for flip animation to clear before changing text
+        }
+
+        function flipCard() {
+            if (isFlipped) return; // Prevent double flip
+            isFlipped = true;
+            cardEl.classList.add('is-flipped');
+            actionsEl.classList.add('visible');
+        }
+
+        function markCard(status) {
+            if (status === 'mastered') {
+                mastered.push(currentCard);
+            } else {
+                // Put back at the end of the learning queue
+                learning.push(currentCard);
+            }
+            
+            saveState();
+            updateUI();
+            
+            // Swipe out animation
+            sceneEl.style.transform = 'scale(0.9) translateX(-100vw)';
+            sceneEl.style.opacity = '0';
+            
+            setTimeout(() => {
+                drawNextCard();
+                sceneEl.style.transition = 'none';
+                sceneEl.style.transform = 'scale(0.9) translateX(100vw)';
+                
+                setTimeout(() => {
+                    sceneEl.style.transition = 'all 0.4s ease';
+                    sceneEl.style.transform = 'scale(1) translateX(0)';
+                    sceneEl.style.opacity = '1';
+                }, 50);
+            }, 300);
+        }
+
+        function updateUI() {
+            document.getElementById('count-unseen').innerText = unseen.length;
+            document.getElementById('count-learning').innerText = learning.length;
+            document.getElementById('count-mastered').innerText = mastered.length;
+            
+            const progress = (mastered.length / TOTAL_CARDS) * 100;
+            document.getElementById('progress-bar').style.width = `${progress}%`;
+        }
+
+        function showEndScreen() {
+            sceneEl.style.display = 'none';
+            actionsEl.style.display = 'none';
+            endScreen.style.display = 'flex';
+        }
+
+        function resetDeck() {
+            sessionStorage.removeItem('chemistryDeckState');
+            sceneEl.style.display = 'block';
+            endScreen.style.display = 'none';
+            initApp();
+        }
+
+        // DATABASE CONNECTION STUB
+        function saveState() {
+            const state = { unseen, learning, mastered };
+            sessionStorage.setItem('chemistryDeckState', JSON.stringify(state));
+            
+            /* * FUTURE FIREBASE INTEGRATION STUB:
+             * const userId = firebase.auth().currentUser.uid;
+             * firebase.database().ref('users/' + userId + '/chemistryDeck').set(state);
+             */
+        }
+
+        // Boot
+        window.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
