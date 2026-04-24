@@ -66,7 +66,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: center; /* Ensures exact vertical centering */
             padding: 20px;
             position: relative;
             overflow: hidden;
@@ -77,7 +77,7 @@
             max-width: 380px;
             height: 360px;
             perspective: 1500px; 
-            margin-bottom: 30px;
+            /* Removed bottom margins so it centers flawlessly */
         }
 
         .card {
@@ -119,17 +119,27 @@
 
         .hint { margin-top: auto; font-size: 0.75rem; color: var(--text-muted); opacity: 0.6; }
 
+        /* FIXED ABSOLUTE POSITIONING FOR BUTTONS */
         .actions {
+            position: absolute;
+            bottom: 30px; /* Anchors underneath the card, fixed to bottom */
+            left: 50%;
+            width: calc(100% - 40px); /* Keeps margins clean on mobile */
+            max-width: 380px;
             display: flex;
             gap: 15px;
-            width: 100%;
-            max-width: 380px;
             opacity: 0;
             pointer-events: none;
-            transform: translateY(15px);
+            transform: translate(-50%, 20px); /* Slides up from below */
             transition: all 0.3s ease;
+            z-index: 10;
         }
-        .actions.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
+        
+        .actions.visible { 
+            opacity: 1; 
+            pointer-events: auto; 
+            transform: translate(-50%, 0); 
+        }
 
         button {
             flex: 1;
@@ -275,7 +285,6 @@
             }
             currentCard = (unseen.length > 0) ? unseen.shift() : learning.shift();
             
-            // Reset state for the new card
             isFlipped = false;
             cardEl.classList.remove('is-flipped');
             actionsEl.classList.remove('visible');
@@ -287,11 +296,10 @@
         }
 
         function flipCard() {
-            // Toggle the flip state
             isFlipped = !isFlipped;
             cardEl.classList.toggle('is-flipped');
             
-            // Show buttons ONLY when the back of the card is visible
+            // Fades in when on answer, fades out when back on question
             if (isFlipped) {
                 actionsEl.classList.add('visible');
             } else {
@@ -300,7 +308,6 @@
         }
 
         function markCard(status) {
-            // Prevent marking if buttons are hidden but somehow clicked
             if (!isFlipped) return; 
 
             if (status === 'mastered') mastered.push(currentCard);
