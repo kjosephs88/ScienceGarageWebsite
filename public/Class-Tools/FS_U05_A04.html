@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab 9 - Blood Typing Whodunit</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        heading: ['Montserrat', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom scrollbar for textareas */
+        textarea::-webkit-scrollbar { width: 8px; }
+        textarea::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        textarea::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        textarea::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* Smooth scrolling for anchor links */
+        html { scroll-behavior: smooth; }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased p-4 md:p-8 min-h-screen">
+
+<div class="max-w-5xl mx-auto space-y-8">
+
+    <div class="bg-white rounded-2xl shadow-sm p-8 md:p-10 border-t-8 border-indigo-600">
+        <div class="flex flex-col md:flex-row md:items-start justify-between gap-6">
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <p class="text-indigo-600 font-semibold tracking-wide uppercase text-sm">Unit 5 - Blood and Blood Spatter</p>
+                    <span class="bg-indigo-100 text-indigo-800 text-xs font-bold px-3 py-1 rounded-full">Assignment #4</span>
+                </div>
+                <h1 class="font-heading text-3xl md:text-4xl text-slate-900">Lab 9: Blood Typing "Whodunit?"</h1>
+            </div>
+            
+            <div class="w-full md:w-64 shrink-0">
+                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Date</label>
+                <input type="date" id="assignmentDate" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-colors duration-200 text-slate-600">
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm p-8 md:p-10">
+        <h2 class="font-heading text-2xl text-slate-800 border-b-2 border-slate-100 pb-4 mb-6 flex items-center gap-3">
+            <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+            Background Information
+        </h2>
+        
+        <div class="space-y-8 text-slate-600 leading-relaxed">
+            <div>
+                <h3 class="font-semibold text-lg text-slate-800 mb-3">ABO/Rh Blood System</h3>
+                <p class="mb-4">Around 1900, Karl Landsteiner discovered that there are at least four different kinds of human blood, determined by the presence or absence of specific agglutinogens (antigens) on the surface of red blood cells (erythrocytes). These antigens have been designated as A and B. Antibodies against antigens A and B begin to build up in the blood plasma shortly after birth.</p>
+                <p class="mb-4">The levels peak at about eight to ten years of age, and the antibodies remain, in declining amounts, throughout the rest of a person's life. The stimulus for antibody production is not clear. However, it has been proposed that antibody production is initiated by minute amounts of A and B antigens that may enter the body through food, bacteria, or other means.</p>
+                <p class="mb-4">Humans normally produce antibodies against those antigens that are not on their red blood cells: A person with A antigens has anti-B antibodies, a person with B antigens has anti-A antibodies, a person with neither A or B antigens has both anti-A antibodies and anti-B antibodies, and a person with both A and B antigens has neither anti-A antibodies nor anti-B antibodies. Blood type is based on the antigens, not the antibodies, a person possess.</p>
+                <p class="mb-4">The four blood groups are A, B, AB, and O. Blood type O, characterized by the absence of A or B agglutinogens, is the most common in the United States with 45% of the population. Type A is the next in frequence, found in 39% of the population. The incidence of types B and AB are 12% and 4% respectively.</p>
+                <p class="mb-4">In 1940, Landsteiner and Wiener discovered another group of antigens on the surface of red blood cells called Rh factors. They are called Rh factors because they were first found in Rhesus monkeys. An individual who possesses these antigens is designated Rh+ and an individual who lacks them is designated Rh-. Unlike the ABO system, antibodies to the Rh factors are not normally present in the plasma, but are produced upon exposure to Rh factors. Exposure to Rh factors can occur during blood transfusions (if Rh+ blood is transfused to an Rh- recipient), or when an Rh- mother carries an Rh+ fetus.</p>
+            </div>
+
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <p class="font-semibold text-slate-800 mb-3 text-sm uppercase tracking-wide">Figure 1: Blood Types and Transfusion Compatibility</p>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-sm bg-white">
+                        <thead class="bg-slate-100 border-b-2 border-slate-300">
+                            <tr>
+                                <th class="p-3 font-semibold text-slate-700 border border-slate-200">Blood Type</th>
+                                <th class="p-3 font-semibold text-slate-700 border border-slate-200">Antigens on Red Blood Cells (Agglutinogens)</th>
+                                <th class="p-3 font-semibold text-slate-700 border border-slate-200">Antibodies in Plasma (Agglutinins)</th>
+                                <th class="p-3 font-semibold text-slate-700 border border-slate-200">Can Donate Blood To</th>
+                                <th class="p-3 font-semibold text-slate-700 border border-slate-200">Can Receive Blood From</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200">
+                            <tr>
+                                <td class="p-3 font-bold text-center border border-slate-200">A</td>
+                                <td class="p-3 border border-slate-200">A</td>
+                                <td class="p-3 border border-slate-200">Anti-B</td>
+                                <td class="p-3 border border-slate-200">A, AB</td>
+                                <td class="p-3 border border-slate-200">O, A</td>
+                            </tr>
+                            <tr class="bg-slate-50/50">
+                                <td class="p-3 font-bold text-center border border-slate-200">B</td>
+                                <td class="p-3 border border-slate-200">B</td>
+                                <td class="p-3 border border-slate-200">Anti-A</td>
+                                <td class="p-3 border border-slate-200">B, AB</td>
+                                <td class="p-3 border border-slate-200">O, B</td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 font-bold text-center border border-slate-200">AB</td>
+                                <td class="p-3 border border-slate-200">A and B</td>
+                                <td class="p-3 border border-slate-200">Neither anti-A nor anti-B</td>
+                                <td class="p-3 border border-slate-200">AB</td>
+                                <td class="p-3 border border-slate-200">O, A, B, AB</td>
+                            </tr>
+                            <tr class="bg-slate-50/50">
+                                <td class="p-3 font-bold text-center border border-slate-200">O</td>
+                                <td class="p-3 border border-slate-200">Neither A nor B</td>
+                                <td class="p-3 border border-slate-200">Both anti-A and Anti-B</td>
+                                <td class="p-3 border border-slate-200">O, A, B, AB</td>
+                                <td class="p-3 border border-slate-200">O</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div>
+                <h3 class="font-semibold text-lg text-slate-800 mb-3">Process of Agglutination</h3>
+                <p class="mb-4">There is a simple test to determine blood type, performed with antisera containing high levels of anti-A, anti-B, and anti-Rh agglutinins. Several drops of each kind of antiserum are added to separate samples of blood. If agglutination (clumping) occurs only in the suspension to which the anti-A serum was added, the blood type is A. If agglutination occurs only in the anti-B mixture, the blood type is B. Agglutination in both samples indicates that the blood type is AB. The absence of agglutination in any sample indicates that the blood type is O. Any sample that agglutinates in the presence of anti-Rh serum is considered Rh+.</p>
+            </div>
+
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 max-w-2xl">
+                <p class="font-semibold text-slate-800 mb-3 text-sm uppercase tracking-wide">Figure 2: Agglutination Reactions</p>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-sm bg-white">
+                        <thead class="bg-slate-100 border-b-2 border-slate-300">
+                            <tr>
+                                <th class="p-3 font-semibold text-slate-700 border border-slate-200">Reaction Anti-A Serum</th>
+                                <th class="p-3 font-semibold text-slate-700 border border-slate-200">Reaction Anti-B Serum</th>
+                                <th class="p-3 font-semibold text-indigo-700 border border-slate-200 bg-indigo-50">Blood Type</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200 text-center">
+                            <tr>
+                                <td class="p-3 border border-slate-200 text-red-600 font-semibold">Agglutination</td>
+                                <td class="p-3 border border-slate-200">No Agglutination</td>
+                                <td class="p-3 border border-slate-200 font-bold bg-indigo-50/30">A</td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 border border-slate-200">No Agglutination</td>
+                                <td class="p-3 border border-slate-200 text-red-600 font-semibold">Agglutination</td>
+                                <td class="p-3 border border-slate-200 font-bold bg-indigo-50/30">B</td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 border border-slate-200 text-red-600 font-semibold">Agglutination</td>
+                                <td class="p-3 border border-slate-200 text-red-600 font-semibold">Agglutination</td>
+                                <td class="p-3 border border-slate-200 font-bold bg-indigo-50/30">AB</td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 border border-slate-200">No Agglutination</td>
+                                <td class="p-3 border border-slate-200">No Agglutination</td>
+                                <td class="p-3 border border-slate-200 font-bold bg-indigo-50/30">O</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div>
+                <h3 class="font-semibold text-lg text-slate-800 mb-3">Importance of Blood Typing</h3>
+                <p class="mb-4">As noted in Figure 1, people can receive transfusions of only certain blood types, depending on the type of blood they have. If incompatible blood types are mixed, red blood cell destruction, agglutination, and other problems can occur. For instance, if a person with Type B blood is transfused with blood type A, the recipient's anti-A antibodies will attack the incoming type A red blood cells. The type A red blood cells will be agglutinated, and hemoglobin will be released into the plasma. This problem may not be serious, unless a large amount of blood is transfused.</p>
+                <p class="mb-4">Blood type, an inherited characteristic, may also be used in medicolegal situations involving identification of disputed paternity. A comparison of the blood groups of mother, child, and alleged father may exclude the man as a possible parent. Blood typing does not prove that an individual is the father of a child, it merely indicates whether or not he is a possible parent. For example, a child with a blood type of AB, whose mother is type A, could not have as a father a man whose blood type is O.</p>
+                <p class="mb-4">Whenever blood has been shed in a criminal act, the identification and typing of the blood stains are of primary importance to the crime scene investigator. The ABO blood groups are used to screen out possible suspects involved in the crime. The first step in the investigation is to distinguish the bloodstains from other similar looking compounds such as fruit juices, jam, chemicals, paint, etc. Secondly, along with a number of sophisticated tests to determine the sex of the individual from which the blood come, and the age of the blood stain, a simple blood typing test is also performed. Although a positive match of the suspect's blood type is not sufficient to convict someone of a crime, it is one type of evidence that is often obtained during a crime investigation.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm p-8 md:p-10">
+        <h2 class="font-heading text-2xl text-slate-800 border-b-2 border-slate-100 pb-4 mb-6 flex items-center gap-3">
+            <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            Pre-Lab Questions
+        </h2>
+        
+        <div class="space-y-6">
+            <div>
+                <label class="block font-medium text-slate-700 mb-2">1. List the most important components that make up blood.</label>
+                <textarea id="preLab1" rows="3" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all duration-200 resize-y"></textarea>
+            </div>
+            <div>
+                <label class="block font-medium text-slate-700 mb-2">2. What are the functions of the components that make up blood?</label>
+                <textarea id="preLab2" rows="3" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all duration-200 resize-y"></textarea>
+            </div>
+            <div>
+                <label class="block font-medium text-slate-700 mb-2">3. What is blood typing? How can it be used to solve a crime?</label>
+                <textarea id="preLab3" rows="3" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all duration-200 resize-y"></textarea>
+            </div>
+            <div>
+                <label class="block font-medium text-slate-700 mb-2">4. How are antigens used in blood typing? What are the four basic blood types?</label>
+                <textarea id="preLab4" rows="3" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all duration-200 resize-y"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm p-8 md:p-10">
+        <h2 class="font-heading text-2xl text-slate-800 border-b-2 border-slate-100 pb-4 mb-6 flex items-center gap-3">
+            <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9.5a2.5 2.5 0 00-2.5-2.5H15"></path></svg>
+            Lab Procedure
+        </h2>
+        
+        <div class="space-y-8 text-slate-600 leading-relaxed">
+            <div class="bg-indigo-50/50 p-6 rounded-xl border border-indigo-100">
+                <h3 class="font-semibold text-lg text-indigo-900 mb-2">The Scenario</h3>
+                <p>Crime investigators were called to the scene of a burglary. Mr. Smith had come home, only to find someone robbing his apartment. As the criminal rushed to leave the apartment, he ran into a glass door, cutting his arm and tearing his shirt. The crime investigators were able to remove small pieces of clothing that appeared to be blood stained from the broken glass door. The blood samples from the crime scene, along with the victim's blood, were sent to the forensic lab to be analyzed. After the crime investigators carefully reviewed all the available evidence, they apprehended four suspects. The last remaining piece of evidence needed to solve the crime is to match the blood type found at the scene of the crime with one of the suspects. You, along with your classmates, have been chosen to provide this last piece of evidence and determine which of the suspects is the burglar.</p>
+            </div>
+
+            <div>
+                <h3 class="font-semibold text-lg text-slate-800 mb-3">Part A - Microscopic Investigation</h3>
+                <p class="mb-4">The first step in the investigation is to distinguish the blood stains from other similar looking compounds such as fruit juices, foods, chemicals, paint, etc.</p>
+                <ol class="list-decimal pl-5 space-y-2">
+                    <li>Use the provided piece of stained cloth found at the scene of the crime. Place the stained cloth flat on a microscope slide and place one drop of water on it.</li>
+                    <li>View the cloth under low and high power (400x) for any clues that would lead you to prove that the stain on the cloth is indeed blood.</li>
+                    <li>Describe your observations and state your conclusion in Table 1 in the Analysis section. State whether or not you believe the sample is stained with blood.</li>
+                </ol>
+            </div>
+
+            <div>
+                <h3 class="font-semibold text-lg text-slate-800 mb-3">Part B - Blood Typing Analysis</h3>
+                <p class="mb-4">You will now determine the blood type of the victim, the four suspects, and the blood found at the scene of the crime.</p>
+                <ol class="list-decimal pl-5 space-y-2">
+                    <li>Take three pieces of blood stained cloth found at the crime scene and place them into the A, B, and Rh wells of the blood typing tray.</li>
+                    <li>Place 3-4 drops of the anti-A serum on the blood-stained cloth in well A.</li>
+                    <li>Place 3-4 drops of anti-B serum on the blood-stained cloth in well B.</li>
+                    <li>Place 3-4 drops of anti-Rh serum on the blood-stained cloth in well Rh.</li>
+                    <li>Obtain three toothpicks and stir the samples in each of the wells with a separate clean toothpick for 30 seconds. To avoid splattering the serum, do not press too hard on the blood typing tray.</li>
+                    <li>Observe the tray and record your observations in Table 2 in the analysis section. To confirm agglutination, try reading text through the mixed sample. If you cannot read the text, assume you have a positive agglutination. Compare with the images provided.</li>
+                    <li>Test the other samples of blood by placing 3-4 drops of each in the three wells and test each with the three anti serums. Remember to stir each test with a new, clean toothpick. Record the results in Table 2.</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-slate-800 rounded-2xl shadow-sm p-8 md:p-10 text-white">
+        <h2 class="font-heading text-2xl text-slate-100 border-b-2 border-slate-700 pb-4 mb-6 flex items-center gap-3">
+            <svg class="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+            Lab Media & Resources
+        </h2>
+        <p class="text-slate-300 mb-8">Scan the QR codes with your device or click them directly to view the lab data files hosted on our secure portal.</p>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="bg-slate-700 rounded-xl p-6 flex flex-col items-center text-center border border-slate-600 hover:border-indigo-400 transition-colors">
+                <h3 class="font-bold text-lg mb-2">Part A: Microscopic Investigation</h3>
+                <p class="text-sm text-slate-300 mb-6">Digital image of stained cloth under 400x magnification.</p>
+                
+                <a href="https://firebasestorage.googleapis.com/v0/b/your-project.appspot.com/o/part-a-image.jpg?alt=media" target="_blank" class="block bg-white p-3 rounded-lg hover:scale-105 transition-transform duration-200">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://firebasestorage.googleapis.com/v0/b/your-project.appspot.com/o/part-a-image.jpg?alt=media" alt="QR Code for Part A Image" class="w-32 h-32">
+                </a>
+                <span class="text-xs text-slate-400 mt-4 uppercase tracking-widest">Click or Scan</span>
+            </div>
+
+            <div class="bg-slate-700 rounded-xl p-6 flex flex-col items-center text-center border border-slate-600 hover:border-indigo-400 transition-colors">
+                <h3 class="font-bold text-lg mb-2">Part B: Blood Typing Analysis</h3>
+                <p class="text-sm text-slate-300 mb-6">Video demonstration of agglutination results in the blood typing tray.</p>
+                
+                <a href="https://firebasestorage.googleapis.com/v0/b/your-project.appspot.com/o/part-b-video.mp4?alt=media" target="_blank" class="block bg-white p-3 rounded-lg hover:scale-105 transition-transform duration-200">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://firebasestorage.googleapis.com/v0/b/your-project.appspot.com/o/part-b-video.mp4?alt=media" alt="QR Code for Part B Video" class="w-32 h-32">
+                </a>
+                <span class="text-xs text-slate-400 mt-4 uppercase tracking-widest">Click or Scan</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm p-8 md:p-10">
+        <h2 class="font-heading text-2xl text-slate-800 border-b-2 border-slate-100 pb-4 mb-6 flex items-center gap-3">
+            <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            Lab Data
+        </h2>
+        
+        <div class="mb-10">
+            <label class="block font-semibold text-lg text-slate-800 mb-4">Table 1 - Observations of Stained Cloth</label>
+            <div class="overflow-hidden rounded-xl border border-slate-200">
+                <table class="w-full text-left border-collapse">
+                    <thead class="bg-slate-50 border-b border-slate-200">
+                        <tr>
+                            <th class="py-3 px-4 font-semibold text-slate-600 border-r border-slate-200 w-1/2">Observation</th>
+                            <th class="py-3 px-4 font-semibold text-slate-600">Conclusion</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200 bg-white">
+                        <tr>
+                            <td class="p-0 border-r border-slate-200 relative group">
+                                <input type="text" id="t1_obs" class="w-full h-full min-h-[50px] px-4 py-3 bg-transparent border-none focus:ring-2 focus:ring-inset focus:ring-indigo-500 focus:bg-indigo-50/30 outline-none transition-colors group-hover:bg-slate-50">
+                            </td>
+                            <td class="p-0 relative group">
+                                <input type="text" id="t1_conc" class="w-full h-full min-h-[50px] px-4 py-3 bg-transparent border-none focus:ring-2 focus:ring-inset focus:ring-indigo-500 focus:bg-indigo-50/30 outline-none transition-colors group-hover:bg-slate-50">
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div>
+            <label class="block font-semibold text-lg text-slate-800 mb-4">Table 2 - Blood Typing Analysis</label>
+            <div class="overflow-x-auto rounded-xl border border-slate-200">
+                <table class="w-full text-left border-collapse whitespace-nowrap min-w-[600px]">
+                    <thead class="bg-slate-50 border-b border-slate-200">
+                        <tr>
+                            <th class="py-3 px-4 font-semibold text-slate-600 border-r border-slate-200 bg-slate-100">Blood Source</th>
+                            <th class="py-3 px-4 font-semibold text-slate-600 border-r border-slate-200">Anti-A Serum</th>
+                            <th class="py-3 px-4 font-semibold text-slate-600 border-r border-slate-200">Anti-B Serum</th>
+                            <th class="py-3 px-4 font-semibold text-slate-600 border-r border-slate-200">Anti-Rh Serum</th>
+                            <th class="py-3 px-4 font-semibold text-slate-600 text-indigo-700">Blood Type</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200 bg-white">
+                        <script>
+                            const sources = ['Crime Scene', 'Victim', 'Suspect 1', 'Suspect 2', 'Suspect 3', 'Suspect 4'];
+                            sources.forEach((source, index) => {
+                                document.write(`
+                                    <tr class="hover:bg-slate-50 transition-colors">
+                                        <td class="py-3 px-4 font-medium text-slate-700 border-r border-slate-200 bg-slate-50/50">${source}</td>
+                                        <td class="p-0 border-r border-slate-200 relative"><input type="text" id="t2_r${index}_a" class="w-full h-full min-h-[45px] px-4 bg-transparent outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500 focus:bg-indigo-50/50"></td>
+                                        <td class="p-0 border-r border-slate-200 relative"><input type="text" id="t2_r${index}_b" class="w-full h-full min-h-[45px] px-4 bg-transparent outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500 focus:bg-indigo-50/50"></td>
+                                        <td class="p-0 border-r border-slate-200 relative"><input type="text" id="t2_r${index}_rh" class="w-full h-full min-h-[45px] px-4 bg-transparent outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500 focus:bg-indigo-50/50"></td>
+                                        <td class="p-0 relative"><input type="text" id="t2_r${index}_type" class="w-full h-full min-h-[45px] px-4 bg-transparent outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500 focus:bg-indigo-50/50 font-bold text-indigo-700"></td>
+                                    </tr>
+                                `);
+                            });
+                        </script>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm p-8 md:p-10">
+        <h2 class="font-heading text-2xl text-slate-800 border-b-2 border-slate-100 pb-4 mb-6 flex items-center gap-3">
+            <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+            Post-Lab Analysis
+        </h2>
+
+        <div class="space-y-8">
+            <div>
+                <label class="block font-medium text-slate-700 mb-2">1. As a forensics technician, the courts have asked you to summarize your findings to the jury. In the space below, explain what you would say. Remember, it is your job to report the facts, not decide who is guilty.</label>
+                <textarea id="q1" rows="4" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all duration-200 resize-y"></textarea>
+            </div>
+
+            <div>
+                <label class="block font-medium text-slate-700 mb-2">2. How would you respond to the accused suspect's denial of having the blood type you identified, since he has proof that he had just received a blood transfusion with type O blood?</label>
+                <textarea id="q2" rows="3" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all duration-200 resize-y"></textarea>
+            </div>
+
+            <div>
+                <label class="block font-medium text-slate-700 mb-2">3. Why is it necessary to type the victim's blood?</label>
+                <textarea id="q3" rows="3" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all duration-200 resize-y"></textarea>
+            </div>
+
+            <div class="bg-slate-50 rounded-xl p-6 border border-slate-200">
+                <label class="flex items-center gap-3 font-medium text-slate-800 mb-6 text-lg">
+                    4. Pick one of the suspects: # 
+                    <input type="text" id="q4_suspect_num" class="w-16 text-center border border-slate-300 rounded-md py-1 px-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                </label>
+                
+                <div class="space-y-4 pl-4 md:pl-8 border-l-2 border-indigo-200">
+                    <div>
+                        <label class="block text-slate-700 mb-2">a. Using the information from Figure 1 and the data from your blood type analysis, what ABO agglutinogens (antigens) are present on the suspect's red blood cells?</label>
+                        <input type="text" id="q4a" class="w-full bg-white border border-slate-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200">
+                    </div>
+                    <div>
+                        <label class="block text-slate-700 mb-2">b. What ABO agglutinins (antibodies) are found in the suspect's blood plasma?</label>
+                        <input type="text" id="q4b" class="w-full bg-white border border-slate-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200">
+                    </div>
+                    <div>
+                        <label class="block text-slate-700 mb-2">c. What is the suspect's blood type?</label>
+                        <input type="text" id="q4c" class="w-full bg-white border border-slate-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200">
+                    </div>
+                    <div>
+                        <label class="block text-slate-700 mb-2">d. If the suspect needed a blood transfusion, what blood types could he/she receive?</label>
+                        <input type="text" id="q4d" class="w-full bg-white border border-slate-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200">
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-slate-800 rounded-2xl p-6 shadow-inner text-white">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+                    <label class="block font-medium text-slate-100 flex-1">5. Create a graph or chart that depicts the percentages of each ABO blood type in the United States.</label>
+                    <button id="clearCanvasBtn" class="shrink-0 bg-slate-700 hover:bg-slate-600 text-white text-sm font-semibold py-2 px-4 rounded-lg transition-colors border border-slate-600 flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        Clear Canvas
+                    </button>
+                </div>
+                <div class="bg-white rounded-xl overflow-hidden border-4 border-slate-700 relative w-full h-[400px] cursor-crosshair">
+                    <canvas id="chartCanvas" class="absolute inset-0 w-full h-full touch-none"></canvas>
+                </div>
+            </div>
+
+            <div>
+                <label class="block font-medium text-slate-700 mb-2">6. How are agglutinins (antibodies) like security guards?</label>
+                <textarea id="q6" rows="3" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all duration-200 resize-y"></textarea>
+            </div>
+
+            <div>
+                <label class="block font-medium text-slate-700 mb-2">7. You are a defense attorney representing the accused. Your client has been shown to have the same blood type as that found at the scene of the crime. Explain to the jury why this information alone is not enough to convict your client.</label>
+                <textarea id="q7" rows="3" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all duration-200 resize-y"></textarea>
+            </div>
+
+            <div>
+                <label class="block font-medium text-slate-700 mb-2">8. As the client's attorney, you have also been provided with police videotape of the crime scene analysis. In the video, you notice that one of the investigating officers has a bandage on his hand. How could you use this evidence to your advantage?</label>
+                <textarea id="q8" rows="3" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all duration-200 resize-y"></textarea>
+            </div>
+
+            <div>
+                <label class="block font-medium text-slate-700 mb-2">9. Blood typing is one method of gathering evidence at the scene of a crime. Describe at least two other methods that can be used in the attempted identification of a guilty suspect.</label>
+                <textarea id="q9" rows="3" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all duration-200 resize-y"></textarea>
+            </div>
+
+            <div>
+                <label class="block font-medium text-slate-700 mb-2">10. Many times, a suspect may attempt to clean the area containing a blood stain at the scene of a crime. One tool utilized by forensic investigators is a substance called luminol. Research luminol on the internet and explain how it may be used to aid investigators at a crime scene.</label>
+                <textarea id="q10" rows="3" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all duration-200 resize-y"></textarea>
+            </div>
+        </div>
+        
+        <div class="mt-12 flex justify-end border-t border-slate-100 pt-8">
+            <button onclick="alert('Submission logic linking to Firebase/GAS goes here!')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg shadow-indigo-200 transition-all duration-200 flex items-center gap-2 transform hover:-translate-y-0.5">
+                Submit Assignment
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+            </button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // Initialize the smooth drawing canvas using signature_pad
+    const canvas = document.getElementById('chartCanvas');
+    
+    function resizeCanvas() {
+        const ratio =  Math.max(window.devicePixelRatio || 1, 1);
+        canvas.width = canvas.offsetWidth * ratio;
+        canvas.height = canvas.offsetHeight * ratio;
+        canvas.getContext("2d").scale(ratio, ratio);
+        
+        if(window.signaturePad) {
+            signaturePad.clear();
+        }
+    }
+    
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+
+    window.signaturePad = new SignaturePad(canvas, {
+        minWidth: 1.5,
+        maxWidth: 3.5,
+        penColor: "rgb(15, 23, 42)",
+        backgroundColor: "rgb(255, 255, 255)"
+    });
+
+    document.getElementById('clearCanvasBtn').addEventListener('click', function () {
+        signaturePad.clear();
+    });
+</script>
+
+</body>
+</html>

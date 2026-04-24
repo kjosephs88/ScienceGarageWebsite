@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <base target="_top">
+  <link rel="shortcut icon" href="https://thesciencegarage.com/SGfavicon.ico">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Assignment Quick Links</title>
+  <style>
+    body { margin:0; font-family:Arial, sans-serif; display: block; }
+    
+    /* Landing Page - Hidden by default to prevent flashing */
+    #landing-page { display: none; text-align: center; margin-top: 80px; }
+    #landing-page h1 { font-size: 40px; margin-bottom: 40px; }
+    .class-btn { display: inline-block; margin: 10px; padding: 15px 30px; font-size: 20px; background: #333; color: white; cursor: pointer; border: 1px solid #444; }
+    .class-btn:hover { background: #555; }
+    
+    /* Dashboard & Tabs */
+    #dashboard { display: none; flex-direction: row; height: 100vh; width: 100vw; }
+    .tabs { display:flex; flex-direction:column; width:120px; background:#333; overflow-y:auto; }
+    .tab { padding:10px; font-size:18px; color:white; text-align:center; cursor:pointer; border:1px solid #444; }
+    .tab:hover { background:#555; }
+    .tab.active { background:#777; }
+    
+    /* Sidebar Action Buttons */
+    .home-tab { background: #111; border-bottom: 1px solid #000; font-size: 14px;}
+    .home-tab:hover { background: #222; }
+    .refresh-tab { background: #2c3e50; border-bottom: 2px solid #1a252f; font-size: 13px; color: #ecf0f1; }
+    .refresh-tab:hover { background: #34495e; }
+
+    /* Content */
+    .content { flex:1; overflow:hidden; position:relative; height:100%; }
+    .unit { display:none; position:absolute; top:0; left:0; width:100%; height:100%; overflow-y:auto; }
+    .unit.active { display:block; }
+    .unit-inner { width:800px; margin:0 auto; padding-bottom: 50px; }
+    .unit-title { font-size:40px; margin:30px 0 20px; font-weight:bold; text-align:center; }
+    
+    /* Tables and Grids */
+    .unit-table { width:100%; border-collapse:collapse; }
+    .unit-table th, .unit-table td { border:3px solid black; text-align:center; }
+    .unit-table th { background:#7e6e6e; color:white; }
+    
+    .grid-container { display:grid; grid-template-columns:repeat(5,1fr); gap:5px; padding:5px; }
+    .grid-container a { text-decoration:none; color:black; }
+    .grid-item { display:flex; align-items:center; justify-content:center; border:1px solid #ccc; padding:10px; background:#f0f0f0; cursor:pointer; height: 100%; box-sizing: border-box;}
+    .grid-item:hover { background:#ddd; }
+    
+    .loading { text-align:center; padding:20px; font-size:18px; color:#555; }
+
+    /* Copy Table */
+    .copy-table { width:100%; border-collapse:collapse; margin-top:15px; }
+    .copy-table th, .copy-table td { border:3px solid black; }
+    .copy-table th { background:#7e6e6e; color:white; text-align:left; padding:6px 8px; }
+    .copy-table td { padding:4px 6px; background:#f8f8f8; }
+    .copy-btn { width:100%; border:1px solid #ccc; background:#f0f0f0; padding:6px 8px; font-size:14px; text-align:left; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .copy-btn:hover { background:#ddd; }
+
+    /* Toast Notification */
+    #toast { visibility: hidden; min-width: 200px; background-color: #333; color: #fff; text-align: center; border-radius: 4px; padding: 12px; position: fixed; z-index: 10; left: 50%; bottom: 30px; transform: translateX(-50%); font-size: 15px; opacity: 0; transition: opacity 0.3s, bottom 0.3s; }
+    #toast.show { visibility: visible; opacity: 1; bottom: 50px; }
+  </style>
+</head>
+<body>
+  
+  <div id="landing-page">
+    <h1>Assignment Quick Links</h1>
+    <div id="class-buttons"></div>
+  </div>
+
+  <div id="loading" class="loading" style="display:block; margin-top: 80px;">Routing...</div>
+
+  <div id="dashboard">
+    <div class="tabs" id="tabs"></div>
+    <div class="content" id="content"></div>
+  </div>
+
+  <div id="toast"></div>
+
+  <script>
+    const DISPLAY_LIMIT = 40;
+    let currentActiveSheetId = null;
+    
+    // Inject the variable from Code.gs into the frontend
+    const INITIAL_MODE = "<?= initialMode ?>";
+
+    window.onload = function() {
+      google.script.run.withSuccessHandler(initializeRoute).getClasses();
+    };
+
+    function initializeRoute(classes) {
+      // Find if the mode passed in the URL matches one of our configured classes
+      const targetClass = classes.find(c => c.mode === INITIAL_MODE);
+      
+      if (targetClass && targetClass.id && !targetClass.id.includes('PASTE_')) {
+        // If there's a match and the ID is real, bypass the landing page entirely
+        loadSubject(targetClass.id, false);
+      } else {
+        // Otherwise, build and show the landing page
+        buildLandingPage(classes);
+      }
+    }
+
+    function buildLandingPage(classes) {
+      const container = document.getElementById('class-buttons');
+      container.innerHTML = '';
+      
+      // Only generate buttons for classes that actually have a JSON ID inputted
+      classes.forEach(cls => {
+        if (cls.id && !cls.id.includes('PASTE_')) {
+          const btn = document.createElement('div');
+          btn.className = 'class-btn';
+          btn.textContent = cls.name;
+          btn.onclick = () => loadSubject(cls.id, false);
+          container.appendChild(btn);
+        }
+      });
+      
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('landing-page').style.display = 'block';
+    }
+
+    function loadSubject(fileId, isForceRefresh) {
+      currentActiveSheetId = fileId;
+      document.getElementById('landing-page').style.display = 'none';
+      document.getElementById('dashboard').style.display = 'none';
+      
+      const loader = document.getElementById('loading');
+      loader.style.display = 'block';
+      loader.innerText = isForceRefresh ? 'Forcing data refresh from Google...' : 'Loading data...';
+      
+      google.script.run
+        .withSuccessHandler(data => renderDashboard(data, isForceRefresh))
+        .withFailureHandler(err => alert("Error: " + err.message))
+        .getClassData(fileId, isForceRefresh);
+    }
+
+    function forceUpdate() {
+      if (currentActiveSheetId) {
+        loadSubject(currentActiveSheetId, true);
+      }
+    }
+
+    function renderDashboard(data, wasRefreshed) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('dashboard').style.display = 'flex';
+      
+      if (wasRefreshed) {
+        showToast("Class data successfully updated!");
+      }
+
+      const tabsDiv = document.getElementById('tabs');
+      const contentDiv = document.getElementById('content');
+      
+      // Keep the Back button so you aren't permanently stuck, even if you bookmarked it
+      tabsDiv.innerHTML = `
+        <div class="tab home-tab" onclick="goHome()">← Back to Classes</div>
+        <div class="tab refresh-tab" onclick="forceUpdate()">🔄 Force Update</div>
+      `;
+      contentDiv.innerHTML = '';
+
+      data.forEach((sheet, index) => {
+        const tab = document.createElement('div');
+        tab.className = 'tab' + (index === 0 ? ' active' : '');
+        tab.textContent = sheet.tabName;
+        tab.onclick = () => showUnit(index);
+        tabsDiv.appendChild(tab);
+
+        const unitDiv = document.createElement('div');
+        unitDiv.className = 'unit' + (index === 0 ? ' active' : '');
+        unitDiv.id = 'unit-' + index;
+        unitDiv.innerHTML = buildUnitHTML(sheet.values, sheet.tabName);
+        contentDiv.appendChild(unitDiv);
+      });
+
+      document.querySelectorAll(".copy-btn").forEach(btn => {
+        btn.addEventListener("click", () => copyToClipboard(btn.dataset.copy));
+      });
+    }
+
+    function buildUnitHTML(rows, tabName) {
+      if (!rows || rows.length === 0) return '<div class="unit-inner"><div class="unit-title">' + tabName + '</div></div>';
+
+      const unitTitle = (rows[0] && rows[0][1]) ? rows[0][1] : tabName;
+      let html = '<div class="unit-inner">';
+      html += '<div class="unit-title">' + unitTitle + '</div>';
+
+      const validLinkHeaders = [];
+      const validLinkCols = [];
+      
+      if (rows.length > 1 && rows[1]) {
+        for (let c = 1; c <= 3; c++) {
+          if (rows[1][c] && String(rows[1][c]).trim() !== "") {
+            validLinkHeaders.push(rows[1][c]);
+            validLinkCols.push(c);
+          }
+        }
+      }
+      
+      const linkData = rows.length > 2 ? rows.slice(2, 42) : [];
+
+      if (validLinkHeaders.length > 0) {
+        html += "<table class='unit-table'><tr>";
+        validLinkHeaders.forEach(h => (html += '<th>' + h + '</th>'));
+        html += "</tr><tr>";
+
+        validLinkCols.forEach(c => {
+          html += "<td style='vertical-align: top;'><div class='grid-container'>";
+          linkData.forEach(row => {
+            const text = row[0]; 
+            const link = row[c]; 
+            if (link && String(link).startsWith("http")) {
+              html += '<a href="' + link + '" target="_blank"><div class="grid-item">' + text + '</div></a>';
+            }
+          });
+          html += "</div></td>";
+        });
+        html += "</tr></table>";
+      }
+
+      const copyHeaders = [];
+      const copyCols = [];
+      
+      if (rows.length > 43 && rows[43]) {
+        for (let c = 1; c <= 3; c++) {
+          if (rows[43][c] && String(rows[43][c]).trim() !== "") {
+            copyHeaders.push(rows[43][c]);
+            copyCols.push(c);
+          }
+        }
+      }
+
+      const copyData = rows.length > 44 ? rows.slice(44, 86) : [];
+
+      if (copyHeaders.length > 0) {
+        html += '<table class="copy-table"><tr>';
+        copyHeaders.forEach(h => html += '<th>' + h + '</th>');
+        html += '</tr>';
+
+        copyData.forEach(row => {
+          let hasData = false;
+          copyCols.forEach(c => {
+            if (row[c] && String(row[c]).trim() !== "") hasData = true;
+          });
+
+          if (hasData) {
+            html += '<tr>';
+            copyCols.forEach(c => {
+              const cellText = row[c] ? String(row[c]).trim() : "";
+              if (cellText) {
+                const attrText = escapeAttr(cellText);
+                const displayText = truncateDisplay(cellText);
+                html += '<td><button class="copy-btn" data-copy="' + attrText + '">' + displayText + '</button></td>';
+              } else {
+                html += '<td></td>';
+              }
+            });
+            html += '</tr>';
+          }
+        });
+        html += '</table>';
+      }
+
+      html += '</div>';
+      return html;
+    }
+
+    function showUnit(index) {
+      const tabs = document.querySelectorAll("#tabs .tab:not(.home-tab):not(.refresh-tab)");
+      const units = document.querySelectorAll(".unit");
+      tabs.forEach((t, i) => t.classList.toggle("active", i === index));
+      units.forEach((u, i) => u.classList.toggle("active", i === index));
+    }
+
+    function goHome() {
+      // Clear the URL parameter locally without reloading the page, then show landing page
+      window.history.replaceState({}, document.title, window.location.pathname);
+      currentActiveSheetId = null;
+      document.getElementById('dashboard').style.display = 'none';
+      
+      // We run this again just to quickly populate the landing page
+      google.script.run.withSuccessHandler(buildLandingPage).getClasses();
+    }
+
+    function escapeAttr(str) { return str.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+    function truncateDisplay(str) { return str.length <= DISPLAY_LIMIT ? str : str.slice(0, DISPLAY_LIMIT) + "…"; }
+    
+    function copyToClipboard(text) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => showToast("Copied to clipboard!")).catch(err => fallbackCopy(text));
+      } else {
+        fallbackCopy(text);
+      }
+    }
+    
+    function fallbackCopy(text) {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand("copy"); showToast("Copied to clipboard!"); } catch (e) {}
+      document.body.removeChild(ta);
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById("toast");
+      toast.innerText = msg;
+      toast.className = "show";
+      setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 2500);
+    }
+  </script>
+</body>
+</html>

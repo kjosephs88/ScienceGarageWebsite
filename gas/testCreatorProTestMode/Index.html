@@ -1,0 +1,2142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Creator Pro</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/mhchem.min.js"></script>
+
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quill-image-resize-module@3.0.0/image-resize.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quill-image-drop-module@1.0.3/image-drop.min.js"></script>
+
+    <style>
+        /* BASE STYLES */
+        body { 
+            font-family: 'Aptos', Calibri, Arial, sans-serif; 
+            font-size: 11pt;
+            line-height: 1.3;
+            background-color: #ffffff; 
+            color: #000000; 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+
+        .ql-container .ql-editor { font-family: 'Aptos', Calibri, Arial, sans-serif !important; font-size: inherit; }
+        
+        img { max-width: 100%; height: auto; }
+        .ql-editor img { 
+            max-width: 100% !important; 
+            height: auto !important; 
+            min-width: 50px; 
+            min-height: 50px; 
+            display: inline-block; 
+            cursor: pointer; 
+            margin: 5px; 
+        }
+        .ql-editor img[style*="float: left"] { margin: 5px 15px 5px 0 !important; }
+        .ql-editor img[style*="float: right"] { margin: 5px 0 5px 15px !important; }
+
+        /* FIX: Snap the formula editor tooltip to the box and float it on top */
+        .ql-snow .ql-tooltip {
+            z-index: 10000 !important;
+            left: 0 !important; 
+            max-width: 100%;
+            white-space: normal;
+        }
+        .ql-snow .ql-picker.ql-size .ql-picker-label[data-value]::before,
+        .ql-snow .ql-picker.ql-size .ql-picker-item[data-value]::before { content: attr(data-value) !important; }
+        .ql-snow .ql-picker.ql-size .ql-picker-label::before,
+        .ql-snow .ql-picker.ql-size .ql-picker-item::before { content: '11pt' !important; }
+
+
+        /* Control list indentation */
+        .ql-editor ol, .ql-editor ul {
+            padding-left: 0 !important; 
+            margin-left: 15px !important; /* Adjust this number to push lists left or right */
+        }
+        
+        /* FIX: Render Quill Alignments accurately outside the editor */
+        .ql-align-center { text-align: center !important; }
+        .ql-align-right { text-align: right !important; }
+        .ql-align-justify { text-align: justify !important; }
+
+        .app-container { display: flex; min-height: 100vh; }
+
+        /* Left Sidebar */
+        .sidebar { width: 260px; background-color: #fcfcfc; border-right: 2px solid #000; padding: 20px; display: flex; flex-direction: column; gap: 30px; position: sticky; top: 0; height: 100vh; overflow-y: auto; transition: transform 0.3s ease; }
+        .sidebar h2 { margin-top: 0; margin-bottom: 15px; font-size: 14pt; border-bottom: 1px solid #000; padding-bottom: 5px; }
+        .sidebar-section { display: flex; flex-direction: column; gap: 10px; }
+        .sidebar-btn { padding: 10px; background-color: #fff; border: 1px solid #000; border-radius: 4px; cursor: pointer; text-align: left; font-weight: bold; font-size: 11pt; transition: background-color 0.2s; }
+        .sidebar-btn:hover { background-color: #e0e0e0; }
+        .sidebar-btn.action-btn { background-color: #f0f0f0; text-align: center; }
+        .sidebar-btn:disabled { background-color: #e6e6e6; color: #aaa; border-color: #ccc; cursor: not-allowed; }
+
+        /* Main Workspace */
+        .main-content { flex: 1; padding: 0 50px 30px 50px; max-width: 900px; transition: margin 0.3s ease; }
+        header { 
+            margin-bottom: 15px; 
+            position: sticky; 
+            top: 0; 
+            background-color: #ffffff; 
+            z-index: 100; 
+            padding-top: 30px; /* Keeps your visual spacing but hides scrolling text behind the solid background */
+            padding-bottom: 5px;
+        }
+        .test-title { font-size: 20pt; font-weight: bold; border: 1px dashed #ccc; padding: 10px; display: inline-block; cursor: text; min-width: 300px; }
+        
+        .tabs { display: flex; gap: 5px; border-bottom: 2px solid #000; margin-top: 20px;}
+        .tab-button { padding: 10px 20px; background: #fff; border: 1px solid #000; border-bottom: none; cursor: pointer; font-weight: bold; font-size: 11pt; }
+        .tab-button.active { background: #000; color: #fff; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* QUESTION LAYOUT - DYNAMIC 'em' SPACING */
+        .question-card { padding: 0; margin-bottom: 1.5em; border-bottom: 1px dashed #ccc; background-color: #fff; cursor: grab; transition: background-color 0.2s; display: flex; flex-direction: column; padding-bottom: 10px; }
+        .question-card:hover { background-color: #fcfcfc; }
+        .question-card:active { cursor: grabbing; }
+        
+        .narrative-group { margin-bottom: 1.5em; border-bottom: 2px solid #000; padding-bottom: 15px; cursor: grab; }
+        .narrative-group:active { cursor: grabbing; }
+        .narrative-content { margin-bottom: 0.5em; padding: 10px 0 5px 0; }
+        .narrative-content:hover { background-color: #f9f9f9; }
+        .linked-questions-container { padding-left: 20px; border-left: 2px dotted #ccc; min-height: 10px; }
+        .linked-questions-container .question-card { border-bottom: 1px dashed #eee; }
+
+        .group-intro-block { margin-bottom: 1.5em; }
+        .group-boundary { display: none; }
+
+        .q-text-container p { margin-top: 0; margin-bottom: 0.2em; } 
+        .q-text-container::after { content: ""; display: table; clear: both; }
+        .narrative-link-badge { font-size: 9pt; color: #666; margin-bottom: 0.5em; font-style: italic; }
+        
+        .answer-lines-container { margin-top: 1em; width: 100%; }
+        .answer-line { border-bottom: 1px solid #000; margin-top: 2.5em; width: 100%; }
+
+        .mc-options { margin-top: 0.5em; list-style-type: none; padding-left: 65px; display: grid; }
+        .mc-options.col-1 { grid-template-columns: 1fr; gap: 0.5em; }
+        .mc-options.col-4 { grid-template-columns: repeat(4, 1fr); gap: 0.5em 15px; }
+        .mc-options.col-2 { grid-template-rows: repeat(2, auto); grid-auto-flow: column; gap: 0.5em 20px; } 
+        
+        .mc-option-item { padding: 2px; cursor: grab; display: flex; align-items: baseline; gap: 8px; }
+        .mc-option-item:hover { background-color: #f9f9f9; }
+        .drag-ghost { opacity: 0.4; background-color: #f0f0f0; }
+
+        .card-actions { display: flex; justify-content: flex-end; align-items: center; margin-top: 5px; gap: 5px; }
+        .action-btn-small { background: #f0f0f0; border: 1px solid #ccc; padding: 4px 8px; font-size: 9pt; cursor: pointer; border-radius: 3px; display: flex; align-items: center; justify-content: center; }
+        .action-btn-small:hover { background: #e0e0e0; }
+
+        /* Modal Styles */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); display: none; justify-content: center; align-items: flex-start; overflow-y: auto; padding: 40px 0; z-index: 1000; box-sizing: border-box; }
+        .modal-content { background: #fff; padding: 30px; border-radius: 8px; width: 800px; margin: auto; max-height: none; border: 2px solid #000; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: flex; flex-direction: column; }
+        .modal-content.settings-modal { width: 500px; }
+        .modal-header { font-size: 16pt; font-weight: bold; margin-bottom: 20px; border-bottom: 1px solid #ccc; padding-bottom: 10px; }
+        .input-group { margin-bottom: 20px; }
+        .input-group label { display: block; font-weight: bold; margin-bottom: 5px; }
+        .input-group input[type="text"], .input-group select, .input-group input[type="file"], .input-group textarea { width: 100%; padding: 8px; border: 1px solid #ccc; box-sizing: border-box; font-family: inherit; font-size: inherit; }
+        
+        #quill-question-container, #quill-reasoning-container, #quill-group-intro { height: 150px; min-height: 100px; background: #fff; resize: vertical; overflow-y: auto; padding-bottom: 15px; }
+        .mc-quill-editor { height: 80px; min-height: 60px; background: #fff; resize: vertical; overflow-y: auto; padding-bottom: 15px; }
+        .ql-editor { overflow-y: visible !important; } 
+        
+        #mc-fields { display: none; background: #f9f9f9; padding: 15px; border: 1px solid #ddd; margin-bottom: 20px; }
+        #extended-fields { display: none; background: #eef7fa; padding: 15px; border: 1px solid #bce8f1; margin-bottom: 20px; }
+        
+        .mc-input-row { display: flex; align-items: flex-start; margin-bottom: 20px; gap: 15px; }
+        .mc-controls { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+        .mc-controls-buttons button { padding: 5px 10px; cursor: pointer; border: 1px solid #000; background: #fff; border-radius: 3px; font-size: 9pt; }
+        .mc-controls-buttons button:hover { background: #e0e0e0; }
+        
+        .modal-actions { display: flex; margin-top: 20px; gap: 10px; }
+        .btn-delete { background: #d9534f; color: #fff; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; margin-right: auto; }
+        .btn-delete:hover { background: #c9302c; }
+        .btn-cancel { background: #fff; border: 1px solid #000; padding: 10px 20px; cursor: pointer; }
+        .btn-save { background: #000; color: #fff; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; }
+
+        /* Answer Key & Bank Styles */
+        .key-card { padding: 8px 0; display: flex; align-items: flex-start; gap: 10px; border-bottom: 1px dashed #eee; }
+        .key-correct-answer { color: #000; font-size: 11pt; margin-top: 0; }
+        .key-reasoning { margin-top: 4px; font-size: 11pt; color: #000; padding-left: 10px; border-left: 2px solid #ccc; }
+        .key-extended { color: #000; margin-top: 0; }
+        #key-container.hide-reasoning .key-reasoning { display: none; }
+
+        .manager-list { border: 1px solid #ccc; max-height: 250px; overflow-y: auto; background: #f9f9f9; border-radius: 4px; padding: 10px; margin-bottom: 15px; }
+        .manager-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #fff; border: 1px solid #ddd; margin-bottom: 5px; cursor: pointer; border-radius: 4px; }
+        .manager-item:hover { background: #eef7fa; }
+        .manager-item.selected { border: 2px solid #0056b3; background: #eef7fa; }
+
+        .bank-item { display: flex; align-items: flex-start; gap: 15px; padding: 15px; border: 1px solid #ccc; margin-bottom: 10px; background: #fff; }
+        .bank-checkbox-container { margin-top: 3px; }
+        .bank-checkbox { transform: scale(1.3); cursor: pointer; }
+        .bank-details { flex: 1; min-width: 0; }
+        .bank-type-badge { font-size: 8pt; font-weight: bold; text-transform: uppercase; background: #eee; padding: 2px 6px; border-radius: 3px; margin-bottom: 5px; display: inline-block; }
+
+        /* Reorder Modal Styles */
+        .reorder-item { padding: 10px; border: 1px solid #ddd; background: #fff; margin-bottom: 5px; cursor: grab; user-select: none; border-radius: 4px; font-size: 10pt; }
+        .reorder-item.selected { border-color: #0056b3; background: #eef7fa; border-width: 2px; }
+        .reorder-group { padding: 10px; border: 2px solid #555; background: #fcfcfc; margin-bottom: 5px; cursor: grab; border-radius: 4px; user-select: none; }
+        .reorder-group.selected { border-color: #0056b3; background: #eef7fa; }
+        .reorder-sub { margin-top: 10px; padding-left: 20px; border-left: 2px dashed #ccc; min-height: 20px; }
+        .reorder-section-wrapper { margin-bottom: 20px; border: 2px dashed #bbb; padding: 10px; background: #fdfdfd; border-radius: 4px; }
+        .reorder-section-header { font-weight: bold; font-size: 12pt; margin-bottom: 10px; border-bottom: 1px solid #ccc; padding-bottom: 5px;}
+
+        /* --- PAGE BREAK STYLES --- */
+        .page-break-indicator { display: none; text-align: center; border-bottom: 2px dashed #007bff; color: #007bff; font-size: 9pt; font-weight: bold; margin-bottom: 15px; padding-bottom: 5px; width: 100%; }
+        .has-page-break > .page-break-indicator { display: block; }
+        .has-page-break > .narrative-content > .page-break-indicator { display: block; }
+        .print-only-header { display: none; } 
+        
+        /* 0.5 top, 0.5 right, 0.5 bottom, 0.7 left */
+        @page { margin: 0.5in 0.5in 0.5in 0.7in; }
+        
+        @media print {
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            .sidebar, .tabs, .mc-controls, .narrative-link-badge, .modal-overlay, .no-print, header { display: none !important; }
+            .main-content { padding: 0; max-width: 100%; }
+            .print-only-header { display: block; margin-bottom: 15px; font-size: 11pt; }
+            .print-only-header h1 { margin-top: 10px; margin-bottom: 10px; text-align: center; font-size: 20pt; }
+            .print-only-header h1.key-title-print { font-size: 16pt; }
+            .formal-header-row-1 { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+            .header-highlight { background-color: #d3d3d3; padding: 2px 1ch; }
+            .formal-header-row-2 { padding-left: 1ch; display: flex; justify-content: space-between; }
+            /* Never cut a question or narrative block in half */
+            .question-card, .linked-questions-container .question-card { border-bottom: none !important; page-break-inside: avoid; margin-bottom: 1.5em !important; padding: 0 !important; break-inside: avoid; }
+            
+            /* Group intros must NEVER be separated from the first question below them, but long ones can span pages */
+            .group-intro-block { border-bottom: none !important; margin-bottom: 1.5em !important; padding-bottom: 0 !important; page-break-after: avoid; break-after: avoid; page-break-inside: auto; break-inside: auto; }
+            
+            /* Instructions are allowed to span across multiple pages */
+            .instruction-card { page-break-inside: auto !important; break-inside: auto !important; }
+            
+            .narrative-group { border-bottom: none !important; margin-bottom: 1.5em !important; padding-bottom: 0 !important; }
+            .narrative-content { page-break-after: avoid; break-after: avoid; page-break-inside: avoid; break-inside: avoid; margin-bottom: 0.5em; }
+            .linked-questions-container { border-left: none; padding-left: 0; }
+            .tab-content { display: none !important; }
+            .tab-content.active { display: block !important; }
+            .has-page-break { break-before: page !important; page-break-before: always !important; margin-top: 0 !important; }
+            .page-break-indicator { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <input type="file" id="import-zip" accept=".zip" style="display:none" onchange="importFromZip('main')">
+    
+    <div class="app-container">
+        <aside class="sidebar" id="main-sidebar">
+            <div class="sidebar-section">
+                <h2>History</h2>
+                <div style="display: flex; gap: 10px;">
+                    <button class="sidebar-btn action-btn" style="flex: 1; padding: 10px 5px;" id="btn-undo" onclick="undoAction()" disabled>↩️ Undo</button>
+                    <button class="sidebar-btn action-btn" style="flex: 1; padding: 10px 5px;" id="btn-redo" onclick="redoAction()" disabled>↪️ Redo</button>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h2>Management</h2>
+                <button class="sidebar-btn action-btn" style="text-align:left;" onclick="openGroupManager()">📁 Groups</button>
+                <button class="sidebar-btn action-btn" style="text-align:left;" onclick="openNarrativeManager()">📚 Narratives</button>
+            </div>
+
+            <div class="sidebar-section">
+                <h2>Add to Test <br><span style="font-size:8pt; font-weight:normal; color:#666;">(Alt+Shift+ I, N, M, E)</span></h2>
+                <button class="sidebar-btn" onclick="openModal('instruction')">+ Add Instruction</button>
+                <button class="sidebar-btn" onclick="openModal('narrative')">+ Add Narrative</button>
+                <button class="sidebar-btn" onclick="openModal('mc')">+ Add Multiple Choice</button>
+                <button class="sidebar-btn" onclick="openModal('extended')">+ Add Ext. Response</button>
+            </div>
+            
+            <div class="sidebar-section">
+                <h2>Test Actions</h2>
+                <button class="sidebar-btn action-btn" onclick="startNewTest()" style="background: #fcf8e3; border-color: #faebcc;">📄 New Fresh Template</button>
+                <button class="sidebar-btn action-btn" onclick="openSettingsModal()">⚙️ Test Settings</button>
+                <button class="sidebar-btn action-btn" onclick="openScrambleModal()">🔀 Scramble</button>
+                <button class="sidebar-btn action-btn" onclick="openReorderModal()">↕️ Reorder Test</button>
+                
+                <button class="sidebar-btn action-btn" id="btn-save-drive" onclick="manualDriveSave()" style="background: #eef7fa; border-color: #bce8f1;">💾 Force Sync to Drive</button>
+                <button class="sidebar-btn action-btn" onclick="recoverDriveAutosave()" style="background: #eef7fa; border-color: #bce8f1;">☁️ Recover Autosave</button>
+                
+                <button class="sidebar-btn action-btn" onclick="document.getElementById('import-zip').click()" id="btn-import-main">📂 Load Test (.zip)</button>
+                <button class="sidebar-btn action-btn" onclick="exportToZip()" id="btn-export">💾 Export Test (.zip)</button>
+                
+                <button class="sidebar-btn action-btn" onclick="safePrint()">🖨️ Print / Save PDF</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header>
+                <div style="display:flex; align-items:center; gap: 15px;">
+                    <button class="sidebar-btn" style="padding: 5px 12px; font-size: 14pt;" onclick="toggleSidebar()" title="Toggle Sidebar">☰</button>
+                    <div class="test-title" id="main-test-title" contenteditable="true" style="margin-bottom: 0;">Unit 1 Chemistry Exam</div>
+                </div>
+                
+                <div id="ui-display-version-container" style="display: none; font-size: 11pt; color: #555; margin-top: 8px; margin-left: 2px;">
+                    <em>Test Version <span id="ui-display-version"></span></em>
+                </div>
+
+                <div class="tabs">
+                    <button class="tab-button active" onclick="switchTab('test-tab')">Test</button>
+                    <button class="tab-button" onclick="switchTab('key-tab')">Answer Key</button>
+                    <button class="tab-button" onclick="switchTab('bank-tab')">Active Test Bank</button>
+                </div>
+            </header>
+
+            <div id="test-tab" class="tab-content active">
+                <div class="print-only-header">
+                    <div id="default-print-header">
+                        <div class="formal-header-row-1">
+                            <span class="header-highlight">Assignment Type: Graded</span>
+                            <span>Name __________________________</span>
+                            <span>Date _______________</span>
+                        </div>
+                        <div class="formal-header-row-2">
+                            <span>Unit <span id="display-unit">1</span> &ndash; Assignment #<span id="display-assign">1</span></span>
+                            <span id="display-version-container" style="display: none;"><strong>Test Ver. <span id="display-version"></span></strong></span>
+                        </div>
+                    </div>
+                    <div id="custom-print-header" style="display: none; margin-bottom: 10px; white-space: pre-wrap;"></div>
+                    <h1 class="dynamic-print-title">Unit 1 Chemistry Exam</h1>
+                </div>
+                
+                <div id="test-container"></div>
+            </div>
+            
+            <div id="key-tab" class="tab-content">
+                <div class="print-only-header">
+                    <h1 class="key-title-print" style="margin-bottom: 5px;"><span class="dynamic-print-title">Unit 1 Chemistry Exam</span> - Answer Key</h1>
+                    <div id="key-display-version-container" style="display: none; text-align: center; font-size: 12pt; margin-bottom: 15px;"><strong>Test Ver. <span id="key-display-version"></span></strong></div>
+                </div>
+                <div class="no-print" style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #ccc;">
+                    <label style="cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="toggle-reasoning" checked onchange="document.getElementById('key-container').classList.toggle('hide-reasoning')"> 
+                        Show Multiple Choice Reasoning
+                    </label>
+                </div>
+                <div id="key-container"></div>
+            </div>
+            
+            <div id="bank-tab" class="tab-content">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px;">
+                    <div>
+                        <h2 style="margin: 0 0 5px 0;">Test Bank Manager</h2>
+                        <p style="margin: 0; font-size: 10pt; color: #555;">Upload a .zip file from your computer to pull questions into your current test.</p>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="file" id="bank-zip" accept=".zip" style="display:none" onchange="importFromZip('bank')">
+                        <button class="sidebar-btn" onclick="document.getElementById('bank-zip').click()" id="btn-import-bank" style="width: auto; margin:0;">📂 Load Local Bank (.zip)</button>
+                        <button class="sidebar-btn" onclick="insertSelectedFromBank()" style="width: auto; margin:0; background: #000; color: #fff;">➕ Insert Selected</button>
+                    </div>
+                </div>
+                <div id="bank-container">
+                    <p style="text-align: center; color: #777; margin-top: 40px;"><em>No Test Bank loaded. Click a Load button above to begin.</em></p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="scramble-modal" class="modal-overlay">
+        <div class="modal-content" style="width: 450px;">
+            <div class="modal-header">Scramble Options</div>
+            
+            <div class="input-group">
+                <label>Scope to Scramble:</label>
+                <select id="scramble-scope">
+                    <option value="all">Whole Test (All Groups)</option>
+                    </select>
+            </div>
+            
+            <div class="input-group">
+                <label style="display: flex; align-items: center; gap: 8px; font-weight: normal;">
+                    <input type="checkbox" id="scramble-questions-chk" checked> 
+                    <strong>Scramble Question Order</strong>
+                </label>
+                <p style="font-size: 9pt; color: #666; margin: 2px 0 0 25px;">Questions and Narratives will shuffle within their designated groups. Questions inside a narrative will shuffle but stay attached.</p>
+            </div>
+            
+            <div class="input-group">
+                <label style="display: flex; align-items: center; gap: 8px; font-weight: normal;">
+                    <input type="checkbox" id="scramble-options-chk" checked> 
+                    <strong>Scramble Multiple Choice Options</strong>
+                </label>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="document.getElementById('scramble-modal').style.display='none';">Cancel</button>
+                <button class="btn-save" onclick="executeScramble()">Scramble Now</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="group-manager-modal" class="modal-overlay">
+        <div class="modal-content" style="width: 500px;">
+            <div class="modal-header">Manage Groups (Sections)</div>
+            <p style="font-size: 10pt; color: #666; margin-top: 0;">Drag and drop to reorder groups.</p>
+            <div id="group-list" class="manager-list"></div>
+            <div style="display:flex; gap:10px;">
+                <button class="btn-cancel" style="flex:1;" onclick="addNewGroup()">+ Add New Group</button>
+            </div>
+            <div class="modal-actions" style="margin-top:20px;">
+                <button class="btn-cancel" onclick="document.getElementById('group-manager-modal').style.display='none';">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="group-edit-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">Edit Group</div>
+            
+            <div class="input-group">
+                <label>Group Title (Management Only):</label>
+                <input type="text" id="edit-group-title">
+            </div>
+            <div class="input-group">
+                <label>Visible Introductory Text (Optional):</label>
+                <div id="quill-group-intro"></div>
+            </div>
+            
+            <div class="modal-actions">
+                <button class="btn-delete" id="btn-delete-group" onclick="deleteSelectedGroup()" style="margin-right: auto;">Delete Group</button>
+                <button class="btn-cancel" onclick="document.getElementById('group-edit-modal').style.display='none'; openGroupManager();">Cancel</button>
+                <button class="btn-save" id="btn-save-group" onclick="saveGroupEdits()">Save Group</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="narrative-manager-modal" class="modal-overlay">
+        <div class="modal-content" style="width: 500px;">
+            <div class="modal-header">Manage Narratives</div>
+            <p style="font-size: 10pt; color: #666; margin-top: 0;">Narratives remain invisible on the test canvas until a question is linked to them.</p>
+            <div id="narrative-list" class="manager-list"></div>
+            <div style="display:flex; gap:10px;">
+                <button class="btn-cancel" style="flex:1;" onclick="document.getElementById('narrative-manager-modal').style.display='none'; openModal('narrative');">+ Add Narrative</button>
+                <button class="btn-delete" style="flex:1;" id="btn-delete-narrative" onclick="deleteSelectedNarrative()" disabled>Delete Selected</button>
+            </div>
+            <div class="modal-actions" style="margin-top:20px;">
+                <button class="btn-cancel" onclick="document.getElementById('narrative-manager-modal').style.display='none';">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="settings-modal" class="modal-overlay">
+        <div class="modal-content settings-modal">
+            <div class="modal-header">Test Settings</div>
+            <div class="input-group">
+                <label>Unit Number / Name:</label>
+                <input type="text" id="setting-unit" placeholder="e.g., 1 or Intro to Chem" value="1">
+            </div>
+            <div class="input-group">
+                <label>Assignment Number:</label>
+                <input type="text" id="setting-assign" placeholder="e.g., 3 or Quiz 2" value="1">
+            </div>
+            <div class="input-group">
+                <label>Test Version (Optional):</label>
+                <input type="text" id="setting-version" placeholder="e.g., A, B, or 2">
+            </div>
+            <hr style="width: 100%; border: 0; border-top: 1px solid #ddd; margin: 15px 0;">
+            <div class="input-group">
+                <label style="display: flex; align-items: center; gap: 8px; font-weight: normal;">
+                    <input type="checkbox" id="setting-use-custom-header" onchange="toggleCustomHeaderFields()"> 
+                    <strong>Use Custom Header (Replaces default Name/Date line)</strong>
+                </label>
+            </div>
+            <div class="input-group" id="custom-header-group" style="display: none;">
+                <label>Custom Header Text (Prints exactly as typed):</label>
+                <textarea id="setting-custom-header" rows="4" placeholder="Name ___________________   Date ___________"></textarea>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeSettingsModal()">Cancel</button>
+                <button class="btn-save" onclick="saveSettings()">Save Settings</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="reorder-modal" class="modal-overlay">
+        <div class="modal-content" style="width: 800px;">
+            <div class="modal-header">Reorder Test Items</div>
+            <p style="font-size: 10pt; color: #666; margin-top: 0;">Items are strictly organized by Group. Move items using arrows or drag-and-drop.</p>
+            
+            <div style="display:flex; gap: 20px;">
+                <div id="reorder-container" style="flex:1; border: 1px solid #ccc; height: 500px; overflow-y:auto; padding: 15px; background:#f4f4f4; border-radius: 4px;">
+                    <div id="reorder-main-list" style="min-height:100%;"></div>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:10px; justify-content:center;">
+                    <button onclick="moveReorderUp()" class="btn-cancel" style="font-size:24pt; padding:15px; cursor:pointer;" title="Move Up">⬆️</button>
+                    <button onclick="moveReorderDown()" class="btn-cancel" style="font-size:24pt; padding:15px; cursor:pointer;" title="Move Down">⬇️</button>
+                </div>
+            </div>
+            
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeReorderModal()">Cancel</button>
+                <button class="btn-save" onclick="saveReorder()">Apply New Order</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="creation-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header" id="modal-title">Add Question</div>
+            
+            <div class="input-group" id="group-assignment-group" style="display:flex; gap:15px;">
+                <div style="flex:1;">
+                    <label>Group Assignment:</label>
+                    <select id="item-section-select"></select>
+                </div>
+                <div style="flex:1;" id="narrative-link-group">
+                    <label>Link to Narrative (Optional):</label>
+                    <select id="narrative-link-select"><option value="">-- None --</option></select>
+                </div>
+            </div>
+
+            <div class="input-group" id="insert-position-group" style="background: #f0f0f0; padding: 15px; border-radius: 4px; border: 1px solid #ccc;">
+                <label style="margin-top: 0;">Insert Position (Within Group):</label>
+                <div style="display:flex; gap: 5px; margin-bottom: 10px;">
+                    <button type="button" class="btn-cancel" style="padding: 4px 12px; font-size: 9pt;" onclick="document.getElementById('insert-location').value='start'">Top of Group</button>
+                    <button type="button" class="btn-cancel" style="padding: 4px 12px; font-size: 9pt;" onclick="document.getElementById('insert-location').value='end'">Bottom of Group</button>
+                </div>
+                <select id="insert-location" style="width: 100%; padding: 6px; font-size: 10pt;">
+                </select>
+            </div>
+
+            <div class="input-group" id="narrative-name-group" style="display:none;">
+                <label>Narrative Reference Name (e.g., "Reading Passage 1"):</label>
+                <input type="text" id="narrative-name" placeholder="Enter a name to link questions to...">
+            </div>
+
+            <div class="input-group">
+                <label id="main-editor-label">Question Text:</label>
+                <div id="quill-question-container"></div>
+            </div>
+
+            <div id="extended-fields" style="display: none;">
+                <label style="margin: 0; font-size: 10pt;">Answer Lines (for student writing):</label>
+                <select id="ext-lines" style="width: auto; padding: 4px; font-size: 10pt;">
+                    <option value="0">0 (Blank Space)</option>
+                    <option value="1">1 Line</option>
+                    <option value="2">2 Lines</option>
+                    <option value="3" selected>3 Lines</option>
+                    <option value="4">4 Lines</option>
+                    <option value="5">5 Lines</option>
+                </select>
+            </div>
+
+            <div id="mc-fields">
+                <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 15px;">
+                    <label style="margin: 0;">Answer Choices (Select radio button for correct answer):</label>
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <label style="font-size: 9pt; font-weight: normal; margin: 0;">Layout:</label>
+                        <select id="mc-columns" style="padding: 3px; font-size: 9pt; width: auto;">
+                            <option value="1">1 Column</option>
+                            <option value="2" selected>2 Columns (2x2)</option>
+                            <option value="4">4 Columns</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="mc-options-container"></div>
+                <div class="mc-controls">
+                    <div class="mc-controls-buttons">
+                        <button type="button" onclick="addMCOption()">+ Add Option</button>
+                        <button type="button" onclick="removeMCOption()">- Remove Option</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-group" id="reasoning-group">
+                <label id="secondary-editor-label">Correct Answer / Reasoning:</label>
+                <div id="quill-reasoning-container"></div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-delete" id="btn-delete" onclick="deleteData()" style="display:none;">Delete</button>
+                <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+                <button class="btn-save" onclick="saveData()">Save to Test</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+      // --- KATEX MACRO INTERCEPTOR FOR QUILL ---
+        // Quill hides the katex.render function, so we intercept it to inject our custom physics macros
+        const myMacros = {
+            "\\unit": "\\,\\mathrm{#1}",
+            "\\deg": "^{\\circ}"
+        };
+        
+        const originalKatexRender = katex.render;
+        katex.render = function(text, element, options) {
+            options = options || {};
+            options.macros = myMacros; // Inject our macros into Quill's request
+            return originalKatexRender(text, element, options);
+        };
+        // --- CORE ARCHITECTURE ---
+        let testData = [];
+        let sections = [{ id: 'default', title: 'Default Group', intro: '' }];
+        let bankData = []; 
+        let questionIdCounter = 1;
+        let sectionIdCounter = 1;
+        
+        let currentModalMode = ''; 
+        let editingId = null; 
+        let currentMCOptionsCount = 4; 
+        let selectedReorderNode = null;
+        let activeGroupId = null;
+        let activeNarrativeId = null;
+
+        let undoStack = [];
+        let redoStack = [];
+        const MAX_HISTORY = 15;
+
+        let quillQuestion, quillReasoning, quillGroupIntro;
+        let mcQuills = []; 
+
+        // --- CUSTOM SOFT BREAK FOR SHIFT+ENTER ---
+        const Embed = Quill.import('blots/embed');
+        class SoftBreak extends Embed {
+            static create(value) { return super.create(value); }
+        }
+        SoftBreak.blotName = 'softbreak';
+        SoftBreak.tagName = 'br';
+        Quill.register(SoftBreak);
+
+
+        const Size = Quill.import('attributors/style/size');
+        Size.whitelist = ['4pt', '6pt', '8pt', '9pt', '10pt', '11pt', '12pt', '14pt', '16pt', '18pt', '20pt', '24pt'];
+        Quill.register(Size, true);
+        
+        const toolbarOptions = [
+            [{ 'size': Size.whitelist }],
+            ['bold', 'italic', 'underline', 'strike'],
+            [{ 'script': 'sub'}, { 'script': 'super' }],
+            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+            [{ 'align': [] }],
+            ['formula', 'image', 'clean'] 
+        ];
+
+        const imageResizeConfig = { displaySize: true, modules: [ 'Resize', 'DisplaySize', 'Toolbar' ] };
+
+        // --- HIGH-SPEED TAB NAVIGATION ---
+        function focusNextQuill(currentQuill, direction) {
+            let activeQuills = [];
+            let saveBtn, cancelBtn;
+
+            // Check if we are inside the Group Manager or the normal Question Creator
+            if (currentQuill === quillGroupIntro) {
+                activeQuills = [quillGroupIntro];
+                saveBtn = document.getElementById('btn-save-group');
+                cancelBtn = document.querySelector('#group-edit-modal .btn-cancel');
+            } else {
+                activeQuills = [quillQuestion];
+                if (currentModalMode === 'mc') activeQuills = activeQuills.concat(mcQuills);
+                if (currentModalMode !== 'narrative' && currentModalMode !== 'instruction') activeQuills.push(quillReasoning);
+                saveBtn = document.querySelector('#creation-modal .btn-save');
+                cancelBtn = document.querySelector('#creation-modal .btn-cancel');
+            }
+            
+            let idx = activeQuills.indexOf(currentQuill);
+            let nextIdx = idx + direction;
+            
+            if (nextIdx >= 0 && nextIdx < activeQuills.length) {
+                activeQuills[nextIdx].focus();
+            } else if (nextIdx >= activeQuills.length) {
+                if(saveBtn) saveBtn.focus();
+            } else {
+                if(cancelBtn) cancelBtn.focus();
+            }
+        }
+
+        // --- DYNAMIC MODULE CONFIG (Tabs & Soft Breaks) ---
+        function getQuillModules() {
+            return {
+                toolbar: toolbarOptions,
+                imageResize: imageResizeConfig,
+                imageDrop: true,
+                keyboard: {
+                    bindings: {
+                        tab: { 
+                            key: 9, 
+                            handler: function(range, context) { focusNextQuill(this.quill, 1); return false; } 
+                        },
+                        shiftTab: { 
+                            key: 9, 
+                            shiftKey: true, 
+                            handler: function(range, context) { focusNextQuill(this.quill, -1); return false; } 
+                        },
+                        shiftEnter: {
+                            key: 13,
+                            shiftKey: true,
+                            handler: function(range, context) {
+                                this.quill.insertEmbed(range.index, 'softbreak', true, Quill.sources.USER);
+                                this.quill.setSelection(range.index + 1, Quill.sources.SILENT);
+                                return false;
+                            }
+                        }
+                    }
+                }
+            };
+        }
+        
+        // --- FORMULA EDITING LOGIC ---
+        function enableFormulaEditing(quillInstance) {
+            const tooltip = quillInstance.theme.tooltip;
+            if (!tooltip._formulaEditPatched) {
+                const origSave = tooltip.save;
+                tooltip.save = function() {
+                    const mode = this.root.getAttribute('data-mode');
+                    const range = this.quill.getSelection(true);
+                    if (mode === 'formula' && range && range.length === 1) {
+                        this.quill.deleteText(range.index, 1, Quill.sources.USER);
+                    }
+                    origSave.call(this);
+                };
+                tooltip._formulaEditPatched = true;
+            }
+
+            quillInstance.root.addEventListener('click', function(ev) {
+                const formulaEl = ev.target.closest('.ql-formula');
+                if (formulaEl) {
+                    const blot = Quill.find(formulaEl);
+                    if (blot) {
+                        const index = quillInstance.getIndex(blot);
+                        quillInstance.setSelection(index, 1);
+                        const value = formulaEl.getAttribute('data-value');
+                        tooltip.edit('formula');
+                        tooltip.textbox.value = value;
+                        setTimeout(() => {
+                            tooltip.textbox.focus();
+                            tooltip.textbox.select();
+                        }, 10);
+                    }
+                }
+            });
+        }
+
+        window.onload = function() {
+            quillQuestion = new Quill('#quill-question-container', { theme: 'snow', modules: getQuillModules() });
+            quillReasoning = new Quill('#quill-reasoning-container', { theme: 'snow', modules: getQuillModules() });
+            quillGroupIntro = new Quill('#quill-group-intro', { theme: 'snow', modules: getQuillModules() });
+            
+            enableFormulaEditing(quillQuestion);
+            enableFormulaEditing(quillReasoning);
+            enableFormulaEditing(quillGroupIntro);
+            
+            quillQuestion.root.style.fontFamily = "'Aptos', Calibri, Arial, sans-serif";
+            quillReasoning.root.style.fontFamily = "'Aptos', Calibri, Arial, sans-serif"; 
+            quillGroupIntro.root.style.fontFamily = "'Aptos', Calibri, Arial, sans-serif";
+
+            document.getElementById('main-test-title').addEventListener('input', function() {
+                document.querySelectorAll('.dynamic-print-title').forEach(el => el.innerText = this.innerText);
+                triggerAutoSave(); 
+            });
+
+            addDummyData();
+            undoStack = []; redoStack = []; updateHistoryButtons();
+            renderApp();
+            
+            document.addEventListener('keydown', function(e) {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable || e.target.classList.contains('ql-editor')) return; 
+                if (e.altKey && e.shiftKey) {
+                    switch(e.code) {
+                        case 'KeyI': e.preventDefault(); openModal('instruction'); break;
+                        case 'KeyN': e.preventDefault(); openModal('narrative'); break;
+                        case 'KeyM': e.preventDefault(); openModal('mc'); break;
+                        case 'KeyE': e.preventDefault(); openModal('extended'); break;
+                    }
+                }
+            });
+
+
+            // UPDATED CLOSING WARNING (Cross-Browser Safe)
+            window.addEventListener('beforeunload', function (e) {
+                triggerAutoSave(); 
+                
+                // The modern HTML5 standard to trigger the popup
+                e.preventDefault(); 
+                
+                // Chrome and older browsers still require this fallback line
+                e.returnValue = ''; 
+            });
+        };
+
+        // --- UI TOGGLES ---
+        let sidebarVisible = true;
+        function toggleSidebar() {
+            const sidebar = document.getElementById('main-sidebar');
+            if(sidebarVisible) {
+                sidebar.style.display = 'none';
+                sidebarVisible = false;
+            } else {
+                sidebar.style.display = 'flex';
+                sidebarVisible = true;
+            }
+        }
+
+        function togglePageBreak(btnElement) {
+            saveState();
+            const container = btnElement.closest('.question-card, .narrative-group');
+            const itemId = parseInt(container.dataset.id);
+            const item = testData.find(q => q.id === itemId);
+            if (item) {
+                item.pageBreakBefore = !item.pageBreakBefore;
+                renderApp();
+                triggerAutoSave();
+            }
+        }
+
+        // --- GOOGLE DRIVE AUTOSAVE & LOAD LOGIC ---
+        function getTestPayload() {
+            return {
+                title: document.getElementById('main-test-title').innerText || "Untitled_Test",
+                unit: document.getElementById('setting-unit').value,
+                assign: document.getElementById('setting-assign').value,
+                version: document.getElementById('setting-version').value, // <--- ADD THIS LINE
+                useCustomHeader: document.getElementById('setting-use-custom-header').checked,
+                customHeaderText: document.getElementById('setting-custom-header').value,
+                sections: sections,
+                data: testData
+            };
+        }
+
+        function triggerAutoSave() {
+            if (typeof google === 'undefined') return; 
+            google.script.run.saveActiveBackup(JSON.stringify(getTestPayload()));
+        }
+
+        function manualDriveSave() {
+            if (typeof google === 'undefined') return;
+            const btn = document.getElementById('btn-save-drive');
+            const originalText = btn.innerText;
+            btn.innerText = "⏳ Syncing...";
+            
+            google.script.run
+                .withSuccessHandler(function() { 
+                    btn.innerText = originalText; 
+                })
+                .saveActiveBackup(JSON.stringify(getTestPayload()));
+        }
+
+        function recoverDriveAutosave() {
+            if (testData.length > 0 && !confirm("Loading your autosave will overwrite the current canvas. Proceed?")) return;
+            
+            const btn = document.querySelector('button[onclick="recoverDriveAutosave()"]');
+            const orig = btn.innerText;
+            btn.innerText = "⏳ Loading...";
+
+            google.script.run
+                .withSuccessHandler(function(jsonString) {
+                    try {
+                        const parsed = JSON.parse(jsonString);
+                        saveState(); 
+                        testData = parsed.data || [];
+                        sections = parsed.sections || [{ id: 'default', title: 'Default Group', intro: '' }];
+                        
+                        document.getElementById('main-test-title').innerText = parsed.title || "Loaded Test";
+                        document.querySelectorAll('.dynamic-print-title').forEach(el => el.innerText = parsed.title || "Loaded Test");
+                        document.getElementById('setting-unit').value = parsed.unit || "1";
+                        document.getElementById('display-unit').innerText = parsed.unit || "1";
+                        document.getElementById('setting-assign').value = parsed.assign || "1";
+                        document.getElementById('display-assign').innerText = parsed.assign || "1";
+                        
+                        // Recover Test Version
+                        let loadedVersion = parsed.version || "";
+                        document.getElementById('setting-version').value = loadedVersion;
+                        if (loadedVersion !== "") {
+                            document.getElementById('display-version').innerText = loadedVersion;
+                            document.getElementById('display-version-container').style.display = "inline";
+                            
+                            document.getElementById('key-display-version').innerText = loadedVersion;
+                            document.getElementById('key-display-version-container').style.display = "block";
+                            
+                            document.getElementById('ui-display-version').innerText = loadedVersion;
+                            document.getElementById('ui-display-version-container').style.display = "block";
+                        } else {
+                            document.getElementById('display-version-container').style.display = "none";
+                            document.getElementById('key-display-version-container').style.display = "none";
+                            document.getElementById('ui-display-version-container').style.display = "none";
+                        }
+                        
+                        // Apply Header settings
+                        document.getElementById('setting-use-custom-header').checked = parsed.useCustomHeader || false;
+                        document.getElementById('setting-custom-header').value = parsed.customHeaderText || "";
+                        toggleCustomHeaderFields();
+                        applyHeaderSettings();
+
+                        questionIdCounter = Math.max(...testData.map(q => q.id), 0) + 1;
+                        let maxSec = 0;
+                        sections.forEach(s => { if(s.id.startsWith('sec-')) { let n = parseInt(s.id.replace('sec-','')); if(n>maxSec) maxSec=n; }});
+                        sectionIdCounter = maxSec + 1;
+
+                        renderApp(); switchTab('test-tab');
+                        alert("Autosave recovered successfully!");
+                    } catch(e) {
+                        alert("Error reading backup: " + e.message);
+                    } finally { btn.innerText = orig; }
+                })
+                .withFailureHandler(function(err) {
+                    alert("No backup found or error loading: " + err.message);
+                    btn.innerText = orig;
+                })
+                .loadActiveBackup();
+        }
+
+        function startNewTest() {
+            if (testData.length > 0 && !confirm("Start a completely fresh template? Your current work will be cleared from the screen. Make sure you exported a .zip if you want to keep it permanently!")) return;
+            
+            saveState(); 
+            testData = [];
+            sections = [{ id: 'default', title: 'Default Group', intro: '' }];
+            questionIdCounter = 1; sectionIdCounter = 1; activeGroupId = null; activeNarrativeId = null;
+            
+            document.getElementById('main-test-title').innerText = "Untitled Test";
+            document.querySelectorAll('.dynamic-print-title').forEach(el => el.innerText = "Untitled Test");
+            document.getElementById('setting-unit').value = "1";
+            document.getElementById('display-unit').innerText = "1";
+            document.getElementById('setting-assign').value = "1";
+            document.getElementById('display-assign').innerText = "1";
+            
+            // Clear Test Version
+            document.getElementById('setting-version').value = "";
+            document.getElementById('display-version-container').style.display = "none";
+            document.getElementById('display-version').innerText = "";
+            document.getElementById('key-display-version-container').style.display = "none";
+            document.getElementById('key-display-version').innerText = "";
+            
+            // NEW: Wipe the UI header for a fresh test
+            document.getElementById('ui-display-version-container').style.display = "none";
+            document.getElementById('ui-display-version').innerText = "";
+            
+            document.getElementById('setting-use-custom-header').checked = false;
+            document.getElementById('setting-custom-header').value = "";
+            toggleCustomHeaderFields();
+            applyHeaderSettings();
+            
+            undoStack = []; redoStack = []; updateHistoryButtons();
+            
+            renderApp(); switchTab('test-tab');
+            triggerAutoSave(); 
+        }
+
+        // --- HISTORY CONTROLS ---
+        function saveState() {
+            undoStack.push(JSON.stringify({ sections: sections, testData: testData }));
+            if (undoStack.length > MAX_HISTORY) undoStack.shift();
+            redoStack = []; 
+            updateHistoryButtons();
+        }
+
+        function undoAction() {
+            if (undoStack.length === 0) return;
+            redoStack.push(JSON.stringify({ sections: sections, testData: testData }));
+            const state = JSON.parse(undoStack.pop());
+            sections = state.sections; testData = state.testData;
+            renderApp(); updateHistoryButtons(); triggerAutoSave();
+        }
+
+        function redoAction() {
+            if (redoStack.length === 0) return;
+            undoStack.push(JSON.stringify({ sections: sections, testData: testData }));
+            const state = JSON.parse(redoStack.pop());
+            sections = state.sections; testData = state.testData;
+            renderApp(); updateHistoryButtons(); triggerAutoSave();
+        }
+
+        function updateHistoryButtons() {
+            document.getElementById('btn-undo').disabled = (undoStack.length === 0);
+            document.getElementById('btn-redo').disabled = (redoStack.length === 0);
+        }
+
+        function switchTab(tabId) { 
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active')); 
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active')); 
+            document.getElementById(tabId).classList.add('active'); 
+            const buttons = document.querySelectorAll('.tab-button');
+            buttons.forEach(btn => { if (btn.getAttribute('onclick').includes(tabId)) { btn.classList.add('active'); } });
+        }
+
+        // --- MANAGERS ---
+        // --- MANAGERS ---
+        function openGroupManager() {
+            activeGroupId = null;
+            renderGroupList();
+            document.getElementById('group-manager-modal').style.display = 'flex';
+            
+            // Keeps the drag-and-drop ordering active on the list!
+            new Sortable(document.getElementById('group-list'), {
+                animation: 150,
+                onEnd: function() {
+                    saveState();
+                    let newSections = [];
+                    document.getElementById('group-list').childNodes.forEach(node => {
+                        let id = node.dataset.id;
+                        let sec = sections.find(s => s.id === id);
+                        if (sec) newSections.push(sec);
+                    });
+                    sections = newSections;
+                    renderApp(); triggerAutoSave();
+                }
+            });
+        }
+
+        function renderGroupList() {
+            const list = document.getElementById('group-list');
+            list.innerHTML = '';
+            sections.forEach(sec => {
+                let div = document.createElement('div');
+                div.className = 'manager-item';
+                div.dataset.id = sec.id;
+                div.innerHTML = `<div><strong>${sec.title}</strong></div> <button class="btn-cancel" style="padding:4px 8px; font-size:9pt;" onclick="event.stopPropagation(); openGroupEditor('${sec.id}')">Edit</button>`;
+                list.appendChild(div);
+            });
+        }
+
+        function openGroupEditor(id) {
+            activeGroupId = id;
+            const sec = sections.find(s => s.id === id);
+            if (sec) {
+                document.getElementById('edit-group-title').value = sec.title;
+                quillGroupIntro.root.innerHTML = sec.intro || '';
+                // Hide the delete button for the default group so it can't be destroyed
+                document.getElementById('btn-delete-group').style.display = (id === 'default') ? 'none' : 'block';
+                
+                document.getElementById('group-manager-modal').style.display = 'none';
+                document.getElementById('group-edit-modal').style.display = 'flex';
+            }
+        }
+
+        function addNewGroup() {
+            saveState();
+            const newId = 'sec-' + sectionIdCounter++;
+            sections.push({ id: newId, title: 'New Group', intro: '' });
+            renderGroupList();
+            openGroupEditor(newId);
+        }
+
+        function saveGroupEdits() {
+            if(!activeGroupId) return;
+            saveState();
+            const sec = sections.find(s => s.id === activeGroupId);
+            if(sec) {
+                sec.title = document.getElementById('edit-group-title').value || "Unnamed Group";
+                sec.intro = quillGroupIntro.root.innerHTML;
+            }
+            document.getElementById('group-edit-modal').style.display = 'none';
+            openGroupManager(); // Bounce the user back to the list view
+            renderApp(); triggerAutoSave();
+        }
+
+        function deleteSelectedGroup() {
+            if(!activeGroupId || activeGroupId === 'default') return;
+            if(confirm("Delete this Group? All questions inside will be moved to the Default Group.")) {
+                saveState();
+                testData.forEach(item => { if(item.sectionId === activeGroupId) item.sectionId = 'default'; });
+                sections = sections.filter(s => s.id !== activeGroupId);
+                activeGroupId = null;
+                document.getElementById('group-edit-modal').style.display = 'none';
+                openGroupManager(); renderApp(); triggerAutoSave();
+            }
+        }
+
+        function openNarrativeManager() {
+            activeNarrativeId = null;
+            renderNarrativeList();
+            document.getElementById('btn-delete-narrative').disabled = true;
+            document.getElementById('narrative-manager-modal').style.display = 'flex';
+        }
+
+        function renderNarrativeList() {
+            const list = document.getElementById('narrative-list');
+            list.innerHTML = '';
+            const nars = testData.filter(i => i.type === 'narrative');
+            if(nars.length === 0) { list.innerHTML = '<p style="color:#777;">No narratives created yet.</p>'; return; }
+
+            nars.forEach(nar => {
+                let div = document.createElement('div');
+                div.className = 'manager-item' + (activeNarrativeId === nar.id ? ' selected' : '');
+                
+                let linkedCount = testData.filter(q => q.linkedNarrativeId === nar.id && q.type !== 'instruction').length;
+                let visibility = linkedCount > 0 ? `<span style="color:green; font-size:9pt;">(${linkedCount} linked - Visible)</span>` : `<span style="color:red; font-size:9pt;">(Empty - Hidden)</span>`;
+                
+                div.innerHTML = `<div><strong>${nar.narrativeName}</strong><br>${visibility}</div> <button class="btn-cancel" style="padding:4px 8px; font-size:9pt;" onclick="event.stopPropagation(); document.getElementById('narrative-manager-modal').style.display='none'; openModal('narrative', ${nar.id});">Edit</button>`;
+                div.onclick = () => { activeNarrativeId = nar.id; renderNarrativeList(); document.getElementById('btn-delete-narrative').disabled = false; };
+                list.appendChild(div);
+            });
+        }
+
+        function deleteSelectedNarrative() {
+            if(!activeNarrativeId) return;
+            if(confirm("Delete this Narrative? Linked questions will become independent but will NOT be deleted.")) {
+                saveState();
+                testData.forEach(item => { if(item.linkedNarrativeId === activeNarrativeId) item.linkedNarrativeId = null; });
+                testData = testData.filter(q => q.id !== activeNarrativeId);
+                activeNarrativeId = null;
+                renderNarrativeList(); renderApp(); triggerAutoSave();
+            }
+        }
+
+        // --- ZIP EXPORT / IMPORT ---
+        function exportToZip() {
+            const exportBtn = document.getElementById('btn-export');
+            const originalText = exportBtn.innerText;
+            exportBtn.innerText = "⏳ Packing...";
+            exportBtn.disabled = true;
+
+            const zip = new JSZip();
+            const imgFolder = zip.folder("images");
+            let imageCounter = 1;
+            let exportData = JSON.parse(JSON.stringify(testData));
+            let exportSections = JSON.parse(JSON.stringify(sections));
+
+            function processHTMLForImages(htmlStr) {
+                if(!htmlStr) return htmlStr;
+                try {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(htmlStr, 'text/html');
+                    const images = doc.querySelectorAll('img[src^="data:image"]');
+                    images.forEach(img => {
+                        const src = img.getAttribute('src');
+                        const match = src.match(/^data:image\/(\w+);base64,(.*)$/);
+                        if(match) {
+                            const ext = match[1]; const base64Data = match[2];
+                            const fileName = `image_${imageCounter}.${ext}`;
+                            imgFolder.file(fileName, base64Data, {base64: true});
+                            img.setAttribute('src', `images/${fileName}`);
+                            imageCounter++;
+                        }
+                    });
+                    return doc.body.innerHTML;
+                } catch(e) { console.error(e); return htmlStr; }
+            }
+
+            exportData.forEach(item => {
+                item.question = processHTMLForImages(item.question);
+                item.reasoning = processHTMLForImages(item.reasoning);
+                if(item.options) item.options = item.options.map(opt => processHTMLForImages(opt));
+                if(item.type === 'mc') item.correctAnswer = processHTMLForImages(item.correctAnswer);
+            });
+            
+            exportSections.forEach(sec => { sec.intro = processHTMLForImages(sec.intro); });
+
+            const payload = {
+                title: document.getElementById('main-test-title').innerText,
+                unit: document.getElementById('setting-unit').value,
+                assign: document.getElementById('setting-assign').value,
+                version: document.getElementById('setting-version').value, // <--- ADD THIS LINE
+                useCustomHeader: document.getElementById('setting-use-custom-header').checked,
+                customHeaderText: document.getElementById('setting-custom-header').value,
+                sections: exportSections,
+                data: exportData
+            };
+
+            zip.file("test_data.json", JSON.stringify(payload, null, 2));
+            let safeTitle = payload.title.replace(/[^a-z0-9]/gi, '_').toLowerCase() || "test_export";
+
+            zip.generateAsync({type:"blob"}).then(function(content) {
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(content); link.download = `${safeTitle}.zip`;
+                document.body.appendChild(link); link.click(); document.body.removeChild(link);
+                exportBtn.innerText = originalText; exportBtn.disabled = false;
+            });
+        }
+
+        async function importFromZip(targetMode) {
+            const inputId = targetMode === 'main' ? 'import-zip' : 'bank-zip';
+            const btnId = targetMode === 'main' ? 'btn-import-main' : 'btn-import-bank';
+            const fileInput = document.getElementById(inputId);
+            const importBtn = document.getElementById(btnId);
+            if (!fileInput.files.length) return;
+
+            const originalText = importBtn.innerText;
+            importBtn.innerText = "⏳ Loading..."; importBtn.disabled = true;
+
+            try {
+                const file = fileInput.files[0];
+                const zip = new JSZip();
+                const loadedZip = await zip.loadAsync(file);
+                const jsonFile = loadedZip.file("test_data.json");
+                if (!jsonFile) throw new Error("Invalid file format: test_data.json missing.");
+                
+                const jsonContent = await jsonFile.async("string");
+                const parsedPayload = JSON.parse(jsonContent);
+
+                let importedTestData = Array.isArray(parsedPayload) ? parsedPayload : parsedPayload.data;
+                let importedSections = parsedPayload.sections || [{ id: 'default', title: 'Default Group', intro: '' }];
+                
+                async function restoreImagesInHTML(htmlStr) {
+                    if (!htmlStr) return htmlStr;
+                    try {
+                        const parser = new DOMParser(); const doc = parser.parseFromString(htmlStr, 'text/html');
+                        const images = doc.querySelectorAll('img[src^="images/"]');
+                        for (let img of images) {
+                            const src = img.getAttribute('src'); const imageFile = loadedZip.file(src);
+                            if (imageFile) {
+                                const base64Data = await imageFile.async("base64");
+                                const ext = src.split('.').pop().toLowerCase() || 'png';
+                                img.setAttribute('src', `data:image/${ext === 'jpg' ? 'jpeg' : ext};base64,${base64Data}`);
+                            }
+                        }
+                        return doc.body.innerHTML;
+                    } catch(e) { console.error(e); return htmlStr; }
+                }
+
+                for (let item of importedTestData) {
+                    item.question = await restoreImagesInHTML(item.question);
+                    item.reasoning = await restoreImagesInHTML(item.reasoning);
+                    if (item.options) for (let i=0; i<item.options.length; i++) item.options[i] = await restoreImagesInHTML(item.options[i]);
+                    if (item.type === 'mc') item.correctAnswer = await restoreImagesInHTML(item.correctAnswer);
+                    if (!item.sectionId) item.sectionId = 'default';
+                }
+                
+                for (let sec of importedSections) sec.intro = await restoreImagesInHTML(sec.intro);
+
+                if(targetMode === 'main') {
+                    saveState(); 
+                    testData = importedTestData;
+                    sections = importedSections;
+                    questionIdCounter = Math.max(...testData.map(q => q.id), 0) + 1;
+                    
+                    let maxSecId = 0;
+                    sections.forEach(s => { if(s.id.startsWith('sec-')) { let num = parseInt(s.id.replace('sec-','')); if(num>maxSecId) maxSecId=num;} });
+                    sectionIdCounter = maxSecId + 1;
+
+                    if (!Array.isArray(parsedPayload)) {
+                        document.getElementById('main-test-title').innerText = parsedPayload.title || "Loaded Test";
+                        document.querySelectorAll('.dynamic-print-title').forEach(el => el.innerText = parsedPayload.title || "Loaded Test");
+                        document.getElementById('setting-unit').value = parsedPayload.unit || "1";
+                        document.getElementById('display-unit').innerText = parsedPayload.unit || "1";
+                        document.getElementById('setting-assign').value = parsedPayload.assign || "1";
+                        document.getElementById('display-assign').innerText = parsedPayload.assign || "1";
+                        
+                        // Recover Test Version
+                        let loadedVersion = parsedPayload.version || "";
+                        document.getElementById('setting-version').value = loadedVersion;
+                        if (loadedVersion !== "") {
+                            document.getElementById('display-version').innerText = loadedVersion;
+                            document.getElementById('display-version-container').style.display = "inline";
+                            
+                            document.getElementById('key-display-version').innerText = loadedVersion;
+                            document.getElementById('key-display-version-container').style.display = "block";
+                            
+                            document.getElementById('ui-display-version').innerText = loadedVersion;
+                            document.getElementById('ui-display-version-container').style.display = "block";
+                        } else {
+                            document.getElementById('display-version-container').style.display = "none";
+                            document.getElementById('key-display-version-container').style.display = "none";
+                            document.getElementById('ui-display-version-container').style.display = "none";
+                        }
+                        
+                        document.getElementById('setting-use-custom-header').checked = parsedPayload.useCustomHeader || false;
+                        document.getElementById('setting-custom-header').value = parsedPayload.customHeaderText || "";
+                        toggleCustomHeaderFields();
+                        applyHeaderSettings();
+                    }
+                    renderApp(); switchTab('test-tab');
+                    triggerAutoSave(); 
+                } else {
+                    bankData = importedTestData; renderBank();
+                }
+            } catch (error) { 
+                console.error(error); alert("Error loading file: " + error.message);
+            } finally { 
+                importBtn.innerText = originalText; importBtn.disabled = false; fileInput.value = ""; 
+            }
+        }
+
+        // --- TEST BANK LOGIC ---
+        function renderBank() {
+            const container = document.getElementById('bank-container');
+            container.innerHTML = '';
+            
+            if(bankData.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #777; margin-top: 40px;"><em>No Test Bank loaded. Click a Load button above to begin.</em></p>';
+                return;
+            }
+
+            bankData.forEach(item => {
+                if(item.type === 'narrative') return; 
+
+                let badge = '';
+                if(item.type === 'mc') badge = '<span class="bank-type-badge">Multiple Choice</span>';
+                if(item.type === 'extended') badge = '<span class="bank-type-badge">Extended Response</span>';
+                if(item.type === 'instruction') badge = '<span class="bank-type-badge" style="background:#e8f4f8;">Instruction</span>';
+                
+                let narTag = '';
+                if(item.linkedNarrativeId) {
+                    const nar = bankData.find(n => n.id === item.linkedNarrativeId);
+                    if(nar) narTag = `<div style="font-size:9pt; color:#666; font-style:italic; margin-bottom:5px;">Linked to: ${nar.narrativeName}</div>`;
+                }
+
+                let optionsHTML = '';
+                if(item.type === 'mc' && item.options) {
+                    optionsHTML = '<div style="margin-top: 10px; margin-left: 10px; display: flex; flex-direction: column; gap: 5px;">';
+                    item.options.forEach((opt, idx) => {
+                        optionsHTML += `<div style="display: flex; align-items: baseline; gap: 5px; font-size: 10pt;">
+                                            <div>(${idx+1})</div>
+                                            <div class="q-text-container" style="flex:1; min-width:0;">${opt}</div>
+                                        </div>`;
+                    });
+                    optionsHTML += '</div>';
+                }
+
+                container.innerHTML += `
+                    <div class="bank-item">
+                        <div class="bank-checkbox-container">
+                            <input type="checkbox" class="bank-checkbox" value="${item.id}">
+                        </div>
+                        <div class="bank-details">
+                            ${badge}
+                            ${narTag}
+                            <div style="font-size: 11pt; margin-top: 5px;">${item.question}</div>
+                            ${optionsHTML}
+                        </div>
+                    </div>`;
+            });
+        }
+
+        function insertSelectedFromBank() {
+            const checkboxes = document.querySelectorAll('.bank-checkbox:checked');
+            if(checkboxes.length === 0) { alert("Please select at least one question to insert."); return; }
+
+            saveState(); 
+            let newIdMap = {}; 
+
+            checkboxes.forEach(cb => {
+                const bankId = parseInt(cb.value);
+                const qToInsert = bankData.find(q => q.id === bankId);
+                if(!qToInsert) return;
+
+                let newQ = JSON.parse(JSON.stringify(qToInsert));
+                newQ.id = questionIdCounter++;
+                newQ.sectionId = 'default'; 
+
+                if(newQ.linkedNarrativeId) {
+                    let bankNarId = newQ.linkedNarrativeId;
+                    if(newIdMap[bankNarId]) {
+                        newQ.linkedNarrativeId = newIdMap[bankNarId];
+                    } else {
+                        const bankNar = bankData.find(n => n.id === bankNarId);
+                        if(bankNar) {
+                            const existingNar = testData.find(n => n.type === 'narrative' && n.narrativeName === bankNar.narrativeName);
+                            if(existingNar) {
+                                if(confirm(`The narrative "${bankNar.narrativeName}" exists. Link to it?`)) {
+                                    newIdMap[bankNarId] = existingNar.id; newQ.linkedNarrativeId = existingNar.id; newQ.sectionId = existingNar.sectionId;
+                                } else return; 
+                            } else {
+                                let newNar = JSON.parse(JSON.stringify(bankNar));
+                                newNar.id = questionIdCounter++; newNar.sectionId = 'default';
+                                newIdMap[bankNarId] = newNar.id; newQ.linkedNarrativeId = newNar.id;
+                                testData.push(newNar);
+                            }
+                        }
+                    }
+                }
+                
+                if (newQ.linkedNarrativeId) {
+                    let insertIndex = testData.findIndex(q => q.id === newQ.linkedNarrativeId);
+                    if (insertIndex > -1) {
+                        while(insertIndex + 1 < testData.length && testData[insertIndex + 1].linkedNarrativeId === newQ.linkedNarrativeId) insertIndex++;
+                        testData.splice(insertIndex + 1, 0, newQ);
+                    } else testData.push(newQ);
+                } else { testData.push(newQ); }
+                cb.checked = false; 
+            });
+            renderApp(); triggerAutoSave(); alert("Inserted into Default Group!"); switchTab('test-tab');
+        }
+
+        // --- REORDER LOGIC ---
+        function selectReorderItem(e, node) {
+            e.stopPropagation();
+            document.querySelectorAll('.reorder-item, .reorder-group').forEach(el => el.classList.remove('selected'));
+            node.classList.add('selected'); selectedReorderNode = node;
+        }
+
+        function openReorderModal() {
+            const mainList = document.getElementById('reorder-main-list');
+            mainList.innerHTML = '';
+            let qNum = 1;
+
+            sections.forEach(sec => {
+                let secContainer = document.createElement('div');
+                secContainer.className = 'reorder-section-wrapper';
+                secContainer.dataset.sectionId = sec.id;
+                secContainer.innerHTML = `<div class="reorder-section-header">${sec.title}</div><div class="reorder-section-list" style="min-height:30px; padding-bottom:10px;"></div>`;
+                const sList = secContainer.querySelector('.reorder-section-list');
+
+                const itemsInSec = testData.filter(q => q.sectionId === sec.id);
+                let currentSubList = null;
+
+                itemsInSec.forEach(item => {
+                    let text = item.question ? item.question.replace(/<[^>]+>/g, '').trim() : "";
+                    if(text.length > 40) text = text.substring(0, 40) + '...';
+                    
+                    if(item.type === 'mc' || item.type === 'extended') text = `Q${qNum++}: ` + text;
+                    else if(item.type === 'narrative') text = `Narrative: ` + item.narrativeName;
+                    else text = `Instruction: ` + text;
+
+                    if (item.type === 'narrative') {
+                        let narDiv = document.createElement('div');
+                        narDiv.className = 'reorder-group'; narDiv.dataset.id = item.id;
+                        narDiv.onclick = (e) => selectReorderItem(e, narDiv);
+                        narDiv.innerHTML = `<strong>${text}</strong>`;
+                        currentSubList = document.createElement('div'); currentSubList.className = 'reorder-sub'; currentSubList.dataset.narrativeId = item.id;
+                        narDiv.appendChild(currentSubList);
+                        sList.appendChild(narDiv);
+                    } else if (item.linkedNarrativeId && currentSubList && item.linkedNarrativeId.toString() === currentSubList.dataset.narrativeId) {
+                        let subItem = document.createElement('div'); subItem.className = 'reorder-item'; subItem.dataset.id = item.id; subItem.innerText = text;
+                        subItem.onclick = (e) => selectReorderItem(e, subItem); currentSubList.appendChild(subItem);
+                    } else {
+                        let standaloneItem = document.createElement('div'); standaloneItem.className = 'reorder-item'; standaloneItem.dataset.id = item.id; standaloneItem.innerText = text;
+                        standaloneItem.onclick = (e) => selectReorderItem(e, standaloneItem); sList.appendChild(standaloneItem);
+                    }
+                });
+                mainList.appendChild(secContainer);
+            });
+
+            document.getElementById('reorder-modal').style.display = 'flex';
+
+            document.querySelectorAll('.reorder-section-list').forEach(list => {
+                new Sortable(list, { group: 'sections', animation: 150, fallbackOnBody: true, ghostClass: 'drag-ghost' });
+            });
+            document.querySelectorAll('.reorder-sub').forEach(sub => {
+                new Sortable(sub, { animation: 150, fallbackOnBody: true, ghostClass: 'drag-ghost' });
+            });
+        }
+
+        function closeReorderModal() { document.getElementById('reorder-modal').style.display = 'none'; selectedReorderNode = null; }
+
+        function moveReorderUp() {
+            if(!selectedReorderNode) return;
+            const prev = selectedReorderNode.previousElementSibling;
+            if(prev) { selectedReorderNode.parentNode.insertBefore(selectedReorderNode, prev); selectedReorderNode.scrollIntoView({behavior: "smooth", block: "nearest"}); }
+        }
+
+        function moveReorderDown() {
+            if(!selectedReorderNode) return;
+            const next = selectedReorderNode.nextElementSibling;
+            if(next) { selectedReorderNode.parentNode.insertBefore(selectedReorderNode, next.nextElementSibling); selectedReorderNode.scrollIntoView({behavior: "smooth", block: "nearest"}); }
+        }
+
+        function saveReorder() {
+            saveState(); 
+            let newOrderIds = [];
+            
+            document.querySelectorAll('.reorder-section-wrapper').forEach(secWrap => {
+                const secId = secWrap.dataset.sectionId;
+                const nodes = secWrap.querySelector('.reorder-section-list').children;
+                for (let node of nodes) {
+                    let itemId = parseInt(node.dataset.id);
+                    let item = testData.find(q => q.id === itemId);
+                    if(item) { 
+                        item.sectionId = secId; 
+                        if (item.type !== 'narrative') item.linkedNarrativeId = null; 
+                        newOrderIds.push(item.id); 
+                    }
+                    
+                    if (node.classList.contains('reorder-group')) {
+                        const narId = parseInt(node.dataset.id);
+                        const subNodes = node.querySelector('.reorder-sub').children;
+                        for (let subNode of subNodes) {
+                            let sItemId = parseInt(subNode.dataset.id);
+                            let sItem = testData.find(q => q.id === sItemId);
+                            if(sItem) { 
+                                sItem.sectionId = secId; 
+                                sItem.linkedNarrativeId = narId; 
+                                newOrderIds.push(sItem.id); 
+                            }
+                        }
+                    }
+                }
+            });
+
+            let newData = [];
+            newOrderIds.forEach(id => { const item = testData.find(q => q.id === id); if(item) newData.push(item); });
+            testData.forEach(item => { if (item.type === 'narrative' && !newData.find(x => x.id === item.id)) newData.push(item); });
+            testData = newData; renderApp(); triggerAutoSave(); closeReorderModal();
+        }
+
+        // --- QUESTION MODAL LOGIC ---
+        function fixModalTabbing() {
+            document.querySelectorAll('.ql-toolbar button, .ql-toolbar span, .ql-toolbar select, .ql-toolbar input').forEach(el => el.setAttribute('tabindex', '-1'));
+            document.querySelectorAll('#item-section-select, #narrative-link-select, #insert-location, #ext-lines, #mc-columns, input[type="radio"]').forEach(el => el.setAttribute('tabindex', '-1'));
+        }
+
+        // SETTINGS & CUSTOM HEADER LOGIC
+        function openSettingsModal() { document.getElementById('settings-modal').style.display = 'flex'; }
+        function closeSettingsModal() { document.getElementById('settings-modal').style.display = 'none'; }
+        
+        function toggleCustomHeaderFields() {
+            const isCustom = document.getElementById('setting-use-custom-header').checked;
+            document.getElementById('custom-header-group').style.display = isCustom ? 'block' : 'none';
+        }
+
+        function applyHeaderSettings() {
+            const isCustom = document.getElementById('setting-use-custom-header').checked;
+            const customText = document.getElementById('setting-custom-header').value;
+            
+            if (isCustom) {
+                document.getElementById('default-print-header').style.display = 'none';
+                document.getElementById('custom-print-header').style.display = 'block';
+                document.getElementById('custom-print-header').innerText = customText;
+            } else {
+                document.getElementById('default-print-header').style.display = 'block';
+                document.getElementById('custom-print-header').style.display = 'none';
+            }
+        }
+
+function saveSettings() {
+            document.getElementById('display-unit').innerText = document.getElementById('setting-unit').value;
+            document.getElementById('display-assign').innerText = document.getElementById('setting-assign').value;
+            
+            let versionVal = document.getElementById('setting-version').value.trim();
+            if (versionVal !== "") {
+                // 1. Main Test Print Header
+                document.getElementById('display-version').innerText = versionVal;
+                document.getElementById('display-version-container').style.display = "inline";
+                
+                // 2. Answer Key Print Header (This was the missing link!)
+                document.getElementById('key-display-version').innerText = versionVal;
+                document.getElementById('key-display-version-container').style.display = "block";
+                
+                // 3. Visual UI Header
+                document.getElementById('ui-display-version').innerText = versionVal;
+                document.getElementById('ui-display-version-container').style.display = "block";
+            } else {
+                document.getElementById('display-version-container').style.display = "none";
+                document.getElementById('display-version').innerText = "";
+                
+                document.getElementById('key-display-version-container').style.display = "none";
+                document.getElementById('key-display-version').innerText = "";
+                
+                document.getElementById('ui-display-version-container').style.display = "none";
+                document.getElementById('ui-display-version').innerText = "";
+            }
+            
+            applyHeaderSettings();
+            closeSettingsModal(); triggerAutoSave();
+        }
+
+        function renderMCOptionInputs(count, existingData = []) {
+            const container = document.getElementById('mc-options-container'); container.innerHTML = '';
+            mcQuills = []; currentMCOptionsCount = count;
+
+            for(let i = 0; i < count; i++) {
+                let isChecked = false;
+                if (existingData.length > 0 && editingId) {
+                    const item = testData.find(q => q.id === editingId); if (item && item.correctAnswer === existingData[i]) isChecked = true;
+                } else if (i === 0) isChecked = true; 
+
+                container.innerHTML += `
+                    <div class="mc-input-row">
+                        <div style="display: flex; align-items: center; gap: 5px; margin-top: 45px;">
+                            <input type="radio" name="correct-answer" value="${i}" ${isChecked ? 'checked' : ''}>
+                            <span style="font-weight: bold;">(${i + 1})</span> 
+                        </div>
+                        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column;">
+                            <div id="mc-quill-${i}" class="mc-quill-editor"></div>
+                        </div>
+                    </div>`;
+            }
+
+            for(let i = 0; i < count; i++) {
+                let q = new Quill(`#mc-quill-${i}`, { theme: 'snow', modules: getQuillModules() });
+                enableFormulaEditing(q);
+                q.root.style.fontFamily = "'Aptos', Calibri, Arial, sans-serif"; 
+                if (existingData[i]) q.root.innerHTML = existingData[i]; mcQuills.push(q);
+            }
+        }
+
+        function addMCOption() { renderMCOptionInputs(currentMCOptionsCount + 1, getCurrentMCInputValues()); fixModalTabbing(); }
+        function removeMCOption() { if (currentMCOptionsCount > 2) { const currentVals = getCurrentMCInputValues(); currentVals.pop(); renderMCOptionInputs(currentMCOptionsCount - 1, currentVals); fixModalTabbing(); } }
+        function getCurrentMCInputValues() { return mcQuills.map(q => q.root.innerHTML); }
+
+        function openModal(type, idToEdit = null) {
+            currentModalMode = type; editingId = idToEdit; 
+            const modal = document.getElementById('creation-modal');
+            const linkSelect = document.getElementById('narrative-link-select');
+            const secSelect = document.getElementById('item-section-select');
+            const insertLoc = document.getElementById('insert-location');
+            const insertGroup = document.getElementById('insert-position-group');
+
+            secSelect.innerHTML = '';
+            sections.forEach(s => secSelect.innerHTML += `<option value="${s.id}">${s.title}</option>`);
+
+            document.getElementById('narrative-name').value = '';
+            linkSelect.innerHTML = '<option value="">-- None --</option>';
+
+            const activeNars = testData.filter(item => item.type === 'narrative');
+            activeNars.forEach(n => { linkSelect.innerHTML += `<option value="${n.id}">${n.narrativeName}</option>`; });
+
+            function buildInsertLocs(sId) {
+                insertLoc.innerHTML = '<option value="end">Bottom of Group</option><option value="start">Top of Group</option>';
+                let qNumLoc = 1;
+                testData.filter(q => q.sectionId === sId).forEach(item => {
+                    let text = item.question ? item.question.replace(/<[^>]+>/g, '').trim() : "";
+                    if(text.length > 30) text = text.substring(0, 30) + '...';
+                    let label = '';
+                    if(item.type === 'mc' || item.type === 'extended') { label = `Before Q${qNumLoc++}: ${text}`; }
+                    else if(item.type === 'narrative') { label = `Before Narrative: ${item.narrativeName}`; }
+                    else { label = `Before Instruction: ${text}`; }
+                    insertLoc.innerHTML += `<option value="before-${item.id}">${label}</option>`;
+                });
+            }
+
+            secSelect.onchange = function() { buildInsertLocs(this.value); };
+
+            linkSelect.onchange = function() {
+                if (this.value !== "") {
+                    let selectedNar = testData.find(n => n.id === parseInt(this.value));
+                    if(selectedNar) secSelect.value = selectedNar.sectionId;
+                    secSelect.disabled = true;
+                    insertGroup.style.opacity = '0.5'; insertGroup.title = 'Linked items auto-nest inside their Narrative.'; insertLoc.disabled = true;
+                } else {
+                    secSelect.disabled = false;
+                    insertGroup.style.opacity = '1'; insertGroup.title = ''; insertLoc.disabled = false;
+                }
+            };
+
+            if (editingId) {
+                const itemToEdit = testData.find(q => q.id === editingId);
+                if (!itemToEdit) { alert("Error loading item."); return closeModal(); } 
+
+                insertGroup.style.display = 'none';
+                document.getElementById('btn-delete').style.display = "block";
+                
+                let modalTitle = "Edit " + (type === 'mc' ? "Multiple Choice" : type === 'extended' ? "Ext. Response" : type === 'instruction' ? "Instruction" : "Narrative");
+                let vNum = 1; let foundNum = null;
+                testData.forEach(item => { if (item.type === 'mc' || item.type === 'extended') { if (item.id === editingId) foundNum = vNum; vNum++; } });
+                if (foundNum !== null) modalTitle += ` (Question ${foundNum})`;
+                document.getElementById('modal-title').innerText = modalTitle;
+                
+                quillQuestion.root.innerHTML = itemToEdit.question;
+                quillReasoning.root.innerHTML = itemToEdit.reasoning || '';
+                secSelect.value = itemToEdit.sectionId || 'default';
+                
+                if (type === 'narrative') document.getElementById('narrative-name').value = itemToEdit.narrativeName || '';
+                if (type !== 'narrative') { linkSelect.value = itemToEdit.linkedNarrativeId || ''; linkSelect.onchange(); }
+                if (type === 'mc') {
+                    renderMCOptionInputs(itemToEdit.options.length, itemToEdit.options);
+                    document.getElementById('mc-columns').value = itemToEdit.columns ? itemToEdit.columns.toString() : "2"; 
+                }
+                if (type === 'extended') { document.getElementById('ext-lines').value = itemToEdit.lines !== undefined ? itemToEdit.lines.toString() : "3"; }
+            } else {
+                insertGroup.style.display = 'block';
+                document.getElementById('btn-delete').style.display = "none";
+                document.getElementById('modal-title').innerText = "Add New " + (type === 'mc' ? "Multiple Choice" : type === 'extended' ? "Ext. Response" : type === 'instruction' ? "Instruction" : "Narrative");
+                
+                quillQuestion.setContents([{ insert: '\n' }]); quillReasoning.setContents([{ insert: '\n' }]);
+                secSelect.value = 'default'; buildInsertLocs('default'); linkSelect.onchange();
+                
+                if (type === 'mc') { renderMCOptionInputs(4); document.getElementById('mc-columns').value = "2"; }
+                if (type === 'extended') document.getElementById('ext-lines').value = "3";
+            }
+
+            document.getElementById('narrative-name-group').style.display = (type === 'narrative') ? "block" : "none";
+            document.getElementById('narrative-link-group').style.display = (type !== 'narrative') ? "block" : "none";
+            document.getElementById('mc-fields').style.display = (type === 'mc') ? "block" : "none";
+            document.getElementById('extended-fields').style.display = (type === 'extended') ? "block" : "none";
+            document.getElementById('reasoning-group').style.display = (type === 'narrative' || type === 'instruction') ? "none" : "block";
+            document.getElementById('main-editor-label').innerText = (type === 'narrative' || type === 'instruction') ? "Text:" : "Question Text:";
+            
+            modal.style.display = "flex";
+            setTimeout(fixModalTabbing, 50);
+        }
+
+        function closeModal() { document.getElementById('creation-modal').style.display = "none"; editingId = null; }
+
+        function deleteData() {
+            if (!editingId) return;
+            if (confirm("Are you sure you want to delete this?")) {
+                saveState(); 
+                const itemToDelete = testData.find(q => q.id === editingId);
+                if (itemToDelete && itemToDelete.type === 'narrative') testData.forEach(q => { if (q.linkedNarrativeId === editingId) q.linkedNarrativeId = null; });
+                testData = testData.filter(q => q.id !== editingId);
+                renderApp(); triggerAutoSave(); closeModal();
+            }
+        }
+
+        function duplicateItem(id) {
+            saveState(); 
+            const itemToCopy = testData.find(q => q.id === id);
+            if(!itemToCopy) return;
+
+            const newItem = JSON.parse(JSON.stringify(itemToCopy));
+            newItem.id = questionIdCounter++; 
+            if (newItem.type === 'narrative') newItem.narrativeName = newItem.narrativeName + " (Copy)";
+
+            let insertIndex = testData.findIndex(q => q.id === id);
+            if (itemToCopy.type === 'narrative') { while (insertIndex + 1 < testData.length && testData[insertIndex + 1].linkedNarrativeId === id) insertIndex++; }
+            testData.splice(insertIndex + 1, 0, newItem); renderApp(); triggerAutoSave();
+        }
+
+        function moveNodeUp(btnElement) {
+            const container = btnElement.closest('.question-card, .narrative-group');
+            const prevSibling = container.previousElementSibling;
+            if (prevSibling && !prevSibling.classList.contains('group-boundary') && !prevSibling.classList.contains('group-intro-block')) { 
+                saveState(); container.parentNode.insertBefore(container, prevSibling); updateDataArrayFromDOM(); triggerAutoSave();
+            }
+        }
+
+        function moveNodeDown(btnElement) {
+            const container = btnElement.closest('.question-card, .narrative-group');
+            const nextSibling = container.nextElementSibling;
+            if (nextSibling) { saveState(); container.parentNode.insertBefore(container, nextSibling.nextElementSibling); updateDataArrayFromDOM(); triggerAutoSave(); }
+        }
+
+        function saveData() {
+            saveState(); 
+            const qHTML = quillQuestion.root.innerHTML;
+            const rHTML = quillReasoning.root.innerHTML;
+            const narNameVal = document.getElementById('narrative-name').value;
+            let linkedNarIdVal = document.getElementById('narrative-link-select').value;
+            linkedNarIdVal = linkedNarIdVal ? parseInt(linkedNarIdVal) : null;
+            let secIdVal = document.getElementById('item-section-select').value;
+            if (linkedNarIdVal) { const n = testData.find(x => x.id === linkedNarIdVal); if(n) secIdVal = n.sectionId; }
+            
+            let mcColumnsVal = document.getElementById('mc-columns').value.toString(); 
+            let extLinesVal = parseInt(document.getElementById('ext-lines').value);
+
+            let extractedOptions = []; let correctAns = "";
+            if (currentModalMode === 'mc') {
+                const radios = document.getElementsByName('correct-answer'); let selectedIndex = 0;
+                for (let i = 0; i < currentMCOptionsCount; i++) {
+                    extractedOptions.push(mcQuills[i].root.innerHTML);
+                    if (radios[i].checked) selectedIndex = i;
+                }
+                correctAns = extractedOptions[selectedIndex];
+            }
+
+            if (editingId) {
+                let itemIndex = testData.findIndex(q => q.id === editingId);
+                if (itemIndex > -1) {
+                    let oldNarrativeId = testData[itemIndex].linkedNarrativeId;
+                    let itemToUpdate = testData[itemIndex];
+                    itemToUpdate.question = qHTML; itemToUpdate.reasoning = rHTML; itemToUpdate.sectionId = secIdVal;
+                    
+                    if (currentModalMode === 'narrative') itemToUpdate.narrativeName = narNameVal;
+                    if (currentModalMode === 'mc') { itemToUpdate.options = extractedOptions; itemToUpdate.correctAnswer = correctAns; itemToUpdate.columns = mcColumnsVal; }
+                    if (currentModalMode === 'extended') itemToUpdate.lines = extLinesVal; 
+
+                    if (currentModalMode !== 'narrative') {
+                        if (oldNarrativeId !== linkedNarIdVal) {
+                            testData.splice(itemIndex, 1); itemToUpdate.linkedNarrativeId = linkedNarIdVal;
+                            if (linkedNarIdVal) {
+                                let insertIndex = testData.findIndex(q => q.id === linkedNarIdVal);
+                                while(insertIndex + 1 < testData.length && testData[insertIndex + 1].linkedNarrativeId === linkedNarIdVal) insertIndex++;
+                                testData.splice(insertIndex + 1, 0, itemToUpdate);
+                            } else { testData.push(itemToUpdate); }
+                        } else itemToUpdate.linkedNarrativeId = linkedNarIdVal;
+                    }
+                }
+            } else {
+                let newItem = { id: questionIdCounter++, sectionId: secIdVal, type: currentModalMode, question: qHTML, reasoning: rHTML };
+                if (currentModalMode === 'narrative') newItem.narrativeName = narNameVal;
+                if (currentModalMode !== 'narrative') newItem.linkedNarrativeId = linkedNarIdVal;
+                if (currentModalMode === 'mc') { newItem.options = extractedOptions; newItem.correctAnswer = correctAns; newItem.columns = mcColumnsVal; }
+                if (currentModalMode === 'extended') newItem.lines = extLinesVal; 
+                
+                if (linkedNarIdVal) {
+                    let insertIndex = testData.findIndex(q => q.id === linkedNarIdVal);
+                    while(insertIndex + 1 < testData.length && testData[insertIndex + 1].linkedNarrativeId === linkedNarIdVal) insertIndex++;
+                    testData.splice(insertIndex + 1, 0, newItem);
+                } else { 
+                    const loc = document.getElementById('insert-location').value;
+                    let secItems = testData.filter(q => q.sectionId === secIdVal);
+                    if (loc === 'start') {
+                        let firstInSec = testData.findIndex(q => q.sectionId === secIdVal);
+                        if (firstInSec > -1) testData.splice(firstInSec, 0, newItem); else testData.push(newItem);
+                    } else if (loc.startsWith('before-')) {
+                        const targetId = parseInt(loc.replace('before-', ''));
+                        const targetIndex = testData.findIndex(q => q.id === targetId);
+                        if (targetIndex > -1) testData.splice(targetIndex, 0, newItem); else testData.push(newItem);
+                    } else {
+                        // REPLACED findLastIndex to prevent browser compatibility crashes
+                        let lastInSec = -1;
+                        for(let i = testData.length - 1; i >= 0; i--) {
+                            if(testData[i].sectionId === secIdVal) { lastInSec = i; break; }
+                        }
+                        if (lastInSec > -1) testData.splice(lastInSec + 1, 0, newItem); else testData.push(newItem);
+                    }
+                }
+            }
+            
+            if (document.getElementById('narrative-manager-modal').style.display === 'flex') renderNarrativeList();
+            renderApp(); closeModal(); triggerAutoSave();
+        }
+
+        // --- ADVANCED SCRAMBLE LOGIC ---
+        function openScrambleModal() {
+            const scopeSelect = document.getElementById('scramble-scope');
+            scopeSelect.innerHTML = '<option value="all">Whole Test (All Groups)</option>';
+            sections.forEach(sec => {
+                scopeSelect.innerHTML += `<option value="${sec.id}">${sec.title}</option>`;
+            });
+            document.getElementById('scramble-modal').style.display = 'flex';
+        }
+
+        function executeScramble() {
+            const scope = document.getElementById('scramble-scope').value;
+            const scrambleQs = document.getElementById('scramble-questions-chk').checked;
+            const scrambleOpts = document.getElementById('scramble-options-chk').checked;
+
+            if (!scrambleQs && !scrambleOpts) {
+                alert("Please select at least one scrambling option.");
+                return;
+            }
+
+            saveState(); 
+
+            // 1. Scramble Multiple Choice Options if checked
+            if (scrambleOpts) {
+                testData.forEach(item => {
+                    if (item.type === 'mc' && item.options && (scope === 'all' || item.sectionId === scope)) {
+                        for (let i = item.options.length - 1; i > 0; i--) { 
+                            const j = Math.floor(Math.random() * (i + 1)); 
+                            [item.options[i], item.options[j]] = [item.options[j], item.options[i]]; 
+                        }
+                    }
+                });
+            }
+
+            // 2. Scramble Question Order if checked
+            if (scrambleQs) {
+                let sectionsToScramble = scope === 'all' ? sections.map(s => s.id) : [scope];
+                let newScrambledData = [];
+                
+                sections.forEach(sec => {
+                    let secItems = testData.filter(q => q.sectionId === sec.id);
+                    
+                    if (sectionsToScramble.includes(sec.id)) {
+                        let groups = []; 
+                        let currentGroup = null;
+                        
+                        // Break section into sub-groups (standalone questions vs. narrative blocks)
+                        secItems.forEach(item => {
+                            if (item.type === 'narrative') { 
+                                if (currentGroup) groups.push(currentGroup); 
+                                currentGroup = [item]; 
+                            } 
+                            else if (item.linkedNarrativeId) { 
+                                if (currentGroup) currentGroup.push(item); 
+                                else groups.push([item]); 
+                            } 
+                            else { 
+                                if (currentGroup) { groups.push(currentGroup); currentGroup = null; } 
+                                groups.push([item]); 
+                            }
+                        });
+                        if (currentGroup) groups.push(currentGroup);
+
+                        // Shuffle the outer blocks
+                        for (let i = groups.length - 1; i > 0; i--) { 
+                            const j = Math.floor(Math.random() * (i + 1)); 
+                            [groups[i], groups[j]] = [groups[j], groups[i]]; 
+                        }
+                        
+                        // Shuffle items INSIDE narrative blocks
+                        groups.forEach(group => {
+                            if (group.length > 1 && group[0].type === 'narrative') {
+                                const nar = group[0]; 
+                                const qs = group.slice(1);
+                                for (let i = qs.length - 1; i > 0; i--) { 
+                                    const j = Math.floor(Math.random() * (i + 1)); 
+                                    [qs[i], qs[j]] = [qs[j], qs[i]]; 
+                                }
+                                group.splice(1, qs.length, ...qs);
+                            }
+                        });
+                        newScrambledData = newScrambledData.concat(groups.flat());
+                    } else {
+                        // Section wasn't selected for scrambling, just append it back
+                        newScrambledData = newScrambledData.concat(secItems);
+                    }
+                });
+                testData = newScrambledData;
+            }
+
+            document.getElementById('scramble-modal').style.display = 'none';
+            renderApp(); 
+            triggerAutoSave();
+        }
+
+        // --- RENDER ENGINE ---
+        function createQuestionElement(item, visualNum) {
+            const questionDiv = document.createElement('div');
+            questionDiv.className = 'question-card'; questionDiv.dataset.id = item.id; 
+            if (item.type === 'instruction') questionDiv.classList.add('instruction-card');
+            if (item.pageBreakBefore) questionDiv.classList.add('has-page-break');
+            
+            let breakIndicator = '<div class="page-break-indicator no-print">✂️ --- Page Break Before This Item --- ✂️</div>';
+            let breakBtnText = item.pageBreakBefore ? "❌ Remove Break" : "✂️ Break";
+            
+            questionDiv.ondblclick = function(e) { e.stopPropagation(); openModal(item.type, item.id); };
+            let linkedBadge = item.linkedNarrativeId ? `<div class="narrative-link-badge">Linked to: ${testData.find(n => n.id === item.linkedNarrativeId)?.narrativeName}</div>` : "";
+            let answerLine = item.type === 'mc' ? '_____ ' : '';
+
+            if (item.type === 'instruction') {
+                questionDiv.innerHTML = `${breakIndicator}${linkedBadge}<div style="display:flex; align-items:baseline; gap:10px;"><div class="q-text-container" style="flex:1; min-width:0; width:100%;">${item.question}</div></div>`;
+            } else if (item.type === 'mc') {
+                questionDiv.innerHTML = `${breakIndicator}${linkedBadge}<div style="display:flex; align-items:baseline; gap:10px;"><div>${answerLine}<span class="q-num">${visualNum}.</span></div><div class="q-text-container" style="flex:1; min-width:0;">${item.question}</div></div>`;
+                const ul = document.createElement('ul'); ul.className = `mc-options ${item.columns ? 'col-'+item.columns : 'col-2'}`;
+                item.options.forEach((optHTML, index) => { 
+                    const li = document.createElement('li'); li.className = 'mc-option-item'; 
+                    li.innerHTML = `<div>(${index + 1})</div> <div class="q-text-container" style="flex:1; min-width:0;">${optHTML}</div>`; 
+                    ul.appendChild(li); 
+                });
+                questionDiv.appendChild(ul);
+            } else if (item.type === 'extended') { 
+                let linesHTML = ''; let lineCount = item.lines !== undefined ? parseInt(item.lines) : 3;
+                if (lineCount > 0) {
+                    linesHTML = `<div class="answer-lines-container">`;
+                    for(let i=0; i<lineCount; i++) linesHTML += `<div class="answer-line"></div>`;
+                    linesHTML += `</div>`;
+                } 
+                questionDiv.innerHTML = `${breakIndicator}${linkedBadge}<div style="display:flex; align-items:baseline; gap:10px;"><div><span style="visibility: hidden;">_____ </span><span class="q-num">${visualNum}.</span></div><div class="q-text-container" style="flex:1; min-width:0;">${item.question}${linesHTML}</div></div>`;
+            }
+            
+            questionDiv.innerHTML += `<div class="card-actions no-print"><button class="action-btn-small" onclick="event.stopPropagation(); togglePageBreak(this);" title="Toggle Page Break">${breakBtnText}</button><button class="action-btn-small" onclick="event.stopPropagation(); moveNodeUp(this);" title="Move Up">⬆️</button><button class="action-btn-small" onclick="event.stopPropagation(); moveNodeDown(this);" title="Move Down">⬇️</button><button class="action-btn-small btn-duplicate" onclick="event.stopPropagation(); duplicateItem(${item.id});">📋 Duplicate</button></div>`;
+            return questionDiv;
+        }
+
+        function updateDataArrayFromDOM() {
+            let newData = [];
+            const mainNodes = document.getElementById('test-container').children;
+            let currentSectionId = sections.length > 0 ? sections[0].id : 'default'; 
+
+            for (let node of mainNodes) {
+                if (node.classList.contains('group-boundary')) {
+                    currentSectionId = node.dataset.sectionId;
+                } else if (node.classList.contains('narrative-group')) {
+                    const narId = parseInt(node.dataset.id);
+                    let nar = testData.find(q => q.id === narId); if(nar) { nar.sectionId = currentSectionId; newData.push(nar); }
+                    for (let lNode of node.querySelectorAll('.question-card')) {
+                        const qId = parseInt(lNode.dataset.id);
+                        let q = testData.find(x => x.id === qId); if(q) { q.sectionId = currentSectionId; q.linkedNarrativeId = narId; newData.push(q); }
+                    }
+                } else if (node.classList.contains('question-card')) {
+                    const qId = parseInt(node.dataset.id);
+                    let q = testData.find(x => x.id === qId); if(q) { q.sectionId = currentSectionId; q.linkedNarrativeId = null; newData.push(q); } 
+                }
+            }
+            testData.forEach(item => { if (item.type === 'narrative' && !newData.find(x => x.id === item.id)) newData.push(item); });
+            testData = newData; 
+        }
+
+
+
+
+        function renderAnswerKey() {
+            const keyContainer = document.getElementById('key-container');
+            keyContainer.innerHTML = '';
+            let visualQuestionNumber = 1;
+
+            testData.forEach(item => {
+                if (item.type === 'narrative' || item.type === 'instruction') return;
+
+                const keyCard = document.createElement('div');
+                keyCard.className = 'key-card'; 
+
+                let answerHTML = `<div><strong>${visualQuestionNumber}.</strong></div><div style="flex: 1; min-width: 0;">`;
+
+                if (item.type === 'mc') {
+                    let correctIndex = item.options.indexOf(item.correctAnswer);
+                    answerHTML += `<div class="key-correct-answer" style="display:flex; align-items:baseline; gap: 5px;"><div>(${correctIndex + 1})</div> <div class="q-text-container" style="flex:1;">${item.correctAnswer}</div></div>`;
+                } else if (item.type === 'extended') {
+                    answerHTML += `
+                        <div class="key-extended q-text-container">
+                            <div style="margin-bottom: 2px;"><strong>Rubric / Expected Answer:</strong></div>
+                            ${item.reasoning || '<p><em>No rubric provided</em></p>'}
+                        </div>`;
+                }
+
+                if (item.type === 'mc' && item.reasoning && item.reasoning.replace(/<[^>]*>?/gm, '').trim() !== '') {
+                    answerHTML += `
+                        <div class="key-reasoning q-text-container">
+                            <div style="margin-bottom: 2px;"><strong>Reasoning:</strong></div>
+                            ${item.reasoning}
+                        </div>`;
+                }
+
+                answerHTML += `</div>`;
+                keyCard.innerHTML = answerHTML;
+                keyContainer.appendChild(keyCard);
+                visualQuestionNumber++;
+            });
+        }
+
+
+
+
+
+        function renderApp() {
+            const testContainer = document.getElementById('test-container');
+            testContainer.innerHTML = '';
+            let visualQuestionNumber = 1;
+
+            sections.forEach(sec => {
+                const boundary = document.createElement('div');
+                boundary.className = 'group-boundary'; boundary.dataset.sectionId = sec.id; boundary.style.display = 'none';
+                testContainer.appendChild(boundary);
+
+                if (sec.intro && sec.intro.trim() !== '' && sec.intro !== '<p><br></p>') {
+                    const introDiv = document.createElement('div');
+                    introDiv.className = 'group-intro-block';
+                    introDiv.innerHTML = `<div class="q-text-container" style="margin-bottom: 1.5em;">${sec.intro}</div>`;
+                    testContainer.appendChild(introDiv);
+                }
+
+                const itemsInThisSection = testData.filter(q => q.sectionId === sec.id);
+                let currentNarrativeGroup = null; let currentLinkedContainer = null;
+
+                itemsInThisSection.forEach((item) => {
+                    if (currentNarrativeGroup && item.linkedNarrativeId !== parseInt(currentNarrativeGroup.dataset.id)) {
+                        testContainer.appendChild(currentNarrativeGroup); currentNarrativeGroup = null;
+                    }
+
+                    if (item.type === 'narrative') {
+                        let linkedCount = itemsInThisSection.filter(q => q.linkedNarrativeId === item.id && q.type !== 'instruction').length;
+                        let totalLinked = itemsInThisSection.filter(q => q.linkedNarrativeId === item.id).length;
+                        if(totalLinked === 0) return; 
+
+                        currentNarrativeGroup = document.createElement('div');
+                        currentNarrativeGroup.className = 'narrative-group'; currentNarrativeGroup.dataset.id = item.id;
+
+                        let headerText = "";
+                        let startQNum = visualQuestionNumber;
+                        let endQNum = visualQuestionNumber + linkedCount - 1;
+
+                        if (linkedCount === 1) {
+                            headerText = `<strong>Base your answer to question ${startQNum} on the information below.</strong><br><br>`;
+                        } else if (linkedCount > 1) {
+                            headerText = `<strong>Base your answers to questions ${startQNum} through ${endQNum} on the information below.</strong><br><br>`;
+                        }
+
+                        if (item.pageBreakBefore) currentNarrativeGroup.classList.add('has-page-break');
+                        let breakIndicator = '<div class="page-break-indicator no-print">✂️ --- Page Break Before This Item --- ✂️</div>';
+                        let breakBtnText = item.pageBreakBefore ? "❌ Remove Break" : "✂️ Break";
+
+                        const narContent = document.createElement('div');
+                        narContent.className = 'narrative-content'; narContent.ondblclick = () => openModal(item.type, item.id);
+                        narContent.innerHTML = `${breakIndicator}<div class="q-text-container">${headerText}${item.question}</div><div class="card-actions no-print"><button class="action-btn-small" onclick="event.stopPropagation(); togglePageBreak(this);" title="Toggle Page Break">${breakBtnText}</button><button class="action-btn-small" onclick="event.stopPropagation(); moveNodeUp(this);" title="Move Up">⬆️</button><button class="action-btn-small" onclick="event.stopPropagation(); moveNodeDown(this);" title="Move Down">⬇️</button><button class="action-btn-small btn-duplicate" onclick="event.stopPropagation(); duplicateItem(${item.id});">📋 Duplicate</button></div>`;
+                        
+                        currentLinkedContainer = document.createElement('div'); currentLinkedContainer.className = 'linked-questions-container';
+                        currentNarrativeGroup.appendChild(narContent); currentNarrativeGroup.appendChild(currentLinkedContainer);
+                    } else {
+                        if(item.linkedNarrativeId && !currentNarrativeGroup) return; 
+                        let currentNum = (item.type === 'instruction') ? "" : visualQuestionNumber++;
+                        const qCard = createQuestionElement(item, currentNum);
+                        
+                        if (item.linkedNarrativeId) currentLinkedContainer.appendChild(qCard);
+                        else testContainer.appendChild(qCard); 
+                    }
+                });
+                if (currentNarrativeGroup) testContainer.appendChild(currentNarrativeGroup);
+            });
+            
+            initializeDragAndDrop(); renderAnswerKey(); renderBank(); applyHeaderSettings();
+        }
+
+        function initializeDragAndDrop() {
+            new Sortable(document.getElementById('test-container'), { 
+                animation: 150, ghostClass: 'drag-ghost', 
+                filter: '.group-boundary, .group-intro-block', 
+                onStart: function(evt) { saveState(); }, 
+                onEnd: function (evt) { 
+                    updateDataArrayFromDOM(); 
+                    setTimeout(() => { renderApp(); triggerAutoSave(); }, 10); 
+                } 
+            }); 
+            
+            document.querySelectorAll('.linked-questions-container').forEach(container => { 
+                new Sortable(container, { 
+                    animation: 150, ghostClass: 'drag-ghost', 
+                    onStart: function(evt) { saveState(); }, 
+                    onEnd: function (evt) { updateDataArrayFromDOM(); setTimeout(() => { renderApp(); triggerAutoSave(); }, 10); } 
+                }); 
+            });
+            
+            document.querySelectorAll('.mc-options').forEach(list => {
+                const parentId = parseInt(list.closest('.question-card').dataset.id);
+                new Sortable(list, { 
+                    animation: 150, ghostClass: 'drag-ghost', onStart: function(evt) { saveState(); }, 
+                    onEnd: function (evt) {
+                        const question = testData.find(q => q.id === parentId);
+                        if (question && question.options) {
+                            const movedOption = question.options.splice(evt.oldIndex, 1)[0];
+                            question.options.splice(evt.newIndex, 0, movedOption);
+                            renderApp(); triggerAutoSave();
+                        }
+                    }
+                });
+            });
+        }
+
+
+
+        // --- SAFE PRINT ENGINE ---
+        function safePrint() {
+            // 1. Force an immediate backup to protect your data just in case!
+            if (typeof triggerAutoSave === 'function') triggerAutoSave();
+
+            // 2. Grab the custom CSS and the HTML of the currently active tab (Test or Answer Key)
+            const styles = document.querySelector('style').innerHTML;
+            const content = document.querySelector('.tab-content.active').innerHTML;
+
+            // 3. Open a clean, isolated "Print Spooler" window
+            const printWin = window.open('', '_blank');
+            
+            // 4. Write a lightweight, read-only version of the test to the new window
+            printWin.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Print Document</title>
+                    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+                    <style>
+                        ${styles}
+                        /* Force the popup window to mimic the printed page on screen */
+                        body { background: #fff; padding: 20px; }
+                        .print-only-header { display: block !important; }
+                        .no-print { display: none !important; }
+                        /* Enforce strict page breaking rules in the print spooler */
+                        .question-card, .key-card { border-bottom: none !important; page-break-inside: avoid; break-inside: avoid; }
+                        .instruction-card { page-break-inside: auto !important; break-inside: auto !important; }
+                        .narrative-group { border-bottom: none !important; }
+                        .group-intro-block { page-break-after: avoid; break-after: avoid; page-break-inside: auto; break-inside: auto; }
+                        .narrative-content { page-break-after: avoid; break-after: avoid; page-break-inside: avoid; break-inside: avoid; }
+                        .ql-editor { padding: 0 !important; overflow-y: visible !important; }
+                    </style>
+                </head>
+                <body>
+                    ${content}
+                    <script>
+                        // Wait a fraction of a second for math equations and images to load, then trigger the print dialog
+                        setTimeout(function() {
+                            window.print();
+                        }, 800); 
+                    <\/script>
+                </body>
+                </html>
+            `);
+            printWin.document.close();
+        }
+
+
+
+
+
+        function addDummyData() {
+            testData.push({ id: questionIdCounter++, sectionId: 'default', type: "instruction", question: "<p><em>Please read all questions carefully and circle the best answer.</em></p>" });
+            testData.push({ id: questionIdCounter++, sectionId: 'default', type: "mc", columns: "2", question: "<p>What is the chemical formula for sodium chloride?</p>", options: ["<p>NaCl</p>", "<p>KCl</p>", "<p>NaOH</p>", "<p>HCl</p>"], correctAnswer: "<p>NaCl</p>" });
+            testData.push({ id: questionIdCounter++, sectionId: 'default', type: "narrative", narrativeName: "Reading Passage 1", question: "<p>Water is a polar molecule that exhibits strong hydrogen bonding.</p>" });
+            testData.push({ id: questionIdCounter++, sectionId: 'default', type: "mc", linkedNarrativeId: 3, columns: "2", question: "<p>What is the molar mass of water (H<sub>2</sub>O)?</p>", options: ["<p>16.00 g/mol</p>", "<p>18.02 g/mol</p>", "<p>32.00 g/mol</p>", "<p>20.02 g/mol</p>"], correctAnswer: "<p>18.02 g/mol</p>" });
+            testData.push({ id: questionIdCounter++, sectionId: 'default', type: "extended", lines: 3, linkedNarrativeId: 3, question: "<p>Explain why water has a high boiling point.</p>", reasoning: "<p>Due to strong intermolecular hydrogen bonding.</p>" });
+        }
+    </script>
+</body>
+</html>

@@ -76,7 +76,6 @@ node_modules/
 # dataconnect generated files
 .dataconnect
 
-# Local GAS and Node configs
-gas/
-package.json
-package-lock.json
+# GAS temporary and cache files
+gas/.npm-cache/
+gas/temp_clasp/

@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Command Center</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+        tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'], heading: ['Montserrat', 'sans-serif'] } } } }
+    </script>
+    <style>
+        .table-container { overflow-x: auto; background: white; max-width: 100%; }
+        table { width: max-content; border-collapse: collapse; }
+        th, td { border: 1px solid #e2e8f0; padding: 10px; text-align: center; font-size: 13px; }
+        .q-col { width: 65px; min-width: 65px; max-width: 65px; }
+        th { background-color: #f8fafc; font-weight: 600; color: #475569; position: sticky; top: 0; z-index: 10; }
+        .name-column-width { width: 280px !important; min-width: 280px !important; max-width: 280px !important; }
+        .student-name { position: sticky; left: 0; background-color: white; z-index: 15; text-align: left; border-right: 3px solid #cbd5e1; box-shadow: 3px 0 6px -2px rgba(0,0,0,0.05); }
+        th.student-name { z-index: 25; background-color: #f8fafc; }
+        .correct { color: #16a34a; font-weight: bold; font-size: 1.1em;}
+        .incorrect { color: #dc2626; font-weight: bold; font-size: 1.1em;}
+        .pending { color: #3b82f6; font-weight: bold; font-size: 1.1em;} 
+        .empty { color: #94a3b8; font-weight: normal; }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased h-screen flex flex-col overflow-hidden">
+
+    <header class="bg-white px-6 py-4 border-b border-slate-200 shadow-sm flex justify-between items-center z-20 shrink-0">
+        <div>
+            <h1 class="font-heading text-xl font-bold text-slate-800">Command Center</h1>
+            <p class="text-slate-500 text-sm mt-1"><?= ASSIGNMENT_TITLE ?></p>
+        </div>
+        <div class="flex items-center gap-6">
+            <div class="flex items-center gap-2">
+                <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Period:</label>
+                <select id="period-filter" onchange="handlePeriodChange()" class="bg-slate-50 border border-slate-200 rounded px-2 py-1 text-sm font-medium text-slate-700 focus:outline-none cursor-pointer">
+                    <option value="ALL">All Periods</option>
+                </select>
+            </div>
+            <div id="connection-status" class="flex items-center gap-2 text-xs font-semibold text-emerald-500 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200">
+                <span class="relative flex h-2 w-2" id="status-ping">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                <span>Live</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden h-full">
+        <aside id="sidebar-container" class="hidden w-80 bg-white border-r border-slate-200 flex flex-col h-full shadow-sm z-10 shrink-0 relative">
+            <div class="p-4 border-b border-slate-200 bg-slate-50">
+                <button onclick="showGridView()" class="w-full bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-lg font-semibold text-sm transition shadow-sm flex justify-center items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                    Return to Grid View
+                </button>
+            </div>
+            <div class="p-4 flex-1 overflow-y-auto">
+                <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Student Roster</h2>
+                <ul id="student-list" class="space-y-1"></ul>
+            </div>
+        </aside>
+
+        <main class="flex-1 relative overflow-y-auto p-6 bg-slate-50">
+            
+            <section id="grid-view" class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden h-full">
+                <div class="table-container h-full rounded-xl">
+                    <table id="dashboard-table">
+                        <thead id="table-head"></thead>
+                        <tbody id="table-body">
+                            <tr><td id="sync-msg" class="py-10 text-slate-500 bg-white text-center">Syncing roster...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="detail-section" class="hidden pb-20 max-w-5xl mx-auto w-full">
+                <div class="flex justify-between items-end mb-6 border-b-2 border-slate-200 pb-3">
+                    <div>
+                        <h2 id="current-student-name" class="font-heading text-3xl font-bold text-slate-800">Student Name</h2>
+                        <p id="current-student-email" class="text-slate-500 font-medium">email@student.com</p>
+                    </div>
+                </div>
+                
+                <div id="answers-container" class="space-y-6"></div>
+            </section>
+
+        </main>
+    </div>
+
+<script>
+    const FIREBASE_SECRET = "<?= FIREBASE_SECRET ?>";
+    const databaseURL = "https://scigarage-default-rtdb.firebaseio.com";
+    const ASSIGNMENT_CODE = "<?= ASSIGNMENT_CODE ?>";
+    const rosterMap = JSON.parse('<?= ROSTER_DATA ?>');
+    const QUESTIONS_ARRAY = JSON.parse('<?= QUESTIONS_ARRAY ?>');
+
+    let allLabData = {}; 
+    let selectedStudentId = null;
+
+    function init() {
+        let headHtml = `<tr><th class="student-name name-column-width text-left px-4">Student Name</th>`;
+        QUESTIONS_ARRAY.forEach(q => { headHtml += `<th class="q-col text-xs" title="${q.title}">${q.id.replace('q_','').toUpperCase()}</th>`; });
+        headHtml += `</tr>`;
+        document.getElementById('table-head').innerHTML = headHtml;
+        document.getElementById('sync-msg').colSpan = QUESTIONS_ARRAY.length + 1;
+
+        const periods = [...new Set(Object.values(rosterMap).map(s => s.period))].sort();
+        const filterSelect = document.getElementById('period-filter');
+        periods.forEach(p => { 
+            const opt = document.createElement('option'); opt.value = p; opt.innerText = `Period ${p}`; filterSelect.appendChild(opt); 
+        });
+
+        startLiveDatabaseListener();
+    }
+
+    function handlePeriodChange() {
+        showGridView();
+        renderGrid();
+    }
+
+    function startLiveDatabaseListener() {
+        const url = `${databaseURL}/classroomAssignments/${ASSIGNMENT_CODE}.json?auth=${FIREBASE_SECRET}`;
+        const eventSource = new EventSource(url);
+        
+        eventSource.addEventListener('put', function(e) {
+            const payload = JSON.parse(e.data);
+            if (payload.path === "/") {
+                allLabData = payload.data || {};
+            } else {
+                fetch(url).then(r => r.json()).then(data => {
+                    allLabData = data || {};
+                    renderGrid();
+                    if (selectedStudentId) renderDetailView();
+                });
+                return;
+            }
+            renderGrid();
+            if (selectedStudentId) renderDetailView();
+        });
+    }
+
+    function renderGrid() {
+        const filterVal = document.getElementById('period-filter').value;
+        let html = '';
+        const sortedStudents = Object.entries(rosterMap)
+            .filter(([uid, s]) => filterVal === "ALL" || s.period === filterVal)
+            .sort((a, b) => a[1].name.localeCompare(b[1].name));
+
+        sortedStudents.forEach(([uuid, student]) => {
+            const sData = allLabData[uuid] || {};
+            const rowBg = "hover:bg-slate-50";
+            
+            let nameColumnInner = `<div class="flex flex-col justify-center w-full h-full cursor-pointer px-4 py-2" onclick="selectStudent('${uuid}')"><div class="text-sm font-bold text-slate-700">${student.name}</div><div class="text-xs text-slate-400 truncate">${student.email}</div></div>`;
+            html += `<tr class="${rowBg} transition-colors"><td class="student-name name-column-width p-0 bg-white">${nameColumnInner}</td>`;
+            
+            QUESTIONS_ARRAY.forEach(q => {
+                const qData = sData[q.id];
+                if (!qData || !qData.inputs || Object.keys(qData.inputs).length === 0) {
+                    html += `<td class="q-col empty">-</td>`;
+                } else if (!qData.inReview) {
+                    html += `<td class="q-col empty text-lg">-</td>`; 
+                } else if (!qData.teacherGraded) {
+                    html += `<td class="q-col pending text-lg">⏳</td>`;
+                } else if (qData.solved) {
+                    html += `<td class="q-col correct text-lg">✔</td>`;
+                } else {
+                    html += `<td class="q-col incorrect text-lg">✘</td>`;
+                }
+            });
+            html += `</tr>`;
+        });
+        document.getElementById('table-body').innerHTML = html;
+    }
+
+    function renderSidebar() {
+        const filterVal = document.getElementById('period-filter').value;
+        const listEl = document.getElementById('student-list');
+        listEl.innerHTML = ''; 
+
+        const sortedStudents = Object.entries(rosterMap)
+            .filter(([uid, s]) => filterVal === "ALL" || s.period === filterVal)
+            .sort((a, b) => a[1].name.localeCompare(b[1].name));
+
+        sortedStudents.forEach(([uuid, student]) => {
+            const isActive = (uuid === selectedStudentId);
+            const baseClass = "w-full text-left px-4 py-3 rounded-xl transition-colors border border-transparent focus:outline-none group flex items-center justify-between";
+            const colorClass = isActive ? "bg-indigo-100 border-indigo-200" : "hover:bg-indigo-50";
+            
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <button onclick="selectStudent('${uuid}')" id="btn-${uuid}" class="${baseClass} ${colorClass}">
+                    <div>
+                        <div class="font-semibold ${isActive ? 'text-indigo-800' : 'text-slate-700 group-hover:text-indigo-700'}">${student.name}</div>
+                        <div class="text-xs ${isActive ? 'text-indigo-600' : 'text-slate-400'} truncate">${student.email}</div>
+                    </div>
+                </button>
+            `;
+            listEl.appendChild(li);
+        });
+    }
+
+    function showGridView() {
+        selectedStudentId = null;
+        document.getElementById('detail-section').classList.add('hidden');
+        document.getElementById('sidebar-container').classList.add('hidden');
+        document.getElementById('grid-view').classList.remove('hidden');
+        renderGrid();
+    }
+
+    function selectStudent(uuid) {
+        selectedStudentId = uuid;
+        document.getElementById('current-student-name').innerText = rosterMap[uuid].name;
+        document.getElementById('current-student-email').innerText = rosterMap[uuid].email;
+        
+        document.getElementById('grid-view').classList.add('hidden');
+        document.getElementById('sidebar-container').classList.remove('hidden');
+        document.getElementById('detail-section').classList.remove('hidden');
+        
+        renderSidebar();
+        renderDetailView();
+    }
+
+    function markCorrectness(qId, isCorrect) {
+        if (!selectedStudentId) return;
+        
+        if (!allLabData[selectedStudentId]) allLabData[selectedStudentId] = {};
+        if (!allLabData[selectedStudentId][qId]) allLabData[selectedStudentId][qId] = {};
+        
+        allLabData[selectedStudentId][qId].teacherGraded = true;
+        allLabData[selectedStudentId][qId].solved = isCorrect;
+        allLabData[selectedStudentId][qId].revisions = null; 
+
+        renderDetailView();
+        
+        const url = `${databaseURL}/classroomAssignments/${ASSIGNMENT_CODE}/${selectedStudentId}/${qId}.json?auth=${FIREBASE_SECRET}`;
+        fetch(url, { method: 'PATCH', body: JSON.stringify({ teacherGraded: true, solved: isCorrect, revisions: null }) });
+    }
+
+    function renderDetailView() {
+        const container = document.getElementById('answers-container');
+        if (!selectedStudentId) return;
+
+        const sData = allLabData[selectedStudentId] || {};
+        let html = '';
+
+        QUESTIONS_ARRAY.forEach(q => {
+            const qData = sData[q.id] || {};
+            const inputs = qData.inputs || {};
+            const revisions = qData.revisions || {};
+            
+            let statusBanner = "";
+            let cardStyle = "bg-white border-slate-200";
+
+            // LOGIC FIX: Check `inReview` first before looking at `teacherGraded`
+            if (!qData.inReview) {
+                statusBanner = `<div class="bg-slate-100 text-slate-500 px-6 py-3 border-b border-slate-200 font-semibold text-sm flex justify-between items-center rounded-t-2xl">
+                    <span class="italic">Incomplete / Drafting</span>
+                    ${Object.keys(revisions).length > 0 ? '<span class="bg-yellow-300 text-yellow-800 px-2 py-0.5 rounded text-xs not-italic font-bold tracking-wide uppercase">Revised</span>' : ''}
+                </div>`;
+                cardStyle = "bg-white border-slate-200 border-2";
+            } else if (qData.teacherGraded) {
+                if (qData.solved) {
+                    statusBanner = `<div class="bg-green-100 text-green-800 px-6 py-3 border-b border-green-200 font-bold text-sm flex justify-between items-center rounded-t-2xl"><span>✓ Graded: Correct</span><button onclick="markCorrectness('${q.id}', false)" class="text-xs font-normal underline hover:text-green-900">Change to Incorrect</button></div>`;
+                    cardStyle = "bg-green-50 border-green-400 border-2";
+                } else {
+                    statusBanner = `<div class="bg-red-100 text-red-800 px-6 py-3 border-b border-red-200 font-bold text-sm flex justify-between items-center rounded-t-2xl"><span>✗ Graded: Incorrect</span><button onclick="markCorrectness('${q.id}', true)" class="text-xs font-normal underline hover:text-red-900">Change to Correct</button></div>`;
+                    cardStyle = "bg-red-50 border-red-400 border-2";
+                }
+            } else {
+                statusBanner = `<div class="bg-blue-100 text-blue-800 px-6 py-3 border-b border-blue-200 font-bold text-sm flex justify-between items-center rounded-t-2xl">
+                    <span>⏳ Ready for Review ${Object.keys(revisions).length > 0 ? '<span class="ml-2 bg-yellow-300 text-yellow-800 px-2 py-0.5 rounded text-xs">Revised</span>' : ''}</span>
+                    <div class="flex gap-2">
+                        <button onclick="markCorrectness('${q.id}', true)" class="bg-white border border-blue-300 hover:bg-green-100 hover:text-green-700 hover:border-green-400 px-3 py-1 rounded shadow-sm transition">✅ Mark Correct</button>
+                        <button onclick="markCorrectness('${q.id}', false)" class="bg-white border border-blue-300 hover:bg-red-100 hover:text-red-700 hover:border-red-400 px-3 py-1 rounded shadow-sm transition">❌ Mark Incorrect</button>
+                    </div>
+                </div>`;
+                cardStyle = "bg-blue-50 border-blue-300 border-2 shadow-md";
+            }
+
+            const getVal = (id) => {
+                let val = inputs[id] || '';
+                let revClass = revisions[id] ? "ring-4 ring-yellow-400 bg-yellow-100" : "bg-transparent";
+                return `<div class="w-full h-full min-h-[45px] flex items-center justify-center px-4 outline-none text-[#0000ff] font-bold whitespace-pre-wrap ${revClass}">${val}</div>`;
+            };
+            const getArea = (id) => {
+                let val = inputs[id] || '';
+                let revClass = revisions[id] ? "ring-4 ring-yellow-400 bg-yellow-50 border-yellow-400" : "bg-slate-50 border-slate-200";
+                return `<div class="w-full ${revClass} border rounded-xl p-4 text-[#0000ff] font-bold min-h-[5rem] whitespace-pre-wrap">${val}</div>`;
+            };
+
+            let innerHtml = "";
+            
+            // EXACT UI REPRODUCTION SWITCH
+            if (q.id === "q_t1") {
+                innerHtml = `
+                    <div class="flex justify-between items-start border-b-2 border-slate-100 pb-4 mb-6"><h2 class="font-heading text-2xl text-slate-800">Data Table 1</h2></div>
+                    <div class="overflow-x-auto rounded-xl border border-slate-200"><table class="w-full text-center border-collapse"><thead class="bg-slate-50 border-b border-slate-200 text-sm"><tr><th class="py-3 px-2 font-semibold text-slate-600 border-r border-slate-200">Height of Drop (cm)</th><th class="py-3 px-2 font-semibold text-slate-600 border-r border-slate-200">Trial 1 Dia. (mm)</th><th class="py-3 px-2 font-semibold text-slate-600 border-r border-slate-200">Trial 2 Dia. (mm)</th><th class="py-3 px-2 font-semibold text-slate-600">Trial 3 Dia. (mm)</th></tr></thead><tbody class="divide-y divide-slate-200 bg-white">
+                        ${[30, 50, 100, 150, 200, 250].map(h => `<tr class="hover:bg-slate-50"><td class="py-3 px-4 font-bold text-slate-700 border-r border-slate-200 bg-slate-50/50">${h}</td><td class="p-0 border-r border-slate-200">${getVal(`t1_${h}_1`)}</td><td class="p-0 border-r border-slate-200">${getVal(`t1_${h}_2`)}</td><td class="p-0">${getVal(`t1_${h}_3`)}</td></tr>`).join('')}
+                    </tbody></table></div>`;
+            } else if (q.id === "q_t2") {
+                innerHtml = `
+                    <div class="flex justify-between items-start border-b-2 border-slate-100 pb-4 mb-6"><h2 class="font-heading text-2xl text-slate-800">Data Analysis (Averages)</h2></div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start"><div class="text-slate-600 space-y-4"><p>1. Calculate the average diameter...</p><p>2. Use the Google Sheets file...</p><p>3. Let the teacher know...</p></div><div class="overflow-hidden rounded-xl border border-slate-200"><table class="w-full text-center border-collapse"><thead class="bg-slate-50 border-b border-slate-200"><tr><th class="py-3 px-2 font-semibold text-slate-600 border-r border-slate-200">Height of Drop (cm)</th><th class="py-3 px-2 font-semibold text-indigo-700">Average Dia. (mm)</th></tr></thead><tbody class="divide-y divide-slate-200 bg-white">
+                        ${[30, 50, 100, 150, 200, 250].map(h => `<tr class="hover:bg-slate-50"><td class="py-2 px-4 font-bold text-slate-700 border-r border-slate-200 bg-slate-50/50">${h}</td><td class="p-0">${getVal(`t2_${h}`)}</td></tr>`).join('')}
+                    </tbody></table></div></div>`;
+            } else if (q.id === "q1") {
+                innerHtml = `<div class="flex justify-between items-start mb-4 gap-4"><label class="block font-medium text-slate-700">1. Using your graph, describe the relationship between the height a drop of blood falls and the diameter of the resulting fallen drop.</label></div>${getArea('ans_q1')}`;
+            } else if (q.id === "q2") {
+                let revClass = revisions['ans_q2_tf'] ? "ring-4 ring-yellow-400 bg-yellow-50" : "bg-slate-50";
+                innerHtml = `<div class="flex justify-between items-start mb-4 gap-4"><label class="block font-medium text-slate-700">2. <b>TRUE or FALSE</b>: As the height from which the blood is dropped increases, the size of the blood spatter continues to increase. Support your answer with data from the experiment.</label></div><div class="space-y-3"><div class="w-full md:w-1/3 ${revClass} border border-slate-200 rounded-xl p-4 text-[#0000ff] font-bold">${inputs['ans_q2_tf'] || '-- Select --'}</div>${getArea('ans_q2_sup')}</div>`;
+            } else if (q.id === "q3") {
+                innerHtml = `<div class="flex justify-between items-start mb-4 gap-4"><label class="block font-medium text-slate-700">3. Blood is dropped from heights of 25 cm and 250 cm. Compare and contrast the outer edges of blood droplets produced from these two heights.</label></div><div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6"><div><div class="text-center font-bold text-slate-600 mb-2">Dropped from 25 cm (Unique)</div>${getArea('ans_q3_25')}</div><div><div class="text-center font-bold text-indigo-600 mb-2">Shared Traits (Both)</div>${getArea('ans_q3_both')}</div><div><div class="text-center font-bold text-slate-600 mb-2">Dropped from 250 cm (Unique)</div>${getArea('ans_q3_250')}</div></div>`;
+            } else if (q.id === "q4") {
+                innerHtml = `<div class="flex justify-between items-start mb-4 gap-4"><label class="block font-medium text-slate-700">4. Examine the blood spatter produced by dropping blood from the six different heights. Is there a relationship between the height from which the blood is dropped and the number of satellites produced? Support your answer with data.</label></div>${getArea('ans_q4_sup')}`;
+            } else if (q.id === "q5") {
+                innerHtml = `<div class="flex justify-between items-start mb-4 gap-4"><label class="block font-medium text-slate-700 text-lg">5. Compare and Analyze Issues</label></div><div class="space-y-4 pl-4 border-l-2 border-indigo-200"><div><label class="block text-slate-700 mb-2">a. Were your results similar to those of your classmates? If not, how did they differ?</label>${getArea('ans_q5a')}</div><div><label class="block text-slate-700 mb-2">b. If someone accidentally dropped two or more drops of blood in the same location, what effect would it have on the blood-spatter pattern?</label>${getArea('ans_q5b')}</div></div>`;
+            } else if (q.id === "q6") {
+                innerHtml = `<div class="flex justify-between items-start mb-4 gap-4"><label class="block font-medium text-slate-700">6. If blood were dropped from a roof, would the diameter of the bloodstain be larger than the diameter of the bloodstain dropped from 250 centimeters? Support your claim with data from your experimentation or from research.</label></div>${getArea('ans_q6_sup')}`;
+            } else if (q.id === "q7") {
+                innerHtml = `<div class="flex justify-between items-start mb-4 gap-4"><label class="block font-medium text-slate-700 text-lg">7. A drop of blood will continue to pick up speed until it reaches its terminal velocity. Use the internet to find the answers to the following questions.</label></div><div class="space-y-4 pl-4 border-l-2 border-indigo-200"><div><label class="block text-slate-700 mb-2">a. What is terminal velocity?</label>${getArea('ans_q7a')}</div><div><label class="block text-slate-700 mb-2">b. What factors affect the terminal velocity of a substance?</label>${getArea('ans_q7b')}</div><div><label class="block text-slate-700 mb-2">c. What is the terminal velocity of blood?</label>${getArea('ans_q7c')}</div><div><label class="block text-slate-700 mb-2">d. How far does blood need to fall until it reaches its terminal velocity?</label>${getArea('ans_q7d')}</div><div><label class="block text-slate-700 mb-2">e. What will happen to the diameter of a drop of blood if it released higher than the height required to achieve terminal velocity? Explain.</label>${getArea('ans_q7e')}</div></div>`;
+            }
+
+            html += `
+                <div class="rounded-2xl shadow-sm border transition-all ${cardStyle}">
+                    ${statusBanner}
+                    <div class="p-8 md:p-10 ${qData.teacherGraded && qData.solved && qData.inReview ? 'opacity-80' : ''}">${innerHtml}</div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+    }
+
+    window.onload = init;
+</script>
+</body>
+</html>

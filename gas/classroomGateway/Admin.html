@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <style>
+      body { font-family: Arial, sans-serif; padding: 20px; max-width: 500px; margin: auto;}
+      select, button { padding: 10px; width: 100%; margin-top: 10px; font-size: 16px; }
+      button { background-color: #4CAF50; color: white; border: none; cursor: pointer; }
+      button:disabled { background-color: #ccc; }
+      #status { margin-top: 15px; font-weight: bold; color: #333; }
+      /* New style for the scrolling list of synced items */
+      #syncedList { 
+        margin-top: 15px; 
+        padding-left: 20px; 
+        text-align: left; 
+        font-size: 14px; 
+        color: #555; 
+        max-height: 250px; 
+        overflow-y: auto; 
+        background: #f9f9f9; 
+        border-radius: 5px;
+      }
+      #syncedList li { margin-bottom: 5px; }
+    </style>
+  </head>
+  <body>
+    <h2>Classroom to Firebase Sync</h2>
+    <p>Select a class to pull all current assignments and push them to the Realtime Database.</p>
+    
+    <select id="classDropdown">
+      <option value="">Loading classes...</option>
+    </select>
+    
+    <button id="syncBtn" onclick="runSync()" disabled>Sync Class Data</button>
+    
+    <div id="status"></div>
+    <ul id="syncedList"></ul>
+
+    <script>
+      // Load classes on startup
+      google.script.run.withSuccessHandler(populateDropdown).getActiveClassesForSync();
+
+      function populateDropdown(classes) {
+        const select = document.getElementById('classDropdown');
+        select.innerHTML = '<option value="">-- Choose a Class --</option>';
+        classes.forEach(c => {
+          select.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+        });
+        document.getElementById('syncBtn').disabled = false;
+      }
+
+      function runSync() {
+        const classId = document.getElementById('classDropdown').value;
+        const className = document.getElementById('classDropdown').options[document.getElementById('classDropdown').selectedIndex].text;
+        
+        if (!classId) {
+          alert("Please select a class.");
+          return;
+        }
+
+        const btn = document.getElementById('syncBtn');
+        const status = document.getElementById('status');
+        const listEl = document.getElementById('syncedList');
+        
+        btn.disabled = true;
+        btn.innerText = "Syncing...";
+        status.innerText = `Fetching assignments for ${className}... this may take a minute.`;
+        listEl.innerHTML = ""; // Clear the list from any previous sync
+
+        google.script.run
+          .withSuccessHandler(res => {
+            status.innerText = `Success: Synced ${res.count} items!`;
+            
+            // Populate the list with the titles sent back from the server
+            if (res.syncedTitles && res.syncedTitles.length > 0) {
+              res.syncedTitles.forEach(title => {
+                listEl.innerHTML += `<li>${title}</li>`;
+              });
+            }
+
+            btn.innerText = "Sync Complete";
+            setTimeout(() => { btn.disabled = false; btn.innerText = "Sync Class Data"; }, 3000);
+          })
+          .withFailureHandler(err => {
+            status.innerText = `Error: ${err.message}`;
+            btn.disabled = false;
+            btn.innerText = "Try Again";
+          })
+          .syncClassroomToDatabase(classId, className);
+      }
+    </script>
+  </body>
+</html>

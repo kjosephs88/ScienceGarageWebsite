@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?= ASSIGNMENT_TITLE ?></title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'], heading: ['Montserrat', 'sans-serif'] } } } }
+    </script>
+
+    <style>
+        textarea::-webkit-scrollbar { width: 8px; }
+        textarea::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        textarea::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        textarea, input[type="text"], select { font-weight: 600 !important; color: #0000ff !important; }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased p-4 md:p-8 min-h-screen relative">
+
+<div id="loading-overlay" class="fixed inset-0 bg-white/90 z-50 flex flex-col justify-center items-center transition-opacity duration-300">
+    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
+    <h2 class="text-xl font-heading text-slate-800">Authenticating & Loading Data...</h2>
+</div>
+
+<div class="max-w-5xl mx-auto space-y-8">
+    <div class="bg-white rounded-2xl shadow-sm p-8 md:p-10 border-t-8 border-indigo-600 relative">
+        <div class="flex items-center gap-3 mb-2">
+            <p class="text-indigo-600 font-semibold tracking-wide uppercase text-sm">Unit 5 - Blood and Blood Spatter</p>
+            <span class="bg-indigo-100 text-indigo-800 text-xs font-bold px-3 py-1 rounded-full">Assignment #6</span>
+        </div>
+        <h1 class="font-heading text-3xl md:text-4xl text-slate-900"><?= ASSIGNMENT_TITLE ?></h1>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm p-8 md:p-10">
+        <h2 class="font-semibold text-lg text-slate-800 border-b-2 border-slate-100 pb-4 mb-6">Objectives</h2>
+        <div class="space-y-6 text-slate-600 leading-relaxed">
+            <ul class="list-disc pl-5 space-y-2">
+                <li>Prepare reference cards of blood spatter dropped from varying heights.</li>
+                <li>Compare and contrast the blood spatter produced from different heights with regard to size, shape, and number of satellites.</li>
+                <li>Distinguish between the parent drop and satellites. Distinguish between satellites and spines.</li>
+                <li>Analyze the results of your experiment, and prepare a summary of the effect of height on blood-spatter stains.</li>
+            </ul>
+            
+            <h3 class="font-semibold text-lg text-slate-800 mt-6">Background</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                <div>
+                    <p class="mb-4">A blood-spatter pattern is created when a wound is inflicted, and blood leaves the body. This pattern can help reconstruct the series of crime-scene events surrounding a shooting, stabbing, or beating.</p>
+                    <p class="mb-4">Recall that blood forms droplets as it falls from a wound. A drop of blood that falls on a flat surface will not totally flatten out—the blood drop will have a domed surface. The reason for this shape is the internal cohesive nature of blood. Blood tends to pull together because of cohesion and resists flattening out on a surface.</p>
+                    <p>The result is that the surface of the blood is elastic, giving the top of the blood spatter a rounded appearance. If any of the blood does overcome cohesion and separates from the main droplet of blood, it will form small secondary droplets known as satellites.</p>
+                </div>
+                <div class="text-center flex flex-col justify-center">
+                    <img src="https://docs.google.com/drawings/d/e/2PACX-1vQUp47kurfWUS7Jm0WnEFuz-6hbVP0ArWEsA9We_xgODO2ev2zK1T21OYz3H-pliVl5F5w8eV-pQUQq/pub?w=960&h=720" alt="Cohesive Forces" class="w-full h-auto object-contain mb-3">
+                    <p class="text-sm italic text-slate-600">Cohesive forces give a domed shape to a blood droplet.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm p-8 md:p-10">
+        <h2 class="font-heading text-2xl text-slate-800 border-b-2 border-slate-100 pb-4 mb-6">Materials & Procedure</h2>
+        <div class="space-y-8">
+            <div class="bg-indigo-50/50 p-6 rounded-xl border border-indigo-100">
+                <h3 class="font-semibold text-lg text-indigo-900 mb-3">Materials</h3>
+                <ul class="list-disc pl-5 space-y-2 text-sm text-indigo-800 grid grid-cols-1 md:grid-cols-2">
+                    <li>Dropper bottle of simulated blood</li>
+                    <li>Six 5x8 inch index cards</li>
+                    <li>Three meter sticks</li>
+                    <li>Ruler</li>
+                    <li>Butcher paper or newspaper</li>
+                </ul>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+                <div class="md:col-span-2 text-slate-600">
+                    <ol class="list-decimal pl-5 space-y-3 text-sm">
+                        <li>Chose a name for your investigation team (your lab partners).</li>
+                        <li>Label the six index cards with your team name at the top and the "drop height" of the blood drop, based on the values in the data table in the data section. See the example of a card in the image to the right.</li>
+                        <li>Place butcher paper on the floor in an appropriate area of 1 m².</li>
+                        <li>Place the index card marked with the lowest height value in the middle of the butcher paper.</li>
+                        <li>One investigation member should hold a meter stick vertically with the zero side on the floor right next to the index card.</li>
+                        <li>Another investigation member should hold the dropper bottle with the simulated blood at the first height in the data table.</li>
+                        <li>Carefully squeeze the dropper bottle so that one drop of simulated blood falls onto the surface of the index card. <i>(You may want to practice dropping blood onto a blank sheet of paper first).</i></li>
+                        <li>Move the index card slightly to the side and repeat step 7, making sure that the second drop does not fall on the first.</li>
+                        <li>Repeat with a third drop.</li>
+                        <li>Carefully remove the index card from the butcher paper and place it in a location where it can dry undisturbed.</li>
+                        <li>Repeat dropping simulated blood from the other heights mentioned in the data table.</li>
+                        <li>After all simulated blood has dried on the cards, measure the width of each fallen drop to the nearest millimeter. <b>Do not include any satellites or spines in your measurement.</b></li>
+                    </ol>
+                </div>
+                <div class="md:col-span-1 text-center flex flex-col justify-center">
+                    <img src="https://docs.google.com/drawings/d/e/2PACX-1vRJp7Yh99uXGzORhzssnTZv1VKXL7PDCGxZYWqu1YBUUMuJvJdnbS1O_rkDY6ex5J3b-iCcRflHww4h/pub?w=960&h=720" alt="Reference Card Example" class="w-full h-auto object-contain mb-3">
+                    <p class="text-sm italic text-slate-500 font-medium">Example of 5x8 inch reference index card</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm p-8 md:p-10 border border-slate-200 transition-colors duration-300" id="card-q_t1">
+        <div class="flex justify-between items-start border-b-2 border-slate-100 pb-4 mb-6">
+            <h2 class="font-heading text-2xl text-slate-800">Data Table 1</h2>
+            <div id="status-q_t1" class="text-sm font-bold text-slate-400 mt-1 shrink-0"></div>
+        </div>
+        <div class="overflow-x-auto rounded-xl border border-slate-200">
+            <table class="w-full text-center border-collapse">
+                <thead class="bg-slate-50 border-b border-slate-200 text-sm">
+                    <tr>
+                        <th class="py-3 px-2 font-semibold text-slate-600 border-r border-slate-200">Height of Drop (cm)</th>
+                        <th class="py-3 px-2 font-semibold text-slate-600 border-r border-slate-200">Trial 1 Dia. (mm)</th>
+                        <th class="py-3 px-2 font-semibold text-slate-600 border-r border-slate-200">Trial 2 Dia. (mm)</th>
+                        <th class="py-3 px-2 font-semibold text-slate-600">Trial 3 Dia. (mm)</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200 bg-white">
+                    <script>
+                        const defaultHeights = [30, 50, 100, 150, 200, 250];
+                        defaultHeights.forEach((h, i) => {
+                            document.write(`
+                                <tr class="hover:bg-slate-50">
+                                    <td class="p-0 border-r border-slate-200 bg-slate-50/50">
+                                        <input type="text" id="h${i}" value="${h}" oninput="handleHeightInput(${i}, this.value)" class="w-full h-[45px] text-center bg-transparent outline-none font-bold text-slate-700 focus:bg-indigo-50/50">
+                                    </td>
+                                    <td class="p-0 border-r border-slate-200"><input type="text" id="t1_${i}_1" oninput="handleInput('q_t1', this.id, this.value)" class="w-full h-[45px] text-center bg-transparent outline-none focus:bg-indigo-50/50"></td>
+                                    <td class="p-0 border-r border-slate-200"><input type="text" id="t1_${i}_2" oninput="handleInput('q_t1', this.id, this.value)" class="w-full h-[45px] text-center bg-transparent outline-none focus:bg-indigo-50/50"></td>
+                                    <td class="p-0"><input type="text" id="t1_${i}_3" oninput="handleInput('q_t1', this.id, this.value)" class="w-full h-[45px] text-center bg-transparent outline-none focus:bg-indigo-50/50"></td>
+                                </tr>
+                            `);
+                        });
+                    </script>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm p-8 md:p-10 border border-slate-200 transition-colors duration-300" id="card-q_t2">
+        <div class="flex justify-between items-start border-b-2 border-slate-100 pb-4 mb-6">
+            <h2 class="font-heading text-2xl text-slate-800">Data Analysis (Averages)</h2>
+            <div id="status-q_t2" class="text-sm font-bold text-slate-400 mt-1 shrink-0"></div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+            <div class="text-slate-600 space-y-4">
+                <p>1. Calculate the average diameter of a fallen blood splatter drop from each of the trials and record their values in the table.</p>
+                <div class="pt-4 mt-4 border-t border-slate-100">
+                    <button onclick="plotData()" class="w-full md:w-auto px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 transition-all active:scale-95 flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/></svg>
+                        Plot Data
+                    </button>
+                    <p id="plot-error" class="text-red-500 text-xs font-bold mt-2 hidden">Please complete all values in the table before plotting.</p>
+                </div>
+            </div>
+            <div class="overflow-hidden rounded-xl border border-slate-200">
+                <table class="w-full text-center border-collapse">
+                    <thead class="bg-slate-50 border-b border-slate-200">
+                        <tr>
+                            <th class="py-3 px-2 font-semibold text-slate-600 border-r border-slate-200">Height of Drop (cm)</th>
+                            <th class="py-3 px-2 font-semibold text-indigo-700">Average Dia. (mm)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200 bg-white">
+                        <script>
+                            defaultHeights.forEach((h, i) => {
+                                document.write(`
+                                    <tr class="hover:bg-slate-50">
+                                        <td class="p-0 border-r border-slate-200 bg-slate-50/50">
+                                            <input type="text" id="t2_h${i}" value="${h}" oninput="handleHeightInput(${i}, this.value)" class="w-full h-[40px] text-center bg-transparent outline-none font-bold text-slate-700 focus:bg-indigo-50/50">
+                                        </td>
+                                        <td class="p-0"><input type="text" id="t2_${i}" oninput="handleInput('q_t2', this.id, this.value)" class="w-full h-[40px] text-center bg-transparent outline-none focus:bg-indigo-50/50"></td>
+                                    </tr>
+                                `);
+                            });
+                        </script>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Graph Area -->
+        <div id="chart-container" class="mt-10 hidden border-t-2 border-slate-50 pt-8">
+            <h3 class="font-heading text-3xl font-bold text-slate-800 text-center mb-8">Relationship Between Height and Drop Diameter</h3>
+            <div class="relative h-[450px] w-full px-4">
+                <canvas id="bloodSpatterChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="space-y-6">
+        
+        <div class="bg-white rounded-2xl shadow-sm p-8 md:p-10 border border-slate-200 transition-colors duration-300" id="card-q1">
+            <div class="flex justify-between items-start mb-4 gap-4">
+                <label class="block font-medium text-slate-700">1. Using your graph, describe the relationship between the height a drop of blood falls and the diameter of the resulting fallen drop.</label>
+                <div id="status-q1" class="text-sm font-bold text-slate-400 mt-1 shrink-0"></div>
+            </div>
+            <textarea id="ans_q1" oninput="handleInput('q1', this.id, this.value)" rows="3" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm p-8 md:p-10 border border-slate-200 transition-colors duration-300" id="card-q2">
+            <div class="flex justify-between items-start mb-4 gap-4">
+                <label class="block font-medium text-slate-700">2. <b>TRUE or FALSE</b>: As the height from which the blood is dropped increases, the size of the blood spatter continues to increase. Support your answer with data from the experiment.</label>
+                <div id="status-q2" class="text-sm font-bold text-slate-400 mt-1 shrink-0"></div>
+            </div>
+            <div class="space-y-3">
+                <select id="ans_q2_tf" onchange="handleInput('q2', this.id, this.value)" class="w-full md:w-1/3 bg-slate-50 border border-slate-200 rounded-xl p-4 focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <option value="">-- Select --</option><option value="True">True</option><option value="False">False</option>
+                </select>
+                <textarea id="ans_q2_sup" oninput="handleInput('q2', this.id, this.value)" rows="3" placeholder="Support your answer..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm p-8 md:p-10 border border-slate-200 transition-colors duration-300" id="card-q3">
+            <div class="flex justify-between items-start mb-4 gap-4">
+                <label class="block font-medium text-slate-700">3. Blood is dropped from heights of 25 cm and 250 cm. Compare and contrast the outer edges of blood droplets produced from these two heights.</label>
+                <div id="status-q3" class="text-sm font-bold text-slate-400 mt-1 shrink-0"></div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                <div>
+                    <div class="text-center font-bold text-slate-600 mb-2">Dropped from 25 cm (Unique)</div>
+                    <textarea id="ans_q3_25" oninput="handleInput('q3', this.id, this.value)" rows="4" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+                </div>
+                <div>
+                    <div class="text-center font-bold text-indigo-600 mb-2">Shared Traits (Both)</div>
+                    <textarea id="ans_q3_both" oninput="handleInput('q3', this.id, this.value)" rows="4" class="w-full bg-indigo-50/50 border border-indigo-200 rounded-xl p-4 focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+                </div>
+                <div>
+                    <div class="text-center font-bold text-slate-600 mb-2">Dropped from 250 cm (Unique)</div>
+                    <textarea id="ans_q3_250" oninput="handleInput('q3', this.id, this.value)" rows="4" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm p-8 md:p-10 border border-slate-200 transition-colors duration-300" id="card-q4">
+            <div class="flex justify-between items-start mb-4 gap-4">
+                <label class="block font-medium text-slate-700">4. Examine the blood spatter produced by dropping blood from the six different heights. Is there a relationship between the height from which the blood is dropped and the number of satellites produced? Support your answer with data.</label>
+                <div id="status-q4" class="text-sm font-bold text-slate-400 mt-1 shrink-0"></div>
+            </div>
+            <textarea id="ans_q4_sup" oninput="handleInput('q4', this.id, this.value)" rows="4" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm p-8 md:p-10 border border-slate-200 transition-colors duration-300" id="card-q5">
+            <div class="flex justify-between items-start mb-4 gap-4">
+                <label class="block font-medium text-slate-700 text-lg">5. Compare and Analyze Issues</label>
+                <div id="status-q5" class="text-sm font-bold text-slate-400 mt-1 shrink-0"></div>
+            </div>
+            <div class="space-y-4 pl-4 border-l-2 border-indigo-200">
+                <div>
+                    <label class="block text-slate-700 mb-2">a. Were your results similar to those of your classmates? If not, how did they differ?</label>
+                    <textarea id="ans_q5a" oninput="handleInput('q5', this.id, this.value)" rows="3" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+                </div>
+                <div>
+                    <label class="block text-slate-700 mb-2">b. If someone accidentally dropped two or more drops of blood in the same location, what effect would it have on the blood-spatter pattern?</label>
+                    <textarea id="ans_q5b" oninput="handleInput('q5', this.id, this.value)" rows="3" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm p-8 md:p-10 border border-slate-200 transition-colors duration-300" id="card-q6">
+            <div class="flex justify-between items-start mb-4 gap-4">
+                <label class="block font-medium text-slate-700">6. If blood were dropped from a roof, would the diameter of the bloodstain be larger than the diameter of the bloodstain dropped from 250 centimeters? Support your claim with data from your experimentation or from research.</label>
+                <div id="status-q6" class="text-sm font-bold text-slate-400 mt-1 shrink-0"></div>
+            </div>
+            <textarea id="ans_q6_sup" oninput="handleInput('q6', this.id, this.value)" rows="4" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm p-8 md:p-10 border border-slate-200 transition-colors duration-300" id="card-q7">
+            <div class="flex justify-between items-start mb-4 gap-4">
+                <label class="block font-medium text-slate-700 text-lg">7. A drop of blood will continue to pick up speed until it reaches its terminal velocity. Use the internet to find the answers to the following questions.</label>
+                <div id="status-q7" class="text-sm font-bold text-slate-400 mt-1 shrink-0"></div>
+            </div>
+            <div class="space-y-4 pl-4 border-l-2 border-indigo-200">
+                <div>
+                    <label class="block text-slate-700 mb-2">a. What is terminal velocity?</label>
+                    <textarea id="ans_q7a" oninput="handleInput('q7', this.id, this.value)" rows="2" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+                </div>
+                <div>
+                    <label class="block text-slate-700 mb-2">b. What factors affect the terminal velocity of a substance?</label>
+                    <textarea id="ans_q7b" oninput="handleInput('q7', this.id, this.value)" rows="2" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+                </div>
+                <div>
+                    <label class="block text-slate-700 mb-2">c. What is the terminal velocity of blood?</label>
+                    <textarea id="ans_q7c" oninput="handleInput('q7', this.id, this.value)" rows="2" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+                </div>
+                <div>
+                    <label class="block text-slate-700 mb-2">d. How far does blood need to fall until it reaches its terminal velocity?</label>
+                    <textarea id="ans_q7d" oninput="handleInput('q7', this.id, this.value)" rows="2" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+                </div>
+                <div>
+                    <label class="block text-slate-700 mb-2">e. What will happen to the diameter of a drop of blood if it released higher than the height required to achieve terminal velocity? Explain.</label>
+                    <textarea id="ans_q7e" oninput="handleInput('q7', this.id, this.value)" rows="3" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    const databaseURL = "https://scigarage-default-rtdb.firebaseio.com";
+    const ASSIGNMENT_CODE = "<?= ASSIGNMENT_CODE ?>";
+    const STUDENT_UUID = "<?= STUDENT_UUID ?>";
+    const QUESTIONS_ARRAY = JSON.parse('<?= QUESTIONS_ARRAY ?>');
+    
+    let localState = {};
+    
+    // TRACKING TIMERS
+    let draftTimers = {};
+    let reviewTimers = {};
+    let chartTimer = null;
+
+    if (STUDENT_UUID.startsWith("ERROR_")) {
+        document.body.innerHTML = `<div style="padding: 40px; text-align: center; color: red; font-weight: bold; font-family: sans-serif; font-size: 1.2rem; margin-top: 20vh;">Access Denied:<br><br><span style="color: #475569; font-weight: normal;">${STUDENT_UUID.replace('ERROR_', '')}</span></div>`;
+    }
+
+    function init() {
+        if (STUDENT_UUID.startsWith("ERROR_")) return;
+
+        fetch(`${databaseURL}/classroomAssignments/${ASSIGNMENT_CODE}/${STUDENT_UUID}.json`)
+            .then(r => r.json())
+            .then(data => {
+                localState = data || {};
+
+                    QUESTIONS_ARRAY.forEach(q => {
+                    const qData = localState[q.id];
+                    if (qData && qData.inputs) {
+                        q.inputs.forEach(inputId => {
+                            const el = document.getElementById(inputId);
+                            if (el && qData.inputs[inputId]) {
+                                el.value = qData.inputs[inputId];
+                                // Special case: Sync heights to T2 if they were loaded in T1
+                                if (inputId.startsWith('h')) {
+                                    const t2h = document.getElementById('t2_' + inputId);
+                                    if (t2h) t2h.value = qData.inputs[inputId];
+                                }
+                            }
+                        });
+                    }
+                    renderCardStatus(q.id);
+                });
+                
+                document.getElementById('loading-overlay').style.opacity = '0';
+                setTimeout(() => document.getElementById('loading-overlay').style.display = 'none', 300);
+                startSSEListener();
+            });
+    }
+
+    function startSSEListener() {
+        const eventSource = new EventSource(`${databaseURL}/classroomAssignments/${ASSIGNMENT_CODE}/${STUDENT_UUID}.json`);
+        eventSource.addEventListener('patch', (e) => {
+            const payload = JSON.parse(e.data);
+            if (payload.path.startsWith("/")) {
+                const qId = payload.path.split('/')[1];
+                if (qId && QUESTIONS_ARRAY.find(q => q.id === qId)) {
+                    if (!draftTimers[qId] && !reviewTimers[qId]) {
+                        localState[qId] = Object.assign({}, localState[qId], payload.data);
+                        renderCardStatus(qId);
+                    }
+                }
+            }
+        });
+    }
+
+    function handleInput(qId, inputId, value) {
+        if (!localState[qId]) localState[qId] = { inputs: {} };
+        if (!localState[qId].inputs) localState[qId].inputs = {};
+        
+        localState[qId].inputs[inputId] = value;
+        
+        // If a student types, it instantly downgrades from "In Review" to "Incomplete"
+        localState[qId].inReview = false;
+
+        // Track Revisions: If a teacher graded it, mark this specific input as revised.
+        if (localState[qId].teacherGraded) {
+            if (!localState[qId].revisions) localState[qId].revisions = {};
+            localState[qId].revisions[inputId] = true;
+        }
+
+        renderCardStatus(qId);
+
+        // If the chart is already visible, update it automatically (Debounced 1s)
+        const container = document.getElementById('chart-container');
+        if (container && !container.classList.contains('hidden')) {
+            clearTimeout(chartTimer);
+            chartTimer = setTimeout(() => plotData(true), 1000);
+        }
+
+        // Clear existing timers so they reset on every keystroke
+        clearTimeout(draftTimers[qId]);
+        clearTimeout(reviewTimers[qId]);
+
+        // TIMER 1: The 5-second Draft Sync (Sends text to teacher, keeps it "Incomplete")
+        draftTimers[qId] = setTimeout(() => {
+            delete draftTimers[qId];
+            syncToDatabase(qId, false); // false = NOT a review attempt
+        }, 5000); 
+
+        // TIMER 2: The 30-second Review Sync (Upgrades to "In Review" if completely filled)
+        reviewTimers[qId] = setTimeout(() => {
+            delete reviewTimers[qId];
+            syncToDatabase(qId, true);  // true = YES, attempt to put in review
+        }, 30000); 
+    }
+
+    function syncToDatabase(qId, isReviewAttempt) {
+        let qDef = QUESTIONS_ARRAY.find(q => q.id === qId);
+        let allFilled = true;
+        
+        if (qDef) {
+            qDef.inputs.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el || el.value.trim() === "") allFilled = false;
+            });
+        }
+
+        // Only upgrade to "In Review" if this is the 30-second timer AND all boxes have text
+        if (isReviewAttempt && allFilled) {
+            localState[qId].inReview = true;
+        }
+
+        let wasGraded = localState[qId].teacherGraded;
+        let hasRevisions = localState[qId].revisions && Object.keys(localState[qId].revisions).length > 0;
+        
+        // If a graded question is fully revised and put back "In Review", reset grading so teacher reviews it again
+        let tg = wasGraded;
+        let solved = localState[qId].solved || false;
+        if (wasGraded && hasRevisions && localState[qId].inReview) {
+            tg = false;
+            solved = false;
+        }
+
+        const payload = { 
+            inputs: localState[qId].inputs, 
+            inReview: localState[qId].inReview || false, 
+            teacherGraded: tg, 
+            solved: solved,
+            revisions: localState[qId].revisions || null,
+            timestamp: new Date().toISOString() 
+        };
+
+        fetch(`${databaseURL}/classroomAssignments/${ASSIGNMENT_CODE}/${STUDENT_UUID}/${qId}.json`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        }).then(() => {
+            localState[qId] = Object.assign(localState[qId], payload);
+            renderCardStatus(qId);
+        });
+    }
+
+    function renderCardStatus(qId) {
+        const card = document.getElementById(`card-${qId}`);
+        const statusEl = document.getElementById(`status-${qId}`);
+        if (!card || !statusEl) return;
+
+        const data = localState[qId];
+
+        if (!data || !data.inReview) {
+            card.className = "bg-white rounded-2xl shadow-sm p-8 md:p-10 border border-slate-200 transition-colors duration-300";
+            statusEl.innerHTML = `<span class="text-slate-400 italic">Incomplete</span>`;
+            return;
+        }
+
+        if (data.teacherGraded) {
+            if (data.solved) {
+                card.className = "bg-green-50 rounded-2xl shadow-sm p-8 md:p-10 border-2 border-green-400 transition-colors duration-300";
+                statusEl.innerHTML = `<span class="text-green-600 font-bold">✓ Correct</span>`;
+            } else {
+                card.className = "bg-red-50 rounded-2xl shadow-sm p-8 md:p-10 border-2 border-red-400 transition-colors duration-300";
+                statusEl.innerHTML = `<span class="text-red-600 font-bold">✗ Incorrect</span>`;
+            }
+        } else {
+            card.className = "bg-blue-50 rounded-2xl shadow-sm p-8 md:p-10 border-2 border-blue-300 transition-colors duration-300";
+            statusEl.innerHTML = `<span class="text-blue-600 font-bold">⏳ In Review</span>`;
+        }
+    }
+
+    // Instantly sync the 5-second draft when the student clicks out of a box
+    document.addEventListener('focusout', function(e) {
+        if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
+            const inputId = e.target.id;
+            const qDef = QUESTIONS_ARRAY.find(q => q.inputs.includes(inputId));
+            if (qDef && draftTimers[qDef.id]) {
+                clearTimeout(draftTimers[qDef.id]);
+                delete draftTimers[qDef.id];
+                syncToDatabase(qDef.id, false); // Instantly trigger draft save
+            }
+        }
+    });
+
+    // Safety net if the student closes the tab
+    window.addEventListener('beforeunload', () => {
+        Object.keys(draftTimers).forEach(qId => { clearTimeout(draftTimers[qId]); syncToDatabase(qId, false); });
+        Object.keys(reviewTimers).forEach(qId => { clearTimeout(reviewTimers[qId]); syncToDatabase(qId, true); });
+    });
+
+    function handleHeightInput(index, value) {
+        // Sync the two height inputs
+        const h1 = document.getElementById('h' + index);
+        const h2 = document.getElementById('t2_h' + index);
+        if (h1) h1.value = value;
+        if (h2) h2.value = value;
+
+        // Save to Firebase (using q_t1 as the owner of height data)
+        handleInput('q_t1', 'h' + index, value);
+        
+        // If the chart is already visible, update it automatically (Debounced 1s)
+        const container = document.getElementById('chart-container');
+        if (container && !container.classList.contains('hidden')) {
+            clearTimeout(chartTimer);
+            chartTimer = setTimeout(() => plotData(true), 1000);
+        }
+    }
+
+    let myChart = null;
+
+    function plotData(isAutoUpdate = false) {
+        const dataPoints = [];
+        let allFilled = true;
+
+        for (let i = 0; i < 6; i++) {
+            const hVal = document.getElementById(`h${i}`).value.trim();
+            const dVal = document.getElementById(`t2_${i}`).value.trim();
+            
+            if (hVal === "" || isNaN(hVal) || dVal === "" || isNaN(dVal)) {
+                allFilled = false;
+            } else {
+                dataPoints.push({ x: parseFloat(hVal), y: parseFloat(dVal) });
+            }
+        }
+
+        const errorEl = document.getElementById('plot-error');
+        const container = document.getElementById('chart-container');
+
+        if (!allFilled || dataPoints.length < 6) {
+            errorEl.classList.remove('hidden');
+            container.classList.add('hidden');
+            return;
+        }
+
+        errorEl.classList.add('hidden');
+        container.classList.remove('hidden');
+
+        const ctx = document.getElementById('bloodSpatterChart').getContext('2d');
+        
+        if (myChart) {
+            myChart.data.datasets[0].data = dataPoints;
+            myChart.update();
+        } else {
+            myChart = new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Drop Diameter vs Height',
+                        data: dataPoints,
+                        backgroundColor: '#0000ff',
+                        borderColor: '#0000ff',
+                        pointRadius: 8,
+                        pointHoverRadius: 10,
+                        showLine: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: { left: 20, right: 20, bottom: 10 }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Height: ${context.parsed.x} cm, Dia: ${context.parsed.y} mm`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: { 
+                                display: true, 
+                                text: 'Height of Drop (cm)', 
+                                font: { size: 18, weight: 'bold' }, 
+                                color: '#1e293b',
+                                padding: { top: 20 }
+                            },
+                            ticks: { font: { size: 14, weight: '500' }, color: '#475569' },
+                            grid: { color: '#f1f5f9' },
+                            min: 0
+                        },
+                        y: {
+                            title: { 
+                                display: true, 
+                                text: 'Average Diameter (mm)', 
+                                font: { size: 18, weight: 'bold' }, 
+                                color: '#1e293b',
+                                padding: { bottom: 20 }
+                            },
+                            ticks: { font: { size: 14, weight: '500' }, color: '#475569' },
+                            grid: { color: '#f1f5f9' },
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Scroll to chart only if it's NOT an automatic update
+        if (!isAutoUpdate) {
+            container.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+
+    window.onload = init;
+</script>
+</body>
+</html>
