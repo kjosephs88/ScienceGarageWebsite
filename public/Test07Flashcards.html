@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Chemistry Mastery Deck</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --primary: #38bdf8;
+            --success: #10b981;
+            --danger: #ef4444;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+            -webkit-tap-highlight-color: transparent; 
+        }
+
+        html, body { 
+            overflow: hidden; 
+            width: 100vw; 
+            height: 100vh;
+            background-color: var(--bg-color);
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-image: radial-gradient(circle at 50% -20%, #1e1b4b, #0f172a);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            width: 100%;
+            padding: 20px;
+            text-align: center;
+            background: #0f172a;
+            border-bottom: 1px solid #1e293b;
+            z-index: 100;
+            flex-shrink: 0; 
+        }
+        
+        h1 { font-size: 1.4rem; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 1px; margin: 0; }
+        
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .stat-badge { padding: 4px 10px; border-radius: 20px; background: #1e293b; border: 1px solid #334155; }
+        .stat-mastered { color: var(--success); }
+        .stat-learning { color: #f59e0b; }
+
+        /* Moved 20px down from pills, sits perfectly balanced inside the header padding */
+        .progress-container { 
+            width: 100%; 
+            height: 4px; 
+            background: #1e293b; 
+            margin-top: 20px; 
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        .progress-bar { height: 100%; background: var(--primary); width: 0%; transition: width 0.3s ease; }
+
+        /* Workspace Layout - Pulled UP from the center */
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start; /* Changed from center to top-aligned */
+            padding: 6vh 20px 20px 20px; /* 6vh keeps a clean, breathable gap below the header */
+            width: 100%;
+        }
+
+        .scene {
+            width: 100%;
+            max-width: 340px; 
+            height: 50vh;     
+            min-height: 300px;
+            max-height: 380px; 
+            perspective: 1200px; 
+            flex-shrink: 1;
+            margin-bottom: 20px; 
+        }
+
+        .card {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+            transform-style: preserve-3d;
+            transform-origin: center center;
+            cursor: pointer;
+            will-change: transform; 
+        }
+
+        .card.is-flipped { transform: rotateY(180deg); }
+
+        .card-face {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            border-radius: 24px;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            border: 2px solid #334155;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+            overflow-wrap: break-word;
+        }
+
+        .card-face-front { background: linear-gradient(145deg, #1e293b, #0f172a); }
+        .card-face-back { background: linear-gradient(145deg, #064e3b, #0f172a); transform: rotateY(180deg); }
+
+        .tag, .card-text, .hint { transform: translateZ(20px); -webkit-transform: translateZ(20px); }
+        .tag { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; color: var(--primary); margin-bottom: 15px; }
+        .card-text { font-size: 1.15rem; font-weight: 600; line-height: 1.5; }
+        .card-face-back .tag { color: var(--success); }
+
+        .hint { margin-top: auto; font-size: 0.75rem; color: var(--text-muted); opacity: 0.6; }
+
+        .actions {
+            display: flex;
+            gap: 15px;
+            width: 100%;
+            max-width: 340px;
+            height: 60px; 
+            flex-shrink: 0;
+            opacity: 0;
+            pointer-events: none; 
+            transition: opacity 0.3s ease; 
+        }
+        
+        .actions.visible { 
+            opacity: 1; 
+            pointer-events: auto; 
+        }
+
+        button {
+            flex: 1;
+            height: 100%;
+            border-radius: 14px;
+            border: none;
+            font-size: 0.95rem;
+            font-weight: 800;
+            cursor: pointer;
+            text-transform: uppercase;
+            color: #fff;
+        }
+        .btn-fail { background: linear-gradient(135deg, #f43f5e, #be123c); }
+        .btn-pass { background: linear-gradient(135deg, #10b981, #047857); }
+
+        #end-screen { display: none; flex-direction: column; align-items: center; text-align: center; margin-top: 10vh; }
+        #end-screen h2 { font-size: 2.2rem; color: var(--success); margin-bottom: 10px; }
+        .btn-reset { margin-top: 30px; background: var(--primary); padding: 15px 30px; width: auto; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Chemistry Mastery</h1>
+        <div class="stats">
+            <span class="stat-badge stat-unseen">New: <span id="count-unseen">0</span></span>
+            <span class="stat-badge stat-learning">Try Again: <span id="count-learning">0</span></span>
+            <span class="stat-badge stat-mastered">Known: <span id="count-mastered">0</span></span>
+        </div>
+        <div class="progress-container"><div class="progress-bar" id="progress-bar"></div></div>
+    </header>
+
+    <main>
+        <div id="end-screen">
+            <h2>Session Done! 🎉</h2>
+            <p>You've cleared the deck.</p>
+            <button class="btn-reset" onclick="resetDeck()">Restart Deck</button>
+        </div>
+
+        <div class="scene" id="card-scene">
+            <div class="card" id="flashcard" onclick="flipCard()">
+                <div class="card-face card-face-front">
+                    <div class="tag">Question</div>
+                    <div class="card-text" id="card-front-text">Loading...</div>
+                    <div class="hint">Tap to flip</div>
+                </div>
+                <div class="card-face card-face-back">
+                    <div class="tag">Answer</div>
+                    <div class="card-text" id="card-back-text">Loading...</div>
+                    <div class="hint">Tap to flip back</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="actions" id="action-buttons">
+            <button class="btn-fail" onclick="markCard('learning')">Needs Work</button>
+            <button class="btn-pass" onclick="markCard('mastered')">Got It</button>
+        </div>
+    </main>
+
+    <script>
+        const rawDeckData = [
+            { q: "What are the two main types of compounds in chemistry?", a: "Ionic compounds (ionic bonds) and molecular compounds (covalent bonds)." },
+            { q: "Between what types of elements does an ionic bond occur?", a: "A metal and a non-metal." },
+            { q: "Between what types of elements does a covalent bond occur?", a: "A nonmetal and a nonmetal." },
+            { q: "How do you name a binary ionic compound?", a: "Name of the positive metal ion followed by the nonmetal negative ion ending in '-ide'." },
+            { q: "Does the number of elements affect the naming of a binary ionic compound?", a: "No, it does not matter." },
+            { q: "How do you write the formula of an ionic compound?", a: "Place the absolute value of the charge on the first ion as the subscript for the second ion and vice versa (criss-cross)." },
+            { q: "What rule applies to the ratios of atoms in an ionic compound formula?", a: "They must be reduced to the lowest whole number." },
+            { q: "What does the Stock System use to show the charge on a positive metal ion?", a: "Roman numerals (e.g., iron(III))." },
+            { q: "When is the Stock System required?", a: "For metallic atoms that can form multiple types of ions with various charges." },
+            { q: "What does the name of a binary covalent compound depend on?", a: "The number of atoms for each element, denoted by prefixes." },
+            { q: "What are the covalent prefixes for numbers 1 through 8?", a: "1-mono, 2-di, 3-tri, 4-tetra, 5-penta, 6-hexa, 7-hepta, 8-octo." },
+            { q: "What is a polyatomic ion?", a: "A group of covalently bonded atoms with a net charge." },
+            { q: "Where can you find a list of common polyatomic ions?", a: "Reference Table E." },
+            { q: "What is a hydrate?", a: "An ionic compound that contains water molecules locked away in its crystalline structure." },
+            { q: "Can a hydrate have more than one water molecule per formula unit?", a: "Yes, it may have a single molecule or multiple." },
+            { q: "What does CuSO<sub>4</sub> &bull; 5H<sub>2</sub>O mean?", a: "Five water molecules for every formula unit of copper sulfate." },
+            { q: "What does an empirical formula express?", a: "The atoms within a compound in the lowest whole number ratio." },
+            { q: "Which type of compound is always represented by an empirical formula?", a: "Ionic compounds." },
+            { q: "Why is H<sub>2</sub>O considered both empirical and molecular?", a: "Actual 2:1 ratio cannot be reduced further." },
+            { q: "What is the empirical formula for H<sub>2</sub>O<sub>2</sub>?", a: "HO." },
+            { q: "What does a chemical equation describe?", a: "Changes that occur during a chemical reaction." },
+            { q: "Reactants are on which side of the arrow?", a: "The left side." },
+            { q: "Products are on which side of the arrow?", a: "The right side." },
+            { q: "Why must chemical equations be balanced?", a: "To satisfy the Law of Conservation of Mass." },
+            { q: "What does (aq) stand for in an equation?", a: "Aqueous (dissolved in water)." },
+            { q: "What are the four basic types of chemical reactions?", a: "Synthesis, decomposition, single replacement, and double replacement." },
+            { q: "Describe a synthesis reaction.", a: "Two reactants combine to form a single product." },
+            { q: "Describe a decomposition reaction.", a: "A single reactant breaks down into two or more products." },
+            { q: "Describe a single replacement reaction.", a: "A metal replaces another metal (or hydrogen) in an ionic compound or acid." },
+            { q: "Describe a double replacement reaction.", a: "Ionic compounds switch their ions." },
+            { q: "What predicts if a single replacement reaction will occur?", a: "The Activity Series (Table J)." },
+            { q: "A metal replaces another metal only if it is ______ on Table J.", a: "Higher." },
+            { q: "What is an exothermic process?", a: "A process that releases energy (energy is a product)." },
+            { q: "What is an endothermic process?", a: "A process that absorbs energy (energy is a reactant)." },
+            { q: "How do you find the mass of a missing reactant?", a: "Mass of Reactants = Mass of Products." },
+            { q: "What is a molar ratio?", a: "Ratio between coefficients in a balanced equation." },
+            { q: "Oxidation is the _______ of electrons.", a: "Loss." },
+            { q: "Reduction is the _______ of electrons.", a: "Gain." },
+            { q: "LEO says GER stands for...?", a: "Losing Electrons is Oxidation / Gaining Electrons is Reduction." },
+            { q: "OIL RIG stands for...?", a: "Oxidation It Loses / Reduction It Gains." },
+            { q: "What does an Oxidizing Agent do?", a: "Causes oxidation in another substance; it is reduced itself." },
+            { q: "What does a Reducing Agent do?", a: "Causes reduction in another substance; it is oxidized itself." },
+            { q: "In redox, electrons lost must ______ electrons gained.", a: "Equal." },
+            { q: "Voltaic cells produce current ______.", a: "Spontaneously (like a battery)." },
+            { q: "Electrolytic cells require an ______ power source.", a: "External." },
+            { q: "RED CAT means...?", a: "REDuction occurs at the CAThode." },
+            { q: "AN OX means...?", a: "ANode is the site of OXidation." },
+            { q: "What allows ions to flow in a voltaic cell?", a: "The salt bridge." }
+        ];
+
+        let unseen = [];
+        let learning = [];
+        let mastered = [];
+        let currentCard = null;
+        let isFlipped = false;
+
+        const cardEl = document.getElementById('flashcard');
+        const frontText = document.getElementById('card-front-text');
+        const backText = document.getElementById('card-back-text');
+        const actionsEl = document.getElementById('action-buttons');
+        const sceneEl = document.getElementById('card-scene');
+
+        function initApp() {
+            const saved = sessionStorage.getItem('chemDeckV2'); 
+            if (saved) {
+                const p = JSON.parse(saved);
+                unseen = p.unseen; learning = p.learning; mastered = p.mastered;
+            } else {
+                unseen = rawDeckData.map((c, i) => ({ ...c, id: i })).sort(() => Math.random() - 0.5);
+            }
+            updateUI();
+            drawNextCard();
+        }
+
+        function drawNextCard() {
+            if (unseen.length === 0 && learning.length === 0) {
+                sceneEl.style.display = 'none';
+                actionsEl.style.display = 'none';
+                document.getElementById('end-screen').style.display = 'flex';
+                return;
+            }
+            currentCard = (unseen.length > 0) ? unseen.shift() : learning.shift();
+            
+            isFlipped = false;
+            cardEl.classList.remove('is-flipped');
+            actionsEl.classList.remove('visible');
+            
+            setTimeout(() => {
+                frontText.innerHTML = currentCard.q;
+                backText.innerHTML = currentCard.a;
+            }, 200);
+        }
+
+        function flipCard() {
+            isFlipped = !isFlipped;
+            cardEl.classList.toggle('is-flipped');
+            
+            if (isFlipped) {
+                actionsEl.classList.add('visible');
+            } else {
+                actionsEl.classList.remove('visible');
+            }
+        }
+
+        function markCard(status) {
+            if (!isFlipped) return; 
+
+            if (status === 'mastered') mastered.push(currentCard);
+            else learning.push(currentCard);
+            
+            save();
+            updateUI();
+            
+            sceneEl.style.transition = 'all 0.3s ease';
+            sceneEl.style.transform = 'translateX(-100vw) rotate(-10deg)';
+            sceneEl.style.opacity = '0';
+            
+            setTimeout(() => {
+                drawNextCard();
+                sceneEl.style.transition = 'none';
+                sceneEl.style.transform = 'translateX(100vw)';
+                
+                setTimeout(() => {
+                    sceneEl.style.transition = 'all 0.4s cubic-bezier(0.4, 0.2, 0.2, 1)';
+                    sceneEl.style.transform = 'translateX(0)';
+                    sceneEl.style.opacity = '1';
+                }, 50);
+            }, 300);
+        }
+
+        function updateUI() {
+            document.getElementById('count-unseen').innerText = unseen.length;
+            document.getElementById('count-learning').innerText = learning.length;
+            document.getElementById('count-mastered').innerText = mastered.length;
+            document.getElementById('progress-bar').style.width = `${(mastered.length / rawDeckData.length) * 100}%`;
+        }
+
+        function resetDeck() {
+            sessionStorage.removeItem('chemDeckV2');
+            location.reload();
+        }
+
+        function save() {
+            sessionStorage.setItem('chemDeckV2', JSON.stringify({ unseen, learning, mastered }));
+        }
+
+        window.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
