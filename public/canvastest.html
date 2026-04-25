@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Precise Freehand Canvas</title>
+  <title>Pro Freehand Canvas</title>
   <style>
     body {
       margin: 0;
       padding: 0;
-      background-color: #f0f2f5;
+      background-color: #f8fafc;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -18,87 +18,95 @@
     }
     
     .canvas-container {
-      width: 90vw;
-      height: 55vh;
+      width: 92vw;
+      height: 50vh;
       background: #ffffff;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.05);
       overflow: hidden;
       touch-action: none; 
       position: relative;
+      border: 1px solid #e2e8f0;
     }
 
-    canvas {
-      display: block;
-      width: 100%;
-      height: 100%;
-    }
+    canvas { display: block; width: 100%; height: 100%; }
     
     .toolbar {
-      width: 90vw;
-      margin-top: 16px;
-      display: flex;
-      flex-wrap: wrap;
+      width: 92vw;
+      margin-top: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
       gap: 12px;
-      justify-content: center;
-      align-items: center;
+      background: white;
+      padding: 16px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.02);
     }
 
-    .tools-row {
+    .control-group { display: flex; flex-direction: column; gap: 4px; }
+    label { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; }
+    
+    select, input[type="range"] {
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #cbd5e1;
+      font-size: 14px;
+    }
+
+    .actions {
+      grid-column: 1 / -1;
       display: flex;
       gap: 8px;
+      margin-top: 8px;
     }
     
     button {
-      padding: 10px 16px;
+      flex: 1;
+      padding: 12px;
       border: none;
       border-radius: 8px;
-      background: #0f172a;
+      background: #1e293b;
       color: white;
-      font-size: 14px;
       font-weight: 600;
       cursor: pointer;
     }
     
-    button:active {
-      background: #334155;
-    }
-
-    button:disabled {
-      background: #cbd5e1;
-      cursor: not-allowed;
-    }
-
-    .slider-container {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: white;
-      padding: 8px 16px;
-      border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-    }
+    button#copyBtn { background: #2563eb; }
+    button:disabled { background: #e2e8f0; color: #94a3b8; }
   </style>
 </head>
 <body>
-  
+
   <div class="canvas-container">
     <canvas id="drawCanvas"></canvas>
   </div>
   
   <div class="toolbar">
-    <div class="slider-container">
-      <label for="sizeSlider" style="font-size:14px; font-weight:600;">Pen Size</label>
-      <input type="range" id="sizeSlider" min="2" max="10" value="6">
-    </div>
-    
-    <div class="tools-row">
-      <button id="undoBtn" disabled>Undo</button>
-      <button id="redoBtn" disabled>Redo</button>
-      <button id="clearBtn">Clear</button>
+    <div class="control-group">
+      <label>Brush Size</label>
+      <input type="range" id="sizeSlider" min="2" max="12" value="6">
     </div>
 
-    <button id="copySvgBtn" style="background: #0056d2;">Copy SVG</button>
+    <div class="control-group">
+      <label>Pressure Easing</label>
+      <select id="easingSelect">
+        <option value="linear">Linear</option>
+        <option value="easeInQuad">Ease In</option>
+        <option value="easeOutQuad">Ease Out</option>
+        <option value="easeInOutCubic" selected>Cubic (Natural)</option>
+      </select>
+    </div>
+
+    <div class="control-group" style="flex-direction:row; align-items:center; gap:10px;">
+      <input type="checkbox" id="taperCheck" checked>
+      <label for="taperCheck" style="margin:0;">Enable Tapering</label>
+    </div>
+
+    <div class="actions">
+      <button id="undoBtn" disabled>Undo</button>
+      <button id="clearBtn">Clear</button>
+      <button id="copyBtn">Copy SVG</button>
+    </div>
   </div>
 
   <script type="module">
@@ -106,120 +114,94 @@
 
     const canvas = document.getElementById("drawCanvas");
     const ctx = canvas.getContext("2d");
-    const undoBtn = document.getElementById("undoBtn");
-    const redoBtn = document.getElementById("redoBtn");
-    const clearBtn = document.getElementById("clearBtn");
-    const copySvgBtn = document.getElementById("copySvgBtn");
     const sizeSlider = document.getElementById("sizeSlider");
+    const easingSelect = document.getElementById("easingSelect");
+    const taperCheck = document.getElementById("taperCheck");
 
     let history = [];
     let historyStep = -1;
     let currentPath = [];
     let isDrawing = false;
-    let canvasRect; 
     let activePointerId = null;
 
-    // --- REFINED PEN SETTINGS ---
-    const baseStrokeOptions = {
-      thinning: 0.5,      
-      smoothing: 0.5,     // Dropped from 0.9 to reduce "shifting"
-      streamline: 0.5,    // Dropped from 0.9 to make ink follow finger instantly
-      simulatePressure: true,
-      last: true
+    // Easing functions for the pressure
+    const easings = {
+      linear: (t) => t,
+      easeInQuad: (t) => t * t,
+      easeOutQuad: (t) => t * (2 - t),
+      easeInOutCubic: (t) => t < 0.5 ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1
     };
 
+    function getOptions(size) {
+      const useTaper = taperCheck.checked;
+      return {
+        size: size,
+        thinning: 0.5,
+        smoothing: 0.5,
+        streamline: 0.5,
+        simulatePressure: true,
+        easing: easings[easingSelect.value],
+        start: { taper: useTaper ? 20 : 0, cap: true },
+        end: { taper: useTaper ? 20 : 0, cap: true }
+      };
+    }
+
     function resizeCanvas() {
-      canvasRect = canvas.parentElement.getBoundingClientRect();
+      const rect = canvas.parentElement.getBoundingClientRect();
       const dpr = window.devicePixelRatio || 1;
-      canvas.width = canvasRect.width * dpr;
-      canvas.height = canvasRect.height * dpr;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
       ctx.scale(dpr, dpr);
       render();
     }
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
-    function updateButtons() {
-      undoBtn.disabled = historyStep < 0;
-      redoBtn.disabled = historyStep === history.length - 1;
-    }
-
-    function getSvgPathFromStroke(stroke) {
-      if (!stroke.length) return "";
-      const d = stroke.reduce(
-        (acc, [x0, y0], i, arr) => {
-          const [x1, y1] = arr[(i + 1) % arr.length];
-          acc.push(x0, y0, (x0 + x1) / 2, (y0 + y1) / 2);
-          return acc;
-        },
-        ["M", ...stroke[0], "Q"]
-      );
-      d.push("Z");
-      return d.join(" ");
-    }
-
     function render() {
-      ctx.clearRect(0, 0, canvasRect.width, canvasRect.height);
-      ctx.fillStyle = "#0f172a";
+      const rect = canvas.parentElement.getBoundingClientRect();
+      ctx.clearRect(0, 0, rect.width, rect.height);
+      ctx.fillStyle = "#1e293b";
 
       for (let i = 0; i <= historyStep; i++) {
         const item = history[i];
-        drawStroke(item.points, item.size);
+        drawStroke(item.points, item.options);
       }
       
       if (currentPath.length > 0) {
-        drawStroke(currentPath, parseInt(sizeSlider.value));
+        drawStroke(currentPath, getOptions(parseInt(sizeSlider.value)));
       }
-      updateButtons();
+      document.getElementById("undoBtn").disabled = historyStep < 0;
     }
 
-    function drawStroke(points, size) {
-      const outline = getStroke(points, { ...baseStrokeOptions, size: size });
+    function drawStroke(points, options) {
+      const outline = getStroke(points, options);
       if (outline.length === 0) return;
       
-      const pathData = getSvgPathFromStroke(outline);
-      const path = new Path2D(pathData);
+      const d = outline.reduce((acc, [x0, y0], i, arr) => {
+        const [x1, y1] = arr[(i + 1) % arr.length];
+        acc.push(x0, y0, (x0 + x1) / 2, (y0 + y1) / 2);
+        return acc;
+      }, ["M", ...outline[0], "Q"]);
+      d.push("Z");
+      
+      const path = new Path2D(d.join(" "));
       ctx.fill(path);
-    }
-
-    function getPointerPos(e) {
-      const rect = canvas.getBoundingClientRect();
-      // Using clientX/Y for standard alignment
-      return [e.clientX - rect.left, e.clientY - rect.top, e.pressure || 0.5];
     }
 
     canvas.addEventListener("pointerdown", (e) => {
       if (activePointerId !== null) return;
       activePointerId = e.pointerId;
       isDrawing = true;
-      currentPath = [getPointerPos(e)];
+      const rect = canvas.getBoundingClientRect();
+      currentPath = [[e.clientX - rect.left, e.clientY - rect.top, e.pressure || 0.5]];
       canvas.setPointerCapture(e.pointerId);
       render();
     });
 
     canvas.addEventListener("pointermove", (e) => {
       if (!isDrawing || e.pointerId !== activePointerId) return;
-      
-      const newPoint = getPointerPos(e);
-      const lastPoint = currentPath[currentPath.length - 1];
-
-      // Interpolation kept at 4px threshold for smoothness without bloating the array
-      const dist = Math.hypot(newPoint[0] - lastPoint[0], newPoint[1] - lastPoint[1]);
-      if (dist > 4) {
-        const steps = Math.floor(dist / 4);
-        for (let i = 1; i < steps; i++) {
-          const t = i / steps;
-          currentPath.push([
-            lastPoint[0] + (newPoint[0] - lastPoint[0]) * t,
-            lastPoint[1] + (newPoint[1] - lastPoint[1]) * t,
-            lastPoint[2] + (newPoint[2] - lastPoint[2]) * t
-          ]);
-        }
-      }
-
-      currentPath.push(newPoint);
-      
-      // Use requestAnimationFrame for smoother UI updates on mobile browsers
+      const rect = canvas.getBoundingClientRect();
+      currentPath.push([e.clientX - rect.left, e.clientY - rect.top, e.pressure || 0.5]);
       requestAnimationFrame(render);
     });
 
@@ -227,10 +209,9 @@
       if (!isDrawing || e.pointerId !== activePointerId) return;
       isDrawing = false;
       activePointerId = null;
-      
       if (currentPath.length > 0) {
         history = history.slice(0, historyStep + 1);
-        history.push({ points: [...currentPath], size: parseInt(sizeSlider.value) });
+        history.push({ points: [...currentPath], options: getOptions(parseInt(sizeSlider.value)) });
         historyStep++;
       }
       currentPath = [];
@@ -240,24 +221,25 @@
     canvas.addEventListener("pointerup", endDrawing);
     canvas.addEventListener("pointercancel", endDrawing);
 
-    undoBtn.addEventListener("click", () => { if (historyStep >= 0) { historyStep--; render(); } });
-    redoBtn.addEventListener("click", () => { if (historyStep < history.length - 1) { historyStep++; render(); } });
-    clearBtn.addEventListener("click", () => { history = []; historyStep = -1; currentPath = []; render(); });
+    document.getElementById("undoBtn").onclick = () => { if (historyStep >= 0) { historyStep--; render(); } };
+    document.getElementById("clearBtn").onclick = () => { history = []; historyStep = -1; render(); };
+    
+    document.getElementById("copyBtn").onclick = () => {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      let paths = history.slice(0, historyStep + 1).map(item => {
+        const outline = getStroke(item.points, item.options);
+        const d = outline.reduce((acc, [x0, y0], i, arr) => {
+          const [x1, y1] = arr[(i + 1) % arr.length];
+          acc.push(x0, y0, (x0 + x1) / 2, (y0 + y1) / 2);
+          return acc;
+        }, ["M", ...outline[0], "Q"]);
+        d.push("Z");
+        return `<path d="${d.join(" ")}" fill="#1e293b" />`;
+      }).join("\n");
 
-    copySvgBtn.addEventListener("click", () => {
-      let svgPaths = "";
-      for (let i = 0; i <= historyStep; i++) {
-        const item = history[i];
-        const outline = getStroke(item.points, { ...baseStrokeOptions, size: item.size });
-        svgPaths += `  <path d="${getSvgPathFromStroke(outline)}" fill="#0f172a" />\n`;
-      }
-      const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${canvasRect.width} ${canvasRect.height}">${svgPaths}</svg>`;
-      navigator.clipboard.writeText(svg).then(() => {
-        const txt = copySvgBtn.innerText;
-        copySvgBtn.innerText = "Copied!";
-        setTimeout(() => copySvgBtn.innerText = txt, 1000);
-      });
-    });
+      const svg = `<svg viewBox="0 0 ${rect.width} ${rect.height}" xmlns="http://www.w3.org/2000/svg">${paths}</svg>`;
+      navigator.clipboard.writeText(svg).then(() => alert("SVG Copied!"));
+    };
   </script>
 </body>
 </html>
