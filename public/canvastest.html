@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Precise Freehand Canvas</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f0f2f5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    
+    .canvas-container {
+      width: 90vw;
+      height: 55vh;
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      overflow: hidden;
+      touch-action: none; 
+      position: relative;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    
+    .toolbar {
+      width: 90vw;
+      margin-top: 16px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .tools-row {
+      display: flex;
+      gap: 8px;
+    }
+    
+    button {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 8px;
+      background: #0f172a;
+      color: white;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    
+    button:active {
+      background: #334155;
+    }
+
+    button:disabled {
+      background: #cbd5e1;
+      cursor: not-allowed;
+    }
+
+    .slider-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: white;
+      padding: 8px 16px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+  </style>
+</head>
+<body>
+  
+  <div class="canvas-container">
+    <canvas id="drawCanvas"></canvas>
+  </div>
+  
+  <div class="toolbar">
+    <div class="slider-container">
+      <label for="sizeSlider" style="font-size:14px; font-weight:600;">Pen Size</label>
+      <input type="range" id="sizeSlider" min="2" max="10" value="6">
+    </div>
+    
+    <div class="tools-row">
+      <button id="undoBtn" disabled>Undo</button>
+      <button id="redoBtn" disabled>Redo</button>
+      <button id="clearBtn">Clear</button>
+    </div>
+
+    <button id="copySvgBtn" style="background: #0056d2;">Copy SVG</button>
+  </div>
+
+  <script type="module">
+    import { getStroke } from "https://esm.sh/perfect-freehand@1.2.0";
+
+    const canvas = document.getElementById("drawCanvas");
+    const ctx = canvas.getContext("2d");
+    const undoBtn = document.getElementById("undoBtn");
+    const redoBtn = document.getElementById("redoBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    const copySvgBtn = document.getElementById("copySvgBtn");
+    const sizeSlider = document.getElementById("sizeSlider");
+
+    let history = [];
+    let historyStep = -1;
+    let currentPath = [];
+    let isDrawing = false;
+    let canvasRect; 
+    let activePointerId = null;
+
+    // --- REFINED PEN SETTINGS ---
+    const baseStrokeOptions = {
+      thinning: 0.5,      
+      smoothing: 0.5,     // Dropped from 0.9 to reduce "shifting"
+      streamline: 0.5,    // Dropped from 0.9 to make ink follow finger instantly
+      simulatePressure: true,
+      last: true
+    };
+
+    function resizeCanvas() {
+      canvasRect = canvas.parentElement.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = canvasRect.width * dpr;
+      canvas.height = canvasRect.height * dpr;
+      ctx.scale(dpr, dpr);
+      render();
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function updateButtons() {
+      undoBtn.disabled = historyStep < 0;
+      redoBtn.disabled = historyStep === history.length - 1;
+    }
+
+    function getSvgPathFromStroke(stroke) {
+      if (!stroke.length) return "";
+      const d = stroke.reduce(
+        (acc, [x0, y0], i, arr) => {
+          const [x1, y1] = arr[(i + 1) % arr.length];
+          acc.push(x0, y0, (x0 + x1) / 2, (y0 + y1) / 2);
+          return acc;
+        },
+        ["M", ...stroke[0], "Q"]
+      );
+      d.push("Z");
+      return d.join(" ");
+    }
+
+    function render() {
+      ctx.clearRect(0, 0, canvasRect.width, canvasRect.height);
+      ctx.fillStyle = "#0f172a";
+
+      for (let i = 0; i <= historyStep; i++) {
+        const item = history[i];
+        drawStroke(item.points, item.size);
+      }
+      
+      if (currentPath.length > 0) {
+        drawStroke(currentPath, parseInt(sizeSlider.value));
+      }
+      updateButtons();
+    }
+
+    function drawStroke(points, size) {
+      const outline = getStroke(points, { ...baseStrokeOptions, size: size });
+      if (outline.length === 0) return;
+      
+      const pathData = getSvgPathFromStroke(outline);
+      const path = new Path2D(pathData);
+      ctx.fill(path);
+    }
+
+    function getPointerPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      // Using clientX/Y for standard alignment
+      return [e.clientX - rect.left, e.clientY - rect.top, e.pressure || 0.5];
+    }
+
+    canvas.addEventListener("pointerdown", (e) => {
+      if (activePointerId !== null) return;
+      activePointerId = e.pointerId;
+      isDrawing = true;
+      currentPath = [getPointerPos(e)];
+      canvas.setPointerCapture(e.pointerId);
+      render();
+    });
+
+    canvas.addEventListener("pointermove", (e) => {
+      if (!isDrawing || e.pointerId !== activePointerId) return;
+      
+      const newPoint = getPointerPos(e);
+      const lastPoint = currentPath[currentPath.length - 1];
+
+      // Interpolation kept at 4px threshold for smoothness without bloating the array
+      const dist = Math.hypot(newPoint[0] - lastPoint[0], newPoint[1] - lastPoint[1]);
+      if (dist > 4) {
+        const steps = Math.floor(dist / 4);
+        for (let i = 1; i < steps; i++) {
+          const t = i / steps;
+          currentPath.push([
+            lastPoint[0] + (newPoint[0] - lastPoint[0]) * t,
+            lastPoint[1] + (newPoint[1] - lastPoint[1]) * t,
+            lastPoint[2] + (newPoint[2] - lastPoint[2]) * t
+          ]);
+        }
+      }
+
+      currentPath.push(newPoint);
+      
+      // Use requestAnimationFrame for smoother UI updates on mobile browsers
+      requestAnimationFrame(render);
+    });
+
+    const endDrawing = (e) => {
+      if (!isDrawing || e.pointerId !== activePointerId) return;
+      isDrawing = false;
+      activePointerId = null;
+      
+      if (currentPath.length > 0) {
+        history = history.slice(0, historyStep + 1);
+        history.push({ points: [...currentPath], size: parseInt(sizeSlider.value) });
+        historyStep++;
+      }
+      currentPath = [];
+      render();
+    };
+
+    canvas.addEventListener("pointerup", endDrawing);
+    canvas.addEventListener("pointercancel", endDrawing);
+
+    undoBtn.addEventListener("click", () => { if (historyStep >= 0) { historyStep--; render(); } });
+    redoBtn.addEventListener("click", () => { if (historyStep < history.length - 1) { historyStep++; render(); } });
+    clearBtn.addEventListener("click", () => { history = []; historyStep = -1; currentPath = []; render(); });
+
+    copySvgBtn.addEventListener("click", () => {
+      let svgPaths = "";
+      for (let i = 0; i <= historyStep; i++) {
+        const item = history[i];
+        const outline = getStroke(item.points, { ...baseStrokeOptions, size: item.size });
+        svgPaths += `  <path d="${getSvgPathFromStroke(outline)}" fill="#0f172a" />\n`;
+      }
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${canvasRect.width} ${canvasRect.height}">${svgPaths}</svg>`;
+      navigator.clipboard.writeText(svg).then(() => {
+        const txt = copySvgBtn.innerText;
+        copySvgBtn.innerText = "Copied!";
+        setTimeout(() => copySvgBtn.innerText = txt, 1000);
+      });
+    });
+  </script>
+</body>
+</html>
