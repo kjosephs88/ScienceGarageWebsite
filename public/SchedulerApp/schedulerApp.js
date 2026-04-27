@@ -229,17 +229,16 @@ window.fetchClassData = async function (className, classId, periodCode) {
     }
 };
 
+// --- REMOVED REDUNDANT CLASS FILTERING ---
 window.buildTopicDropdown = function () {
     const topicSelect = document.getElementById('topic-select');
-    const selectedClass = document.getElementById('class-select').value;
-
     const currentSelection = topicSelect.value;
 
     topicSelect.innerHTML = '<option value="all">All Topics</option>';
     const uniqueTopics = new Set();
 
     Object.values(currentClassData).forEach(a => {
-        if (a.classId === selectedClass && a.topicName && !a.isCustomNote) {
+        if (a.topicName && !a.isCustomNote) {
             uniqueTopics.add(a.topicName);
         }
     });
@@ -344,7 +343,6 @@ window.createDayColumn = function (dateObj, isDouble, dateStr, dayConfig) {
     return col;
 }
 
-// --- PATH UPDATED ---
 window.saveAllListOrders = async function () {
     const updates = {};
     document.querySelectorAll('.sortable-list').forEach(list => {
@@ -369,7 +367,6 @@ window.saveAllListOrders = async function () {
     } catch (e) { console.error("Order save failed", e); }
 };
 
-// --- PATH UPDATED ---
 window.addCustomNote = async function (dateStr) {
     const text = prompt("Enter text for this draggable note:");
     if (!text || text.trim() === "") return;
@@ -379,11 +376,10 @@ window.addCustomNote = async function (dateStr) {
     const className = classSelect.options[classSelect.selectedIndex].text;
     const classFolder = getFolderId(className, classId);
 
-    // Push directly to the nested folder!
     const newNoteRef = push(ref(db, `schedulerAssignments/${classFolder}`));
 
     const noteData = {
-        assignmentId: newNoteRef.key, // Acts as our dbKey for mapping
+        assignmentId: newNoteRef.key,
         title: text.trim(),
         className: className,
         classId: classId,
@@ -395,7 +391,6 @@ window.addCustomNote = async function (dateStr) {
 
     try {
         await set(newNoteRef, noteData);
-        // We don't need to manually fetch, the onValue listener handles it
     } catch (err) { console.error("Error adding note:", err); }
 }
 
@@ -413,10 +408,10 @@ window.toggleFlip = async function (dateStr) {
     } catch (err) { console.error("Error saving flip:", err); }
 };
 
+// --- REMOVED REDUNDANT CLASS FILTERING ---
 window.placeAssignments = function () {
     const holdingTank = document.getElementById('holding-tank');
     const selectedTopic = document.getElementById('topic-select').value;
-    const selectedClassId = document.getElementById('class-select').value;
 
     const queues = { "holding-tank": [] };
     document.querySelectorAll('.day-list').forEach(list => queues[list.id] = []);
@@ -426,7 +421,6 @@ window.placeAssignments = function () {
         const isUnassigned = dates.includes("unassigned") || dates.length === 0;
 
         if (isUnassigned) {
-            if (assignment.classId !== selectedClassId) return;
             if (selectedTopic !== 'all' && assignment.topicName !== selectedTopic && !assignment.isCustomNote) return;
         }
 
@@ -510,7 +504,7 @@ window.initSortables = function () {
     document.querySelectorAll('.day-list').forEach(list => new Sortable(list, sortableOptions));
 }
 
-// --- PATH UPDATED ---
+// --- REMOVED REDUNDANT CLASS FILTERING ---
 window.syncAssignmentToFirebase = async function (dbKey, visualItem = null, fromId = null, toId = null) {
     const visibleDatesOnGrid = Array.from(document.querySelectorAll('.day-list')).map(list => list.id);
     const oldDates = currentClassData[dbKey].scheduledDates || ["unassigned"];
@@ -528,7 +522,6 @@ window.syncAssignmentToFirebase = async function (dbKey, visualItem = null, from
     if (currentClassData[dbKey]) currentClassData[dbKey].scheduledDates = newDatesArray;
     if (!currentClassData[dbKey].isCustomNote) window.updatePrefixes(dbKey);
 
-    // Get the dynamic folder path
     const assig = currentClassData[dbKey];
     const classFolder = getFolderId(assig.className, assig.classId);
     const basePath = `/schedulerAssignments/${classFolder}/${assig._fbKey}`;
@@ -575,9 +568,8 @@ window.syncAssignmentToFirebase = async function (dbKey, visualItem = null, from
         await window.saveAllListOrders();
 
         if (newDatesArray.length === 1 && newDatesArray[0] === "unassigned") {
-            const selectedClassId = document.getElementById('class-select').value;
             const selectedTopic = document.getElementById('topic-select').value;
-            if (assig.classId !== selectedClassId || (selectedTopic !== 'all' && assig.topicName !== selectedTopic && !assig.isCustomNote)) {
+            if (selectedTopic !== 'all' && assig.topicName !== selectedTopic && !assig.isCustomNote) {
                 if (visualItem) visualItem.remove();
             }
         }
@@ -643,7 +635,7 @@ window.getNextValidDay = function (currentDateStr) {
     }
 }
 
-// --- ALL PATHS UPDATED IN CLICK LISTENERS ---
+// --- REMOVED REDUNDANT CLASS FILTERING ---
 document.body.addEventListener('click', function (e) {
     const btn = e.target.closest('.action-btn');
 
@@ -667,9 +659,8 @@ document.body.addEventListener('click', function (e) {
         item.remove();
 
         if (document.querySelectorAll(`.day-list .assignment-item[data-db-key="${dbKey}"]`).length === 0) {
-            const selectedClassId = document.getElementById('class-select').value;
             const selectedTopic = document.getElementById('topic-select').value;
-            if (assig.classId === selectedClassId && (selectedTopic === 'all' || assig.topicName === selectedTopic || assig.isCustomNote)) {
+            if (selectedTopic === 'all' || assig.topicName === selectedTopic || assig.isCustomNote) {
                 document.getElementById('holding-tank').appendChild(item.cloneNode(true));
             }
         }
@@ -787,7 +778,6 @@ window.getValidDaysArray = function (configObj, startDateStr, numDays = 800) {
     return validDays;
 }
 
-// --- PATH UPDATED ---
 window.shiftAssignments = function (oldValidDays, newValidDays, startStr) {
     const assignmentUpdates = {};
     let assignmentsShifted = false;
