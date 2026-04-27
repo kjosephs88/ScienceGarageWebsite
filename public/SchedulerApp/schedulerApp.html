@@ -1,116 +1,65 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teacher Scheduler Admin - V32 (Modular)</title>
-    
+    <title>Teacher Scheduler Admin</title>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
-    
     <link rel="stylesheet" href="schedulerApp.css">
 </head>
-<body>
 
+<body>
     <div class="sidebar" id="teacher-sidebar" style="display: none;">
         <div class="control-group">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
                 <label style="margin-bottom: 0;">Select Class</label>
-                <button onclick="openSettingsModal()" class="gear-btn" title="Calendar Settings">⚙️</button>
+                <button id="settings-btn" class="gear-btn" title="Calendar Settings">⚙️</button>
             </div>
-            <select id="class-select" onchange="fetchClassData()">
-                <option>Loading...</option> 
+            <select id="class-select">
+                <option value="">Loading classes...</option>
             </select>
         </div>
-        
+
         <div class="control-group">
             <label>Select Topic</label>
-            <select id="topic-select" onchange="handleTopicFilter()">
+            <select id="topic-select">
                 <option value="all">All Topics</option>
             </select>
         </div>
-        
+
         <hr>
-        
+
         <div class="control-group" style="flex-grow: 1; display: flex; flex-direction: column; min-height: 0;">
             <label>Unscheduled Assignments</label>
-            <div id="holding-tank" class="sortable-list holding-tank"></div>
+            <div id="holding-tank" class="sortable-list tank-list"></div>
         </div>
+
+        <div id="auth-status" style="font-size: 0.8rem; color: #666; margin-top: 10px;"></div>
+        <button id="auth-btn" class="login-btn">Teacher Login</button>
     </div>
 
     <div class="main-content" id="main-view">
         <div class="toolbar">
             <div class="view-controls">
-                <select id="week-view-select" onchange="renderCalendar()">
-                    <option value="1">1 Week</option>
-                    <option value="2" selected>2 Weeks</option>
+                <select id="week-view-select">
+                    <option value="1" selected>1 Week</option>
+                    <option value="2">2 Weeks</option>
                     <option value="3">3 Weeks</option>
+                    <option value="4">4 Weeks</option>
                 </select>
             </div>
-            
             <div class="week-nav">
-                <button onclick="changeWeek(-1)">&lt; Prev</button>
-                <h2 id="date-range-display">Loading...</h2>
-                <button onclick="changeWeek(1)">Next &gt;</button>
+                <button id="prev-week">&lt; Prev</button>
+                <h2 id="date-range-display">Select a Class</h2>
+                <button id="next-week">Next &gt;</button>
             </div>
-            
-            <div class="auth-container">
-                <div id="auth-status" class="auth-status">Checking auth...</div>
-                <button id="auth-btn">Teacher Login</button>
-            </div>
+            <h1 id="calendar-title" style="margin:0; font-size: 1.2rem; text-align: right; color: #666;">Calendar</h1>
         </div>
-        
         <div id="calendar-container"></div>
-    </div>
-
-    <div class="modal-overlay" id="settings-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="modal-title">Calendar Settings</h3>
-                <button class="close-btn" onclick="closeSettingsModal()">&times;</button>
-            </div>
-            <div class="modal-body" style="display: flex; flex-direction: column; height: 100%;">
-                
-                <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid #ddd;">
-                    <label style="display: flex; align-items: center; gap: 8px; background: #e2e3e5; padding: 10px; border-radius: 4px; border: 1px solid #ced4da; margin-bottom: 15px; color: #333; cursor: pointer;">
-                        <input type="checkbox" id="apply-all-checkbox" checked style="width: 18px; height: 18px; margin: 0;">
-                        Apply to ALL classes (P1, P3, P6, P8)
-                    </label>
-
-                    <div style="display: flex; gap: 10px; background: #fff; padding: 10px; border-radius: 4px; margin-bottom: 15px; border: 1px solid #ced4da;">
-                        <div style="flex: 1;">
-                            <label style="color: #333;">Start Date</label>
-                            <input type="date" id="special-date-start" style="border: 2px solid #007bff; margin-bottom: 0;">
-                        </div>
-                        <div style="flex: 1;">
-                            <label style="color: #333;">End Date <span style="font-weight: normal; color: #888;">(Optional)</span></label>
-                            <input type="date" id="special-date-end" style="margin-bottom: 0;">
-                        </div>
-                    </div>
-                    
-                    <label style="margin-top: 5px;">Event Name</label>
-                    <input type="text" id="custom-type-input" placeholder="e.g., Snow Day, Spring Break, Assembly">
-                    
-                    <label style="margin-top: 15px; display: block; font-weight: bold; color: #555; font-size: 0.9rem;">Event Type</label>
-                    <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; background: #fff; padding: 10px; border-radius: 4px; border: 1px solid #ced4da;">
-                        <label style="font-weight: normal; cursor: pointer; color: #333; display: flex; align-items: center; gap: 5px;">
-                            <input type="radio" name="event-type" value="dayOff" checked style="width: auto; margin: 0;"> 
-                            <span><strong>Day Off</strong> (Blocks grid & shifts curriculum)</span>
-                        </label>
-                        <label style="font-weight: normal; cursor: pointer; color: #333; display: flex; align-items: center; gap: 5px;">
-                            <input type="radio" name="event-type" value="banner" style="width: auto; margin: 0;"> 
-                            <span><strong>Special Banner Only</strong> (Leaves grid open for assignments)</span>
-                        </label>
-                    </div>
-                    
-                    <button class="save-btn" onclick="saveCalendarConfig()">Save Calendar Event</button>
-                </div>
-
-                <label style="margin-top: 15px;">Saved Overrides for <span id="current-period-label"></span></label>
-                <ul id="saved-days-list" class="config-list"></ul>
-            </div>
-        </div>
     </div>
 
     <script type="module" src="schedulerApp.js"></script>
 </body>
+
 </html>
