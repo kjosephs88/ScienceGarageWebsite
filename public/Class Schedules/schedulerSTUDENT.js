@@ -5,21 +5,21 @@ import { getDatabase, ref, get, onValue } from "https://www.gstatic.com/firebase
 const CONFIG = window.STUDENT_CONFIG;
 
 document.getElementById('calendar-title').innerText = CONFIG.title;
-document.title = CONFIG.title; 
+document.title = CONFIG.title;
 
 function scaleUI() {
     const baseWidth = 1900; // Change this from 1400
     const wrapper = document.getElementById('scale-wrapper');
     const content = document.getElementById('scaled-content');
-    
+
     const availableWidth = wrapper.clientWidth;
     let scale = availableWidth / baseWidth;
-    
+
     // If the screen is wider than 1900px, don't keep growing (optional)
-    if (scale > 1) scale = 1; 
+    if (scale > 1) scale = 1;
 
     content.style.transform = `scale(${scale})`;
-    
+
     setTimeout(() => {
         const scaledHeight = content.getBoundingClientRect().height;
         wrapper.style.height = `${scaledHeight}px`;
@@ -30,13 +30,13 @@ window.addEventListener('resize', scaleUI);
 function fitDayOffText() {
     document.querySelectorAll('.day-off-banner').forEach(banner => {
         const textSpan = banner.querySelector('.banner-text');
-        if(!textSpan) return;
-        
-        let fontSize = 24; 
+        if (!textSpan) return;
+
+        let fontSize = 24;
         textSpan.style.fontSize = fontSize + 'px';
-        
+
         while (textSpan.scrollWidth > (banner.clientWidth - 20)) {
-            if (fontSize <= 1) break; 
+            if (fontSize <= 1) break;
             fontSize--;
             textSpan.style.fontSize = fontSize + 'px';
         }
@@ -56,19 +56,19 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-let currentMonday = (function() {
+let currentMonday = (function () {
     let now = new Date();
-    now.setHours(12, 0, 0, 0); 
-    let day = now.getDay();    
-    let diff = 1 - day;        
+    now.setHours(12, 0, 0, 0);
+    let day = now.getDay();
+    let diff = 1 - day;
     now.setDate(now.getDate() + diff);
     return now;
 })();
 
 const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-let currentClassData = {}; 
-let currentCalendarConfig = {}; 
-let currentBellringers = {}; 
+let currentClassData = {};
+let currentCalendarConfig = {};
+let currentBellringers = {};
 
 // Paste this missing function right here!
 function formatDateLocal(dateObj) {
@@ -80,7 +80,7 @@ function formatDateLocal(dateObj) {
 
 async function fetchStudentData() {
     const scaledContent = document.getElementById('scaled-content');
-    
+
     if (CONFIG.period === 'P1' || CONFIG.subject === 'Forensics') {
         scaledContent.classList.add('hide-for-forensics');
     }
@@ -96,41 +96,54 @@ async function fetchStudentData() {
         const configRef = ref(db, `calendarConfig/${CONFIG.period}`);
         onValue(configRef, (configSnap) => {
             currentCalendarConfig = configSnap.exists() ? configSnap.val() : {};
-            window.renderCalendar(); 
+            window.renderCalendar();
         });
 
-        // 3. LIVE PIPELINE: Assignments & Notes
-        const assignmentsRef = ref(db, 'assignments');
+        // 3. LIVE PIPELINE: Assignments & Notes (UPDATED FOR NEW SCHEMA)
+        const assignmentsRef = ref(db, 'schedulerAssignments');
         onValue(assignmentsRef, (assigSnap) => {
             currentClassData = {};
             if (assigSnap.exists()) {
-                const allData = assigSnap.val();
-                Object.entries(allData).forEach(([key, val]) => {
-                    if (val.className && val.className.includes(CONFIG.period)) {
-                        currentClassData[key] = val;
+                const allFolders = assigSnap.val();
+
+                // Figure out the prefix we are looking for (e.g., "CH_P6_")
+                let subj = "ZZ";
+                let lowerSubj = CONFIG.subject.toLowerCase();
+                if (lowerSubj.includes("chemistry")) subj = "CH";
+                else if (lowerSubj.includes("physics")) subj = "PH";
+                else if (lowerSubj.includes("forensic")) subj = "FS";
+
+                const targetPrefix = `${subj}_${CONFIG.period}_`;
+
+                // Find the specific class folder and load its assignments
+                Object.keys(allFolders).forEach(folderName => {
+                    if (folderName.startsWith(targetPrefix)) {
+                        const classAssignments = allFolders[folderName];
+                        // Merge the assignments into the local data object
+                        Object.assign(currentClassData, classAssignments);
                     }
                 });
             }
-            window.renderCalendar(); 
+            window.renderCalendar();
         });
 
-    } catch (error) { 
+    } catch (error) {
         console.error("Error fetching data:", error);
         document.getElementById('date-range-display').innerText = "Error loading schedule.";
     }
 }
 
-window.renderCalendar = function() {
+window.renderCalendar = function () {
     const container = document.getElementById('calendar-container');
-    container.innerHTML = ''; 
-    
+    container.innerHTML = '';
+
     const numWeeks = parseInt(document.getElementById('week-view-select').value) || 1;
     let renderDate = new Date(currentMonday);
 
     const endDate = new Date(currentMonday);
-    endDate.setDate(currentMonday.getDate() + (numWeeks * 7) - 3); 
-    document.getElementById('date-range-display').innerText = 
-        `${currentMonday.toLocaleDateString('en-US', {month:'short', day:'numeric'})} - ${endDate.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})}`;
+    endDate.setDate(currentMonday.getDate() + (numWeeks * 7) - 3);
+    document.getElementById('date-range-display').innerText =
+        `${currentMonday.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
 
     for (let w = 0; w < numWeeks; w++) {
         const weekGrid = document.createElement('div');
@@ -139,16 +152,16 @@ window.renderCalendar = function() {
         for (let d = 0; d < 5; d++) {
             const dateStr = formatDateLocal(renderDate);
             const dayConfig = currentCalendarConfig[dateStr] || {};
-            
+
             // THE BRAINLESS READ
             let isDouble = dayConfig.isDouble !== undefined ? dayConfig.isDouble : true;
-            
+
             weekGrid.appendChild(createDayColumn(renderDate, isDouble, dateStr, dayConfig));
-            
+
             renderDate.setDate(renderDate.getDate() + 1);
         }
         container.appendChild(weekGrid);
-        renderDate.setDate(renderDate.getDate() + 2); 
+        renderDate.setDate(renderDate.getDate() + 2);
     }
 
     placeAssignments();
@@ -158,7 +171,7 @@ function createDayColumn(dateObj, isDouble, dateStr, dayConfig) {
     const col = document.createElement('div');
     col.className = 'day-column';
     const displayDate = `${dateObj.toLocaleString('en-US', { month: 'short' })} ${dateObj.getDate()}`;
-    
+
     if (dayConfig && (dayConfig.isDayOff || dayConfig.isClassDrop)) {
         col.innerHTML = `
             <div class="day-header">
@@ -206,7 +219,7 @@ function placeAssignments() {
 
     Object.entries(currentClassData).forEach(([dbKey, assignment]) => {
         const dates = assignment.scheduledDates || ["unassigned"];
-        
+
         if (!dates.includes("unassigned") && dates.length > 0) {
             let itemHTML = '';
 
@@ -219,7 +232,7 @@ function placeAssignments() {
             } else {
                 const urlAttr = assignment.encodedUrl ? `data-url="${assignment.encodedUrl}"` : '';
                 const titleAttr = assignment.encodedUrl ? `title="Click to open in Google Classroom"` : ``;
-                
+
                 itemHTML = `
                     <div class="assignment-item" data-db-key="${dbKey}" ${urlAttr} ${titleAttr} style="${assignment.encodedUrl ? 'cursor: pointer;' : ''}">
                         <span class="item-prefix">Complete assignment:</span>
@@ -235,7 +248,7 @@ function placeAssignments() {
                     if (!assignment.isCustomNote && assignment.notes && assignment.notes[dateString]) {
                         blockHTML = blockHTML.replace('<span class="item-note" style="display: none;"></span>', `<span class="item-note">Note: ${assignment.notes[dateString]}</span>`);
                     }
-                    
+
                     let order = (assignment.dayOrder && assignment.dayOrder[dateString]) !== undefined ? assignment.dayOrder[dateString] : 999;
                     queues[dateString].push({ html: blockHTML, order: order, key: dbKey });
                 }
@@ -256,8 +269,8 @@ function placeAssignments() {
         if (!currentClassData[dbKey].isCustomNote) updatePrefixes(dbKey);
     });
 
-    scaleUI(); 
-    setTimeout(fitDayOffText, 50); 
+    scaleUI();
+    setTimeout(fitDayOffText, 50);
 }
 
 function updatePrefixes(dbKey) {
@@ -265,14 +278,14 @@ function updatePrefixes(dbKey) {
     if (!assignment || assignment.isCustomNote) return;
 
     let dates = (assignment.scheduledDates || []).filter(d => d !== "unassigned").sort();
-    
+
     const instances = document.querySelectorAll(`.assignment-item[data-db-key="${dbKey}"]`);
     instances.forEach(inst => {
         const list = inst.closest('.day-list');
         if (!list) return;
         const listId = list.id;
         const prefixSpan = inst.querySelector('.item-prefix');
-        
+
         if (dates.length <= 1) {
             prefixSpan.innerText = 'Complete assignment:';
         } else if (listId === dates[0]) {
@@ -285,17 +298,17 @@ function updatePrefixes(dbKey) {
     });
 }
 
-document.body.addEventListener('click', function(e) {
+document.body.addEventListener('click', function (e) {
     const item = e.target.closest('.assignment-item');
-    if (item && !item.classList.contains('custom-note-item')) { 
+    if (item && !item.classList.contains('custom-note-item')) {
         const url = item.getAttribute('data-url');
         if (url) { window.open(url, '_blank'); }
     }
 });
 
-window.changeWeek = function(offset) { 
-    currentMonday.setDate(currentMonday.getDate() + (offset * 7)); 
-    window.renderCalendar(); 
+window.changeWeek = function (offset) {
+    currentMonday.setDate(currentMonday.getDate() + (offset * 7));
+    window.renderCalendar();
 }
 
 fetchStudentData();
