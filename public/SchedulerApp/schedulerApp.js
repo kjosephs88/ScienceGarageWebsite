@@ -71,7 +71,6 @@ function fitDayOffText() {
     document.querySelectorAll('.day-off-banner').forEach(banner => {
         const textSpan = banner.querySelector('.banner-text');
         if (!textSpan) {
-            // If no banner-text, wrap current content if it looks like a string
             if (banner.childNodes.length === 1 && banner.childNodes[0].nodeType === 3) {
                 const text = banner.innerText;
                 banner.innerHTML = `<span class="banner-text">${text}</span>`;
@@ -105,8 +104,7 @@ onAuthStateChanged(auth, (user) => {
         authBtn.onclick = window.logoutTeacher;
         sidebar.style.display = "flex";
         mainView.classList.add('edit-mode');
-
-        // 🚀 INITIALIZE LISTENERS INSIDE AUTH BLOCK
+        
         initEventListeners();
         window.loadInitialClasses();
     } else {
@@ -118,7 +116,6 @@ onAuthStateChanged(auth, (user) => {
 });
 
 function initEventListeners() {
-    // Prevent multiple listeners if auth state changes multiple times
     const classSelect = document.getElementById('class-select');
     classSelect.onchange = (e) => {
         const folder = e.target.value;
@@ -140,10 +137,10 @@ function initEventListeners() {
         currentMonday.setDate(currentMonday.getDate() + 7);
         window.renderCalendar();
     };
-
+    
     const settingsBtn = document.getElementById('settings-btn');
     settingsBtn.onclick = () => {
-        alert("Calendar Settings functionality to be implemented/restored.");
+        window.openSettings();
     };
 }
 
@@ -157,7 +154,6 @@ window.loadInitialClasses = async function () {
             const uniqueClasses = [];
             Object.keys(allFolders).forEach(folderName => {
                 const folderData = allFolders[folderName];
-                // Find a sample assignment to get the className
                 const sample = Object.values(folderData).find(a => a && a.className);
                 if (sample) uniqueClasses.push({ folder: folderName, name: sample.className });
             });
@@ -167,8 +163,7 @@ window.loadInitialClasses = async function () {
                 opt.value = c.folder; opt.textContent = c.name;
                 classSelect.appendChild(opt);
             });
-
-            // Auto-load first class if exists
+            
             if (uniqueClasses.length > 0) {
                 classSelect.value = uniqueClasses[0].folder;
                 window.fetchClassData(uniqueClasses[0].folder, uniqueClasses[0].name);
@@ -179,12 +174,9 @@ window.loadInitialClasses = async function () {
 
 window.fetchClassData = async function (exactFolder, className) {
     currentClassFolder = exactFolder;
-
-    // Determine Period
     const pMatch = className.match(/P\d/i) || exactFolder.match(/P\d/i);
     activePeriod = pMatch ? pMatch[0].toUpperCase() : "P0";
-
-    // Determine Subject
+    
     if (className.toLowerCase().includes("chemistry")) currentSubject = "Chemistry";
     else if (className.toLowerCase().includes("physics")) currentSubject = "Physics";
     else if (className.toLowerCase().includes("forensic")) currentSubject = "Forensics";
@@ -195,19 +187,17 @@ window.fetchClassData = async function (exactFolder, className) {
     if (unsubscribeAssignments) unsubscribeAssignments();
     if (unsubscribeConfig) unsubscribeConfig();
 
-    // 1. Fetch Bellringers (Once)
     try {
         const bellSnap = await get(ref(db, `bellringers/${currentSubject}`));
         currentBellringers = bellSnap.exists() ? bellSnap.val() : {};
     } catch (e) { console.error("Bellringer fetch failed", e); }
 
-    // 2. Live Calendar Config
     unsubscribeConfig = onValue(ref(db, `calendarConfig/${activePeriod}`), (snap) => {
         currentCalendarConfig = snap.exists() ? snap.val() : {};
         window.renderCalendar();
+        window.loadConfigList();
     });
 
-    // 3. Live Assignments
     unsubscribeAssignments = onValue(ref(db, `schedulerAssignments/${exactFolder}`), (snap) => {
         currentClassData = {};
         if (snap.exists()) {
@@ -239,8 +229,8 @@ window.renderCalendar = function () {
     const container = document.getElementById('calendar-container');
     const tank = document.getElementById('holding-tank');
     if (!container || !tank) return;
-
-    container.innerHTML = '';
+    
+    container.innerHTML = ''; 
     tank.innerHTML = '';
 
     let numWeeks = parseInt(document.getElementById('week-view-select').value) || 1;
@@ -248,11 +238,10 @@ window.renderCalendar = function () {
 
     let renderDate = new Date(currentMonday);
     const dateRangeDisplay = document.getElementById('date-range-display');
-
     const startDateStr = renderDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
     for (let w = 0; w < numWeeks; w++) {
-        const grid = document.createElement('div');
+        const grid = document.createElement('div'); 
         grid.className = 'week-grid';
         for (let d = 0; d < 5; d++) {
             const dStr = formatDateLocal(renderDate);
@@ -270,13 +259,13 @@ window.renderCalendar = function () {
 
     window.initSortables();
     window.placeAssignments();
-
+    
     scaleUI();
     setTimeout(fitDayOffText, 50);
 };
 
 window.createDayColumn = (dateObj, isDouble, dStr, conf) => {
-    const col = document.createElement('div');
+    const col = document.createElement('div'); 
     col.className = 'day-column';
     const display = `${dateObj.toLocaleString('en-US', { month: 'short' })} ${dateObj.getDate()}`;
     const dayName = dayNames[dateObj.getDay() - 1];
@@ -287,19 +276,15 @@ window.createDayColumn = (dateObj, isDouble, dStr, conf) => {
                 <span class="day-name">${dayName}</span>
                 <div class="day-date">${display}</div>
             </div>
-            <div class="day-off-banner"><span class="banner-text">${conf.name}</span></div>
+            <div class="day-off-banner"><span class="banner-text">${conf.name || 'DAY OFF'}</span></div>
             <div class="day-list" id="${dStr}" style="display:none"></div>
         `;
     } else {
         let bannerHTML = conf.name ? `<div class="special-day-banner">${conf.name}</div>` : '';
-
         let bellringerHTML = '';
         const bellUrl = currentBellringers[dStr];
         if (bellUrl) {
-            bellringerHTML = `
-                <div class="bellringer-container">
-                    <a href="${bellUrl}" target="_blank" class="bellringer-link">🔔 BELLRINGER</a>
-                </div>`;
+            bellringerHTML = `<div class="bellringer-container"><a href="${bellUrl}" target="_blank" class="bellringer-link">🔔 BELLRINGER</a></div>`;
         } else {
             bellringerHTML = `<div class="bellringer-container"></div>`;
         }
@@ -328,15 +313,11 @@ window.placeAssignments = function () {
 
     Object.entries(currentClassData).forEach(([key, a]) => {
         if (!a) return;
-
-        // Skip assignments with "bellringer" in topic name (as they are handled by live links)
         const tName = (a.topicName || "").toLowerCase();
         if (tName.includes("bellringer")) return;
 
         const dates = a.scheduledDates || ["unassigned"];
         const isUn = dates.includes("unassigned");
-
-        // Topic Filtering for Holding Tank
         if (isUn && topic !== 'all' && a.topicName !== topic && !a.isCustomNote) return;
 
         const html = `
@@ -344,9 +325,9 @@ window.placeAssignments = function () {
                 ${!a.isCustomNote ? '<span class="item-prefix">Complete assignment:</span>' : ''}
                 <span class="item-title">${a.title}</span>
             </div>`;
-
-        dates.forEach(d => {
-            if (queues[d]) queues[d].push({ html, order: (a.dayOrder?.[d] ?? 999) });
+            
+        dates.forEach(d => { 
+            if (queues[d]) queues[d].push({ html, order: (a.dayOrder?.[d] ?? 999) }); 
         });
     });
 
@@ -358,8 +339,8 @@ window.placeAssignments = function () {
 
 window.initSortables = () => {
     const opt = {
-        group: 'shared',
-        animation: 150,
+        group: 'shared', 
+        animation: 150, 
         onEnd: (evt) => {
             const key = evt.item.dataset.dbKey;
             const to = evt.to.id === 'holding-tank' ? 'unassigned' : evt.to.id;
@@ -376,4 +357,52 @@ window.syncToFirebase = async (key, toId) => {
     const path = `schedulerAssignments/${currentClassFolder}/${assig._fbKey}`;
     const newDates = toId === 'unassigned' ? ['unassigned'] : [toId];
     await update(ref(db), { [`${path}/scheduledDates`]: newDates });
+};
+
+// --- SETTINGS MODAL FUNCTIONS ---
+window.openSettings = () => {
+    document.getElementById('settings-period-name').innerText = activePeriod;
+    document.getElementById('settings-modal').style.display = 'flex';
+    window.loadConfigList();
+};
+
+window.closeSettings = () => {
+    document.getElementById('settings-modal').style.display = 'none';
+};
+
+window.saveDayConfig = async () => {
+    const date = document.getElementById('config-date').value;
+    const name = document.getElementById('config-name').value;
+    const isDayOff = document.getElementById('config-is-day-off').checked;
+    const isDouble = document.getElementById('config-is-double').checked;
+
+    if (!date) return alert("Please select a date.");
+
+    const config = { name, isDayOff, isDouble };
+    await set(ref(db, `calendarConfig/${activePeriod}/${date}`), config);
+    alert("Configuration saved!");
+    window.loadConfigList();
+};
+
+window.loadConfigList = () => {
+    const list = document.getElementById('config-list');
+    if (!list) return;
+    list.innerHTML = '';
+
+    Object.entries(currentCalendarConfig).sort().forEach(([date, conf]) => {
+        const li = document.createElement('li');
+        li.className = 'config-item';
+        li.innerHTML = `
+            <span><b>${date}</b>: ${conf.name || (conf.isDayOff ? 'Day Off' : 'Special')} (${conf.isDouble ? 'Double' : 'Single'})</span>
+            <button class="delete-config-btn" onclick="window.deleteConfig('${date}')">&times;</button>
+        `;
+        list.appendChild(li);
+    });
+};
+
+window.deleteConfig = async (date) => {
+    if (confirm(`Delete configuration for ${date}?`)) {
+        await remove(ref(db, `calendarConfig/${activePeriod}/${date}`));
+        window.loadConfigList();
+    }
 };

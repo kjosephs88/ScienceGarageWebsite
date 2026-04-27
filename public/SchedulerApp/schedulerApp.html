@@ -55,10 +55,42 @@
                         <h2 id="date-range-display">Select a Class</h2>
                         <button id="next-week">Next &gt;</button>
                     </div>
-                    <h1 id="calendar-title" style="margin:0; font-size: 1.2rem; text-align: right; color: #666;">
-                        Calendar</h1>
+                    <h1 id="calendar-title" style="margin:0; font-size: 1.2rem; text-align: right; color: #666;">Calendar</h1>
                 </div>
                 <div id="calendar-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="settings-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Calendar Settings - <span id="settings-period-name"></span></h3>
+                <button class="close-btn" onclick="window.closeSettings()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="control-group">
+                    <label>Target Date</label>
+                    <input type="date" id="config-date">
+                </div>
+                <div class="control-group">
+                    <label>Day Label (e.g. Holiday Name)</label>
+                    <input type="text" id="config-name" placeholder="Leave empty for normal day">
+                </div>
+                <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <input type="checkbox" id="config-is-day-off">
+                        <label style="margin: 0;">Day Off (No Classes)</label>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <input type="checkbox" id="config-is-double" checked>
+                        <label style="margin: 0;">Double Period</label>
+                    </div>
+                </div>
+                <button class="save-btn" onclick="window.saveDayConfig()">Save Day Configuration</button>
+                <hr>
+                <label>Existing Configurations</label>
+                <ul id="config-list" class="config-list"></ul>
             </div>
         </div>
     </div>
