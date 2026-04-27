@@ -184,9 +184,13 @@
       localState[qId].selection = selection; 
       
       const payload = { selection: selection, type: qType, timestamp: new Date().toISOString() };
+      
       return fetch(`${databaseURL}/classroomAssignments/${ASSIGNMENT_CODE}/${STUDENT_UUID}/q${qId}.json`, {
         method: 'PATCH',
         body: JSON.stringify(payload)
+      }).then(() => {
+          // ---> NEW: Trigger continuous background grading silently! <---
+          google.script.run.autoSyncGrade(STUDENT_UUID);
       });
     }
 

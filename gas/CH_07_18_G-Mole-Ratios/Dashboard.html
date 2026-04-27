@@ -79,8 +79,6 @@
     let classRoster = [];
     let currentLiveData = {};
     let activeStudentUid = null;
-    let teacherDebounceTimers = {};
-    let activeTeacherDebounces = new Set();
     let openCommentAreas = new Set();
 
     function toggleTeacherCommentArea(qId) {
@@ -99,7 +97,6 @@
         }
       } else {
         openCommentAreas.delete(qId);
-        // Save when toggled off
         if (activeStudentUid) saveTeacherComment(activeStudentUid, qId);
       }
     }
@@ -194,7 +191,6 @@
       let visibleStudents = classRoster.slice();
       if (filterVal !== "ALL") visibleStudents = visibleStudents.filter(s => s.period.toString().trim() === filterVal);
       
-      // Determine new status: if any are unlocked, lock all. If all are locked, unlock all.
       let anyUnlocked = false;
       visibleStudents.forEach(s => {
           const prog = currentLiveData[s.uid] || {};
@@ -244,25 +240,57 @@
       const url = `${databaseURL}/classroomAssignments/${ASSIGNMENT_CODE}.json?auth=${FIREBASE_SECRET}`;
       const eventSource = new EventSource(url);
       
+      // THE FIX: Custom Deep-Merging Engine for Root PATCH compatibility
+      function applyDeepValue(obj, pathArr, val) {
+        let current = obj;
+        for (let i = 0; i < pathArr.length - 1; i++) {
+          if (typeof current[pathArr[i]] !== "object" || current[pathArr[i]] === null) {
+            current[pathArr[i]] = {};
+          }
+          current = current[pathArr[i]];
+        }
+        const lastKey = pathArr[pathArr.length - 1];
+        if (val === null) {
+          delete current[lastKey];
+        } else {
+          current[lastKey] = val;
+        }
+      }
+
+      function applyFirebaseUpdate(eventType, path, data) {
+        if (path === "/") {
+          if (eventType === "put") {
+            currentLiveData = data || {};
+          } else if (eventType === "patch") {
+            for (let key in data) {
+              applyDeepValue(currentLiveData, key.split("/").filter(p => p), data[key]);
+            }
+          }
+        } else {
+          const pathParts = path.split("/").filter(p => p);
+          if (eventType === "put") {
+            applyDeepValue(currentLiveData, pathParts, data);
+          } else if (eventType === "patch") {
+            for (let key in data) {
+              applyDeepValue(currentLiveData, [...pathParts, ...key.split("/").filter(p => p)], data[key]);
+            }
+          }
+        }
+      }
+
       const handleFirebaseEvent = function(e) {
+         if (!e.data || e.data === "null") return;
          const payload = JSON.parse(e.data);
-         if (payload.path === "/") {
-            currentLiveData = payload.data || {};
-            updateGrid(currentLiveData);
-            if (activeStudentUid) renderStudentDetail(activeStudentUid);
-         } else {
-          fetch(url).then(r=>r.json()).then(d => { 
-                currentLiveData = d || {}; 
-                updateGrid(currentLiveData); 
-                if (activeStudentUid) renderStudentDetail(activeStudentUid); 
-            });
-         }
+         
+         applyFirebaseUpdate(e.type, payload.path, payload.data);
+         
+         updateGrid(currentLiveData);
+         if (activeStudentUid) renderStudentDetail(activeStudentUid);
       };
 
       eventSource.addEventListener('put', handleFirebaseEvent);
       eventSource.addEventListener('patch', handleFirebaseEvent);
     }
-
 
     function handlePeriodChange() {
       const filterVal = document.getElementById('period-filter').value;
@@ -313,10 +341,12 @@
         let allCleared = true; 
         let liveScore = 0;
         
+        // STANDARD GRADING LOGIC: Number, Compare, Draw
         for (let i = 1; i <= questions.length; i++) {
           const qData = studentProgress[`q${i}`];
           let isCorrect = false;
           if (qData && qData.selection !== undefined && qData.selection !== null && qData.selection !== "") {
+             // Directly compare raw selection to the master answer key
              isCorrect = (qData.selection == SECURE_ANSWER_KEY[i]);
           }
           if (!isCorrect) allCleared = false;
@@ -359,6 +389,7 @@
              isCorrect = (qData.selection == SECURE_ANSWER_KEY[i]);
           }
           
+          // DRAW LOGIC based strictly on the comparison
           if (!isAnswered) html += `<td class="q-col empty bg-inherit">-</td>`; 
           else if (isCorrect) html += `<td class="q-col correct bg-inherit">✔</td>`; 
           else html += `<td class="q-col incorrect bg-inherit">✘</td>`; 
@@ -388,13 +419,11 @@
     function renderStudentDetail(uid) {
       const container = document.getElementById('detail-questions');
       
-      // Save focus and selection info
       const focusedEl = document.activeElement;
       const focusedId = focusedEl ? focusedEl.id : null;
       const selectionStart = focusedEl ? focusedEl.selectionStart : null;
       const selectionEnd = focusedEl ? focusedEl.selectionEnd : null;
       
-      // PERSIST UN-SAVED TEACHER TYPING
       let preservedValue = null;
       let preservedQId = null;
       if (focusedId && focusedId.startsWith('teacher-comment-input-q')) {
@@ -473,7 +502,6 @@
         `;
       });
 
-      // Restore focus and selection
       if (focusedId) {
         const el = document.getElementById(focusedId);
         if (el && (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT')) {

@@ -9,6 +9,12 @@ const SHEET_ID = "1NT5wVymwWpW5-NPu1cra0LH8byk7LLnVd4FKU1pSTcs";
 const TAB_GID = 598574737;
 const ADMIN_EMAILS = ['pianodemon88@gmail.com', 'kjosephs@ocsdny.org'];
 
+// ---> NEW: Map period numbers to their exact Classroom names <---
+const CLASS_MAPPING = {
+  "6": "25-26 P6 Q4 Chemistry",
+  "8": "25-26 P8 Q4 Chemistry"
+};
+
 const QUESTIONS_ARRAY = [
   { id: 1, type: "mc", text: "Given the balanced equation representing a reaction: $$4Al(s) + 3O_{2}(g) \\rightarrow 2Al_{2}O_{3}(s)$$ How many moles of \\(Al(s)\\) react completely with 4.50 moles of \\(O_{2}(g)\\) to produce 3.00 moles of \\(Al_{2}O_{3}(s)\\)?", options: ["1.50 mol", "2.00 mol", "6.00 mol", "4.00 mol"] },
   { id: 2, type: "mc", text: "Given the balanced equation representing the reaction between propane and oxygen: $$C_{3}H_{8} + 5O_{2} \\rightarrow 3CO_{2} + 4H_{2}O$$ According to this equation, which ratio of oxygen to propane is correct?", options: ["\\( \\frac{5 \\text{ grams } O_{2}}{1 \\text{ gram } C_{3}H_{8}} \\)", "\\( \\frac{5 \\text{ moles } O_{2}}{1 \\text{ mole } C_{3}H_{8}} \\)", "\\( \\frac{10 \\text{ grams } O_{2}}{11 \\text{ grams } C_{3}H_{8}} \\)", "\\( \\frac{10 \\text{ moles } O_{2}}{11 \\text{ moles } C_{3}H_{8}} \\)"] },
@@ -34,10 +40,9 @@ const ANSWER_KEY = {
 };
 const DB_URL = "https://scigarage-default-rtdb.firebaseio.com/"; 
 
-// 🚀 DYNAMIC ROSTER ENGINE
 function getCachedRosterData() {
   const cache = CacheService.getScriptCache();
-  const cacheKey = "ROSTER_" + ASSIGNMENT_CODE; // Prevents assignment clashing
+  const cacheKey = "ROSTER_" + ASSIGNMENT_CODE; 
   const cachedData = cache.get(cacheKey);
   
   if (cachedData) {
@@ -66,7 +71,7 @@ function getCachedRosterData() {
       });
     }
   }
-  cache.put(cacheKey, JSON.stringify(roster), 21600); // 6 hours
+  cache.put(cacheKey, JSON.stringify(roster), 21600); 
   return roster;
 }
 
@@ -147,6 +152,10 @@ function gradeSubmission(uid) {
   }
 
   UrlFetchApp.fetch(url, { method: "PATCH", contentType: "application/json", payload: JSON.stringify(statusPayload) });
+  
+  // ---> NEW: Trigger the fan-out to lock in the final score and submitted status!
+  autoSyncGrade(uid);
+
   return { 
       status: statusPayload.unlocked ? 'unlocked' : 'fail', 
       correctCount: correctCount, 
@@ -158,8 +167,63 @@ function gradeSubmission(uid) {
 
 function getDashboardRoster() { return getCachedRosterData().filter(s => s.uid !== ""); }
 
-// 🚀 MANUAL OVERRIDE TO CLEAR THIS ASSIGNMENT'S CACHE
 function forceClearCache() {
   CacheService.getScriptCache().remove("ROSTER_" + ASSIGNMENT_CODE);
   Logger.log("Cache cleared successfully for: " + ASSIGNMENT_CODE);
+}
+
+// ---> FIXED: 3-Way Surgical Sync bypassing the Root Wipe Bug <---
+function autoSyncGrade(uid) {
+  const secret = PropertiesService.getScriptProperties().getProperty("FIREBASE_SECRET");
+  
+  // 1. Identify the student and their class period
+  const roster = getCachedRosterData();
+  const student = roster.find(s => s.uid === uid);
+  if (!student) return;
+  const className = CLASS_MAPPING[student.period.toString().trim()];
+
+  // 2. Fetch the student's current answers
+  const url = `${DB_URL}classroomAssignments/${ASSIGNMENT_CODE}/${uid}.json?auth=${secret}`;
+  const res = UrlFetchApp.fetch(url);
+  const studentData = JSON.parse(res.getContentText()) || {};
+
+  // 3. Calculate the raw numerical score quietly in the background
+  let correctCount = 0;
+  for (let i = 1; i <= TOTAL_QUESTIONS; i++) {
+    const q = studentData[`q${i}`];
+    if (q && q.selection !== undefined && q.selection !== null && q.selection !== "") {
+      if (q.selection == ANSWER_KEY[i]) correctCount++;
+    }
+  }
+
+  const timestamp = Date.now();
+  const statusText = studentData.submitted ? "submitted" : "in_progress";
+
+  // 4. Fire 3 SEPARATE surgical PATCH requests to safely update nodes without root-wiping
+
+  // Update A: Granular Tracker
+  UrlFetchApp.fetch(`${DB_URL}classroomAssignments/${ASSIGNMENT_CODE}/${uid}.json?auth=${secret}`, {
+    method: "PATCH",
+    contentType: "application/json",
+    payload: JSON.stringify({ score: correctCount, lastUpdated: timestamp })
+  });
+
+  // Update B: Teacher Gradebook
+  if (className) {
+    UrlFetchApp.fetch(`${DB_URL}teacherGradebook/${className}/${ASSIGNMENT_CODE}/${uid}.json?auth=${secret}`, {
+      method: "PATCH",
+      contentType: "application/json",
+      payload: JSON.stringify({ score: correctCount, status: statusText, lastUpdated: timestamp })
+    });
+  }
+
+  // Update C: Student Report Cards (Gated at 80% Mastery)
+  const threshold = Math.ceil(TOTAL_QUESTIONS * 0.8);
+  if (correctCount >= threshold) {
+    UrlFetchApp.fetch(`${DB_URL}StudentReportCards/${uid}/${ASSIGNMENT_CODE}.json?auth=${secret}`, {
+      method: "PATCH",
+      contentType: "application/json",
+      payload: JSON.stringify({ score: correctCount, _exists: true })
+    });
+  }
 }

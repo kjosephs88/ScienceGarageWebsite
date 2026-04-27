@@ -4,11 +4,15 @@
     <base target="_top">
     <style>
       body { font-family: Arial, sans-serif; padding: 20px; max-width: 500px; margin: auto;}
-      select, button { padding: 10px; width: 100%; margin-top: 10px; font-size: 16px; }
-      button { background-color: #4CAF50; color: white; border: none; cursor: pointer; }
-      button:disabled { background-color: #ccc; }
+      select, button { padding: 10px; width: 100%; margin-top: 10px; font-size: 16px; border-radius: 5px; }
+      
+      .btn-primary { background-color: #4CAF50; color: white; border: none; cursor: pointer; }
+      .btn-secondary { background-color: #2196F3; color: white; border: none; cursor: pointer; margin-top: 15px;}
+      .btn-tertiary { background-color: #9C27B0; color: white; border: none; cursor: pointer; margin-top: 15px;}
+      
+      button:disabled { background-color: #ccc; cursor: not-allowed; }
       #status { margin-top: 15px; font-weight: bold; color: #333; }
-      /* New style for the scrolling list of synced items */
+      
       #syncedList { 
         margin-top: 15px; 
         padding-left: 20px; 
@@ -21,23 +25,30 @@
         border-radius: 5px;
       }
       #syncedList li { margin-bottom: 5px; }
+      
+      .divider { margin: 25px 0; border-bottom: 1px solid #ddd; }
     </style>
   </head>
   <body>
-    <h2>Classroom to Firebase Sync</h2>
-    <p>Select a class to pull all current assignments and push them to the Realtime Database.</p>
+    <h2>Classroom Gateway Admin</h2>
+    <p>Select a class to execute synchronization tasks.</p>
     
     <select id="classDropdown">
       <option value="">Loading classes...</option>
     </select>
     
-    <button id="syncBtn" onclick="runSync()" disabled>Sync Class Data</button>
+    <button id="syncBtn" class="btn-primary" onclick="runSync()" disabled>1. Sync Assignments for Scheduler</button>
+    
+    <div class="divider"></div>
+    
+    <button id="gradebookBtn" class="btn-secondary" onclick="runGradebookSync()" disabled>2. Sync Assignments to Student Report Cards</button>
+    
+    <button id="teacherBtn" class="btn-tertiary" onclick="runTeacherGradebookSync()" disabled>3. Sync Assignments to Teacher Gradebook</button>
     
     <div id="status"></div>
     <ul id="syncedList"></ul>
 
     <script>
-      // Load classes on startup
       google.script.run.withSuccessHandler(populateDropdown).getActiveClassesForSync();
 
       function populateDropdown(classes) {
@@ -47,6 +58,8 @@
           select.innerHTML += `<option value="${c.id}">${c.name}</option>`;
         });
         document.getElementById('syncBtn').disabled = false;
+        document.getElementById('gradebookBtn').disabled = false;
+        document.getElementById('teacherBtn').disabled = false;
       }
 
       function runSync() {
@@ -58,35 +71,110 @@
           return;
         }
 
-        const btn = document.getElementById('syncBtn');
+        const btn1 = document.getElementById('syncBtn');
+        const btn2 = document.getElementById('gradebookBtn');
+        const btn3 = document.getElementById('teacherBtn');
         const status = document.getElementById('status');
         const listEl = document.getElementById('syncedList');
         
-        btn.disabled = true;
-        btn.innerText = "Syncing...";
+        btn1.disabled = true; btn2.disabled = true; btn3.disabled = true;
+        btn1.innerText = "Syncing...";
+        status.style.color = '#333';
         status.innerText = `Fetching assignments for ${className}... this may take a minute.`;
-        listEl.innerHTML = ""; // Clear the list from any previous sync
+        listEl.innerHTML = ""; 
 
         google.script.run
           .withSuccessHandler(res => {
+            status.style.color = '#4CAF50';
             status.innerText = `Success: Synced ${res.count} items!`;
-            
-            // Populate the list with the titles sent back from the server
             if (res.syncedTitles && res.syncedTitles.length > 0) {
-              res.syncedTitles.forEach(title => {
-                listEl.innerHTML += `<li>${title}</li>`;
-              });
+              res.syncedTitles.forEach(title => { listEl.innerHTML += `<li>${title}</li>`; });
             }
-
-            btn.innerText = "Sync Complete";
-            setTimeout(() => { btn.disabled = false; btn.innerText = "Sync Class Data"; }, 3000);
+            btn1.innerText = "1. Sync Assignments for Scheduler";
+            btn1.disabled = false; btn2.disabled = false; btn3.disabled = false;
           })
           .withFailureHandler(err => {
+            status.style.color = 'red';
             status.innerText = `Error: ${err.message}`;
-            btn.disabled = false;
-            btn.innerText = "Try Again";
+            btn1.innerText = "1. Sync Assignments for Scheduler";
+            btn1.disabled = false; btn2.disabled = false; btn3.disabled = false;
           })
           .syncClassroomToDatabase(classId, className);
+      }
+
+      function runGradebookSync() {
+        const classId = document.getElementById('classDropdown').value;
+        const className = document.getElementById('classDropdown').options[document.getElementById('classDropdown').selectedIndex].text;
+        
+        if (!classId) {
+          alert("Please select a class.");
+          return;
+        }
+
+        const btn1 = document.getElementById('syncBtn');
+        const btn2 = document.getElementById('gradebookBtn');
+        const btn3 = document.getElementById('teacherBtn');
+        const status = document.getElementById('status');
+        const listEl = document.getElementById('syncedList');
+        
+        btn1.disabled = true; btn2.disabled = true; btn3.disabled = true;
+        btn2.innerText = "Syncing Report Cards...";
+        status.style.color = '#333';
+        status.innerText = `Extracting grades and URLs for ${className}...`;
+        listEl.innerHTML = ""; 
+
+        google.script.run
+          .withSuccessHandler(res => {
+            status.style.color = '#2196F3';
+            status.innerText = res.message;
+            btn2.innerText = "2. Sync Assignments to Student Report Cards";
+            btn1.disabled = false; btn2.disabled = false; btn3.disabled = false;
+          })
+          .withFailureHandler(err => {
+            status.style.color = 'red';
+            status.innerText = `Error: ${err.message}`;
+            btn2.innerText = "2. Sync Assignments to Student Report Cards";
+            btn1.disabled = false; btn2.disabled = false; btn3.disabled = false;
+          })
+          .syncGradebook(classId, className);
+      }
+
+      // --- NEW: Function to run the Teacher Gradebook initialization ---
+      function runTeacherGradebookSync() {
+        const classId = document.getElementById('classDropdown').value;
+        const className = document.getElementById('classDropdown').options[document.getElementById('classDropdown').selectedIndex].text;
+        
+        if (!classId) {
+          alert("Please select a class.");
+          return;
+        }
+
+        const btn1 = document.getElementById('syncBtn');
+        const btn2 = document.getElementById('gradebookBtn');
+        const btn3 = document.getElementById('teacherBtn');
+        const status = document.getElementById('status');
+        const listEl = document.getElementById('syncedList');
+        
+        btn1.disabled = true; btn2.disabled = true; btn3.disabled = true;
+        btn3.innerText = "Syncing Teacher Gradebook...";
+        status.style.color = '#333';
+        status.innerText = `Building gradebook matrix for ${className}...`;
+        listEl.innerHTML = ""; 
+
+        google.script.run
+          .withSuccessHandler(res => {
+            status.style.color = '#9C27B0';
+            status.innerText = res.message;
+            btn3.innerText = "3. Sync Assignments to Teacher Gradebook";
+            btn1.disabled = false; btn2.disabled = false; btn3.disabled = false;
+          })
+          .withFailureHandler(err => {
+            status.style.color = 'red';
+            status.innerText = `Error: ${err.message}`;
+            btn3.innerText = "3. Sync Assignments to Teacher Gradebook";
+            btn1.disabled = false; btn2.disabled = false; btn3.disabled = false;
+          })
+          .syncTeacherGradebook(classId, className);
       }
     </script>
   </body>

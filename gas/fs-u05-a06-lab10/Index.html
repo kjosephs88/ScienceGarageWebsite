@@ -383,7 +383,7 @@
         const container = document.getElementById('chart-container');
         if (container && !container.classList.contains('hidden')) {
             clearTimeout(chartTimer);
-            chartTimer = setTimeout(() => plotData(true), 1000);
+            chartTimer = setTimeout(() => plotData(true), 500);
         }
 
         // Clear existing timers so they reset on every keystroke
@@ -509,7 +509,7 @@
         const container = document.getElementById('chart-container');
         if (container && !container.classList.contains('hidden')) {
             clearTimeout(chartTimer);
-            chartTimer = setTimeout(() => plotData(true), 1000);
+            chartTimer = setTimeout(() => plotData(true), 500);
         }
     }
 
@@ -587,7 +587,7 @@
                                 padding: { top: 20 }
                             },
                             ticks: { font: { size: 14, weight: '500' }, color: '#475569' },
-                            grid: { color: '#f1f5f9' },
+                            grid: { color: '#cbd5e1' },
                             min: 0
                         },
                         y: {
@@ -599,7 +599,7 @@
                                 padding: { bottom: 20 }
                             },
                             ticks: { font: { size: 14, weight: '500' }, color: '#475569' },
-                            grid: { color: '#f1f5f9' },
+                            grid: { color: '#cbd5e1' },
                             beginAtZero: true
                         }
                     }
