@@ -40,22 +40,27 @@
     </div>
 
     <div class="main-content" id="main-view">
-        <div class="toolbar">
-            <div class="view-controls">
-                <select id="week-view-select">
-                    <option value="1" selected>1 Week</option>
-                    <option value="2">2 Weeks</option>
-                    <option value="3">3 Weeks</option>
-                </select>
+        <div id="scale-wrapper">
+            <div id="scaled-content">
+                <div class="toolbar">
+                    <div class="view-controls">
+                        <select id="week-view-select">
+                            <option value="1" selected>1 Week</option>
+                            <option value="2">2 Weeks</option>
+                            <option value="3">3 Weeks</option>
+                        </select>
+                    </div>
+                    <div class="week-nav">
+                        <button id="prev-week">&lt; Prev</button>
+                        <h2 id="date-range-display">Select a Class</h2>
+                        <button id="next-week">Next &gt;</button>
+                    </div>
+                    <h1 id="calendar-title" style="margin:0; font-size: 1.2rem; text-align: right; color: #666;">
+                        Calendar</h1>
+                </div>
+                <div id="calendar-container"></div>
             </div>
-            <div class="week-nav">
-                <button id="prev-week">&lt; Prev</button>
-                <h2 id="date-range-display">Select a Class</h2>
-                <button id="next-week">Next &gt;</button>
-            </div>
-            <h1 id="calendar-title" style="margin:0; font-size: 1.2rem; text-align: right; color: #666;">Calendar</h1>
         </div>
-        <div id="calendar-container"></div>
     </div>
 
     <script type="module" src="schedulerApp.js"></script>

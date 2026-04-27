@@ -32,8 +32,10 @@ let currentMonday = (function () {
 const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 let currentClassData = {};
 let currentCalendarConfig = {};
+let currentBellringers = {};
 let activePeriod = "";
 let currentClassFolder = "";
+let currentSubject = "";
 let unsubscribeAssignments = null;
 let unsubscribeConfig = null;
 window.isDragging = false;
@@ -45,7 +47,49 @@ const formatDateLocal = (dateObj) => {
     return `${y}-${m}-${d}`;
 };
 
-// --- AUTH ---
+// --- UI SCALING ---
+function scaleUI() {
+    const baseWidth = 1900;
+    const wrapper = document.getElementById('scale-wrapper');
+    const content = document.getElementById('scaled-content');
+    if (!wrapper || !content) return;
+
+    const availableWidth = wrapper.clientWidth;
+    let scale = availableWidth / baseWidth;
+    if (scale > 1) scale = 1;
+
+    content.style.transform = `scale(${scale})`;
+
+    setTimeout(() => {
+        const scaledHeight = content.getBoundingClientRect().height;
+        wrapper.style.height = `${scaledHeight}px`;
+    }, 10);
+}
+window.addEventListener('resize', scaleUI);
+
+function fitDayOffText() {
+    document.querySelectorAll('.day-off-banner').forEach(banner => {
+        const textSpan = banner.querySelector('.banner-text');
+        if (!textSpan) {
+            // If no banner-text, wrap current content if it looks like a string
+            if (banner.childNodes.length === 1 && banner.childNodes[0].nodeType === 3) {
+                const text = banner.innerText;
+                banner.innerHTML = `<span class="banner-text">${text}</span>`;
+            } else {
+                return;
+            }
+        }
+        const span = banner.querySelector('.banner-text');
+        let fontSize = 24;
+        span.style.fontSize = fontSize + 'px';
+        while (span.scrollWidth > (banner.clientWidth - 20) && fontSize > 10) {
+            fontSize--;
+            span.style.fontSize = fontSize + 'px';
+        }
+    });
+}
+
+// --- AUTH & INITIALIZATION ---
 window.loginTeacher = () => signInWithPopup(auth, provider);
 window.logoutTeacher = () => signOut(auth);
 
@@ -61,6 +105,9 @@ onAuthStateChanged(auth, (user) => {
         authBtn.onclick = window.logoutTeacher;
         sidebar.style.display = "flex";
         mainView.classList.add('edit-mode');
+
+        // 🚀 INITIALIZE LISTENERS INSIDE AUTH BLOCK
+        initEventListeners();
         window.loadInitialClasses();
     } else {
         sidebar.style.display = "none";
@@ -69,6 +116,36 @@ onAuthStateChanged(auth, (user) => {
         authBtn.onclick = window.loginTeacher;
     }
 });
+
+function initEventListeners() {
+    // Prevent multiple listeners if auth state changes multiple times
+    const classSelect = document.getElementById('class-select');
+    classSelect.onchange = (e) => {
+        const folder = e.target.value;
+        const name = e.target.options[e.target.selectedIndex].text;
+        if (folder) window.fetchClassData(folder, name);
+    };
+
+    const topicSelect = document.getElementById('topic-select');
+    topicSelect.onchange = window.renderCalendar;
+
+    const weekViewSelect = document.getElementById('week-view-select');
+    weekViewSelect.onchange = window.renderCalendar;
+
+    document.getElementById('prev-week').onclick = () => {
+        currentMonday.setDate(currentMonday.getDate() - 7);
+        window.renderCalendar();
+    };
+    document.getElementById('next-week').onclick = () => {
+        currentMonday.setDate(currentMonday.getDate() + 7);
+        window.renderCalendar();
+    };
+
+    const settingsBtn = document.getElementById('settings-btn');
+    settingsBtn.onclick = () => {
+        alert("Calendar Settings functionality to be implemented/restored.");
+    };
+}
 
 // --- DATA LOADING ---
 window.loadInitialClasses = async function () {
@@ -80,6 +157,7 @@ window.loadInitialClasses = async function () {
             const uniqueClasses = [];
             Object.keys(allFolders).forEach(folderName => {
                 const folderData = allFolders[folderName];
+                // Find a sample assignment to get the className
                 const sample = Object.values(folderData).find(a => a && a.className);
                 if (sample) uniqueClasses.push({ folder: folderName, name: sample.className });
             });
@@ -89,24 +167,47 @@ window.loadInitialClasses = async function () {
                 opt.value = c.folder; opt.textContent = c.name;
                 classSelect.appendChild(opt);
             });
+
+            // Auto-load first class if exists
+            if (uniqueClasses.length > 0) {
+                classSelect.value = uniqueClasses[0].folder;
+                window.fetchClassData(uniqueClasses[0].folder, uniqueClasses[0].name);
+            }
         }
     } catch (e) { console.error("Initial load failed:", e); }
 };
 
-window.fetchClassData = function (exactFolder, className) {
+window.fetchClassData = async function (exactFolder, className) {
     currentClassFolder = exactFolder;
+
+    // Determine Period
     const pMatch = className.match(/P\d/i) || exactFolder.match(/P\d/i);
     activePeriod = pMatch ? pMatch[0].toUpperCase() : "P0";
-    document.getElementById('calendar-title').innerText = `Calendar - ${activePeriod}`;
+
+    // Determine Subject
+    if (className.toLowerCase().includes("chemistry")) currentSubject = "Chemistry";
+    else if (className.toLowerCase().includes("physics")) currentSubject = "Physics";
+    else if (className.toLowerCase().includes("forensic")) currentSubject = "Forensics";
+    else currentSubject = "Science";
+
+    document.getElementById('calendar-title').innerText = `${className} - ${activePeriod}`;
 
     if (unsubscribeAssignments) unsubscribeAssignments();
     if (unsubscribeConfig) unsubscribeConfig();
 
+    // 1. Fetch Bellringers (Once)
+    try {
+        const bellSnap = await get(ref(db, `bellringers/${currentSubject}`));
+        currentBellringers = bellSnap.exists() ? bellSnap.val() : {};
+    } catch (e) { console.error("Bellringer fetch failed", e); }
+
+    // 2. Live Calendar Config
     unsubscribeConfig = onValue(ref(db, `calendarConfig/${activePeriod}`), (snap) => {
         currentCalendarConfig = snap.exists() ? snap.val() : {};
         window.renderCalendar();
     });
 
+    // 3. Live Assignments
     unsubscribeAssignments = onValue(ref(db, `schedulerAssignments/${exactFolder}`), (snap) => {
         currentClassData = {};
         if (snap.exists()) {
@@ -133,14 +234,15 @@ window.buildTopicDropdown = function () {
     });
 };
 
-// --- RENDER LOGIC: FIXED WEEK CLAMP & NAV ---
+// --- RENDER LOGIC ---
 window.renderCalendar = function () {
     const container = document.getElementById('calendar-container');
     const tank = document.getElementById('holding-tank');
     if (!container || !tank) return;
-    container.innerHTML = ''; tank.innerHTML = '';
 
-    // Clamp to max 3 weeks
+    container.innerHTML = '';
+    tank.innerHTML = '';
+
     let numWeeks = parseInt(document.getElementById('week-view-select').value) || 1;
     if (numWeeks > 3) numWeeks = 3;
 
@@ -150,7 +252,8 @@ window.renderCalendar = function () {
     const startDateStr = renderDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
     for (let w = 0; w < numWeeks; w++) {
-        const grid = document.createElement('div'); grid.className = 'week-grid';
+        const grid = document.createElement('div');
+        grid.className = 'week-grid';
         for (let d = 0; d < 5; d++) {
             const dStr = formatDateLocal(renderDate);
             const conf = currentCalendarConfig[dStr] || {};
@@ -167,20 +270,57 @@ window.renderCalendar = function () {
 
     window.initSortables();
     window.placeAssignments();
+
+    scaleUI();
+    setTimeout(fitDayOffText, 50);
 };
 
 window.createDayColumn = (dateObj, isDouble, dStr, conf) => {
-    const col = document.createElement('div'); col.className = 'day-column';
+    const col = document.createElement('div');
+    col.className = 'day-column';
     const display = `${dateObj.toLocaleString('en-US', { month: 'short' })} ${dateObj.getDate()}`;
+    const dayName = dayNames[dateObj.getDay() - 1];
+
     if (conf.isDayOff) {
-        col.innerHTML = `<div class="day-header"><span class="day-name">${dayNames[dateObj.getDay() - 1]}</span><div class="day-date">${display}</div></div><div class="day-off-banner">${conf.name}</div><div class="day-list" id="${dStr}" style="display:none"></div>`;
+        col.innerHTML = `
+            <div class="day-header">
+                <span class="day-name">${dayName}</span>
+                <div class="day-date">${display}</div>
+            </div>
+            <div class="day-off-banner"><span class="banner-text">${conf.name}</span></div>
+            <div class="day-list" id="${dStr}" style="display:none"></div>
+        `;
     } else {
-        col.innerHTML = `<div class="day-header"><span class="day-name">${dayNames[dateObj.getDay() - 1]}</span><div class="day-date">${display}</div></div><div class="day-list" id="${dStr}"></div><div class="day-footer"><span class="period-text">${isDouble ? 'Double' : 'Single'}</span></div>`;
+        let bannerHTML = conf.name ? `<div class="special-day-banner">${conf.name}</div>` : '';
+
+        let bellringerHTML = '';
+        const bellUrl = currentBellringers[dStr];
+        if (bellUrl) {
+            bellringerHTML = `
+                <div class="bellringer-container">
+                    <a href="${bellUrl}" target="_blank" class="bellringer-link">🔔 BELLRINGER</a>
+                </div>`;
+        } else {
+            bellringerHTML = `<div class="bellringer-container"></div>`;
+        }
+
+        col.innerHTML = `
+            <div class="day-header">
+                <span class="day-name">${dayName}</span>
+                <div class="day-date">${display}</div>
+            </div>
+            ${bannerHTML}
+            ${bellringerHTML}
+            <div class="day-list" id="${dStr}"></div>
+            <div class="day-footer">
+                <span class="period-text">${isDouble ? 'Double Period' : 'Single Period'}</span>
+            </div>
+        `;
     }
     return col;
 };
 
-// --- PLACE ASSIGNMENTS: FILTER BELLRINGERS ---
+// --- PLACE ASSIGNMENTS ---
 window.placeAssignments = function () {
     const topic = document.getElementById('topic-select').value;
     const queues = { "holding-tank": [] };
@@ -189,16 +329,25 @@ window.placeAssignments = function () {
     Object.entries(currentClassData).forEach(([key, a]) => {
         if (!a) return;
 
-        // 🚨 SAFETY: Hide Bellringers if they still exist in the node
+        // Skip assignments with "bellringer" in topic name (as they are handled by live links)
         const tName = (a.topicName || "").toLowerCase();
         if (tName.includes("bellringer")) return;
 
         const dates = a.scheduledDates || ["unassigned"];
         const isUn = dates.includes("unassigned");
+
+        // Topic Filtering for Holding Tank
         if (isUn && topic !== 'all' && a.topicName !== topic && !a.isCustomNote) return;
 
-        const html = `<div class="assignment-item ${a.isCustomNote ? 'custom-note-item' : ''}" data-db-key="${key}"><span class="item-title">${a.title}</span></div>`;
-        dates.forEach(d => { if (queues[d]) queues[d].push({ html, order: (a.dayOrder?.[d] ?? 999) }); });
+        const html = `
+            <div class="assignment-item ${a.isCustomNote ? 'custom-note-item' : ''}" data-db-key="${key}">
+                ${!a.isCustomNote ? '<span class="item-prefix">Complete assignment:</span>' : ''}
+                <span class="item-title">${a.title}</span>
+            </div>`;
+
+        dates.forEach(d => {
+            if (queues[d]) queues[d].push({ html, order: (a.dayOrder?.[d] ?? 999) });
+        });
     });
 
     Object.keys(queues).forEach(id => {
@@ -209,7 +358,9 @@ window.placeAssignments = function () {
 
 window.initSortables = () => {
     const opt = {
-        group: 'shared', animation: 150, onEnd: (evt) => {
+        group: 'shared',
+        animation: 150,
+        onEnd: (evt) => {
             const key = evt.item.dataset.dbKey;
             const to = evt.to.id === 'holding-tank' ? 'unassigned' : evt.to.id;
             window.syncToFirebase(key, to);
@@ -225,23 +376,4 @@ window.syncToFirebase = async (key, toId) => {
     const path = `schedulerAssignments/${currentClassFolder}/${assig._fbKey}`;
     const newDates = toId === 'unassigned' ? ['unassigned'] : [toId];
     await update(ref(db), { [`${path}/scheduledDates`]: newDates });
-};
-
-// --- EVENT LISTENERS: FIXED FOR MODULAR SCRIPTS ---
-document.getElementById('class-select').addEventListener('change', (e) => {
-    const folder = e.target.value;
-    const name = e.target.options[e.target.selectedIndex].text;
-    if (folder) window.fetchClassData(folder, name);
-});
-
-document.getElementById('topic-select').addEventListener('change', window.renderCalendar);
-document.getElementById('week-view-select').addEventListener('change', window.renderCalendar);
-
-document.getElementById('prev-week').onclick = () => {
-    currentMonday.setDate(currentMonday.getDate() - 7);
-    window.renderCalendar();
-};
-document.getElementById('next-week').onclick = () => {
-    currentMonday.setDate(currentMonday.getDate() + 7);
-    window.renderCalendar();
 };
