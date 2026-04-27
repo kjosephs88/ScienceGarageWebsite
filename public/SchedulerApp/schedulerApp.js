@@ -2,6 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebas
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 import { getDatabase, ref, get, update, remove, push, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
+// 🛑🛑🛑 FIREBASE CONFIG 🛑🛑🛑
 const firebaseConfig = {
     apiKey: "AIzaSyCcpjuH1qv9IUDJJQR_5ms18TBRS8UFaV8",
     authDomain: "scigarage.firebaseapp.com",
@@ -18,7 +19,7 @@ const auth = getAuth(app);
 const db = getDatabase(app);
 const provider = new GoogleAuthProvider();
 
-// App State
+// GLOBAL STATE
 let currentMonday = (function () {
     let now = new Date();
     now.setHours(12, 0, 0, 0);
@@ -31,7 +32,6 @@ let currentMonday = (function () {
 const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 let currentClassData = {};
 let currentCalendarConfig = {};
-let currentBellringers = {};
 let activePeriod = "";
 let currentClassFolder = "";
 let unsubscribeAssignments = null;
@@ -81,9 +81,7 @@ window.loadInitialClasses = async function () {
             Object.keys(allFolders).forEach(folderName => {
                 const folderData = allFolders[folderName];
                 const sample = Object.values(folderData).find(a => a && a.className);
-                if (sample) {
-                    uniqueClasses.push({ folder: folderName, name: sample.className });
-                }
+                if (sample) uniqueClasses.push({ folder: folderName, name: sample.className });
             });
             classSelect.innerHTML = '<option value="">-- Select a Class --</option>';
             uniqueClasses.sort((a, b) => a.name.localeCompare(b.name)).forEach(c => {
@@ -124,7 +122,6 @@ window.fetchClassData = function (exactFolder, className) {
     });
 };
 
-// --- UI RENDERING ---
 window.buildTopicDropdown = function () {
     const topicSelect = document.getElementById('topic-select');
     const topics = new Set();
@@ -136,14 +133,21 @@ window.buildTopicDropdown = function () {
     });
 };
 
+// --- RENDER LOGIC: FIXED WEEK CLAMP & NAV ---
 window.renderCalendar = function () {
     const container = document.getElementById('calendar-container');
     const tank = document.getElementById('holding-tank');
     if (!container || !tank) return;
     container.innerHTML = ''; tank.innerHTML = '';
 
-    const numWeeks = parseInt(document.getElementById('week-view-select').value) || 1;
+    // Clamp to max 3 weeks
+    let numWeeks = parseInt(document.getElementById('week-view-select').value) || 1;
+    if (numWeeks > 3) numWeeks = 3;
+
     let renderDate = new Date(currentMonday);
+    const dateRangeDisplay = document.getElementById('date-range-display');
+
+    const startDateStr = renderDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
     for (let w = 0; w < numWeeks; w++) {
         const grid = document.createElement('div'); grid.className = 'week-grid';
@@ -156,6 +160,11 @@ window.renderCalendar = function () {
         container.appendChild(grid);
         renderDate.setDate(renderDate.getDate() + 2);
     }
+
+    const endDate = new Date(renderDate);
+    endDate.setDate(renderDate.getDate() - 3);
+    dateRangeDisplay.innerText = `${startDateStr} - ${endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+
     window.initSortables();
     window.placeAssignments();
 };
@@ -171,6 +180,7 @@ window.createDayColumn = (dateObj, isDouble, dStr, conf) => {
     return col;
 };
 
+// --- PLACE ASSIGNMENTS: FILTER BELLRINGERS ---
 window.placeAssignments = function () {
     const topic = document.getElementById('topic-select').value;
     const queues = { "holding-tank": [] };
@@ -178,8 +188,14 @@ window.placeAssignments = function () {
 
     Object.entries(currentClassData).forEach(([key, a]) => {
         if (!a) return;
+
+        // 🚨 SAFETY: Hide Bellringers if they still exist in the node
+        const tName = (a.topicName || "").toLowerCase();
+        if (tName.includes("bellringer")) return;
+
         const dates = a.scheduledDates || ["unassigned"];
-        if (dates.includes("unassigned") && topic !== 'all' && a.topicName !== topic && !a.isCustomNote) return;
+        const isUn = dates.includes("unassigned");
+        if (isUn && topic !== 'all' && a.topicName !== topic && !a.isCustomNote) return;
 
         const html = `<div class="assignment-item ${a.isCustomNote ? 'custom-note-item' : ''}" data-db-key="${key}"><span class="item-title">${a.title}</span></div>`;
         dates.forEach(d => { if (queues[d]) queues[d].push({ html, order: (a.dayOrder?.[d] ?? 999) }); });
@@ -211,7 +227,7 @@ window.syncToFirebase = async (key, toId) => {
     await update(ref(db), { [`${path}/scheduledDates`]: newDates });
 };
 
-// --- EVENT LISTENERS ---
+// --- EVENT LISTENERS: FIXED FOR MODULAR SCRIPTS ---
 document.getElementById('class-select').addEventListener('change', (e) => {
     const folder = e.target.value;
     const name = e.target.options[e.target.selectedIndex].text;
@@ -220,5 +236,12 @@ document.getElementById('class-select').addEventListener('change', (e) => {
 
 document.getElementById('topic-select').addEventListener('change', window.renderCalendar);
 document.getElementById('week-view-select').addEventListener('change', window.renderCalendar);
-document.getElementById('prev-week').onclick = () => { currentMonday.setDate(currentMonday.getDate() - 7); window.renderCalendar(); };
-document.getElementById('next-week').onclick = () => { currentMonday.setDate(currentMonday.getDate() + 7); window.renderCalendar(); };
+
+document.getElementById('prev-week').onclick = () => {
+    currentMonday.setDate(currentMonday.getDate() - 7);
+    window.renderCalendar();
+};
+document.getElementById('next-week').onclick = () => {
+    currentMonday.setDate(currentMonday.getDate() + 7);
+    window.renderCalendar();
+};
