@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Multiple Choice Review</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --primary: #38bdf8;
+            --success: #10b981;
+            --danger: #ef4444;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        /* Anti-flicker lock */
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+            -webkit-tap-highlight-color: transparent; 
+        }
+
+        html, body { 
+            overflow: hidden; 
+            width: 100vw; 
+            height: 100vh;
+            background-color: var(--bg-color);
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-image: radial-gradient(circle at 50% -20%, #1e1b4b, #0f172a);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            width: 100%;
+            padding: 20px;
+            text-align: center;
+            background: #0f172a;
+            border-bottom: 1px solid #1e293b;
+            z-index: 100;
+            flex-shrink: 0; 
+        }
+        
+        h1 { font-size: 1.4rem; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 1px; margin: 0; }
+        
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .stat-badge { padding: 4px 10px; border-radius: 20px; background: #1e293b; border: 1px solid #334155; }
+        .stat-mastered { color: var(--success); }
+        .stat-learning { color: #f59e0b; }
+
+        .progress-container { width: 100%; height: 4px; background: #1e293b; margin-top: 20px; border-radius: 2px; overflow: hidden; }
+        .progress-bar { height: 100%; background: var(--primary); width: 0%; transition: width 0.3s ease; }
+
+        /* Workspace Layout */
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start; 
+            padding: 4vh 20px 20px 20px; 
+            width: 100%;
+        }
+
+        /* Increased height slightly to accommodate 4 MC buttons comfortably */
+        .scene {
+            width: 100%;
+            max-width: 350px; 
+            height: 55vh;     
+            min-height: 380px;
+            max-height: 480px; 
+            perspective: 1200px; 
+            flex-shrink: 1;
+            margin-bottom: 20px; 
+        }
+
+        .card {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+            transform-style: preserve-3d;
+            transform-origin: center center;
+            will-change: transform; 
+        }
+
+        .card.is-flipped { transform: rotateY(180deg); }
+
+        .card-face {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            border-radius: 24px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start; /* Changed to flex-start so content flows nicely */
+            align-items: center;
+            text-align: center;
+            border: 2px solid #334155;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+        }
+
+        .card-face-front { background: linear-gradient(145deg, #1e293b, #0f172a); }
+        .card-face-back { background: linear-gradient(145deg, #064e3b, #0f172a); transform: rotateY(180deg); }
+
+        .tag, .card-text, .result-header, .options-container { transform: translateZ(20px); -webkit-transform: translateZ(20px); }
+        
+        .tag { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; color: var(--primary); margin-bottom: 10px; }
+        .card-text { font-size: 1.05rem; font-weight: 600; line-height: 1.4; margin-bottom: 15px; width: 100%; }
+        
+        /* Multiple Choice Styles */
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 100%;
+            margin-top: auto;
+            margin-bottom: auto;
+        }
+
+        .mc-option {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 12px 15px;
+            border-radius: 10px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.9rem;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .mc-option:active { transform: scale(0.98); }
+        .mc-correct { background: rgba(16, 185, 129, 0.2); border-color: var(--success); }
+        .mc-wrong { background: rgba(239, 68, 68, 0.2); border-color: var(--danger); }
+        
+        .disabled { pointer-events: none; opacity: 0.8; }
+
+        /* Back Card Styles */
+        .result-header { font-size: 1.6rem; font-weight: 800; margin-bottom: 15px; }
+        .result-correct { color: var(--success); }
+        .result-wrong { color: var(--danger); }
+        
+        .explanation { 
+            font-size: 0.95rem; 
+            font-weight: 400; 
+            text-align: left; 
+            background: rgba(0,0,0,0.2); 
+            padding: 15px; 
+            border-radius: 12px; 
+            margin-top: 10px;
+        }
+
+        .actions {
+            display: flex;
+            width: 100%;
+            max-width: 350px;
+            height: 60px; 
+            flex-shrink: 0;
+            opacity: 0;
+            pointer-events: none; 
+            transition: opacity 0.3s ease; 
+        }
+        
+        .actions.visible { opacity: 1; pointer-events: auto; }
+
+        .btn-continue {
+            width: 100%;
+            height: 100%;
+            border-radius: 14px;
+            border: none;
+            font-size: 1rem;
+            font-weight: 800;
+            cursor: pointer;
+            text-transform: uppercase;
+            color: #fff;
+            background: linear-gradient(135deg, var(--primary), #0284c7);
+            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3);
+        }
+
+        #end-screen { display: none; flex-direction: column; align-items: center; text-align: center; margin-top: 10vh; }
+        #end-screen h2 { font-size: 2.2rem; color: var(--success); margin-bottom: 10px; }
+        .btn-reset { margin-top: 30px; background: var(--primary); padding: 15px 30px; width: auto; border:none; border-radius:12px; color:#fff; font-weight:bold;}
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Multiple Choice Review</h1>
+        <div class="stats">
+            <span class="stat-badge stat-unseen">New: <span id="count-unseen">0</span></span>
+            <span class="stat-badge stat-learning">Try Again: <span id="count-learning">0</span></span>
+            <span class="stat-badge stat-mastered">Known: <span id="count-mastered">0</span></span>
+        </div>
+        <div class="progress-container"><div class="progress-bar" id="progress-bar"></div></div>
+    </header>
+
+    <main>
+        <div id="end-screen">
+            <h2>Session Done! 🎉</h2>
+            <p>You've cleared the deck.</p>
+            <button class="btn-reset" onclick="resetDeck()">Restart Deck</button>
+        </div>
+
+        <div class="scene" id="card-scene">
+            <div class="card" id="flashcard">
+                <div class="card-face card-face-front">
+                    <div class="tag">Question</div>
+                    <div class="card-text" id="card-front-text">Loading...</div>
+                    <div class="options-container" id="options-container">
+                        </div>
+                </div>
+                
+                <div class="card-face card-face-back" id="card-back-bg">
+                    <div class="tag" id="back-tag">Result</div>
+                    <div class="result-header" id="result-header">Correct!</div>
+                    <div class="explanation" id="card-back-text">Loading...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="actions" id="action-buttons">
+            <button class="btn-continue" onclick="nextCard()">Next Question ➔</button>
+        </div>
+    </main>
+
+    <script>
+        // Updated Data Structure: Question, 4 Options, Correct Index (0-3), Explanation
+        const rawDeckData = [
+            { 
+                q: "What are the two main types of compounds in chemistry?", 
+                opts: ["Acids and Bases", "Ionic and Molecular", "Organic and Inorganic", "Homogeneous and Heterogeneous"],
+                correct: 1,
+                exp: "Ionic compounds are formed by ionic bonds (metal + non-metal), while molecular compounds are formed by covalent bonds (non-metals)."
+            },
+            { 
+                q: "Between what types of elements does an ionic bond occur?", 
+                opts: ["Two non-metals", "Two metals", "A metal and a non-metal", "Noble gases only"],
+                correct: 2,
+                exp: "Ionic bonds require the transfer of electrons from a metal (which forms a positive ion) to a non-metal (which forms a negative ion)."
+            },
+            { 
+                q: "How do you name a binary ionic compound?", 
+                opts: ["Metal ion + nonmetal ending in '-ide'", "Nonmetal + metal ending in '-ate'", "Metal + nonmetal ending in '-ine'", "Use prefixes like mono- and di-"],
+                correct: 0,
+                exp: "The positive metal ion is written first, followed by the negative nonmetal ion with its ending changed to '-ide' (e.g., Sodium chloride)."
+            },
+            { 
+                q: "What does the Stock System use to show the charge on a positive metal ion?", 
+                opts: ["Greek prefixes", "Subscripts", "Roman numerals", "Superscripts"],
+                correct: 2,
+                exp: "Roman numerals are placed in parentheses after the metal's name to indicate its charge, such as iron(III) for Fe³⁺."
+            },
+            { 
+                q: "What are the covalent prefixes for numbers 1 through 4?", 
+                opts: ["Un-, bi-, tri-, quad-", "Mono-, di-, tri-, tetra-", "Meth-, eth-, prop-, but-", "Primary, secondary, tertiary, quart-"],
+                correct: 1,
+                exp: "Covalent naming uses mono- (1), di- (2), tri- (3), and tetra- (4) to denote the number of atoms."
+            },
+            { 
+                q: "What is a hydrate?", 
+                opts: ["A dissolved acid", "A compound that produces hydrogen", "A liquid metal", "An ionic compound with water molecules in its crystal structure"],
+                correct: 3,
+                exp: "Hydrates physically trap water molecules within their crystalline structure, represented by a dot (e.g., CuSO₄ • 5H₂O)."
+            },
+            { 
+                q: "What does an empirical formula express?", 
+                opts: ["The exact number of atoms in a molecule", "The lowest whole number ratio of atoms", "The spatial geometry of a compound", "The molar mass of a substance"],
+                correct: 1,
+                exp: "An empirical formula is the simplest, most reduced ratio of elements in a compound. Ionic compounds are always empirical."
+            },
+            { 
+                q: "What do the phase indicators (s), (g), (l), and (aq) stand for?", 
+                opts: ["Solid, gas, liquid, aqueous", "Solute, gas, lipid, aqua", "Suspension, gravity, liter, aqueous", "Synthesis, grams, liquid, acid"],
+                correct: 0,
+                exp: "(s) Solid, (g) Gas, (l) Liquid, and (aq) Aqueous meaning the substance is dissolved in water."
+            },
+            { 
+                q: "Describe a single replacement reaction.", 
+                opts: ["Two reactants form one product", "One reactant breaks into two products", "A metal replaces another metal in a compound", "Two ionic compounds switch ions"],
+                correct: 2,
+                exp: "In a single replacement, a more active free element takes the place of a less active element in a compound."
+            },
+            { 
+                q: "What is an endothermic process?", 
+                opts: ["A process that releases energy", "A process that absorbs energy", "A process that creates a vacuum", "A process that yields a gas"],
+                correct: 1,
+                exp: "Endothermic reactions absorb energy from their surroundings, meaning energy is treated as a reactant."
+            },
+            { 
+                q: "What happens to a species during oxidation?", 
+                opts: ["It gains protons", "It loses protons", "It gains electrons", "It loses electrons"],
+                correct: 3,
+                exp: "LEO the lion says GER: Losing Electrons is Oxidation. This causes its oxidation state to increase."
+            },
+            { 
+                q: "What characterizes a voltaic cell?", 
+                opts: ["Requires a battery to operate", "Produces spontaneous electrical current", "Only operates at high temperatures", "Does not contain a salt bridge"],
+                correct: 1,
+                exp: "A voltaic (galvanic) cell uses a spontaneous redox chemical reaction to generate electricity, like a standard battery."
+            }
+        ];
+
+        let unseen = [];
+        let learning = [];
+        let mastered = [];
+        let currentCard = null;
+        let isFlipped = false;
+        let currentIsCorrect = false;
+
+        const cardEl = document.getElementById('flashcard');
+        const frontText = document.getElementById('card-front-text');
+        const optsContainer = document.getElementById('options-container');
+        const backText = document.getElementById('card-back-text');
+        const resultHeader = document.getElementById('result-header');
+        const actionsEl = document.getElementById('action-buttons');
+        const sceneEl = document.getElementById('card-scene');
+
+        function initApp() {
+            const saved = sessionStorage.getItem('chemDeckMC'); 
+            if (saved) {
+                const p = JSON.parse(saved);
+                unseen = p.unseen; learning = p.learning; mastered = p.mastered;
+            } else {
+                unseen = rawDeckData.map((c, i) => ({ ...c, id: i })).sort(() => Math.random() - 0.5);
+            }
+            updateUI();
+            drawNextCard();
+        }
+
+        function drawNextCard() {
+            if (unseen.length === 0 && learning.length === 0) {
+                sceneEl.style.display = 'none';
+                actionsEl.style.display = 'none';
+                document.getElementById('end-screen').style.display = 'flex';
+                return;
+            }
+            
+            currentCard = (unseen.length > 0) ? unseen.shift() : learning.shift();
+            
+            // Reset UI
+            isFlipped = false;
+            cardEl.classList.remove('is-flipped');
+            actionsEl.classList.remove('visible');
+            
+            setTimeout(() => {
+                // Populate Question
+                frontText.innerHTML = currentCard.q;
+                
+                // Populate Options
+                optsContainer.innerHTML = "";
+                currentCard.opts.forEach((opt, index) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'mc-option';
+                    btn.innerHTML = opt;
+                    btn.onclick = () => selectOption(index, btn);
+                    optsContainer.appendChild(btn);
+                });
+            }, 300); // Wait for the reverse flip animation to finish
+        }
+
+        function selectOption(selectedIndex, btnElement) {
+            // Lock all buttons to prevent double-clicking
+            const allBtns = optsContainer.querySelectorAll('.mc-option');
+            allBtns.forEach(b => b.classList.add('disabled'));
+
+            // Check Answer
+            currentIsCorrect = (selectedIndex === currentCard.correct);
+
+            // Highlight chosen button
+            if (currentIsCorrect) {
+                btnElement.classList.add('mc-correct');
+            } else {
+                btnElement.classList.add('mc-wrong');
+                // Highlight the actual correct one too
+                allBtns[currentCard.correct].classList.add('mc-correct');
+            }
+
+            // Prep the Back of the Card
+            setTimeout(() => {
+                if (currentIsCorrect) {
+                    resultHeader.innerText = "Correct!";
+                    resultHeader.className = "result-header result-correct";
+                } else {
+                    resultHeader.innerText = "Incorrect";
+                    resultHeader.className = "result-header result-wrong";
+                }
+                
+                // Add the correct answer briefly before the explanation
+                const correctText = currentCard.opts[currentCard.correct];
+                backText.innerHTML = `<strong>Answer:</strong> ${correctText}<br><br>${currentCard.exp}`;
+
+                // Trigger Flip
+                flipCard();
+            }, 600); // Short delay so user can see the red/green highlight before flipping
+        }
+
+        function flipCard() {
+            isFlipped = true;
+            cardEl.classList.add('is-flipped');
+            actionsEl.classList.add('visible'); // Show "Next Question" button
+        }
+
+        function nextCard() {
+            // Record the result
+            if (currentIsCorrect) {
+                mastered.push(currentCard);
+            } else {
+                learning.push(currentCard); // Sends back to the "Try Again" pile
+            }
+            
+            save();
+            updateUI();
+            
+            // Swipe Out Animation (Unchanged)
+            sceneEl.style.transition = 'all 0.3s ease';
+            sceneEl.style.transform = 'translateX(-100vw) rotate(-10deg)';
+            sceneEl.style.opacity = '0';
+            
+            setTimeout(() => {
+                drawNextCard();
+                sceneEl.style.transition = 'none';
+                sceneEl.style.transform = 'translateX(100vw)';
+                
+                setTimeout(() => {
+                    sceneEl.style.transition = 'all 0.4s cubic-bezier(0.4, 0.2, 0.2, 1)';
+                    sceneEl.style.transform = 'translateX(0)';
+                    sceneEl.style.opacity = '1';
+                }, 50);
+            }, 300);
+        }
+
+        function updateUI() {
+            document.getElementById('count-unseen').innerText = unseen.length;
+            document.getElementById('count-learning').innerText = learning.length;
+            document.getElementById('count-mastered').innerText = mastered.length;
+            document.getElementById('progress-bar').style.width = `${(mastered.length / rawDeckData.length) * 100}%`;
+        }
+
+        function resetDeck() {
+            sessionStorage.removeItem('chemDeckMC');
+            location.reload();
+        }
+
+        function save() {
+            sessionStorage.setItem('chemDeckMC', JSON.stringify({ unseen, learning, mastered }));
+        }
+
+        window.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>

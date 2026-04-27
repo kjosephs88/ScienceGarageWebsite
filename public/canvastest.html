@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Pro Freehand Canvas</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f8fafc;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    
+    .canvas-container {
+      width: 92vw;
+      height: 50vh;
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+      overflow: hidden;
+      touch-action: none; 
+      position: relative;
+      border: 1px solid #e2e8f0;
+    }
+
+    canvas { display: block; width: 100%; height: 100%; }
+    
+    .toolbar {
+      width: 92vw;
+      margin-top: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      background: white;
+      padding: 16px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+    }
+
+    .control-group { display: flex; flex-direction: column; gap: 4px; }
+    label { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; }
+    
+    select, input[type="range"] {
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #cbd5e1;
+      font-size: 14px;
+    }
+
+    .actions {
+      grid-column: 1 / -1;
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    
+    button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      background: #1e293b;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    
+    button#copyBtn { background: #2563eb; }
+    button:disabled { background: #e2e8f0; color: #94a3b8; }
+  </style>
+</head>
+<body>
+
+  <div class="canvas-container">
+    <canvas id="drawCanvas"></canvas>
+  </div>
+  
+  <div class="toolbar">
+    <div class="control-group">
+      <label>Brush Size</label>
+      <input type="range" id="sizeSlider" min="2" max="12" value="6">
+    </div>
+
+    <div class="control-group">
+      <label>Pressure Easing</label>
+      <select id="easingSelect">
+        <option value="linear">Linear</option>
+        <option value="easeInQuad">Ease In</option>
+        <option value="easeOutQuad">Ease Out</option>
+        <option value="easeInOutCubic" selected>Cubic (Natural)</option>
+      </select>
+    </div>
+
+    <div class="control-group" style="flex-direction:row; align-items:center; gap:10px;">
+      <input type="checkbox" id="taperCheck" checked>
+      <label for="taperCheck" style="margin:0;">Enable Tapering</label>
+    </div>
+
+    <div class="actions">
+      <button id="undoBtn" disabled>Undo</button>
+      <button id="clearBtn">Clear</button>
+      <button id="copyBtn">Copy SVG</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { getStroke } from "https://esm.sh/perfect-freehand@1.2.0";
+
+    const canvas = document.getElementById("drawCanvas");
+    const ctx = canvas.getContext("2d");
+    const sizeSlider = document.getElementById("sizeSlider");
+    const easingSelect = document.getElementById("easingSelect");
+    const taperCheck = document.getElementById("taperCheck");
+
+    let history = [];
+    let historyStep = -1;
+    let currentPath = [];
+    let isDrawing = false;
+    let activePointerId = null;
+
+    // Easing functions for the pressure
+    const easings = {
+      linear: (t) => t,
+      easeInQuad: (t) => t * t,
+      easeOutQuad: (t) => t * (2 - t),
+      easeInOutCubic: (t) => t < 0.5 ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1
+    };
+
+    function getOptions(size) {
+      const useTaper = taperCheck.checked;
+      return {
+        size: size,
+        thinning: 0.5,
+        smoothing: 0.5,
+        streamline: 0.5,
+        simulatePressure: true,
+        easing: easings[easingSelect.value],
+        start: { taper: useTaper ? 20 : 0, cap: true },
+        end: { taper: useTaper ? 20 : 0, cap: true }
+      };
+    }
+
+    function resizeCanvas() {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+      render();
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function render() {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      ctx.clearRect(0, 0, rect.width, rect.height);
+      ctx.fillStyle = "#1e293b";
+
+      for (let i = 0; i <= historyStep; i++) {
+        const item = history[i];
+        drawStroke(item.points, item.options);
+      }
+      
+      if (currentPath.length > 0) {
+        drawStroke(currentPath, getOptions(parseInt(sizeSlider.value)));
+      }
+      document.getElementById("undoBtn").disabled = historyStep < 0;
+    }
+
+    function drawStroke(points, options) {
+      const outline = getStroke(points, options);
+      if (outline.length === 0) return;
+      
+      const d = outline.reduce((acc, [x0, y0], i, arr) => {
+        const [x1, y1] = arr[(i + 1) % arr.length];
+        acc.push(x0, y0, (x0 + x1) / 2, (y0 + y1) / 2);
+        return acc;
+      }, ["M", ...outline[0], "Q"]);
+      d.push("Z");
+      
+      const path = new Path2D(d.join(" "));
+      ctx.fill(path);
+    }
+
+    canvas.addEventListener("pointerdown", (e) => {
+      if (activePointerId !== null) return;
+      activePointerId = e.pointerId;
+      isDrawing = true;
+      const rect = canvas.getBoundingClientRect();
+      currentPath = [[e.clientX - rect.left, e.clientY - rect.top, e.pressure || 0.5]];
+      canvas.setPointerCapture(e.pointerId);
+      render();
+    });
+
+    canvas.addEventListener("pointermove", (e) => {
+      if (!isDrawing || e.pointerId !== activePointerId) return;
+      const rect = canvas.getBoundingClientRect();
+      currentPath.push([e.clientX - rect.left, e.clientY - rect.top, e.pressure || 0.5]);
+      requestAnimationFrame(render);
+    });
+
+    const endDrawing = (e) => {
+      if (!isDrawing || e.pointerId !== activePointerId) return;
+      isDrawing = false;
+      activePointerId = null;
+      if (currentPath.length > 0) {
+        history = history.slice(0, historyStep + 1);
+        history.push({ points: [...currentPath], options: getOptions(parseInt(sizeSlider.value)) });
+        historyStep++;
+      }
+      currentPath = [];
+      render();
+    };
+
+    canvas.addEventListener("pointerup", endDrawing);
+    canvas.addEventListener("pointercancel", endDrawing);
+
+    document.getElementById("undoBtn").onclick = () => { if (historyStep >= 0) { historyStep--; render(); } };
+    document.getElementById("clearBtn").onclick = () => { history = []; historyStep = -1; render(); };
+    
+    document.getElementById("copyBtn").onclick = () => {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      let paths = history.slice(0, historyStep + 1).map(item => {
+        const outline = getStroke(item.points, item.options);
+        const d = outline.reduce((acc, [x0, y0], i, arr) => {
+          const [x1, y1] = arr[(i + 1) % arr.length];
+          acc.push(x0, y0, (x0 + x1) / 2, (y0 + y1) / 2);
+          return acc;
+        }, ["M", ...outline[0], "Q"]);
+        d.push("Z");
+        return `<path d="${d.join(" ")}" fill="#1e293b" />`;
+      }).join("\n");
+
+      const svg = `<svg viewBox="0 0 ${rect.width} ${rect.height}" xmlns="http://www.w3.org/2000/svg">${paths}</svg>`;
+      navigator.clipboard.writeText(svg).then(() => alert("SVG Copied!"));
+    };
+  </script>
+</body>
+</html>
