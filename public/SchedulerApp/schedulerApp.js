@@ -68,7 +68,7 @@ function formatDateLocal(dateObj) {
     return `${y}-${m}-${d}`;
 }
 
-// --- NEW: THE OPTIMIZED MASTER CALENDAR ENGINE ---
+// --- MASTER CALENDAR ENGINE ---
 window.updateMasterCalendarState = async function (periodsToUpdate = [activePeriod]) {
     const updates = {};
 
@@ -144,7 +144,7 @@ onAuthStateChanged(auth, (user) => {
     }
 });
 
-async function loadInitialClasses() {
+window.loadInitialClasses = async function () {
     try {
         const snapshot = await get(ref(db, 'schedulerAssignments'));
 
@@ -180,6 +180,7 @@ async function loadInitialClasses() {
                 if (selectedId) {
                     const pMatch = selectedName.match(/P\d/i);
                     const periodCode = pMatch ? pMatch[0].toUpperCase() : "P0";
+                    activePeriod = periodCode;
                     window.fetchClassData(selectedName, selectedId, periodCode);
                 } else {
                     currentClassData = {};
@@ -192,7 +193,7 @@ async function loadInitialClasses() {
     } catch (error) {
         console.error("Error loading classes:", error);
     }
-}
+};
 
 window.fetchClassData = async function (className, classId, periodCode) {
     try {
@@ -212,7 +213,7 @@ window.fetchClassData = async function (className, classId, periodCode) {
                 const rawData = assigSnap.val();
                 Object.keys(rawData).forEach(fbKey => {
                     let assig = rawData[fbKey];
-                    assig._fbKey = fbKey; // Secretly store the composite key for saving later
+                    assig._fbKey = fbKey; // Secretly store the composite key
                     currentClassData[assig.assignmentId] = assig;
                 });
             }
@@ -238,7 +239,7 @@ window.buildTopicDropdown = function () {
     const uniqueTopics = new Set();
 
     Object.values(currentClassData).forEach(a => {
-        if (a.className === selectedClass && a.topicName && !a.isCustomNote) {
+        if (a.classId === selectedClass && a.topicName && !a.isCustomNote) {
             uniqueTopics.add(a.topicName);
         }
     });
@@ -343,15 +344,19 @@ window.createDayColumn = function (dateObj, isDouble, dateStr, dayConfig) {
     return col;
 }
 
+// --- PATH UPDATED ---
 window.saveAllListOrders = async function () {
     const updates = {};
     document.querySelectorAll('.sortable-list').forEach(list => {
         const listId = list.id === 'holding-tank' ? 'holding-tank' : list.id;
         Array.from(list.children).forEach((item, index) => {
             const dbKey = item.getAttribute('data-db-key');
-            updates[`/assignments/${dbKey}/dayOrder/${listId}`] = index;
+            const assig = currentClassData[dbKey];
 
-            if (currentClassData[dbKey]) {
+            if (assig) {
+                const classFolder = getFolderId(assig.className, assig.classId);
+                updates[`/schedulerAssignments/${classFolder}/${assig._fbKey}/dayOrder/${listId}`] = index;
+
                 if (!currentClassData[dbKey].dayOrder) currentClassData[dbKey].dayOrder = {};
                 currentClassData[dbKey].dayOrder[listId] = index;
             }
@@ -364,16 +369,24 @@ window.saveAllListOrders = async function () {
     } catch (e) { console.error("Order save failed", e); }
 };
 
+// --- PATH UPDATED ---
 window.addCustomNote = async function (dateStr) {
     const text = prompt("Enter text for this draggable note:");
     if (!text || text.trim() === "") return;
 
-    const currentClass = document.getElementById('class-select').value;
-    const newNoteRef = push(ref(db, 'assignments'));
+    const classSelect = document.getElementById('class-select');
+    const classId = classSelect.value;
+    const className = classSelect.options[classSelect.selectedIndex].text;
+    const classFolder = getFolderId(className, classId);
+
+    // Push directly to the nested folder!
+    const newNoteRef = push(ref(db, `schedulerAssignments/${classFolder}`));
 
     const noteData = {
+        assignmentId: newNoteRef.key, // Acts as our dbKey for mapping
         title: text.trim(),
-        className: currentClass,
+        className: className,
+        classId: classId,
         topicName: "Custom Notes",
         scheduledDates: [dateStr],
         isCustomNote: true,
@@ -382,7 +395,7 @@ window.addCustomNote = async function (dateStr) {
 
     try {
         await set(newNoteRef, noteData);
-        window.fetchClassData();
+        // We don't need to manually fetch, the onValue listener handles it
     } catch (err) { console.error("Error adding note:", err); }
 }
 
@@ -403,7 +416,7 @@ window.toggleFlip = async function (dateStr) {
 window.placeAssignments = function () {
     const holdingTank = document.getElementById('holding-tank');
     const selectedTopic = document.getElementById('topic-select').value;
-    const selectedClass = document.getElementById('class-select').value;
+    const selectedClassId = document.getElementById('class-select').value;
 
     const queues = { "holding-tank": [] };
     document.querySelectorAll('.day-list').forEach(list => queues[list.id] = []);
@@ -413,7 +426,7 @@ window.placeAssignments = function () {
         const isUnassigned = dates.includes("unassigned") || dates.length === 0;
 
         if (isUnassigned) {
-            if (assignment.className !== selectedClass) return;
+            if (assignment.classId !== selectedClassId) return;
             if (selectedTopic !== 'all' && assignment.topicName !== selectedTopic && !assignment.isCustomNote) return;
         }
 
@@ -482,7 +495,6 @@ window.placeAssignments = function () {
     });
 }
 
-// --- UPDATED: Sortable logic captures fromId and toId for "The Mover" ---
 window.initSortables = function () {
     const sortableOptions = {
         group: 'shared', animation: 150, ghostClass: 'sortable-ghost',
@@ -498,7 +510,7 @@ window.initSortables = function () {
     document.querySelectorAll('.day-list').forEach(list => new Sortable(list, sortableOptions));
 }
 
-// --- UPDATED: The Mover and The Janitor applied directly to the sync function ---
+// --- PATH UPDATED ---
 window.syncAssignmentToFirebase = async function (dbKey, visualItem = null, fromId = null, toId = null) {
     const visibleDatesOnGrid = Array.from(document.querySelectorAll('.day-list')).map(list => list.id);
     const oldDates = currentClassData[dbKey].scheduledDates || ["unassigned"];
@@ -516,43 +528,45 @@ window.syncAssignmentToFirebase = async function (dbKey, visualItem = null, from
     if (currentClassData[dbKey]) currentClassData[dbKey].scheduledDates = newDatesArray;
     if (!currentClassData[dbKey].isCustomNote) window.updatePrefixes(dbKey);
 
+    // Get the dynamic folder path
+    const assig = currentClassData[dbKey];
+    const classFolder = getFolderId(assig.className, assig.classId);
+    const basePath = `/schedulerAssignments/${classFolder}/${assig._fbKey}`;
+
     try {
         const updatePayload = {
-            [`/assignments/${dbKey}/scheduledDates`]: newDatesArray
+            [`${basePath}/scheduledDates`]: newDatesArray
         };
 
-        // --- THE MOVER: Transfer notes when dragged to a new day ---
         if (fromId && toId && fromId !== toId) {
-            if (!currentClassData[dbKey].notes) currentClassData[dbKey].notes = {};
+            if (!assig.notes) assig.notes = {};
 
-            if (currentClassData[dbKey].notes[fromId]) {
-                const noteText = currentClassData[dbKey].notes[fromId];
-                updatePayload[`/assignments/${dbKey}/notes/${toId}`] = noteText;
-                currentClassData[dbKey].notes[toId] = noteText;
+            if (assig.notes[fromId]) {
+                const noteText = assig.notes[fromId];
+                updatePayload[`${basePath}/notes/${toId}`] = noteText;
+                assig.notes[toId] = noteText;
             } else {
-                updatePayload[`/assignments/${dbKey}/notes/${toId}`] = null;
-                delete currentClassData[dbKey].notes[toId];
+                updatePayload[`${basePath}/notes/${toId}`] = null;
+                delete assig.notes[toId];
             }
-            updatePayload[`/assignments/${dbKey}/notes/${fromId}`] = null;
-            delete currentClassData[dbKey].notes[fromId];
+            updatePayload[`${basePath}/notes/${fromId}`] = null;
+            delete assig.notes[fromId];
         }
 
-        // --- THE JANITOR: Sweep up orphan dayOrder keys ---
-        if (currentClassData[dbKey] && currentClassData[dbKey].dayOrder) {
-            Object.keys(currentClassData[dbKey].dayOrder).forEach(dateKey => {
+        if (assig.dayOrder) {
+            Object.keys(assig.dayOrder).forEach(dateKey => {
                 if (dateKey !== 'holding-tank' && !newDatesArray.includes(dateKey)) {
-                    updatePayload[`/assignments/${dbKey}/dayOrder/${dateKey}`] = null;
-                    delete currentClassData[dbKey].dayOrder[dateKey];
+                    updatePayload[`${basePath}/dayOrder/${dateKey}`] = null;
+                    delete assig.dayOrder[dateKey];
                 }
             });
         }
 
-        // --- THE JANITOR: Sweep up orphan notes keys ---
-        if (currentClassData[dbKey] && currentClassData[dbKey].notes) {
-            Object.keys(currentClassData[dbKey].notes).forEach(dateKey => {
+        if (assig.notes) {
+            Object.keys(assig.notes).forEach(dateKey => {
                 if (dateKey !== 'unassigned' && !newDatesArray.includes(dateKey)) {
-                    updatePayload[`/assignments/${dbKey}/notes/${dateKey}`] = null;
-                    delete currentClassData[dbKey].notes[dateKey];
+                    updatePayload[`${basePath}/notes/${dateKey}`] = null;
+                    delete assig.notes[dateKey];
                 }
             });
         }
@@ -561,10 +575,9 @@ window.syncAssignmentToFirebase = async function (dbKey, visualItem = null, from
         await window.saveAllListOrders();
 
         if (newDatesArray.length === 1 && newDatesArray[0] === "unassigned") {
-            const selectedClass = document.getElementById('class-select').value;
+            const selectedClassId = document.getElementById('class-select').value;
             const selectedTopic = document.getElementById('topic-select').value;
-            const assignment = currentClassData[dbKey];
-            if (assignment.className !== selectedClass || (selectedTopic !== 'all' && assignment.topicName !== selectedTopic && !assignment.isCustomNote)) {
+            if (assig.classId !== selectedClassId || (selectedTopic !== 'all' && assig.topicName !== selectedTopic && !assig.isCustomNote)) {
                 if (visualItem) visualItem.remove();
             }
         }
@@ -630,16 +643,19 @@ window.getNextValidDay = function (currentDateStr) {
     }
 }
 
+// --- ALL PATHS UPDATED IN CLICK LISTENERS ---
 document.body.addEventListener('click', function (e) {
     const btn = e.target.closest('.action-btn');
 
     if (btn && btn.classList.contains('delete-btn')) {
         const item = btn.closest('.assignment-item');
         const dbKey = item.getAttribute('data-db-key');
+        const assig = currentClassData[dbKey];
+        const classFolder = getFolderId(assig.className, assig.classId);
 
-        if (currentClassData[dbKey] && currentClassData[dbKey].isCustomNote) {
+        if (assig && assig.isCustomNote) {
             if (confirm("Delete this custom note permanently?")) {
-                remove(ref(db, `/assignments/${dbKey}`));
+                remove(ref(db, `/schedulerAssignments/${classFolder}/${assig._fbKey}`));
                 delete currentClassData[dbKey];
                 item.remove();
                 window.saveAllListOrders();
@@ -651,10 +667,9 @@ document.body.addEventListener('click', function (e) {
         item.remove();
 
         if (document.querySelectorAll(`.day-list .assignment-item[data-db-key="${dbKey}"]`).length === 0) {
-            const selectedClass = document.getElementById('class-select').value;
+            const selectedClassId = document.getElementById('class-select').value;
             const selectedTopic = document.getElementById('topic-select').value;
-            const assignment = currentClassData[dbKey];
-            if (assignment.className === selectedClass && (selectedTopic === 'all' || assignment.topicName === selectedTopic || assignment.isCustomNote)) {
+            if (assig.classId === selectedClassId && (selectedTopic === 'all' || assig.topicName === selectedTopic || assig.isCustomNote)) {
                 document.getElementById('holding-tank').appendChild(item.cloneNode(true));
             }
         }
@@ -665,12 +680,14 @@ document.body.addEventListener('click', function (e) {
     if (btn && btn.classList.contains('edit-custom-note-btn')) {
         const item = btn.closest('.assignment-item');
         const dbKey = item.getAttribute('data-db-key');
-        const currentText = currentClassData[dbKey].title;
+        const assig = currentClassData[dbKey];
+        const classFolder = getFolderId(assig.className, assig.classId);
+        const currentText = assig.title;
 
         const newText = prompt("Edit note:", currentText);
         if (newText !== null && newText.trim() !== "") {
-            update(ref(db), { [`/assignments/${dbKey}/title`]: newText.trim() }).then(() => {
-                currentClassData[dbKey].title = newText.trim();
+            update(ref(db), { [`/schedulerAssignments/${classFolder}/${assig._fbKey}/title`]: newText.trim() }).then(() => {
+                assig.title = newText.trim();
                 document.querySelectorAll('.assignment-item').forEach(el => el.remove());
                 window.placeAssignments();
             });
@@ -684,19 +701,21 @@ document.body.addEventListener('click', function (e) {
         if (!currentList) return;
 
         const dbKey = item.getAttribute('data-db-key');
+        const assig = currentClassData[dbKey];
+        const classFolder = getFolderId(assig.className, assig.classId);
         const currentDateStr = currentList.id;
 
         const nextDayStr = window.getNextValidDay(currentDateStr);
 
-        let dates = currentClassData[dbKey].scheduledDates || [];
+        let dates = assig.scheduledDates || [];
         if (!dates.includes(nextDayStr)) {
             dates.push(nextDayStr);
             dates.sort();
         }
 
-        currentClassData[dbKey].scheduledDates = dates;
+        assig.scheduledDates = dates;
 
-        update(ref(db), { [`/assignments/${dbKey}/scheduledDates`]: dates }).then(() => {
+        update(ref(db), { [`/schedulerAssignments/${classFolder}/${assig._fbKey}/scheduledDates`]: dates }).then(() => {
             document.querySelectorAll('.assignment-item').forEach(el => el.remove());
             window.placeAssignments();
         }).catch(err => console.error("Error duplicating:", err));
@@ -707,23 +726,25 @@ document.body.addEventListener('click', function (e) {
     if (btn && btn.classList.contains('note-btn')) {
         const item = btn.closest('.assignment-item');
         const dbKey = item.getAttribute('data-db-key');
+        const assig = currentClassData[dbKey];
+        const classFolder = getFolderId(assig.className, assig.classId);
         const listId = item.closest('.sortable-list').id === 'holding-tank' ? 'unassigned' : item.closest('.sortable-list').id;
 
-        const currentNotesObj = currentClassData[dbKey].notes || {};
+        const currentNotesObj = assig.notes || {};
         const currentNoteStr = currentNotesObj[listId] || "";
 
         const newNote = prompt("Add an inline note for this specific block (leave blank to remove):", currentNoteStr);
 
         if (newNote !== null) {
             const finalNote = newNote.trim();
-            if (!currentClassData[dbKey].notes) currentClassData[dbKey].notes = {};
-            currentClassData[dbKey].notes[listId] = finalNote;
+            if (!assig.notes) assig.notes = {};
+            assig.notes[listId] = finalNote;
 
             const updatePayload = {};
             if (finalNote === "") {
-                updatePayload[`/assignments/${dbKey}/notes/${listId}`] = null;
+                updatePayload[`/schedulerAssignments/${classFolder}/${assig._fbKey}/notes/${listId}`] = null;
             } else {
-                updatePayload[`/assignments/${dbKey}/notes/${listId}`] = finalNote;
+                updatePayload[`/schedulerAssignments/${classFolder}/${assig._fbKey}/notes/${listId}`] = finalNote;
             }
 
             update(ref(db), updatePayload).then(() => {
@@ -766,6 +787,7 @@ window.getValidDaysArray = function (configObj, startDateStr, numDays = 800) {
     return validDays;
 }
 
+// --- PATH UPDATED ---
 window.shiftAssignments = function (oldValidDays, newValidDays, startStr) {
     const assignmentUpdates = {};
     let assignmentsShifted = false;
@@ -787,7 +809,11 @@ window.shiftAssignments = function (oldValidDays, newValidDays, startStr) {
 
             if (changed) {
                 newDates = [...new Set(newDates)].sort();
-                assignmentUpdates[`/assignments/${dbKey}/scheduledDates`] = newDates;
+
+                const classFolder = getFolderId(assignment.className, assignment.classId);
+                const basePath = `/schedulerAssignments/${classFolder}/${assignment._fbKey}`;
+
+                assignmentUpdates[`${basePath}/scheduledDates`] = newDates;
                 currentClassData[dbKey].scheduledDates = newDates;
 
                 if (assignment.notes) {
@@ -797,8 +823,8 @@ window.shiftAssignments = function (oldValidDays, newValidDays, startStr) {
                             let oldIndex = oldValidDays.indexOf(oldKey);
                             if (oldIndex !== -1 && oldIndex < newValidDays.length) {
                                 newNotes[newValidDays[oldIndex]] = assignment.notes[oldKey];
-                                assignmentUpdates[`/assignments/${dbKey}/notes/${oldKey}`] = null;
-                                assignmentUpdates[`/assignments/${dbKey}/notes/${newValidDays[oldIndex]}`] = assignment.notes[oldKey];
+                                assignmentUpdates[`${basePath}/notes/${oldKey}`] = null;
+                                assignmentUpdates[`${basePath}/notes/${newValidDays[oldIndex]}`] = assignment.notes[oldKey];
                             } else { newNotes[oldKey] = assignment.notes[oldKey]; }
                         } else { newNotes[oldKey] = assignment.notes[oldKey]; }
                     });
@@ -812,8 +838,8 @@ window.shiftAssignments = function (oldValidDays, newValidDays, startStr) {
                             let oldIndex = oldValidDays.indexOf(oldKey);
                             if (oldIndex !== -1 && oldIndex < newValidDays.length) {
                                 newOrder[newValidDays[oldIndex]] = assignment.dayOrder[oldKey];
-                                assignmentUpdates[`/assignments/${dbKey}/dayOrder/${oldKey}`] = null;
-                                assignmentUpdates[`/assignments/${dbKey}/dayOrder/${newValidDays[oldIndex]}`] = assignment.dayOrder[oldKey];
+                                assignmentUpdates[`${basePath}/dayOrder/${oldKey}`] = null;
+                                assignmentUpdates[`${basePath}/dayOrder/${newValidDays[oldIndex]}`] = assignment.dayOrder[oldKey];
                             } else { newOrder[oldKey] = assignment.dayOrder[oldKey]; }
                         } else { newOrder[oldKey] = assignment.dayOrder[oldKey]; }
                     });
