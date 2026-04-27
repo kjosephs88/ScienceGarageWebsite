@@ -8,14 +8,13 @@ document.getElementById('calendar-title').innerText = CONFIG.title;
 document.title = CONFIG.title;
 
 function scaleUI() {
-    const baseWidth = 1900; // Change this from 1400
+    const baseWidth = 1900;
     const wrapper = document.getElementById('scale-wrapper');
     const content = document.getElementById('scaled-content');
 
     const availableWidth = wrapper.clientWidth;
     let scale = availableWidth / baseWidth;
 
-    // If the screen is wider than 1900px, don't keep growing (optional)
     if (scale > 1) scale = 1;
 
     content.style.transform = `scale(${scale})`;
@@ -35,14 +34,14 @@ function fitDayOffText() {
         let fontSize = 24;
         textSpan.style.fontSize = fontSize + 'px';
 
-        while (textSpan.scrollWidth > (banner.clientWidth - 20)) {
-            if (fontSize <= 1) break;
+        while (textSpan.scrollWidth > (banner.clientWidth - 20) && fontSize > 10) {
             fontSize--;
             textSpan.style.fontSize = fontSize + 'px';
         }
     });
 }
 
+// --- FIREBASE CONFIG ---
 const firebaseConfig = {
     apiKey: "AIzaSyCcpjuH1qv9IUDJJQR_5ms18TBRS8UFaV8",
     authDomain: "scigarage.firebaseapp.com",
@@ -50,7 +49,8 @@ const firebaseConfig = {
     projectId: "scigarage",
     storageBucket: "scigarage.firebasestorage.app",
     messagingSenderId: "768658065204",
-    appId: "1:768658065204:web:31e0386ee9c9edfe3ac761"
+    appId: "1:768658065204:web:31e0386ee9c9edfe3ac761",
+    measurementId: "G-SJ48L43TZ2"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -70,7 +70,6 @@ let currentClassData = {};
 let currentCalendarConfig = {};
 let currentBellringers = {};
 
-// Paste this missing function right here!
 function formatDateLocal(dateObj) {
     const y = dateObj.getFullYear();
     const m = String(dateObj.getMonth() + 1).padStart(2, '0');
@@ -86,27 +85,26 @@ async function fetchStudentData() {
     }
 
     try {
-        // 1. Fetch Bellringers (Static snapshot)
+        // 1. Fetch Bellringers 
         if (CONFIG.subject === 'Chemistry' || CONFIG.subject === 'Physics') {
             const bellringerSnap = await get(ref(db, `bellringers/${CONFIG.subject}`));
             currentBellringers = bellringerSnap.exists() ? bellringerSnap.val() : {};
         }
 
-        // 2. LIVE PIPELINE: Master Calendar State (Flips and Days Off)
+        // 2. LIVE PIPELINE: Master Calendar State
         const configRef = ref(db, `calendarConfig/${CONFIG.period}`);
         onValue(configRef, (configSnap) => {
             currentCalendarConfig = configSnap.exists() ? configSnap.val() : {};
             window.renderCalendar();
         });
 
-        // 3. LIVE PIPELINE: Assignments & Notes (UPDATED FOR NEW SCHEMA)
+        // 3. LIVE PIPELINE: Assignments (Reading from the NEW architecture)
         const assignmentsRef = ref(db, 'schedulerAssignments');
         onValue(assignmentsRef, (assigSnap) => {
             currentClassData = {};
             if (assigSnap.exists()) {
                 const allFolders = assigSnap.val();
 
-                // Figure out the prefix we are looking for (e.g., "CH_P6_")
                 let subj = "ZZ";
                 let lowerSubj = CONFIG.subject.toLowerCase();
                 if (lowerSubj.includes("chemistry")) subj = "CH";
@@ -115,12 +113,15 @@ async function fetchStudentData() {
 
                 const targetPrefix = `${subj}_${CONFIG.period}_`;
 
-                // Find the specific class folder and load its assignments
                 Object.keys(allFolders).forEach(folderName => {
                     if (folderName.startsWith(targetPrefix)) {
                         const classAssignments = allFolders[folderName];
-                        // Merge the assignments into the local data object
-                        Object.assign(currentClassData, classAssignments);
+
+                        // Map the data by assignmentId EXACTLY like the Teacher App
+                        Object.keys(classAssignments).forEach(fbKey => {
+                            let assig = classAssignments[fbKey];
+                            currentClassData[assig.assignmentId] = assig;
+                        });
                     }
                 });
             }
@@ -135,6 +136,7 @@ async function fetchStudentData() {
 
 window.renderCalendar = function () {
     const container = document.getElementById('calendar-container');
+    if (!container) return;
     container.innerHTML = '';
 
     const numWeeks = parseInt(document.getElementById('week-view-select').value) || 1;
@@ -153,7 +155,6 @@ window.renderCalendar = function () {
             const dateStr = formatDateLocal(renderDate);
             const dayConfig = currentCalendarConfig[dateStr] || {};
 
-            // THE BRAINLESS READ
             let isDouble = dayConfig.isDouble !== undefined ? dayConfig.isDouble : true;
 
             weekGrid.appendChild(createDayColumn(renderDate, isDouble, dateStr, dayConfig));
@@ -172,7 +173,7 @@ function createDayColumn(dateObj, isDouble, dateStr, dayConfig) {
     col.className = 'day-column';
     const displayDate = `${dateObj.toLocaleString('en-US', { month: 'short' })} ${dateObj.getDate()}`;
 
-    if (dayConfig && (dayConfig.isDayOff || dayConfig.isClassDrop)) {
+    if (dayConfig && dayConfig.isDayOff) {
         col.innerHTML = `
             <div class="day-header">
                 <span class="day-name">${dayNames[dateObj.getDay() - 1]}</span>
@@ -218,42 +219,42 @@ function placeAssignments() {
     document.querySelectorAll('.day-list').forEach(list => queues[list.id] = []);
 
     Object.entries(currentClassData).forEach(([dbKey, assignment]) => {
-        const dates = assignment.scheduledDates || ["unassigned"];
+        const dates = assignment.scheduledDates || [];
 
-        if (!dates.includes("unassigned") && dates.length > 0) {
-            let itemHTML = '';
+        // Students DO NOT see unassigned tasks
+        if (dates.length === 0 || (dates.length === 1 && dates[0] === "unassigned")) return;
 
-            if (assignment.isCustomNote) {
-                itemHTML = `
-                    <div class="assignment-item custom-note-item" data-db-key="${dbKey}">
-                        <span class="item-title" style="font-weight: bold;">${assignment.title}</span>
-                    </div>
-                `;
-            } else {
-                const urlAttr = assignment.encodedUrl ? `data-url="${assignment.encodedUrl}"` : '';
-                const titleAttr = assignment.encodedUrl ? `title="Click to open in Google Classroom"` : ``;
+        let itemHTML = '';
 
-                itemHTML = `
-                    <div class="assignment-item" data-db-key="${dbKey}" ${urlAttr} ${titleAttr} style="${assignment.encodedUrl ? 'cursor: pointer;' : ''}">
-                        <span class="item-prefix">Complete assignment:</span>
-                        <span class="item-title">${assignment.title}</span>
-                        <span class="item-note" style="display: none;"></span> 
-                    </div>
-                `;
-            }
+        if (assignment.isCustomNote) {
+            itemHTML = `
+                <div class="assignment-item custom-note-item" data-db-key="${dbKey}">
+                    <span class="item-title" style="font-weight: bold;">${assignment.title}</span>
+                </div>
+            `;
+        } else {
+            const urlAttr = assignment.encodedUrl ? `data-url="${assignment.encodedUrl}"` : '';
+            const titleAttr = assignment.encodedUrl ? `title="Click to open in Google Classroom"` : '';
 
-            dates.forEach(dateString => {
-                if (queues[dateString]) {
-                    let blockHTML = itemHTML;
-                    if (!assignment.isCustomNote && assignment.notes && assignment.notes[dateString]) {
-                        blockHTML = blockHTML.replace('<span class="item-note" style="display: none;"></span>', `<span class="item-note">Note: ${assignment.notes[dateString]}</span>`);
-                    }
-
-                    let order = (assignment.dayOrder && assignment.dayOrder[dateString]) !== undefined ? assignment.dayOrder[dateString] : 999;
-                    queues[dateString].push({ html: blockHTML, order: order, key: dbKey });
-                }
-            });
+            itemHTML = `
+                <div class="assignment-item" data-db-key="${dbKey}" ${urlAttr} ${titleAttr} style="${assignment.encodedUrl ? 'cursor: pointer;' : ''}">
+                    <span class="item-prefix">Complete assignment:</span>
+                    <span class="item-title">${assignment.title}</span>
+                    <span class="item-note" style="display: none;"></span> 
+                </div>
+            `;
         }
+
+        dates.forEach(dateString => {
+            if (queues[dateString] && dateString !== "unassigned") {
+                let blockHTML = itemHTML;
+                if (!assignment.isCustomNote && assignment.notes && assignment.notes[dateString]) {
+                    blockHTML = blockHTML.replace('<span class="item-note" style="display: none;"></span>', `<span class="item-note">Note: ${assignment.notes[dateString]}</span>`);
+                }
+                let order = (assignment.dayOrder && assignment.dayOrder[dateString]) !== undefined ? assignment.dayOrder[dateString] : 999;
+                queues[dateString].push({ html: blockHTML, order: order, key: dbKey });
+            }
+        });
     });
 
     Object.keys(queues).forEach(qId => {
@@ -311,5 +312,5 @@ window.changeWeek = function (offset) {
     window.renderCalendar();
 }
 
+// 🚀 CRITICAL: Actually tell the script to fetch the data when the page loads!
 fetchStudentData();
-scaleUI();
