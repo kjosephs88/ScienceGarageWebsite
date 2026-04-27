@@ -104,7 +104,7 @@ onAuthStateChanged(auth, (user) => {
         authBtn.onclick = window.logoutTeacher;
         sidebar.style.display = "flex";
         mainView.classList.add('edit-mode');
-        
+
         initEventListeners();
         window.loadInitialClasses();
     } else {
@@ -137,7 +137,7 @@ function initEventListeners() {
         currentMonday.setDate(currentMonday.getDate() + 7);
         window.renderCalendar();
     };
-    
+
     const settingsBtn = document.getElementById('settings-btn');
     settingsBtn.onclick = () => {
         window.openSettings();
@@ -163,7 +163,7 @@ window.loadInitialClasses = async function () {
                 opt.value = c.folder; opt.textContent = c.name;
                 classSelect.appendChild(opt);
             });
-            
+
             if (uniqueClasses.length > 0) {
                 classSelect.value = uniqueClasses[0].folder;
                 window.fetchClassData(uniqueClasses[0].folder, uniqueClasses[0].name);
@@ -176,7 +176,7 @@ window.fetchClassData = async function (exactFolder, className) {
     currentClassFolder = exactFolder;
     const pMatch = className.match(/P\d/i) || exactFolder.match(/P\d/i);
     activePeriod = pMatch ? pMatch[0].toUpperCase() : "P0";
-    
+
     if (className.toLowerCase().includes("chemistry")) currentSubject = "Chemistry";
     else if (className.toLowerCase().includes("physics")) currentSubject = "Physics";
     else if (className.toLowerCase().includes("forensic")) currentSubject = "Forensics";
@@ -215,13 +215,24 @@ window.fetchClassData = async function (exactFolder, className) {
 
 window.buildTopicDropdown = function () {
     const topicSelect = document.getElementById('topic-select');
-    const topics = new Set();
-    Object.values(currentClassData).forEach(a => { if (a.topicName && !a.isCustomNote) topics.add(a.topicName); });
+    const previousValue = topicSelect.value;
+
+    // Create a map of unique Topic Names to IDs
+    const topicMap = new Map();
+    Object.values(currentClassData).forEach(a => {
+        if (a.topicName && a.topicId && !a.isCustomNote) topicMap.set(a.topicName, a.topicId);
+    });
+
     topicSelect.innerHTML = '<option value="all">All Topics</option>';
-    Array.from(topics).sort().forEach(t => {
-        const opt = document.createElement('option'); opt.value = t; opt.textContent = t;
+    Array.from(topicMap.keys()).sort().forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        opt.dataset.topicId = topicMap.get(name); // Store ID for matching
         topicSelect.appendChild(opt);
     });
+
+    topicSelect.value = previousValue; // Prevent resetting to 'All Topics'
 };
 
 // --- RENDER LOGIC ---
@@ -229,8 +240,8 @@ window.renderCalendar = function () {
     const container = document.getElementById('calendar-container');
     const tank = document.getElementById('holding-tank');
     if (!container || !tank) return;
-    
-    container.innerHTML = ''; 
+
+    container.innerHTML = '';
     tank.innerHTML = '';
 
     let numWeeks = parseInt(document.getElementById('week-view-select').value) || 1;
@@ -241,7 +252,7 @@ window.renderCalendar = function () {
     const startDateStr = renderDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
     for (let w = 0; w < numWeeks; w++) {
-        const grid = document.createElement('div'); 
+        const grid = document.createElement('div');
         grid.className = 'week-grid';
         for (let d = 0; d < 5; d++) {
             const dStr = formatDateLocal(renderDate);
@@ -259,13 +270,13 @@ window.renderCalendar = function () {
 
     window.initSortables();
     window.placeAssignments();
-    
+
     scaleUI();
     setTimeout(fitDayOffText, 50);
 };
 
 window.createDayColumn = (dateObj, isDouble, dStr, conf) => {
-    const col = document.createElement('div'); 
+    const col = document.createElement('div');
     col.className = 'day-column';
     const display = `${dateObj.toLocaleString('en-US', { month: 'short' })} ${dateObj.getDate()}`;
     const dayName = dayNames[dateObj.getDay() - 1];
@@ -284,7 +295,7 @@ window.createDayColumn = (dateObj, isDouble, dStr, conf) => {
         let bellringerHTML = '';
         const bellUrl = currentBellringers[dStr];
         if (bellUrl) {
-            bellringerHTML = `<div class="bellringer-container"><a href="${bellUrl}" target="_blank" class="bellringer-link">🔔 BELLRINGER</a></div>`;
+            bellringerHTML = `<div class="bellringer-container"><a href="${bellUrl}" target="_blank" class="bellringer-link" style="color: #0000ff; font-weight: bold; text-decoration: none; display: block; text-align: center;">BELLRINGER</a></div>`;
         } else {
             bellringerHTML = `<div class="bellringer-container"></div>`;
         }
@@ -307,7 +318,8 @@ window.createDayColumn = (dateObj, isDouble, dStr, conf) => {
 
 // --- PLACE ASSIGNMENTS ---
 window.placeAssignments = function () {
-    const topic = document.getElementById('topic-select').value;
+    const topicSelect = document.getElementById('topic-select');
+    const selectedTopicId = topicSelect.options[topicSelect.selectedIndex]?.dataset?.topicId || 'all';
     const queues = { "holding-tank": [] };
     document.querySelectorAll('.day-list').forEach(l => queues[l.id] = []);
 
@@ -318,16 +330,19 @@ window.placeAssignments = function () {
 
         const dates = a.scheduledDates || ["unassigned"];
         const isUn = dates.includes("unassigned");
-        if (isUn && topic !== 'all' && a.topicName !== topic && !a.isCustomNote) return;
+
+        // ID-Based Filtering: Respect topic ID for holding tank items
+        const matchesFilter = (selectedTopicId === 'all' || a.topicId === selectedTopicId || a.isCustomNote);
+        if (!matchesFilter) return;
 
         const html = `
             <div class="assignment-item ${a.isCustomNote ? 'custom-note-item' : ''}" data-db-key="${key}">
                 ${!a.isCustomNote ? '<span class="item-prefix">Complete assignment:</span>' : ''}
                 <span class="item-title">${a.title}</span>
             </div>`;
-            
-        dates.forEach(d => { 
-            if (queues[d]) queues[d].push({ html, order: (a.dayOrder?.[d] ?? 999) }); 
+
+        dates.forEach(d => {
+            if (queues[d]) queues[d].push({ html, order: (a.dayOrder?.[d] ?? 999) });
         });
     });
 
@@ -339,8 +354,8 @@ window.placeAssignments = function () {
 
 window.initSortables = () => {
     const opt = {
-        group: 'shared', 
-        animation: 150, 
+        group: 'shared',
+        animation: 150,
         onEnd: (evt) => {
             const key = evt.item.dataset.dbKey;
             const to = evt.to.id === 'holding-tank' ? 'unassigned' : evt.to.id;
