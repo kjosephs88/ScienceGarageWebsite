@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Blood-Spatter Patterns</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* Base Styles - Classy Light Mode */
+        body {
+            background-color: #f4f1ea;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Lato', sans-serif;
+            color: #2c2c2c;
+            overflow: hidden;
+        }
+
+        .book-container {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        .my-page {
+            background-color: #fdfdfc;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.02);
+            border: 1px solid #e3dec9;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .my-page::-webkit-scrollbar { width: 6px; }
+        .my-page::-webkit-scrollbar-thumb { background-color: #d1cbc0; border-radius: 3px; }
+
+        .page-content {
+            padding: 25px;
+            min-height: 100%;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }
+
+        h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.8rem;
+            color: #2a3a35;
+            margin-top: 0;
+            margin-bottom: 12px;
+            border-bottom: 1px solid #e3dec9;
+            padding-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        h3 {
+            font-family: 'Lato', sans-serif;
+            font-size: 1.1rem;
+            color: #e59042;
+            margin-bottom: 5px;
+            margin-top: 20px;
+            text-transform: uppercase;
+        }
+
+        p, li {
+            line-height: 1.6;
+            font-size: 0.9rem;
+            text-align: justify;
+            margin-bottom: 12px;
+        }
+
+        ul, ol { padding-left: 20px; margin-bottom: 15px; }
+
+        .callout {
+            background-color: #f9f6f0;
+            border-left: 4px solid #e59042;
+            padding: 15px;
+            margin: 15px 0;
+            font-style: italic;
+            font-size: 0.85rem;
+        }
+
+        /* --- TABLE STYLES --- */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto; /* Allows table to scroll horizontally on small screens */
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+            min-width: 400px; /* Ensures columns don't crush too small */
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #e3dec9;
+            vertical-align: middle;
+        }
+
+        th {
+            background-color: #e59042;
+            color: white;
+            font-family: 'Lato', sans-serif;
+        }
+
+        tr:nth-child(even) { background-color: #f9f8f4; }
+
+        /* Placeholders for images INSIDE tables */
+        .table-img-placeholder {
+            background-color: #eae7df;
+            border: 1px dashed #b8b3a5;
+            min-width: 70px;
+            min-height: 70px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #7a766c;
+            font-size: 0.7rem;
+            font-style: italic;
+            position: relative;
+        }
+        .table-img-placeholder img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Ensures image fills the box nicely */
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        /* Standard Placeholders for regular page images */
+        .image-placeholder {
+            background-color: #eae7df;
+            border: 1px dashed #b8b3a5;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 180px;
+            margin: 15px 0;
+            border-radius: 4px;
+            color: #7a766c;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1rem;
+            position: relative;
+            overflow: hidden;
+            text-align: center;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        .image-placeholder img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background-color: white;
+        }
+
+        .image-caption {
+            text-align: center; 
+            font-size: 0.8rem; 
+            font-style: italic; 
+            margin-top: 5px;
+            color: #666;
+        }
+
+        .page-footer {
+            margin-top: auto;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #999;
+            font-family: 'Cormorant Garamond', serif;
+            border-top: 1px solid #f0ece1;
+            padding-top: 10px;
+            padding-bottom: 10px;
+        }
+
+        .my-page.--left { border-right: 0; box-shadow: inset -10px 0 20px rgba(0,0,0,0.04); }
+        .my-page.--right { border-left: 0; box-shadow: inset 10px 0 20px rgba(0,0,0,0.04); }
+
+        @media (max-width: 600px) {
+            h2 { font-size: 1.5rem; }
+            .page-content { padding: 15px; }
+            p, li { font-size: 0.85rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="book-container">
+        <div id="book">
+            
+            <div class="my-page">
+                <div class="page-content">
+                    <h2>Blood-Spatter Patterns</h2>
+                    <p>When a wound is inflicted and blood leaves the body, a blood-spatter pattern may be created. A single stain or drop of blood does not constitute a spatter. Instead, a grouping of bloodstains composes a blood-spatter pattern. This pattern can help reconstruct the series of events surrounding a shooting, stabbing, or beating.</p>
+                    
+                    <h3>History of Blood-Spatter Analysis</h3>
+                    <p>In 1895, Edward Piotrowski wrote the earliest reference to blood-spatter analysis. In 1939, Dr. Victor Balthazard was the first researcher to analyze the meaning of the spatter pattern. In 1955, blood-spatter evidence used by the defense in the Sam Shepard case helped to exonerate him. In 1971, investigators began to use the physics of blood-spatter analysis as a tool in modern forensic examinations. Today, blood-spatter evidence is an integral part of crime-scene analysis.</p>
+
+                    <h3>Blood-Spatter Pattern Analysis</h3>
+                    <p>In the laboratory activities in this chapter, you will study how blood-spatter patterns can be used to recreate the events that occurred at a crime scene. Given blood-spatter patterns, it is possible to determine the direction the blood was traveling, the angle of impact of each blood droplet, and the area of origin and general velocity of the blood. Blood-spatter patterns may help resolve whether a victim died from a suicide or homicide. Instructions on blood-spatter analysis are provided within each activity.</p>
+
+                    <p>Did you ever wonder why blood forms droplets as it falls from a wound? If blood is a mixture, then why doesn't it separate in the air before it hits the ground or an object? Why does a drop of blood have a domed surface when it lands on a flat surface instead of spreading out flat? The answers to these questions relate to how the forces of gravity, cohesion, adhesion, and surface tension act on blood.</p>
+
+                    <h3>Physics</h3>
+                    <p>Recall that blood is a suspension of blood components in plasma. When blood is dripping, gravity acts on it, pulling it downward (Figure 8-12). Blood has cohesion. This means that its molecules are attracted to each other, so blood tends to stick together as it falls. The cohesion of the falling blood droplets results in a spherical shape (Figure 8-13). When a droplet of blood strikes a surface, it flattens out, but the cohesive forces still act to give it a domed shape (Figure 8-14). If any of the blood overcomes cohesion and separates from the main droplet of blood,</p>
+
+                    <div class="image-placeholder">
+                        <span style="font-style: italic;"><img src="https://docs.google.com/drawings/d/e/2PACX-1vTEK673aohwdiQ5WgLudTbSrT5jFgYbQ8cJtxw8VZY92qk2ri0Cs40a5i93F8HrLC166gfo4Le7Xkcr/pub?w=960&amp;h=720"></span>
+                        <div class="image-caption">Figures showing a falling droplet, cohesive forces, and resistance to flattening.</div>
+                    </div>
+
+                    <div class="page-footer">1</div>
+                </div>
+            </div>
+
+            <div class="my-page">
+                <div class="page-content">
+                    <p>it will form small secondary droplets known as satellites (Figure 8-15). Besides gravity and cohesion, another force, adhesion, affects the shape of a blood droplet. Adhesion is the attraction between molecules of unlike substances (for example, adhesive tape and paper). When blood directly strikes a porous surface, such as wood, ceiling tile, or clothing, then the edge of the drop of blood may form spines, or elongated extensions, due to the adhesion of the blood to the uneven, porous surface (Figure 8-15). Note that spines are connected to the main blood droplet, whereas satellites are separated from it.</p>
+
+                    <div class="image-placeholder">
+                        <span style="font-style: italic;"><img src="https://docs.google.com/drawings/d/e/2PACX-1vQ-UzLu5UKhoJkbLikrCkJ7Mhim_LBJFl6K-d8cm_fg-95jFcz32ekwICjdlex_kUI4wEXVj5np9X52/pub?w=960&amp;h=720"></span>
+                        <div class="image-caption">Figure 8-15: Satellites and spines in a blood droplet pattern.</div>
+                    </div>
+
+                    <h3>Directionality of Blood</h3>
+                    <p>The shape of an individual drop of blood provides clues to the direction from where the blood originated. Blood droplet shape varies from round to elliptical (longer than wide). The directionality of the blood is easily determined since the pointed or elongated end of the blood indicates the direction of travel (Figure 8-16).</p>
+                    
+                    <p>If blood is dropped straight down (90-degree drop), the shape of the blood droplet is circular. This is typical if the blood was passively produced (without any force other than gravity), as when blood drips from a wound. If blood is released from an angle other than 90 degrees, then the shape of the blood droplet will be more elliptical (longer than wide). The droplet tends to become less rounded and more elongated as the angle changes from a 90-degree drop toward a 10-degree drop.</p>
+
+                    <div class="image-placeholder">
+                        <span style="font-style: italic;"><img src="https://docs.google.com/drawings/d/e/2PACX-1vQPIbwXMaFAssnmRzw1DYC3aQ5oGVgrGr6Yi1G2CuirNatmWbIol8nfX1AAzNIHFyYte5Mol-5q_vZS/pub?w=960&amp;h=720"></span>
+                        <div class="image-caption">Figure 8-16 & 8-17: Blood droplets moving away from source and point of impact.</div>
+                    </div>
+
+                    <p>What causes blood droplets to have varying shapes? When blood comes into contact with another surface, the blood tends to adhere to the surface. As a result, less blood continues to move, and the point of impact of the blood droplet is wider than the forward traveling edge of the blood (Figure 8-17). Cohesion causes most of the blood to remain in a single drop. Smaller satellite droplets may break away from the main drop of blood and will appear in front of it in a spatter pattern.</p>
+
+                    <h3>Bloodstain Patterns</h3>
+                    <p>Careful observation of bloodstain patterns resulting from falling, projected, or smeared blood at crime scenes helps investigators interpret and reconstruct what happened. Refer to Figure 8-18, which illustrates some of the common patterns. The importance of blood-spatter analysis is that it helps to recreate the crime scene based on scientifically analyzing the blood-spatter patterns. If blood-spatter analysis isn't consistent with the eyewitness account(s) of the crime, police will realize that the truth is not being told and further investigation is needed.</p>
+
+                    <div class="page-footer">2</div>
+                </div>
+            </div>
+
+            <div class="my-page">
+                <div class="page-content">
+                    <h3>Figure 8-18: Bloodstain patterns</h3>
+                    
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Photo/Diagram</th>
+                                    <th>Description</th>
+                                    <th>What Likely Happened</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Passive Drops</strong></td>
+                                    <td>
+                                        <div class="table-img-placeholder">
+                                            <img src="https://docs.google.com/drawings/d/e/2PACX-1vTkDzfkS15FgqWzCMLYDE7GQmOKPpA7JUjySCOQzJ-qub3gk_gItopgH3QusYCiB71Inh31TMhO3y2b/pub?w=960&amp;h=720">
+                                            </div>
+                                    </td>
+                                    <td>Linear pattern of round droplets of blood</td>
+                                    <td>Person walking while bleeding</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Cast-off</strong></td>
+                                    <td>
+                                        <div class="table-img-placeholder">
+                                            <center>No image available</center>
+                                            </div>
+                                    </td>
+                                    <td>Seen on walls or ceilings: pattern of lines with blood direction changing as arm moves up and back; blood flung off weapon</td>
+                                    <td>Person repeatedly striking someone with a weapon, raising and lowering arm</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Transfer</strong></td>
+                                    <td>
+                                        <div class="table-img-placeholder">
+                                            <img src="https://docs.google.com/drawings/d/e/2PACX-1vR4fwDFbkYMw2y4Tgo2LuCXsl7IS30SfcTWUgqjfsHGuNfA4GHP4SD2-m03YEK_ph254Uh1ZDlpo3IR/pub?w=960&amp;h=720">
+                                            </div>
+                                    </td>
+                                    <td>Wet, bloody surface contacts a second surface; minimal lateral motion</td>
+                                    <td>Person steps in blood or presses hand onto bloody surface</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Wipe</strong></td>
+                                    <td>
+                                        <div class="table-img-placeholder">
+                                            <img src="https://docs.google.com/drawings/d/e/2PACX-1vRf64sNbwcljGCKteAISVzptV7kzicK28rymd6I4BKcM6gkwK4_tdP_inftv6-r5GARiXNAY1McaBst/pub?w=960&amp;h=720">
+                                            </div>
+                                    </td>
+                                    <td>Object moves through partly dried blood with lateral motion, altering appearance</td>
+                                    <td>Trying to remove blood from a surface with a cloth</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Swipe</strong></td>
+                                    <td>
+                                        <div class="table-img-placeholder">
+                                            <img src="https://docs.google.com/drawings/d/e/2PACX-1vSq5mXxZ9oZ6HD8PEw6R-e9HlPrKsIF1aWZb5ENQOuLeiTZMPUwKKgQgEYa-HUb3cXGn6eTYb5fk9hd/pub?w=960&amp;h=720">
+                                            </div>
+                                    </td>
+                                    <td>Lateral transfer of wet blood from a moving source onto a surface; feathered edge</td>
+                                    <td>Bloody hair dragged across floor</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Arterial Gush</strong></td>
+                                    <td>
+                                        <div class="table-img-placeholder">
+                                            <img src="https://docs.google.com/drawings/d/e/2PACX-1vSGSODQe36DHfwZ7r8-1ngOZbftF2YCzFmhUwgf-SDxeHgY24vhHt3cCVAtsNKThhvgt-CNI-10yrdc/pub?w=960&amp;h=720">
+                                            </div>
+                                    </td>
+                                    <td>Blood exiting under pressure from an artery and striking a surface; peaks indicate heart contraction</td>
+                                    <td>Severed artery due to injury or attack</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Expired Blood</strong></td>
+                                    <td>
+                                        <div class="table-img-placeholder">
+                                            <img src="https://docs.google.com/drawings/d/e/2PACX-1vSdqwDqITe49kQUDzAUecEdAmL8BRF0l_xIPKbkqNmykkSQNyWE8GlGGE2gTnQuSX9dIyJymbB1_C4-/pub?w=960&amp;h=720">
+                                            </div>
+                                    </td>
+                                    <td>Blood blown out of nose or mouth as a result of air pressure, similar to high-velocity blood spatter, often with bubbles</td>
+                                    <td>Injury causing internal bleeding; body trying to expel blood</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Shadowing/Void</strong></td>
+                                    <td>
+                                        <div class="table-img-placeholder">
+                                            <img src="https://docs.google.com/drawings/d/e/2PACX-1vS4WP2T7E12xVgFVAdyyX-t_c6uUMH7awo0xO-PuCtyJ1OlCcVFAeLqd7ved6ldXvgeEbNQ-YS62lv2/pub?w=960&amp;h=720">
+                                            </div>
+                                    </td>
+                                    <td>Area devoid of blood spatter</td>
+                                    <td>Object was in front of the wall during injury but object has since been moved</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="page-footer">3</div>
+                </div>
+            </div>
+
+            <div class="my-page">
+                <div class="page-content">
+                    <h3>Area of Convergence</h3>
+                    <p>The approximate location of a blood source can be determined if there are at least two drops of blood. Draw straight lines down the center of the long axis of the blood spatter and, noting where the lines intersect, you will find the area of convergence (Figure 8-19). You can use this information to calculate the height above the floor at which the injury took place.</p>
+
+                    <div class="image-placeholder">
+                        <span style="font-style: italic;"><img src="https://docs.google.com/drawings/d/e/2PACX-1vSPlNNUJtnGGoGFmOn0QAvVL1SBVU-wXYvCPCDYtDzs0ZySNM1IFSTlxLpW6AwJawfFWohI8FdgPZhT/pub?w=960&amp;h=720"></span>
+                        <div class="image-caption">Figure 8-19: Area of convergence.</div>
+                    </div>
+
+                    <div class="callout">
+                        <strong>Did you know:</strong> Blood congeals (thickens) after it leaves the body. Changes to the physical appearance of blood may be used to estimate when it was deposited at a crime scene.
+                    </div>
+
+                    <div class="callout">
+                        <strong>Did you know:</strong> A nondestructive technique is being developed (Teesside University, UK) that enables investigators to determine the approximate age of a bloodstain.
+                    </div>
+
+                    <h3>Angle of Impact Calculations</h3>
+                    <p>The angle of impact of blood relative to a surface that it strikes can establish the area of origin of the blood. The area of origin is the location of the blood source as viewed in three dimensions. It is determined by projecting angles of impact of individual bloodstains. When blood is cast onto a surface at an acute angle, the droplet will not be round. Blood droplets tend to become more elliptical as they are released from a body at angles increasingly more acute than 90 degrees (Figure 8-20).</p>
+
+                    <div class="image-placeholder">
+                        <span style="font-style: italic;"><img src="https://docs.google.com/drawings/d/e/2PACX-1vSFkBJwQrtxaXanzAlGkCtZ6PZpps307uN5Dxe1P3PgPiYbNJj2jMzFtip455mqnV7VEg62F_17e5k9/pub?w=960&amp;h=720"></span>
+                        <div class="image-caption">Figure 8-20: Shape of blood droplet based on angle of release.</div>
+                    </div>
+
+                    <div class="page-footer">4</div>
+                </div>
+            </div>
+
+            <div class="my-page">
+                <div class="page-content">
+                    <h3>Calculating the Angle of Impact</h3>
+                    <ol>
+                        <li>Measure the width and length of each droplet of blood in millimeters. Do not include any extensions of the blood droplet such as spines. The top and the bottom of the main droplet of blood should be symmetrical. Refer to Figure 8-21.</li>
+                        <li>Divide the width by the length (this gives you a decimal value, a number less than 1).</li>
+                        <li>Take the arcsine, or inverse sine, of the ratio width: length to determine the angle of impact. You can find this decimal value by using a sine table, a calculator, or a computer.</li>
+                    </ol>
+
+                    <div class="image-placeholder">
+                        <span style="font-style: italic;"><img src="https://docs.google.com/drawings/d/e/2PACX-1vQKK2_DDCpB6hJkJKdShYqyos2n5_ogmKZOGGmZKT5_MK5kjmQEginbw2gYLnl6cAV2xcaOBCXE6hoE/pub?w=960&amp;h=720"></span>
+                        <div class="image-caption">Figure 8-21: Measuring bloodstain droplets.</div>
+                    </div>
+
+                    <p style="font-weight: bold;">Example:</p>
+                    <p>Determine the angle of impact for a blood droplet 5 millimeters wide and 14 millimeters long. Use Figure 8-22.</p>
+                    <ul style="list-style-type: none;">
+                        <li>1. width = 5 mm length = 14 mm</li>
+                        <li>2. width/length = 5 mm / 14 mm</li>
+                        <li>3. 5 / 14 = 0.3571</li>
+                        <li>4. inverse sine of 0.3571 &simeq; 21 degrees</li>
+                    </ul>
+
+                    <div class="image-placeholder" style="min-height: 100px;">
+                        <span style="font-style: italic;"><img src="https://docs.google.com/drawings/d/e/2PACX-1vRBAq01EAS2OEooNpJGURWBhi3pNCcKU8833GBOcVQ941yOEkDNjZDCeNP0ZA7G7y1pEUBwiYeRXYpR/pub?w=960&amp;h=720"></span>
+                        <div class="image-caption">Figure 8-22</div>
+                    </div>
+
+                    <p>Once the area of convergence and impact angles are determined, it is possible to estimate the area of origin. This can be calculated either using a string method, protractor, or laser pointer method, or you can use basic trigonometry to estimate the area of origin. The process and associated calculations are described fully in Activity 8-6.</p>
+
+                    <div class="page-footer">5</div>
+                </div>
+            </div>
+
+            <div class="my-page">
+                <div class="page-content">
+                    <h3>Blood Velocity and Spatter Size</h3>
+                    <p>Blood-spatter size is indicative of the weapon and type of injury. Spatter patterns can help the investigator determine the type of wound and the type of weapon used to produce the spatter. A fine-mist spatter pattern (less than 1 mm) is produced by high-velocity impact, such as a gunshot wound. Beatings or stabbings will produce medium-velocity-sized blood spatter (1-4 mm). However, a beating with a pipe or bat will produce low-velocity-sized blood spatter (4-6 mm), as shown in Figure 8-23.</p>
+
+                    <h3>Figure 8-23: Blood velocity and spatter size</h3>
+                    
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Velocity</th>
+                                    <th>Size (mm)</th>
+                                    <th>Velocity (ft/sec)</th>
+                                    <th>Examples</th>
+                                    <th>Visual Image</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>High</td>
+                                    <td>Less than 1</td>
+                                    <td>100</td>
+                                    <td>Gunshot wounds</td>
+                                    <td>
+                                        <div class="table-img-placeholder">
+                                            <img src="https://docs.google.com/drawings/d/e/2PACX-1vTKh4JA2CVCtUETATdHognUSFiVOC5N4dgc5P8oP3uhGrAopyGkx3pu2PfQkFxaPAwA5nnifFhTSxhJ/pub?w=960&amp;h=720">
+                                            </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Medium</td>
+                                    <td>1-4</td>
+                                    <td>25</td>
+                                    <td>Beating, stabbing</td>
+                                    <td>
+                                        <div class="table-img-placeholder">
+                                            <img src="https://docs.google.com/drawings/d/e/2PACX-1vSTtetIZQU1P-h0R_xwzJTqfGaQmtCb0vVNL6REOawZgVUrPEzZ8SPRXAkyqGy3QmKKlwMqfIohpid_/pub?w=960&amp;h=720">
+                                            </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Low</td>
+                                    <td>more than 4</td>
+                                    <td>5</td>
+                                    <td>Blunt object impact or dripping</td>
+                                    <td>
+                                        <div class="table-img-placeholder">
+                                            <img src="https://docs.google.com/drawings/d/e/2PACX-1vSS-ooycwanOuymWuPTBxigSWjcrThKesGY33VSUVdRb8as7xR1cFWmQzO7NOhNA27cMClRp5fGKREE/pub?w=960&amp;h=720">
+                                            </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="page-footer">6</div>
+                </div>
+            </div>
+
+
+
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/page-flip/dist/js/page-flip.browser.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const pageFlip = new St.PageFlip(document.getElementById('book'), {
+                width: 450,         
+                height: 650,        
+                size: "stretch",    
+                minWidth: 280,
+                maxWidth: 550,
+                minHeight: 400,
+                maxHeight: 850,
+                maxShadowOpacity: 0.2, 
+                showCover: false, 
+                usePortrait: true,
+                mobileScrollSupport: true 
+            });
+
+            pageFlip.loadFromHTML(document.querySelectorAll('.my-page'));
+            
+            window.addEventListener('resize', () => {
+                pageFlip.update();
+            });
+        });
+    </script>
+</body>
+</html>
