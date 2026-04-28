@@ -1,5 +1,5 @@
 // A secret password to prevent unauthorized access to your API
-const API_KEY = PropertiesService.getScriptProperties().getProperty("APP_API_KEY"); 
+const API_KEY = PropertiesService.getScriptProperties().getProperty("APP_API_KEY");
 
 // Run this once to trigger the Auth flow based on your appsscript.json
 function triggerAuthorization() {
@@ -29,7 +29,7 @@ function sendResponse(responseObject) {
 // ==========================================
 // 1. GLOBAL CONFIGURATION
 // ==========================================
-const FIREBASE_DB_URL = "https://scigarage-default-rtdb.firebaseio.com"; 
+const FIREBASE_DB_URL = "https://scigarage-default-rtdb.firebaseio.com";
 const FIREBASE_SECRET = PropertiesService.getScriptProperties().getProperty("FIREBASE_SECRET");
 
 const ROSTER_CONFIG = {
@@ -38,24 +38,146 @@ const ROSTER_CONFIG = {
   forensics: { id: "1idQ_iJ-JaqKSEP0wdsgHz1n625AOhVShFHXhVyR1e90", gid: "1951332896" }
 };
 
+
+
 // ==========================================
-// 2. FIREBASE HELPER FUNCTION 
+// 3. BATCH ASSIGNMENT CREATION (From Sheet)
 // ==========================================
-function sendToFirebase(firebaseDataObjects) {
-  const bulkUpdatePayload = {};
-  firebaseDataObjects.forEach(data => bulkUpdatePayload[data.assignmentId] = data);
-  const response = UrlFetchApp.fetch(`${FIREBASE_DB_URL}/assignments.json?auth=${FIREBASE_SECRET}`, {
-    method: "patch", contentType: "application/json; charset=utf-8", payload: JSON.stringify(bulkUpdatePayload), muteHttpExceptions: true
+function createClassroomAssignment(payload) {
+  const className = payload.className;
+  const assignmentsToPost = payload.assignments;
+  let classId;
+
+  try {
+    classId = getClassIdByName(className);
+  } catch (error) {
+    return { status: "error", message: `Could not find class: ${className}` };
+  }
+
+  // Cache API calls once per batch
+  let currentTopics = Classroom.Courses.Topics.list(classId).topic || [];
+  let currentRoster = Classroom.Courses.Students.list(classId).students || [];
+
+  let postedCount = 0;
+  let errorLog = [];
+
+  assignmentsToPost.forEach(assignment => {
+    try {
+      let topicId = null;
+      if (assignment.topicName) {
+        let existingTopic = currentTopics.find(t => t.name.toLowerCase() === assignment.topicName.toLowerCase());
+        if (existingTopic) {
+          topicId = existingTopic.topicId;
+        } else {
+          const newTopic = Classroom.Courses.Topics.create({ name: assignment.topicName }, classId);
+          topicId = newTopic.topicId;
+          currentTopics.push(newTopic);
+        }
+      }
+
+      let materials = [];
+      if (assignment.files && assignment.folderId) {
+        assignment.files.forEach(fileName => {
+          const fileId = getDriveFileIdByName(assignment.folderId, fileName);
+          if (fileId) materials.push({ driveFile: { driveFile: { id: fileId } } });
+        });
+      }
+      if (assignment.links) {
+        const linkList = assignment.links.split(',').map(l => l.trim());
+        linkList.forEach(url => { if (url) materials.push({ link: { url: url } }); });
+      }
+
+      let parsedDate = undefined;
+      let defaultDueTime = undefined;
+      if (assignment.dueDateString) {
+        const dateParts = assignment.dueDateString.split("-");
+        parsedDate = { year: parseInt(dateParts[2]), month: parseInt(dateParts[0]), day: parseInt(dateParts[1]) + 1 };
+        defaultDueTime = { hours: 0, minutes: 0, seconds: 0 };
+      }
+
+      let individualStudentsOptions = undefined;
+      if (assignment.studentsCell) {
+        const studentEmails = assignment.studentsCell.split(',').map(e => e.trim().toLowerCase());
+        const studentIds = [];
+        studentEmails.forEach(email => {
+          const student = currentRoster.find(s => s.profile && s.profile.emailAddress.toLowerCase() === email);
+          if (student) studentIds.push(student.userId);
+        });
+        if (studentIds.length > 0) individualStudentsOptions = { studentIds: studentIds };
+      }
+
+      if (assignment.workType === "MATERIAL") {
+        const materialObj = {
+          title: assignment.title,
+          description: assignment.description || "",
+          materials: materials,
+          state: (assignment.state || "PUBLISHED").toUpperCase(),
+          topicId: topicId,
+          assigneeMode: individualStudentsOptions ? 'INDIVIDUAL_STUDENTS' : undefined,
+          individualStudentsOptions: individualStudentsOptions
+        };
+        Classroom.Courses.CourseWorkMaterials.create(materialObj, classId);
+      } else {
+        const courseworkObj = {
+          title: assignment.title,
+          description: assignment.description || "",
+          materials: materials,
+          state: (assignment.state || "PUBLISHED").toUpperCase(),
+          workType: "ASSIGNMENT",
+          topicId: topicId,
+          maxPoints: assignment.maxPoints || undefined,
+          dueDate: parsedDate,
+          dueTime: defaultDueTime,
+          assigneeMode: individualStudentsOptions ? 'INDIVIDUAL_STUDENTS' : undefined,
+          individualStudentsOptions: individualStudentsOptions
+        };
+        Classroom.Courses.CourseWork.create(courseworkObj, classId);
+      }
+
+      postedCount++;
+      Utilities.sleep(1000);
+
+    } catch (e) {
+      errorLog.push(`Failed to post "${assignment.title}": ${e.message}`);
+    }
   });
-  if (response.getResponseCode() !== 200) throw new Error("Firebase Bulk Sync Error: " + response.getContentText());
+
+  let syncMessage = "No assignments posted, skipped database sync.";
+  if (postedCount > 0) {
+    try {
+      syncClassroomToDatabase(classId, className);
+      syncTeacherGradebook(classId, className);
+      syncMessage = "Firebase databases successfully synced.";
+    } catch (e) {
+      errorLog.push(`Classroom posting succeeded, but Firebase Sync failed: ${e.message}`);
+    }
+  }
+
+  return {
+    status: errorLog.length === 0 ? "success" : "partial",
+    message: `Successfully posted ${postedCount} assignments. ${syncMessage}`,
+    errors: errorLog
+  };
 }
 
 // ==========================================
-// 3. MAIN ASSIGNMENT SYNC (Scheduler)
+// 4. MAIN ASSIGNMENT SYNC (Scheduler)
 // ==========================================
 function syncClassroomToDatabase(classId, className) {
   try {
     const encodedClassId = Utilities.base64EncodeWebSafe(classId);
+
+    let subj = "ZZ";
+    let lowerClassName = className.toLowerCase();
+    if (lowerClassName.includes("chemistry")) subj = "CH";
+    else if (lowerClassName.includes("physics")) subj = "PH";
+    else if (lowerClassName.includes("forensic")) subj = "FS";
+
+    let periodMatch = className.match(/P\d/i);
+    let period = periodMatch ? periodMatch[0].toUpperCase() : "P0";
+    let classFolder = `${subj}_${period}_${classId}`;
+
+    // 1. Fetch current Classroom CourseWork
     let allCourseWork = []; let pageToken = null;
     do {
       const response = Classroom.Courses.CourseWork.list(classId, { pageToken: pageToken, courseWorkStates: ["PUBLISHED", "DRAFT"] });
@@ -63,7 +185,7 @@ function syncClassroomToDatabase(classId, className) {
       pageToken = response.nextPageToken;
     } while (pageToken);
 
-    const gcAssignmentIds = allCourseWork.map(work => work.id);
+    // 2. Map Topics
     const topicsMap = {}; let topicPageToken = null;
     do {
       const response = Classroom.Courses.Topics.list(classId, { pageToken: topicPageToken });
@@ -71,48 +193,96 @@ function syncClassroomToDatabase(classId, className) {
       topicPageToken = response.nextPageToken;
     } while (topicPageToken);
 
-    const rtdbData = JSON.parse(UrlFetchApp.fetch(`${FIREBASE_DB_URL}/assignments.json?orderBy="classId"&equalTo="${classId}"&auth=${FIREBASE_SECRET}`).getContentText()) || {};
-    let deletedCount = 0;
-    Object.keys(rtdbData).forEach(rtdbId => {
-      if (!gcAssignmentIds.includes(rtdbId)) {
-        UrlFetchApp.fetch(`${FIREBASE_DB_URL}/assignments/${rtdbId}.json?auth=${FIREBASE_SECRET}`, { method: "delete" });
-        deletedCount++;
+    // 3. Get existing RTDB data for this specific class folder
+    const classNodeUrl = `${FIREBASE_DB_URL}/schedulerAssignments/${classFolder}.json?auth=${FIREBASE_SECRET}`;
+    const rtdbData = JSON.parse(UrlFetchApp.fetch(classNodeUrl).getContentText()) || {};
+
+    // Map existing entries by Assignment Code to identify ghosts/clashes
+    const existingByCode = {};
+    Object.keys(rtdbData).forEach(fbKey => {
+      const entry = rtdbData[fbKey];
+      if (entry && entry.assignmentCode) {
+        existingByCode[entry.assignmentCode] = { key: fbKey, data: entry };
       }
     });
 
-    const firebaseDataObjects = [];
+    const bulkPayload = {};
+
+    // 4. Process current Classroom assignments
     allCourseWork.forEach(work => {
+      let topicName = work.topicId ? (topicsMap[work.topicId] || "") : "";
+      if (topicName.toLowerCase().includes("bellringer")) return;
+
+      const assignCode = generateAssignmentCode(className, topicName, work.title);
       const encodedAssId = Utilities.base64EncodeWebSafe(work.id);
-      let preservedDates = ["unassigned"]; let preservedNotes = null; let preservedDayOrder = null;
-      if (rtdbData[work.id]) {
-          if (rtdbData[work.id].scheduledDates) preservedDates = rtdbData[work.id].scheduledDates;
-          if (rtdbData[work.id].notes) preservedNotes = rtdbData[work.id].notes;
-          if (rtdbData[work.id].dayOrder) preservedDayOrder = rtdbData[work.id].dayOrder;
+      let fbKey = `${assignCode}_${work.id}`;
+
+      let finalDates = ["unassigned"];
+      let finalNotes = null;
+      let finalDayOrder = null;
+
+      // GHOST DETECTION & CLASH RESOLUTION
+      if (existingByCode[assignCode]) {
+        const currentEntry = existingByCode[assignCode].data;
+
+        // Carry over manual data (dates, notes, etc.)
+        if (currentEntry.scheduledDates) finalDates = currentEntry.scheduledDates;
+        if (currentEntry.notes) finalNotes = currentEntry.notes;
+        if (currentEntry.dayOrder) finalDayOrder = currentEntry.dayOrder;
+
+        // If the IDs are different, the old one is a "ghost" (repost). Delete it.
+        if (currentEntry.assignmentId !== work.id) {
+          bulkPayload[existingByCode[assignCode].key] = null;
+        }
       }
-      firebaseDataObjects.push({
-        assignmentId: work.id, title: work.title, classId: classId, className: className,
-        topicId: work.topicId || "", topicName: work.topicId ? (topicsMap[work.topicId] || "") : "",
+
+      // Add/Update the current assignment
+      bulkPayload[fbKey] = {
+        assignmentId: work.id,
+        classId: classId,
+        topicId: work.topicId || "",
+        title: work.title,
+        className: className,
+        topicName: topicName,
+        assignmentCode: assignCode,
         encodedUrl: `https://classroom.google.com/c/${encodedClassId}/a/${encodedAssId}/details`,
-        state: work.state || "PUBLISHED", workType: work.workType || "ASSIGNMENT",
+        state: work.state || "PUBLISHED",
+        workType: work.workType || "ASSIGNMENT",
         timestampCreated: work.creationTime ? new Date(work.creationTime).getTime() : Date.now(),
         dueDateString: work.dueDate ? `${work.dueDate.year}-${work.dueDate.month}-${work.dueDate.day}` : "",
-        maxPoints: work.maxPoints || 0, scheduledDates: preservedDates, notes: preservedNotes, dayOrder: preservedDayOrder, sortIndex: 0, category: "", durationMinutes: 0
-      });
+        maxPoints: work.maxPoints || 0,
+        scheduledDates: finalDates,
+        notes: finalNotes,
+        dayOrder: finalDayOrder
+      };
     });
 
-    if (firebaseDataObjects.length > 0) sendToFirebase(firebaseDataObjects);
-    return { count: firebaseDataObjects.length, deletedCount: deletedCount, syncedTitles: firebaseDataObjects.map(data => data.title) };
-  } catch (error) { throw new Error(`Sync failed: ${error.message}`); }
+    // NOTE: The general "Cleanup" loop is removed. 
+    // This ensures assignments from previous years/classes remain in the RTDB 
+    // unless their code clashes with a current sync item.
+
+    if (Object.keys(bulkPayload).length > 0) {
+      UrlFetchApp.fetch(classNodeUrl, {
+        method: "patch",
+        contentType: "application/json; charset=utf-8",
+        payload: JSON.stringify(bulkPayload),
+        muteHttpExceptions: true
+      });
+    }
+    return { status: "success", syncedCount: allCourseWork.length };
+  } catch (error) {
+    throw new Error(`Sync failed: ${error.message}`);
+  }
 }
 
 // ==========================================
-// 4. STUDENT REPORT CARD SYNC
+// 5. STUDENT REPORT CARD SYNC
 // ==========================================
 function syncGradebook(classId, className) {
   let sheetId = ""; let sheetGid = "";
-  if (/chemistry/i.test(className)) { sheetId = ROSTER_CONFIG.chemistry.id; sheetGid = ROSTER_CONFIG.chemistry.gid; } 
-  else if (/physics/i.test(className)) { sheetId = ROSTER_CONFIG.physics.id; sheetGid = ROSTER_CONFIG.physics.gid; } 
-  else if (/forensic/i.test(className)) { sheetId = ROSTER_CONFIG.forensics.id; sheetGid = ROSTER_CONFIG.forensics.gid; } 
+  if (/chemistry/i.test(className)) { sheetId = ROSTER_CONFIG.chemistry.id; sheetGid = ROSTER_CONFIG.chemistry.gid; }
+  else if (/physics/i.test(className)) { sheetId = ROSTER_CONFIG.physics.id; sheetGid = ROSTER_CONFIG.physics.gid; }
+  else if (/forensic/i.test(className)) { sheetId = ROSTER_CONFIG.forensics.id; sheetGid = ROSTER_CONFIG.forensics.gid; }
   else throw new Error("Unknown subject");
 
   const emailToUuidMap = getEmailToUuidMap(sheetId, sheetGid);
@@ -133,7 +303,7 @@ function syncGradebook(classId, className) {
     if (response.courseWork) allCourseWork = allCourseWork.concat(response.courseWork);
     pageToken = response.nextPageToken;
   } while (pageToken);
-  
+
   let firebaseUpdates = {};
   allCourseWork.forEach(work => {
     let topicName = topicMap[work.topicId] || "";
@@ -169,13 +339,13 @@ function syncGradebook(classId, className) {
 }
 
 // ==========================================
-// 5. TEACHER GRADEBOOK SYNC (UPDATED WITH UNIT MAP)
+// 6. TEACHER GRADEBOOK SYNC
 // ==========================================
 function syncTeacherGradebook(classId, className) {
   let sheetId = ""; let sheetGid = "";
-  if (/chemistry/i.test(className)) { sheetId = ROSTER_CONFIG.chemistry.id; sheetGid = ROSTER_CONFIG.chemistry.gid; } 
-  else if (/physics/i.test(className)) { sheetId = ROSTER_CONFIG.physics.id; sheetGid = ROSTER_CONFIG.physics.gid; } 
-  else if (/forensic/i.test(className)) { sheetId = ROSTER_CONFIG.forensics.id; sheetGid = ROSTER_CONFIG.forensics.gid; } 
+  if (/chemistry/i.test(className)) { sheetId = ROSTER_CONFIG.chemistry.id; sheetGid = ROSTER_CONFIG.chemistry.gid; }
+  else if (/physics/i.test(className)) { sheetId = ROSTER_CONFIG.physics.id; sheetGid = ROSTER_CONFIG.physics.gid; }
+  else if (/forensic/i.test(className)) { sheetId = ROSTER_CONFIG.forensics.id; sheetGid = ROSTER_CONFIG.forensics.gid; }
   else throw new Error("Unknown subject");
 
   const emailToUuidMap = getEmailToUuidMap(sheetId, sheetGid);
@@ -196,20 +366,18 @@ function syncTeacherGradebook(classId, className) {
     if (response.courseWork) allCourseWork = allCourseWork.concat(response.courseWork);
     pageToken = response.nextPageToken;
   } while (pageToken);
-  
+
   let firebaseUpdates = {};
   const currentTimestamp = Date.now();
-  const unitMappingDictionary = {}; // Dictionary to store parsed Unit Code -> Full Unit Name
+  const unitMappingDictionary = {};
 
   allCourseWork.forEach(work => {
     let topicName = topicMap[work.topicId] || "Uncategorized";
     let assignmentCode = generateAssignmentCode(className, topicName, work.title);
-    
-    // Extract the Unit Code (e.g. U07, BR, SDA) from the generated assignment code
+
     let codeParts = assignmentCode.split('_');
     let unitCode = codeParts.length > 1 ? codeParts[1] : "U00";
-    
-    // Build the mapping dictionary
+
     unitMappingDictionary[unitCode] = topicName;
 
     let b64Course = Utilities.base64EncodeWebSafe(classId.toString());
@@ -228,7 +396,7 @@ function syncTeacherGradebook(classId, className) {
             let score = (sub.assignedGrade !== undefined && sub.assignedGrade !== null) ? sub.assignedGrade : null;
             let statusText = sub.state ? sub.state.toLowerCase() : "assigned";
             let basePath = `teacherGradebook/${className}/${assignmentCode}/${uuid}`;
-            
+
             firebaseUpdates[`${basePath}/score`] = score;
             firebaseUpdates[`${basePath}/status`] = statusText;
             firebaseUpdates[`${basePath}/gcSynced`] = (score !== null);
@@ -239,7 +407,6 @@ function syncTeacherGradebook(classId, className) {
     }
   });
 
-  // Write the completed Unit Dictionary into the class node
   Object.keys(unitMappingDictionary).forEach(uCode => {
     firebaseUpdates[`teacherGradebook/${className}/_unitMap/${uCode}`] = unitMappingDictionary[uCode];
   });
@@ -308,9 +475,21 @@ function getClassIdByName(className) {
 }
 
 function getActiveClassesForSync() {
-  return (Classroom.Courses.list().courses || []).filter(c => c.courseState !== "ARCHIVED").map(c => ({ id: c.id, name: c.name })); 
+  return (Classroom.Courses.list().courses || []).filter(c => c.courseState !== "ARCHIVED").map(c => ({ id: c.id, name: c.name }));
+}
+
+function getDriveFileIdByName(folderId, fileName) {
+  try {
+    const folder = DriveApp.getFolderById(folderId);
+    const files = folder.getFilesByName(fileName);
+    if (files.hasNext()) return files.next().getId();
+    return null;
+  } catch (e) {
+    return null;
+  }
 }
 
 function doGet(e) {
   return HtmlService.createHtmlOutputFromFile('Admin').setTitle('Classroom Sync Admin').setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
+

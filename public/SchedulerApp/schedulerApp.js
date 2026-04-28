@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-import { getDatabase, ref, get, update, remove, push, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+import { getDatabase, ref, query, orderByChild, equalTo, get, update, remove, push, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
 // 🛑🛑🛑 FIREBASE CONFIG 🛑🛑🛑
 const firebaseConfig = {
@@ -19,405 +19,952 @@ const auth = getAuth(app);
 const db = getDatabase(app);
 const provider = new GoogleAuthProvider();
 
-// GLOBAL STATE
-let currentMonday = (function () {
+window.loginTeacher = function() {
+    signInWithPopup(auth, provider).catch((error) => {
+        console.error("Login error:", error);
+        alert("Login failed: " + error.message);
+    });
+};
+
+window.logoutTeacher = function() {
+    signOut(auth).catch((error) => console.error("Logout error:", error));
+};
+
+let currentMonday = (function() {
     let now = new Date();
-    now.setHours(12, 0, 0, 0);
-    let day = now.getDay();
-    let diff = 1 - day;
+    now.setHours(12, 0, 0, 0); 
+    let day = now.getDay();    
+    let diff = 1 - day;        
     now.setDate(now.getDate() + diff);
     return now;
 })();
 
 const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-let currentClassData = {};
-let currentCalendarConfig = {};
-let currentBellringers = {};
-let activePeriod = "";
-let currentClassFolder = "";
-let currentSubject = "";
-let unsubscribeAssignments = null;
-let unsubscribeConfig = null;
-window.isDragging = false;
+let currentClassData = {}; 
+let currentCalendarConfig = {}; 
+let currentBellringers = {}; 
+let activePeriod = ""; 
+let unsubscribeAssignments = null; 
+window.isDragging = false;         
 
-const formatDateLocal = (dateObj) => {
+// State tracking to ensure clean renders when switching classes
+window.lastSelectedClass = "";
+window.forceNextRender = false;
+
+function formatDateLocal(dateObj) {
     const y = dateObj.getFullYear();
     const m = String(dateObj.getMonth() + 1).padStart(2, '0');
     const d = String(dateObj.getDate()).padStart(2, '0');
     return `${y}-${m}-${d}`;
-};
-
-// --- UI SCALING ---
-function scaleUI() {
-    const baseWidth = 1900;
-    const wrapper = document.getElementById('scale-wrapper');
-    const content = document.getElementById('scaled-content');
-    if (!wrapper || !content) return;
-
-    const availableWidth = wrapper.clientWidth;
-    let scale = availableWidth / baseWidth;
-    if (scale > 1) scale = 1;
-
-    content.style.transform = `scale(${scale})`;
-
-    setTimeout(() => {
-        const scaledHeight = content.getBoundingClientRect().height;
-        wrapper.style.height = `${scaledHeight}px`;
-    }, 10);
 }
-window.addEventListener('resize', scaleUI);
 
-function fitDayOffText() {
-    document.querySelectorAll('.day-off-banner').forEach(banner => {
-        const textSpan = banner.querySelector('.banner-text');
-        if (!textSpan) {
-            if (banner.childNodes.length === 1 && banner.childNodes[0].nodeType === 3) {
-                const text = banner.innerText;
-                banner.innerHTML = `<span class="banner-text">${text}</span>`;
-            } else {
-                return;
+window.updateMasterCalendarState = async function(periodsToUpdate = [activePeriod]) {
+    const updates = {};
+    
+    for (const period of periodsToUpdate) {
+        let configToUpdate = currentCalendarConfig;
+        if (period !== activePeriod) {
+            const snap = await get(ref(db, `calendarConfig/${period}`));
+            configToUpdate = snap.exists() ? snap.val() : {};
+        }
+
+        let currDate = new Date('2025-07-01T12:00:00'); 
+        let endDate = new Date('2026-06-30T12:00:00'); 
+        let isDouble = true; 
+
+        while (currDate <= endDate) {
+            let dStr = formatDateLocal(currDate);
+            let dayOfWeek = currDate.getDay();
+            let isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+            let dayConfig = configToUpdate[dStr] || {};
+
+            if (!isWeekend) {
+                if (dayConfig.flipped) isDouble = !isDouble;
+                
+                if (dayConfig.isDouble !== isDouble) {
+                    updates[`/calendarConfig/${period}/${dStr}/isDouble`] = isDouble;
+                    
+                    if (period === activePeriod) {
+                        if (!currentCalendarConfig[dStr]) currentCalendarConfig[dStr] = {};
+                        currentCalendarConfig[dStr].isDouble = isDouble;
+                    }
+                }
+
+                if (!dayConfig.isDayOff) isDouble = !isDouble; 
             }
+            currDate.setDate(currDate.getDate() + 1);
         }
-        const span = banner.querySelector('.banner-text');
-        let fontSize = 24;
-        span.style.fontSize = fontSize + 'px';
-        while (span.scrollWidth > (banner.clientWidth - 20) && fontSize > 10) {
-            fontSize--;
-            span.style.fontSize = fontSize + 'px';
+    }
+    try {
+        if (Object.keys(updates).length > 0) {
+            await update(ref(db), updates);
         }
-    });
+    } catch (error) { console.error("Master calendar sync failed", error); }
 }
 
-// --- AUTH & INITIALIZATION ---
-window.loginTeacher = () => signInWithPopup(auth, provider);
-window.logoutTeacher = () => signOut(auth);
+const allowedAdmins = ['pianodemon88@gmail.com', 'kjosephs@ocsdny.org'];
 
 onAuthStateChanged(auth, (user) => {
+    const authStatus = document.getElementById('auth-status');
+    const authBtn = document.getElementById('auth-btn');
     const sidebar = document.getElementById('teacher-sidebar');
     const mainView = document.getElementById('main-view');
-    const authBtn = document.getElementById('auth-btn');
-    const authStatus = document.getElementById('auth-status');
 
-    if (user && ['pianodemon88@gmail.com', 'kjosephs@ocsdny.org'].includes(user.email)) {
-        authStatus.innerHTML = `Logged in: <b>${user.email}</b>`;
-        authBtn.innerText = "Log Out";
-        authBtn.onclick = window.logoutTeacher;
-        sidebar.style.display = "flex";
-        mainView.classList.add('edit-mode');
-
-        initEventListeners();
-        window.loadInitialClasses();
+    if (user) {
+        if (allowedAdmins.includes(user.email)) {
+            authStatus.innerHTML = `Logged in: <b>${user.email}</b>`;
+            authBtn.innerText = "Log Out";
+            authBtn.onclick = window.logoutTeacher;
+            sidebar.style.display = "flex";
+            mainView.classList.add('edit-mode');
+            window.loadInitialClasses();
+        } else {
+            alert(`Access Denied: The account (${user.email}) does not have admin privileges.`);
+            window.logoutTeacher(); 
+        }
     } else {
-        sidebar.style.display = "none";
-        mainView.classList.remove('edit-mode');
+        authStatus.innerHTML = `Mode: View Only`;
         authBtn.innerText = "Teacher Login";
         authBtn.onclick = window.loginTeacher;
+        sidebar.style.display = "none";
+        mainView.classList.remove('edit-mode');
+        document.getElementById('calendar-container').innerHTML = '';
+        document.getElementById('date-range-display').innerText = "Please Log In";
     }
 });
 
-function initEventListeners() {
+window.loadInitialClasses = async function() {
+    document.getElementById('date-range-display').innerText = "Syncing...";
     const classSelect = document.getElementById('class-select');
-    classSelect.onchange = (e) => {
-        const folder = e.target.value;
-        const name = e.target.options[e.target.selectedIndex].text;
-        if (folder) window.fetchClassData(folder, name);
-    };
-
-    const topicSelect = document.getElementById('topic-select');
-    topicSelect.onchange = window.renderCalendar;
-
-    const weekViewSelect = document.getElementById('week-view-select');
-    weekViewSelect.onchange = window.renderCalendar;
-
-    document.getElementById('prev-week').onclick = () => {
-        currentMonday.setDate(currentMonday.getDate() - 7);
-        window.renderCalendar();
-    };
-    document.getElementById('next-week').onclick = () => {
-        currentMonday.setDate(currentMonday.getDate() + 7);
-        window.renderCalendar();
-    };
-
-    const settingsBtn = document.getElementById('settings-btn');
-    settingsBtn.onclick = () => {
-        window.openSettings();
-    };
-}
-
-// --- DATA LOADING ---
-window.loadInitialClasses = async function () {
-    const classSelect = document.getElementById('class-select');
+    
     try {
-        const snapshot = await get(ref(db, 'schedulerAssignments'));
+        const snapshot = await get(ref(db, 'schedulerAssignments')); 
         if (snapshot.exists()) {
             const allFolders = snapshot.val();
-            const uniqueClasses = [];
-            Object.keys(allFolders).forEach(folderName => {
-                const folderData = allFolders[folderName];
-                const sample = Object.values(folderData).find(a => a && a.className);
-                if (sample) uniqueClasses.push({ folder: folderName, name: sample.className });
+            const uniqueClasses = new Set();
+            
+            Object.values(allFolders).forEach(folder => {
+                Object.values(folder).forEach(a => {
+                    if (a.className) uniqueClasses.add(a.className);
+                });
             });
-            classSelect.innerHTML = '<option value="">-- Select a Class --</option>';
-            uniqueClasses.sort((a, b) => a.name.localeCompare(b.name)).forEach(c => {
+
+            classSelect.innerHTML = ''; 
+            Array.from(uniqueClasses).sort().forEach(className => {
                 const opt = document.createElement('option');
-                opt.value = c.folder; opt.textContent = c.name;
+                opt.value = className;
+                opt.innerText = className;
                 classSelect.appendChild(opt);
             });
-
-            if (uniqueClasses.length > 0) {
-                classSelect.value = uniqueClasses[0].folder;
-                window.fetchClassData(uniqueClasses[0].folder, uniqueClasses[0].name);
-            }
+            window.fetchClassData(); 
+        } else {
+            classSelect.innerHTML = '<option>No classes found</option>';
+            document.getElementById('date-range-display').innerText = "Database empty.";
         }
-    } catch (e) { console.error("Initial load failed:", e); }
-};
+    } catch (error) { console.error("Error:", error); }
+}
 
-window.fetchClassData = async function (exactFolder, className) {
-    currentClassFolder = exactFolder;
-    const pMatch = className.match(/P\d/i) || exactFolder.match(/P\d/i);
-    activePeriod = pMatch ? pMatch[0].toUpperCase() : "P0";
+window.fetchClassData = async function() {
+    const className = document.getElementById('class-select').value;
+    if(!className || className === "Loading...") return;
 
-    if (className.toLowerCase().includes("chemistry")) currentSubject = "Chemistry";
-    else if (className.toLowerCase().includes("physics")) currentSubject = "Physics";
-    else if (className.toLowerCase().includes("forensic")) currentSubject = "Forensics";
-    else currentSubject = "Science";
+    // Track if the class explicitly changed to force a complete screen wipe
+    if (window.lastSelectedClass !== className) {
+        window.forceNextRender = true;
+        window.lastSelectedClass = className;
+    }
 
-    document.getElementById('calendar-title').innerText = `${className} - ${activePeriod}`;
+    const periodMatch = className.match(/(P\d)/i);
+    activePeriod = periodMatch ? periodMatch[0].toUpperCase() : "DEFAULT";
+    
+    document.getElementById('modal-title').innerText = `${activePeriod} Calendar Settings`;
+    document.getElementById('current-period-label').innerText = activePeriod;
+    
+    const mainView = document.getElementById('main-view');
+    const lowerClassName = className.toLowerCase();
+    
+    const isForensics = lowerClassName.includes('forensics') || activePeriod === 'P1';
+    if (isForensics) {
+        mainView.classList.add('hide-for-forensics');
+    } else {
+        mainView.classList.remove('hide-for-forensics');
+    }
 
-    if (unsubscribeAssignments) unsubscribeAssignments();
-    if (unsubscribeConfig) unsubscribeConfig();
+    let subject = null;
+    if (lowerClassName.includes('chemistry')) {
+        subject = 'Chemistry';
+    } else if (lowerClassName.includes('physics')) {
+        subject = 'Physics';
+    }
 
     try {
-        const bellSnap = await get(ref(db, `bellringers/${currentSubject}`));
-        currentBellringers = bellSnap.exists() ? bellSnap.val() : {};
-    } catch (e) { console.error("Bellringer fetch failed", e); }
+        const configSnap = await get(ref(db, `calendarConfig/${activePeriod}`));
+        currentCalendarConfig = configSnap.exists() ? configSnap.val() : {};
 
-    unsubscribeConfig = onValue(ref(db, `calendarConfig/${activePeriod}`), (snap) => {
-        currentCalendarConfig = snap.exists() ? snap.val() : {};
-        window.renderCalendar();
-        window.loadConfigList();
-    });
-
-    unsubscribeAssignments = onValue(ref(db, `schedulerAssignments/${exactFolder}`), (snap) => {
-        currentClassData = {};
-        if (snap.exists()) {
-            Object.entries(snap.val()).forEach(([key, val]) => {
-                if (val && typeof val === 'object') {
-                    val._fbKey = key;
-                    currentClassData[val.assignmentId || key] = val;
-                }
-            });
+        if (subject) {
+            const bellringerSnap = await get(ref(db, `bellringers/${subject}`));
+            currentBellringers = bellringerSnap.exists() ? bellringerSnap.val() : {};
+        } else {
+            currentBellringers = {};
         }
-        window.buildTopicDropdown();
-        window.renderCalendar();
-    });
-};
 
-window.buildTopicDropdown = function () {
+        await window.updateMasterCalendarState([activePeriod]);
+
+        if (unsubscribeAssignments) unsubscribeAssignments();
+
+        const assignmentsRef = ref(db, 'schedulerAssignments'); 
+        unsubscribeAssignments = onValue(assignmentsRef, (assigSnap) => {
+            currentClassData = {};
+            
+            if (assigSnap.exists()) {
+                const allFolders = assigSnap.val();
+                
+                Object.entries(allFolders).forEach(([folderName, folderData]) => {
+                    Object.entries(folderData).forEach(([key, val]) => {
+                        if (val.className && val.className.includes(activePeriod)) {
+                            val._folderName = folderName; 
+                            currentClassData[key] = val;
+                        }
+                    });
+                });
+            }
+
+            if (!window.isDragging) {
+                window.buildTopicDropdown();
+                
+                const container = document.getElementById('calendar-container');
+                // Force a full clean render if the class changed to wipe old DOM elements
+                if (window.forceNextRender || !container || container.innerHTML === '') {
+                    window.renderCalendar(); 
+                    window.forceNextRender = false; // Reset the flag after forcing the wipe
+                } else {
+                    window.placeAssignments();
+                }
+            }
+        });
+
+    } catch (error) { console.error("Error:", error); }
+}
+
+window.buildTopicDropdown = function() {
     const topicSelect = document.getElementById('topic-select');
-    const previousValue = topicSelect.value;
-
-    // Create a map of unique Topic Names to IDs
-    const topicMap = new Map();
-    Object.values(currentClassData).forEach(a => {
-        if (a.topicName && a.topicId && !a.isCustomNote) topicMap.set(a.topicName, a.topicId);
+    const selectedClass = document.getElementById('class-select').value;
+    
+    const currentSelection = topicSelect.value;
+    
+    topicSelect.innerHTML = '<option value="all">All Topics</option>'; 
+    const uniqueTopics = new Set();
+    
+    Object.values(currentClassData).forEach(a => { 
+        if (a.className === selectedClass && a.topicName && !a.isCustomNote) {
+            uniqueTopics.add(a.topicName); 
+        }
     });
-
-    topicSelect.innerHTML = '<option value="all">All Topics</option>';
-    Array.from(topicMap.keys()).sort().forEach(name => {
-        const opt = document.createElement('option');
-        opt.value = name;
-        opt.textContent = name;
-        opt.dataset.topicId = topicMap.get(name); // Store ID for matching
+    
+    Array.from(uniqueTopics).sort().forEach(topic => {
+        const opt = document.createElement('option'); 
+        opt.value = topic; 
+        opt.innerText = topic; 
         topicSelect.appendChild(opt);
     });
 
-    topicSelect.value = previousValue; // Prevent resetting to 'All Topics'
-};
+    const topicStillExists = Array.from(topicSelect.options).some(opt => opt.value === currentSelection);
+    if (currentSelection && topicStillExists) {
+        topicSelect.value = currentSelection;
+    } else {
+        topicSelect.value = 'all'; 
+    }
+}
 
-// --- RENDER LOGIC ---
-window.renderCalendar = function () {
+window.renderCalendar = function() {
     const container = document.getElementById('calendar-container');
-    const tank = document.getElementById('holding-tank');
-    if (!container || !tank) return;
-
-    container.innerHTML = '';
-    tank.innerHTML = '';
-
-    let numWeeks = parseInt(document.getElementById('week-view-select').value) || 1;
-    if (numWeeks > 3) numWeeks = 3;
-
+    const holdingTank = document.getElementById('holding-tank');
+    
+    // Completely wipe the screen elements to guarantee a fresh state
+    container.innerHTML = ''; 
+    holdingTank.innerHTML = ''; 
+    
+    const numWeeks = parseInt(document.getElementById('week-view-select').value) || 1;
     let renderDate = new Date(currentMonday);
-    const dateRangeDisplay = document.getElementById('date-range-display');
-    const startDateStr = renderDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+    const endDate = new Date(currentMonday);
+    endDate.setDate(currentMonday.getDate() + (numWeeks * 7) - 3); 
+    document.getElementById('date-range-display').innerText = 
+        `${currentMonday.toLocaleDateString('en-US', {month:'short', day:'numeric'})} - ${endDate.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})}`;
 
     for (let w = 0; w < numWeeks; w++) {
-        const grid = document.createElement('div');
-        grid.className = 'week-grid';
+        const weekGrid = document.createElement('div');
+        weekGrid.className = 'week-grid';
+
         for (let d = 0; d < 5; d++) {
-            const dStr = formatDateLocal(renderDate);
-            const conf = currentCalendarConfig[dStr] || {};
-            grid.appendChild(window.createDayColumn(renderDate, conf.isDouble !== false, dStr, conf));
+            const dateStr = formatDateLocal(renderDate);
+            const dayConfig = currentCalendarConfig[dateStr] || {};
+            
+            let isDouble = dayConfig.isDouble !== undefined ? dayConfig.isDouble : true;
+            
+            weekGrid.appendChild(window.createDayColumn(renderDate, isDouble, dateStr, dayConfig));
+            
             renderDate.setDate(renderDate.getDate() + 1);
         }
-        container.appendChild(grid);
-        renderDate.setDate(renderDate.getDate() + 2);
+        container.appendChild(weekGrid);
+        renderDate.setDate(renderDate.getDate() + 2); 
     }
-
-    const endDate = new Date(renderDate);
-    endDate.setDate(renderDate.getDate() - 3);
-    dateRangeDisplay.innerText = `${startDateStr} - ${endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
 
     window.initSortables();
     window.placeAssignments();
+}
 
-    scaleUI();
-    setTimeout(fitDayOffText, 50);
-};
-
-window.createDayColumn = (dateObj, isDouble, dStr, conf) => {
+window.createDayColumn = function(dateObj, isDouble, dateStr, dayConfig) {
     const col = document.createElement('div');
     col.className = 'day-column';
-    const display = `${dateObj.toLocaleString('en-US', { month: 'short' })} ${dateObj.getDate()}`;
-    const dayName = dayNames[dateObj.getDay() - 1];
-
-    if (conf.isDayOff) {
+    const displayDate = `${dateObj.toLocaleString('en-US', { month: 'short' })} ${dateObj.getDate()}`;
+    
+    if (dayConfig && dayConfig.isDayOff) {
         col.innerHTML = `
             <div class="day-header">
-                <span class="day-name">${dayName}</span>
-                <div class="day-date">${display}</div>
+                <span class="day-name">${dayNames[dateObj.getDay() - 1]}</span>
+                <div class="day-date">${displayDate}</div>
             </div>
-            <div class="day-off-banner"><span class="banner-text">${conf.name || 'DAY OFF'}</span></div>
-            <div class="day-list" id="${dStr}" style="display:none"></div>
+            <div class="day-off-banner">${dayConfig.name}</div>
+            <div class="sortable-list day-list" id="${dateStr}" style="display: none;"></div>
         `;
     } else {
-        let bannerHTML = conf.name ? `<div class="special-day-banner">${conf.name}</div>` : '';
+        let bannerHTML = '';
+        if (dayConfig && dayConfig.name) {
+            bannerHTML = `<div class="special-day-banner">${dayConfig.name}</div>`;
+        }
+
         let bellringerHTML = '';
-        const bellUrl = currentBellringers[dStr];
-        if (bellUrl) {
-            bellringerHTML = `<div class="bellringer-container"><a href="${bellUrl}" target="_blank" class="bellringer-link" style="color: #0000ff; font-weight: bold; text-decoration: none; display: block; text-align: center;">BELLRINGER</a></div>`;
+        const bellringerUrl = currentBellringers[dateStr];
+        if (bellringerUrl) {
+            bellringerHTML = `<div class="bellringer-container"><span onclick="window.open('${bellringerUrl}', '_blank')" style="color: #0056b3; font-weight: bold; text-decoration: underline; cursor: pointer;" title="Click to open Bellringer">BELLRINGER</span></div>`;
         } else {
             bellringerHTML = `<div class="bellringer-container"></div>`;
         }
 
         col.innerHTML = `
             <div class="day-header">
-                <span class="day-name">${dayName}</span>
-                <div class="day-date">${display}</div>
+                <span class="day-name">${dayNames[dateObj.getDay() - 1]}</span>
+                <div class="day-date">${displayDate}</div>
             </div>
             ${bannerHTML}
             ${bellringerHTML}
-            <div class="day-list" id="${dStr}"></div>
+            <div class="sortable-list day-list" id="${dateStr}"></div>
             <div class="day-footer">
-                <span class="period-text">${isDouble ? 'Double Period' : 'Single Period'}</span>
+                <div class="period-badge-container">
+                    <span class="period-text">${isDouble ? 'Double period' : 'Single period'}</span>
+                    <button class="swap-btn" onclick="toggleFlip('${dateStr}')" title="Flip Sequence from here forward">⟳</button>
+                </div>
+                <button class="add-note-btn" onclick="addCustomNote('${dateStr}')" title="Add Draggable Note">➕📝</button>
             </div>
         `;
     }
     return col;
-};
+}
 
-// --- PLACE ASSIGNMENTS ---
-window.placeAssignments = function () {
-    const topicSelect = document.getElementById('topic-select');
-    const selectedTopicId = topicSelect.options[topicSelect.selectedIndex]?.dataset?.topicId || 'all';
-    const queues = { "holding-tank": [] };
-    document.querySelectorAll('.day-list').forEach(l => queues[l.id] = []);
-
-    Object.entries(currentClassData).forEach(([key, a]) => {
-        if (!a) return;
-        const tName = (a.topicName || "").toLowerCase();
-        if (tName.includes("bellringer")) return;
-
-        const dates = a.scheduledDates || ["unassigned"];
-        const isUn = dates.includes("unassigned");
-
-        // ID-Based Filtering: Respect topic ID for holding tank items
-        const matchesFilter = (selectedTopicId === 'all' || a.topicId === selectedTopicId || a.isCustomNote);
-        if (!matchesFilter) return;
-
-        const html = `
-            <div class="assignment-item ${a.isCustomNote ? 'custom-note-item' : ''}" data-db-key="${key}">
-                ${!a.isCustomNote ? '<span class="item-prefix">Complete assignment:</span>' : ''}
-                <span class="item-title">${a.title}</span>
-            </div>`;
-
-        dates.forEach(d => {
-            if (queues[d]) queues[d].push({ html, order: (a.dayOrder?.[d] ?? 999) });
+window.saveAllListOrders = async function() {
+    const updates = {};
+    document.querySelectorAll('.sortable-list').forEach(list => {
+        const listId = list.id === 'holding-tank' ? 'holding-tank' : list.id;
+        Array.from(list.children).forEach((item, index) => {
+            const dbKey = item.getAttribute('data-db-key');
+            if (currentClassData[dbKey]) {
+                const folder = currentClassData[dbKey]._folderName; 
+                updates[`/schedulerAssignments/${folder}/${dbKey}/dayOrder/${listId}`] = index; 
+                
+                if (!currentClassData[dbKey].dayOrder) currentClassData[dbKey].dayOrder = {};
+                currentClassData[dbKey].dayOrder[listId] = index;
+            }
         });
     });
-
-    Object.keys(queues).forEach(id => {
-        const el = document.getElementById(id);
-        if (el) queues[id].sort((a, b) => a.order - b.order).forEach(i => el.insertAdjacentHTML('beforeend', i.html));
-    });
+    try {
+        if(Object.keys(updates).length > 0) {
+            await update(ref(db), updates);
+        }
+    } catch (e) { console.error("Order save failed", e); }
 };
 
-window.initSortables = () => {
-    const opt = {
-        group: 'shared',
-        animation: 150,
-        onEnd: (evt) => {
-            const key = evt.item.dataset.dbKey;
-            const to = evt.to.id === 'holding-tank' ? 'unassigned' : evt.to.id;
-            window.syncToFirebase(key, to);
+window.addCustomNote = async function(dateStr) {
+    const text = prompt("Enter text for this draggable note:");
+    if (!text || text.trim() === "") return;
+
+    const currentClass = document.getElementById('class-select').value;
+    
+    const folderNames = [...new Set(Object.values(currentClassData).map(a => a._folderName))];
+    const targetFolder = folderNames[0]; 
+    if (!targetFolder) return alert("Error: No class folder exists yet to save this note.");
+
+    const newNoteRef = push(ref(db, `schedulerAssignments/${targetFolder}`)); 
+    
+    const noteData = {
+        title: text.trim(),
+        className: currentClass,
+        topicName: "Custom Notes", 
+        scheduledDates: [dateStr],
+        isCustomNote: true,
+        timestampCreated: Date.now()
+    };
+
+    try {
+        await set(newNoteRef, noteData);
+        window.fetchClassData(); 
+    } catch (err) { console.error("Error adding note:", err); }
+}
+
+window.toggleFlip = async function(dateStr) {
+    let isCurrentlyFlipped = false;
+    if (currentCalendarConfig[dateStr] && currentCalendarConfig[dateStr].flipped) {
+        isCurrentlyFlipped = true;
+    }
+    try {
+        await update(ref(db), { [`/calendarConfig/${activePeriod}/${dateStr}/flipped`]: !isCurrentlyFlipped });
+        if (!currentCalendarConfig[dateStr]) currentCalendarConfig[dateStr] = {};
+        currentCalendarConfig[dateStr].flipped = !isCurrentlyFlipped;
+        await window.updateMasterCalendarState([activePeriod]);
+        window.renderCalendar(); 
+    } catch (err) { console.error("Error saving flip:", err); }
+};
+
+window.placeAssignments = function() {
+    const holdingTank = document.getElementById('holding-tank');
+    const selectedTopic = document.getElementById('topic-select').value;
+    const selectedClass = document.getElementById('class-select').value;
+
+    const queues = { "holding-tank": [] };
+    document.querySelectorAll('.day-list').forEach(list => queues[list.id] = []);
+
+    Object.entries(currentClassData).forEach(([dbKey, assignment]) => {
+        const dates = assignment.scheduledDates || ["unassigned"];
+        const isUnassigned = dates.includes("unassigned") || dates.length === 0;
+
+        if (isUnassigned) {
+            // STRICT FILTERING: Reject any unscheduled assignment that does not perfectly match the active class
+            if (assignment.className !== selectedClass) return; 
+            if (selectedTopic !== 'all' && assignment.topicName !== selectedTopic && !assignment.isCustomNote) return; 
+        }
+        
+        let itemHTML = '';
+
+        if (assignment.isCustomNote) {
+            itemHTML = `
+                <div class="assignment-item custom-note-item" data-db-key="${dbKey}">
+                    <span class="item-title" style="font-weight: bold;">${assignment.title}</span>
+                    <div class="item-actions">
+                        <button class="action-btn edit-custom-note-btn" title="Edit Note">✏️</button>
+                        <button class="action-btn delete-btn" title="Delete Note">❌</button>
+                    </div>
+                </div>
+            `;
+        } else {
+            const urlAttr = assignment.encodedUrl ? `data-url="${assignment.encodedUrl}"` : '';
+            const titleAttr = assignment.encodedUrl ? `title="Click to open in Google Classroom, drag to move"` : `title="Drag to schedule"`;
+            
+            itemHTML = `
+                <div class="assignment-item" data-db-key="${dbKey}" ${urlAttr} ${titleAttr} style="${assignment.encodedUrl ? 'cursor: pointer;' : ''}">
+                    <span class="item-prefix">Complete assignment:</span>
+                    <span class="item-title">${assignment.title}</span>
+                    <span class="item-note" style="display: none;"></span> 
+                    <div class="item-actions">
+                        <button class="action-btn note-btn" title="Add/Edit Inline Note">📝</button>
+                        <button class="action-btn delete-btn" title="Remove">❌</button>
+                        <button class="action-btn duplicate-btn" title="Duplicate">➡️</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        if (isUnassigned) {
+            let blockHTML = itemHTML;
+            if (!assignment.isCustomNote && assignment.notes && assignment.notes["unassigned"]) {
+                blockHTML = blockHTML.replace('<span class="item-note" style="display: none;"></span>', `<span class="item-note">Note: ${assignment.notes["unassigned"]}</span>`);
+            }
+            let order = (assignment.dayOrder && assignment.dayOrder["holding-tank"]) !== undefined ? assignment.dayOrder["holding-tank"] : 999;
+            queues["holding-tank"].push({ html: blockHTML, order: order, key: dbKey });
+        } else {
+            dates.forEach(dateString => {
+                if (queues[dateString]) { 
+                    let blockHTML = itemHTML;
+                    if (!assignment.isCustomNote && assignment.notes && assignment.notes[dateString]) {
+                        blockHTML = blockHTML.replace('<span class="item-note" style="display: none;"></span>', `<span class="item-note">Note: ${assignment.notes[dateString]}</span>`);
+                    }
+                    let order = (assignment.dayOrder && assignment.dayOrder[dateString]) !== undefined ? assignment.dayOrder[dateString] : 999;
+                    queues[dateString].push({ html: blockHTML, order: order, key: dbKey });
+                }
+            });
+        }
+    });
+
+    Object.keys(queues).forEach(qId => {
+        const targetList = document.getElementById(qId);
+        if (targetList) {
+            targetList.innerHTML = '';
+            queues[qId].sort((a, b) => a.order - b.order).forEach(item => {
+                targetList.insertAdjacentHTML('beforeend', item.html);
+            });
+        }
+    });
+
+    Object.keys(currentClassData).forEach(dbKey => {
+        if (!currentClassData[dbKey].isCustomNote) window.updatePrefixes(dbKey);
+    });
+}
+
+window.initSortables = function() {
+    const sortableOptions = {
+        group: 'shared', animation: 150, ghostClass: 'sortable-ghost',
+        onStart: function () { window.isDragging = true; }, 
+        onEnd: function (evt) { 
+            const dbKey = evt.item.getAttribute('data-db-key');
+            const fromId = evt.from.id === 'holding-tank' ? 'unassigned' : evt.from.id;
+            const toId = evt.to.id === 'holding-tank' ? 'unassigned' : evt.to.id;
+            window.syncAssignmentToFirebase(dbKey, evt.item, fromId, toId); 
         }
     };
-    new Sortable(document.getElementById('holding-tank'), opt);
-    document.querySelectorAll('.day-list').forEach(l => new Sortable(l, opt));
-};
+    new Sortable(document.getElementById('holding-tank'), sortableOptions);
+    document.querySelectorAll('.day-list').forEach(list => new Sortable(list, sortableOptions));
+}
 
-window.syncToFirebase = async (key, toId) => {
-    const assig = currentClassData[key];
-    if (!assig || !currentClassFolder) return;
-    const path = `schedulerAssignments/${currentClassFolder}/${assig._fbKey}`;
-    const newDates = toId === 'unassigned' ? ['unassigned'] : [toId];
-    await update(ref(db), { [`${path}/scheduledDates`]: newDates });
-};
+window.syncAssignmentToFirebase = async function(dbKey, visualItem = null, fromId = null, toId = null) {
+    const visibleDatesOnGrid = Array.from(document.querySelectorAll('.day-list')).map(list => list.id);
+    const oldDates = currentClassData[dbKey].scheduledDates || ["unassigned"];
+    const preservedOffScreenDates = oldDates.filter(d => d !== "unassigned" && !visibleDatesOnGrid.includes(d));
 
-// --- SETTINGS MODAL FUNCTIONS ---
-window.openSettings = () => {
-    document.getElementById('settings-period-name').innerText = activePeriod;
-    document.getElementById('settings-modal').style.display = 'flex';
-    window.loadConfigList();
-};
+    const allInstances = Array.from(document.querySelectorAll(`.assignment-item[data-db-key="${dbKey}"]`));
+    let domDates = allInstances.map(inst => inst.closest('.sortable-list').id === 'holding-tank' ? 'unassigned' : inst.closest('.sortable-list').id);
+    
+    let newDatesArray = [...preservedOffScreenDates, ...domDates];
+    newDatesArray = [...new Set(newDatesArray)].sort();
+    
+    if (newDatesArray.length > 1 && newDatesArray.includes("unassigned")) newDatesArray = newDatesArray.filter(d => d !== "unassigned");
+    if (newDatesArray.length === 0) newDatesArray = ["unassigned"];
 
-window.closeSettings = () => {
-    document.getElementById('settings-modal').style.display = 'none';
-};
+    if(currentClassData[dbKey]) currentClassData[dbKey].scheduledDates = newDatesArray;
+    if(!currentClassData[dbKey].isCustomNote) window.updatePrefixes(dbKey);
 
-window.saveDayConfig = async () => {
-    const date = document.getElementById('config-date').value;
-    const name = document.getElementById('config-name').value;
-    const isDayOff = document.getElementById('config-is-day-off').checked;
-    const isDouble = document.getElementById('config-is-double').checked;
+    try {
+        const folder = currentClassData[dbKey]._folderName; 
 
-    if (!date) return alert("Please select a date.");
+        const updatePayload = {
+            [`/schedulerAssignments/${folder}/${dbKey}/scheduledDates`]: newDatesArray 
+        };
 
-    const config = { name, isDayOff, isDouble };
-    await set(ref(db, `calendarConfig/${activePeriod}/${date}`), config);
-    alert("Configuration saved!");
-    window.loadConfigList();
-};
+        if (fromId && toId && fromId !== toId) {
+            if (!currentClassData[dbKey].notes) currentClassData[dbKey].notes = {};
+            
+            if (currentClassData[dbKey].notes[fromId]) {
+                const noteText = currentClassData[dbKey].notes[fromId];
+                updatePayload[`/schedulerAssignments/${folder}/${dbKey}/notes/${toId}`] = noteText; 
+                currentClassData[dbKey].notes[toId] = noteText;
+            } else {
+                updatePayload[`/schedulerAssignments/${folder}/${dbKey}/notes/${toId}`] = null; 
+                delete currentClassData[dbKey].notes[toId];
+            }
+            updatePayload[`/schedulerAssignments/${folder}/${dbKey}/notes/${fromId}`] = null; 
+            delete currentClassData[dbKey].notes[fromId];
+        }
 
-window.loadConfigList = () => {
-    const list = document.getElementById('config-list');
-    if (!list) return;
-    list.innerHTML = '';
+        if (currentClassData[dbKey] && currentClassData[dbKey].dayOrder) {
+            Object.keys(currentClassData[dbKey].dayOrder).forEach(dateKey => {
+                if (dateKey !== 'holding-tank' && !newDatesArray.includes(dateKey)) {
+                    updatePayload[`/schedulerAssignments/${folder}/${dbKey}/dayOrder/${dateKey}`] = null; 
+                    delete currentClassData[dbKey].dayOrder[dateKey]; 
+                }
+            });
+        }
+        
+        if (currentClassData[dbKey] && currentClassData[dbKey].notes) {
+            Object.keys(currentClassData[dbKey].notes).forEach(dateKey => {
+                if (dateKey !== 'unassigned' && !newDatesArray.includes(dateKey)) {
+                    updatePayload[`/schedulerAssignments/${folder}/${dbKey}/notes/${dateKey}`] = null; 
+                    delete currentClassData[dbKey].notes[dateKey]; 
+                }
+            });
+        }
 
-    Object.entries(currentCalendarConfig).sort().forEach(([date, conf]) => {
-        const li = document.createElement('li');
-        li.className = 'config-item';
-        li.innerHTML = `
-            <span><b>${date}</b>: ${conf.name || (conf.isDayOff ? 'Day Off' : 'Special')} (${conf.isDouble ? 'Double' : 'Single'})</span>
-            <button class="delete-config-btn" onclick="window.deleteConfig('${date}')">&times;</button>
-        `;
-        list.appendChild(li);
-    });
-};
+        await update(ref(db), updatePayload);
+        await window.saveAllListOrders(); 
+        
+        if (newDatesArray.length === 1 && newDatesArray[0] === "unassigned") {
+            const selectedClass = document.getElementById('class-select').value;
+            const selectedTopic = document.getElementById('topic-select').value;
+            const assignment = currentClassData[dbKey];
+            if (assignment.className !== selectedClass || (selectedTopic !== 'all' && assignment.topicName !== selectedTopic && !assignment.isCustomNote)) {
+                if (visualItem) visualItem.remove(); 
+            }
+        }
 
-window.deleteConfig = async (date) => {
-    if (confirm(`Delete configuration for ${date}?`)) {
-        await remove(ref(db, `calendarConfig/${activePeriod}/${date}`));
-        window.loadConfigList();
+        if (visualItem && document.body.contains(visualItem)) { 
+            visualItem.style.backgroundColor = '#d4edda'; 
+            setTimeout(() => visualItem.style.backgroundColor = visualItem.classList.contains('custom-note-item') ? '#fff3cd' : '#dfdfdf', 500); 
+        }
+    } catch (error) { 
+        console.error("Save failed:", error); 
+    } finally {
+        setTimeout(() => { window.isDragging = false; }, 500);
     }
-};
+}
+
+window.updatePrefixes = function(dbKey) {
+    const assignment = currentClassData[dbKey];
+    if (!assignment || assignment.isCustomNote) return;
+
+    let dates = (assignment.scheduledDates || []).filter(d => d !== "unassigned").sort();
+    
+    const instances = document.querySelectorAll(`.assignment-item[data-db-key="${dbKey}"]`);
+    instances.forEach(inst => {
+        const list = inst.closest('.sortable-list');
+        if (!list) return;
+        const listId = list.id;
+        const prefixSpan = inst.querySelector('.item-prefix');
+        const dupBtn = inst.querySelector('.duplicate-btn');
+        
+        if (listId === 'holding-tank') {
+            prefixSpan.innerText = 'Complete assignment:';
+            if (dupBtn) dupBtn.disabled = true; 
+        } else {
+            if (dates.length <= 1) {
+                prefixSpan.innerText = 'Complete assignment:';
+            } else if (listId === dates[0]) {
+                prefixSpan.innerText = 'Begin assignment:';
+            } else if (listId === dates[dates.length - 1]) {
+                prefixSpan.innerText = 'Finish assignment:';
+            } else {
+                prefixSpan.innerText = 'Continue assignment:';
+            }
+            
+            if (dupBtn) {
+                dupBtn.disabled = (dates.length > 0 && listId !== dates[dates.length - 1]);
+            }
+        }
+    });
+}
+
+window.getNextValidDay = function(currentDateStr) {
+    let currDate = new Date(currentDateStr + 'T12:00:00');
+    currDate.setDate(currDate.getDate() + 1); 
+    
+    while (true) {
+        let dStr = formatDateLocal(currDate);
+        let dayOfWeek = currDate.getDay();
+        let isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+        let isOff = currentCalendarConfig[dStr] && currentCalendarConfig[dStr].isDayOff;
+        
+        if (!isWeekend && !isOff) return dStr;
+        currDate.setDate(currDate.getDate() + 1);
+    }
+}
+
+document.body.addEventListener('click', function(e) {
+    const btn = e.target.closest('.action-btn'); 
+    
+    if (btn && btn.classList.contains('delete-btn')) {
+        const item = btn.closest('.assignment-item');
+        const dbKey = item.getAttribute('data-db-key');
+        
+        if (currentClassData[dbKey] && currentClassData[dbKey].isCustomNote) {
+            if(confirm("Delete this custom note permanently?")) {
+                const folder = currentClassData[dbKey]._folderName; 
+                remove(ref(db, `/schedulerAssignments/${folder}/${dbKey}`)); 
+                delete currentClassData[dbKey];
+                item.remove();
+                window.saveAllListOrders(); 
+            }
+            return;
+        }
+
+        if (item.closest('#holding-tank')) return; 
+        item.remove(); 
+        
+        if (document.querySelectorAll(`.day-list .assignment-item[data-db-key="${dbKey}"]`).length === 0) {
+            const selectedClass = document.getElementById('class-select').value;
+            const selectedTopic = document.getElementById('topic-select').value;
+            const assignment = currentClassData[dbKey];
+            if (assignment.className === selectedClass && (selectedTopic === 'all' || assignment.topicName === selectedTopic || assignment.isCustomNote)) {
+                document.getElementById('holding-tank').appendChild(item.cloneNode(true));
+            }
+        }
+        window.syncAssignmentToFirebase(dbKey); 
+        return; 
+    }
+    
+    if (btn && btn.classList.contains('edit-custom-note-btn')) {
+        const item = btn.closest('.assignment-item');
+        const dbKey = item.getAttribute('data-db-key');
+        const currentText = currentClassData[dbKey].title;
+        
+        const newText = prompt("Edit note:", currentText);
+        if (newText !== null && newText.trim() !== "") {
+            const folder = currentClassData[dbKey]._folderName; 
+            update(ref(db), { [`/schedulerAssignments/${folder}/${dbKey}/title`]: newText.trim() }).then(() => { 
+                currentClassData[dbKey].title = newText.trim();
+                document.querySelectorAll('.assignment-item').forEach(el => el.remove());
+                window.placeAssignments();
+            });
+        }
+        return;
+    }
+
+    if (btn && btn.classList.contains('duplicate-btn') && !btn.disabled) {
+        const item = btn.closest('.assignment-item');
+        const currentList = item.closest('.day-list');
+        if (!currentList) return;
+        
+        const dbKey = item.getAttribute('data-db-key');
+        const currentDateStr = currentList.id; 
+        
+        const nextDayStr = window.getNextValidDay(currentDateStr);
+        
+        let dates = currentClassData[dbKey].scheduledDates || [];
+        if (!dates.includes(nextDayStr)) {
+            dates.push(nextDayStr);
+            dates.sort();
+        }
+        
+        currentClassData[dbKey].scheduledDates = dates;
+        const folder = currentClassData[dbKey]._folderName; 
+        
+        update(ref(db), { [`/schedulerAssignments/${folder}/${dbKey}/scheduledDates`]: dates }).then(() => { 
+            document.querySelectorAll('.assignment-item').forEach(el => el.remove());
+            window.placeAssignments();
+        }).catch(err => console.error("Error duplicating:", err));
+        
+        return; 
+    }
+
+    if (btn && btn.classList.contains('note-btn')) {
+        const item = btn.closest('.assignment-item');
+        const dbKey = item.getAttribute('data-db-key');
+        const listId = item.closest('.sortable-list').id === 'holding-tank' ? 'unassigned' : item.closest('.sortable-list').id;
+        
+        const currentNotesObj = currentClassData[dbKey].notes || {};
+        const currentNoteStr = currentNotesObj[listId] || "";
+        
+        const newNote = prompt("Add an inline note for this specific block (leave blank to remove):", currentNoteStr);
+        
+        if (newNote !== null) {
+            const finalNote = newNote.trim();
+            if (!currentClassData[dbKey].notes) currentClassData[dbKey].notes = {};
+            currentClassData[dbKey].notes[listId] = finalNote;
+            
+            const folder = currentClassData[dbKey]._folderName; 
+            const updatePayload = {};
+            if (finalNote === "") {
+                updatePayload[`/schedulerAssignments/${folder}/${dbKey}/notes/${listId}`] = null; 
+            } else {
+                updatePayload[`/schedulerAssignments/${folder}/${dbKey}/notes/${listId}`] = finalNote; 
+            }
+
+            update(ref(db), updatePayload).then(() => {
+                document.querySelectorAll('.assignment-item').forEach(el => el.remove());
+                window.placeAssignments();
+            }).catch(err => console.error("Error saving note:", err));
+        }
+        return; 
+    }
+
+    const item = e.target.closest('.assignment-item');
+    if (item && !btn && !item.classList.contains('custom-note-item')) { 
+        const url = item.getAttribute('data-url');
+        if (url) { window.open(url, '_blank'); }
+    }
+});
+
+window.changeWeek = function(offset) { currentMonday.setDate(currentMonday.getDate() + (offset * 7)); window.renderCalendar(); }
+window.handleTopicFilter = function() { document.querySelectorAll('.assignment-item').forEach(el => el.remove()); window.placeAssignments(); }
+
+window.openSettingsModal = function() {
+    document.getElementById('settings-modal').style.display = 'flex';
+    window.populateConfigList();
+}
+window.closeSettingsModal = function() {
+    document.getElementById('settings-modal').style.display = 'none';
+}
+
+window.getValidDaysArray = function(configObj, startDateStr, numDays = 800) {
+    let validDays = [];
+    let currDate = new Date(startDateStr + 'T12:00:00');
+    while (validDays.length < numDays) {
+        let dStr = formatDateLocal(currDate);
+        let dayOfWeek = currDate.getDay();
+        let isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+        let isOff = configObj[dStr] && configObj[dStr].isDayOff;
+        if (!isWeekend && !isOff) validDays.push(dStr);
+        currDate.setDate(currDate.getDate() + 1);
+    }
+    return validDays;
+}
+
+window.shiftAssignments = function(oldValidDays, newValidDays, startStr) {
+    const assignmentUpdates = {};
+    let assignmentsShifted = false;
+
+    Object.entries(currentClassData).forEach(([dbKey, assignment]) => {
+        const folder = assignment._folderName; 
+
+        if (assignment.scheduledDates && assignment.scheduledDates.length > 0) {
+            let newDates = [];
+            let changed = false;
+
+            assignment.scheduledDates.forEach(dateStr => {
+                if (dateStr !== "unassigned" && dateStr >= startStr) {
+                    let oldIndex = oldValidDays.indexOf(dateStr);
+                    if (oldIndex !== -1 && oldIndex < newValidDays.length) {
+                        newDates.push(newValidDays[oldIndex]);
+                        changed = true;
+                    } else { newDates.push(dateStr); }
+                } else { newDates.push(dateStr); }
+            });
+
+            if (changed) {
+                newDates = [...new Set(newDates)].sort();
+                assignmentUpdates[`/schedulerAssignments/${folder}/${dbKey}/scheduledDates`] = newDates; 
+                currentClassData[dbKey].scheduledDates = newDates;
+
+                if (assignment.notes) {
+                    let newNotes = {};
+                    Object.keys(assignment.notes).forEach(oldKey => {
+                        if (oldKey !== "unassigned" && oldKey >= startStr) {
+                            let oldIndex = oldValidDays.indexOf(oldKey);
+                            if (oldIndex !== -1 && oldIndex < newValidDays.length) {
+                                newNotes[newValidDays[oldIndex]] = assignment.notes[oldKey];
+                                assignmentUpdates[`/schedulerAssignments/${folder}/${dbKey}/notes/${oldKey}`] = null; 
+                                assignmentUpdates[`/schedulerAssignments/${folder}/${dbKey}/notes/${newValidDays[oldIndex]}`] = assignment.notes[oldKey]; 
+                            } else { newNotes[oldKey] = assignment.notes[oldKey]; }
+                        } else { newNotes[oldKey] = assignment.notes[oldKey]; }
+                    });
+                    currentClassData[dbKey].notes = newNotes;
+                }
+
+                if (assignment.dayOrder) {
+                    let newOrder = {};
+                    Object.keys(assignment.dayOrder).forEach(oldKey => {
+                        if (oldKey !== "holding-tank" && oldKey !== "unassigned" && oldKey >= startStr) {
+                            let oldIndex = oldValidDays.indexOf(oldKey);
+                            if (oldIndex !== -1 && oldIndex < newValidDays.length) {
+                                newOrder[newValidDays[oldIndex]] = assignment.dayOrder[oldKey];
+                                assignmentUpdates[`/schedulerAssignments/${folder}/${dbKey}/dayOrder/${oldKey}`] = null; 
+                                assignmentUpdates[`/schedulerAssignments/${folder}/${dbKey}/dayOrder/${newValidDays[oldIndex]}`] = assignment.dayOrder[oldKey]; 
+                            } else { newOrder[oldKey] = assignment.dayOrder[oldKey]; }
+                        } else { newOrder[oldKey] = assignment.dayOrder[oldKey]; }
+                    });
+                    currentClassData[dbKey].dayOrder = newOrder;
+                }
+                assignmentsShifted = true;
+            }
+        }
+    });
+    return { updates: assignmentUpdates, shifted: assignmentsShifted };
+}
+
+window.saveCalendarConfig = async function() {
+    const startStr = document.getElementById('special-date-start').value;
+    const endStr = document.getElementById('special-date-end').value || startStr; 
+    const applyAll = document.getElementById('apply-all-checkbox').checked;
+    const finalName = document.getElementById('custom-type-input').value.trim();
+    
+    if (!startStr) return alert("Please select a Start Date.");
+    if (!finalName) return alert("Please type an Event Name.");
+
+    const isDayOff = document.querySelector('input[name="event-type"]:checked').value === "dayOff";
+
+    let currDate = new Date(startStr + 'T12:00:00'); 
+    let endDateObj = new Date(endStr + 'T12:00:00');
+    if (currDate > endDateObj) return alert("End Date must be after Start Date.");
+
+    const oldValidDays = window.getValidDaysArray(currentCalendarConfig, "2024-07-01", 800);
+    const configUpdates = {};
+    const newlyCreatedOffDays = []; 
+    const targetPeriods = applyAll ? ['P1', 'P3', 'P6', 'P8'] : [activePeriod];
+    
+    while (currDate <= endDateObj) {
+        if (currDate.getDay() !== 0 && currDate.getDay() !== 6) {
+            const dateStr = formatDateLocal(currDate);
+            let wasAlreadyOff = currentCalendarConfig[dateStr] && currentCalendarConfig[dateStr].isDayOff;
+            
+            targetPeriods.forEach(p => {
+                configUpdates[`/calendarConfig/${p}/${dateStr}/name`] = finalName;
+                configUpdates[`/calendarConfig/${p}/${dateStr}/isDayOff`] = isDayOff;
+            });
+            
+            if (isDayOff && !wasAlreadyOff) newlyCreatedOffDays.push(dateStr);
+            
+            if (!currentCalendarConfig[dateStr]) currentCalendarConfig[dateStr] = {};
+            currentCalendarConfig[dateStr].name = finalName;
+            currentCalendarConfig[dateStr].isDayOff = isDayOff;
+        }
+        currDate.setDate(currDate.getDate() + 1);
+    }
+    
+    try {
+        await update(ref(db), configUpdates);
+        
+        if (newlyCreatedOffDays.length > 0) {
+            const newValidDays = window.getValidDaysArray(currentCalendarConfig, "2024-07-01", 800);
+            const shiftResult = window.shiftAssignments(oldValidDays, newValidDays, startStr);
+
+            if (shiftResult.shifted) {
+                await update(ref(db), shiftResult.updates);
+            }
+        }
+        
+        await window.updateMasterCalendarState(targetPeriods);
+        document.getElementById('special-date-start').value = '';
+        document.getElementById('special-date-end').value = '';
+        document.getElementById('custom-type-input').value = '';
+        
+        window.populateConfigList();
+        window.renderCalendar(); 
+    } catch (error) { console.error("Config save failed", error); }
+}
+
+window.deleteConfig = async function(dateStr) {
+    const wasDayOff = currentCalendarConfig[dateStr] && currentCalendarConfig[dateStr].isDayOff;
+    
+    const oldValidDays = window.getValidDaysArray(currentCalendarConfig, "2024-07-01", 800);
+
+    try {
+        const targetPeriods = ['P1', 'P3', 'P6', 'P8'];
+        const deletePayload = {};
+        targetPeriods.forEach(p => {
+            deletePayload[`/calendarConfig/${p}/${dateStr}`] = null;
+        });
+        
+        await update(ref(db), deletePayload);
+        delete currentCalendarConfig[dateStr];
+
+        if (wasDayOff) {
+            const newValidDays = window.getValidDaysArray(currentCalendarConfig, "2024-07-01", 800);
+            const shiftResult = window.shiftAssignments(oldValidDays, newValidDays, dateStr);
+
+            if (shiftResult.shifted) {
+                await update(ref(db), shiftResult.updates);
+            }
+        }
+
+        await window.updateMasterCalendarState(['P1', 'P3', 'P6', 'P8']);
+        window.populateConfigList();
+        window.renderCalendar();
+    } catch (error) { console.error("Config delete failed", error); }
+}
+
+window.populateConfigList = function() {
+    const list = document.getElementById('saved-days-list');
+    list.innerHTML = '';
+    
+    const sortedDates = Object.keys(currentCalendarConfig).sort();
+    if(sortedDates.length === 0) {
+        list.innerHTML = '<li style="padding: 10px; color: #888;">No special days saved yet.</li>';
+        return;
+    }
+
+    sortedDates.forEach(dateStr => {
+        const config = currentCalendarConfig[dateStr];
+        const flipBadge = config.flipped ? '<span style="background: #007bff; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; margin-left: 5px;">FLIPPED</span>' : '';
+        list.innerHTML += `
+            <li class="config-item">
+                <span><strong>${dateStr}</strong>: ${config.name || "Rule"} ${flipBadge}</span>
+                <button class="action-btn delete-btn" onclick="deleteConfig('${dateStr}')" style="color: #dc3545; font-size: 1.1rem;">🗑️</button>
+            </li>
+        `;
+    });
+}
