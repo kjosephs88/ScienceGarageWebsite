@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Assignment Quick Links</title>
+  <link rel="shortcut icon" href="https://thesciencegarage.com/SGfavicon.ico">
+  <style>
+    body { margin:0; font-family:Arial, sans-serif; display: block; background-color: #f4f4f9; }
+    
+    /* Login & Loading Screens */
+    #auth-screen, #loading-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; text-align: center; }
+    #auth-screen h1 { margin-bottom: 20px; }
+    .login-btn { padding: 15px 30px; font-size: 18px; background: #4285F4; color: white; border: none; border-radius: 4px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+    .login-btn:hover { background: #357ae8; }
+    .error-msg { color: #d32f2f; margin-top: 15px; max-width: 400px; }
+    .logout-btn-small { background: transparent; color: #888; border: 1px solid #ccc; padding: 5px 10px; margin-top: 20px; cursor: pointer; border-radius: 4px; }
+    .logout-btn-small:hover { background: #eee; color: #333; }
+    
+    /* Landing Page */
+    #landing-page { display: none; text-align: center; margin-top: 80px; }
+    #landing-page h1 { font-size: 40px; margin-bottom: 40px; }
+    .class-btn { display: inline-block; margin: 10px; padding: 15px 30px; font-size: 20px; background: #333; color: white; cursor: pointer; border: 1px solid #444; border-radius: 4px; }
+    .class-btn:hover { background: #555; }
+    
+    /* Dashboard & Tabs */
+    #dashboard { display: none; flex-direction: row; height: 100vh; width: 100vw; background: white; }
+    .tabs { display:flex; flex-direction:column; width:140px; background:#333; overflow-y:auto; }
+    .tab { padding:15px 10px; font-size:16px; color:white; text-align:center; cursor:pointer; border-bottom:1px solid #444; }
+    .tab:hover { background:#555; }
+    .tab.active { background:#777; font-weight: bold; }
+    
+    /* Sidebar Action Buttons */
+    .home-tab { background: #111; border-bottom: 1px solid #000; font-size: 13px;}
+    .home-tab:hover { background: #222; }
+    .refresh-tab { background: #2c3e50; border-bottom: 2px solid #1a252f; font-size: 13px; color: #ecf0f1; }
+    .refresh-tab:hover { background: #34495e; }
+    .logout-tab { background: #8e44ad; font-size: 12px; margin-top: auto; border-top: 2px solid #222; }
+    .logout-tab:hover { background: #9b59b6; }
+
+    /* Content */
+    .content { flex:1; overflow:hidden; position:relative; height:100%; }
+    .unit { display:none; position:absolute; top:0; left:0; width:100%; height:100%; overflow-y:auto; }
+    .unit.active { display:block; }
+    .unit-inner { width:90%; max-width: 900px; margin:0 auto; padding-bottom: 50px; }
+    .unit-title { font-size:36px; margin:30px 0 20px; font-weight:bold; text-align:center; color: #333; }
+    
+    /* Tables and Grids */
+    .unit-table { width:100%; border-collapse:collapse; margin-bottom: 20px;}
+    .unit-table th, .unit-table td { border:2px solid #ddd; text-align:center; }
+    .unit-table th { background:#7e6e6e; color:white; padding: 10px; font-size: 18px;}
+    
+    .grid-container { display:grid; grid-template-columns:repeat(5,1fr); gap:5px; padding:5px; }
+    .grid-container a { text-decoration:none; color:black; }
+    .grid-item { display:flex; align-items:center; justify-content:center; border:1px solid #ccc; padding:12px; background:#f9f9f9; cursor:pointer; height: 100%; box-sizing: border-box; font-weight: bold; border-radius: 3px;}
+    .grid-item:hover { background:#e2e2e2; border-color: #999;}
+    
+    /* Copy Table */
+    .copy-table { width:100%; border-collapse:collapse; margin-top:15px; }
+    .copy-table th, .copy-table td { border:2px solid #ddd; }
+    .copy-table th { background:#7e6e6e; color:white; text-align:left; padding:8px 10px; }
+    .copy-table td { padding:4px; background:#fcfcfc; vertical-align: top; width: 50%;}
+    .copy-btn { width:100%; border:1px solid #ccc; background:#f0f0f0; padding:8px 10px; font-size:14px; text-align:left; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; border-radius: 3px; }
+    .copy-btn:hover { background:#e2e2e2; border-color: #aaa;}
+
+    /* Toast Notification */
+    #toast { visibility: hidden; min-width: 200px; background-color: #333; color: #fff; text-align: center; border-radius: 4px; padding: 12px; position: fixed; z-index: 10; left: 50%; bottom: 30px; transform: translateX(-50%); font-size: 15px; opacity: 0; transition: opacity 0.3s, bottom 0.3s; }
+    #toast.show { visibility: visible; opacity: 1; bottom: 50px; }
+  </style>
+</head>
+<body>
+
+  <div id="auth-screen">
+    <h1>Teacher Portal</h1>
+    <button id="login-btn" class="login-btn">Log in with Google</button>
+    <div id="auth-error" class="error-msg"></div>
+  </div>
+
+  <div id="loading-screen" style="display: none;">
+    <h2 id="loading-text" style="color: #555;">Loading...</h2>
+    <button id="emergency-logout-btn" class="logout-btn-small" style="display: none;">Sign Out</button>
+  </div>
+  
+  <div id="landing-page">
+    <h1>Assignment Quick Links</h1>
+    <div id="class-buttons"></div>
+  </div>
+
+  <div id="dashboard">
+    <div class="tabs" id="tabs"></div>
+    <div class="content" id="content"></div>
+  </div>
+
+  <div id="toast"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+    // 1. FIREBASE CONFIGURATION
+    const firebaseConfig = {
+      apiKey: "AIzaSyCcpjuH1qv9IUDJJQR_5ms18TBRS8UFaV8", // <--- UPDATE THIS
+      authDomain: "scigarage.firebaseapp.com",
+      databaseURL: "https://scigarage-default-rtdb.firebaseio.com",
+      projectId: "scigarage",
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+    const provider = new GoogleAuthProvider();
+
+    // Configuration map
+    const CLASS_CONFIG = {
+      'chemistry': { name: 'Chemistry', code: 'CH' },
+      'physics': { name: 'Physics', code: 'PH' },
+      'forensics': { name: 'Forensic Science', code: 'FS' }
+    };
+
+    const DISPLAY_LIMIT = 40;
+    let currentActiveMode = null;
+    let globalGradebookData = null; // Cache data locally in memory
+
+    // DOM Elements
+    const authScreen = document.getElementById('auth-screen');
+    const loginBtn = document.getElementById('login-btn');
+    const authError = document.getElementById('auth-error');
+    const loadingScreen = document.getElementById('loading-screen');
+    const loadingText = document.getElementById('loading-text');
+    const emergencyLogoutBtn = document.getElementById('emergency-logout-btn');
+    const landingPage = document.getElementById('landing-page');
+    const dashboard = document.getElementById('dashboard');
+
+    // Make utility functions available globally for inline HTML onclicks
+    window.goHome = goHome;
+    window.forceUpdate = fetchAndRenderData;
+    window.handleLogout = handleLogout;
+    window.showUnit = showUnit;
+
+    // --- AUTHENTICATION LOGIC ---
+    
+    loginBtn.addEventListener('click', () => {
+      authError.innerText = "";
+      signInWithPopup(auth, provider).catch(error => {
+        authError.innerText = "Login failed: " + error.message;
+      });
+    });
+
+    emergencyLogoutBtn.addEventListener('click', handleLogout);
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // User is signed in. Check if they are authorized.
+        const allowedEmails = ['pianodemon88@gmail.com', 'kjosephs@ocsdny.org'];
+        if (allowedEmails.includes(user.email)) {
+          authScreen.style.display = 'none';
+          initializeAppRouter();
+        } else {
+          // Logged in, but unauthorized email
+          authScreen.style.display = 'flex';
+          authError.innerHTML = `Unauthorized access attempt by ${user.email}.<br>Your account has been signed out.`;
+          signOut(auth);
+        }
+      } else {
+        // User is signed out
+        hideAllScreens();
+        authScreen.style.display = 'flex';
+      }
+    });
+
+    function handleLogout() {
+      signOut(auth).then(() => {
+        globalGradebookData = null;
+        window.history.replaceState({}, document.title, window.location.pathname);
+      });
+    }
+
+    // --- ROUTING & VIEW LOGIC ---
+
+    function hideAllScreens() {
+      authScreen.style.display = 'none';
+      loadingScreen.style.display = 'none';
+      landingPage.style.display = 'none';
+      dashboard.style.display = 'none';
+      emergencyLogoutBtn.style.display = 'none';
+    }
+
+    function initializeAppRouter() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const mode = urlParams.get('mode') ? urlParams.get('mode').toLowerCase() : 'home';
+
+      if (mode !== 'home' && CLASS_CONFIG[mode]) {
+        loadSubject(mode);
+      } else {
+        buildLandingPage();
+      }
+    }
+
+    function buildLandingPage() {
+      hideAllScreens();
+      const container = document.getElementById('class-buttons');
+      container.innerHTML = '';
+      
+      Object.keys(CLASS_CONFIG).forEach(key => {
+        const cls = CLASS_CONFIG[key];
+        const btn = document.createElement('div');
+        btn.className = 'class-btn';
+        btn.textContent = cls.name;
+        // Update URL and load subject without reloading the page
+        btn.onclick = () => {
+          window.history.pushState({}, '', '?mode=' + key);
+          loadSubject(key);
+        };
+        container.appendChild(btn);
+      });
+      
+      landingPage.style.display = 'block';
+    }
+
+    function loadSubject(mode) {
+      currentActiveMode = mode;
+      hideAllScreens();
+      loadingScreen.style.display = 'flex';
+      loadingText.innerText = 'Syncing securely with Firebase...';
+      emergencyLogoutBtn.style.display = 'block';
+      
+      if (globalGradebookData) {
+        // Use in-memory cache if we already pulled it this session
+        renderDashboard(globalGradebookData, CLASS_CONFIG[mode].code, false);
+      } else {
+        // Fetch fresh from Firebase
+        fetchAndRenderData();
+      }
+    }
+
+    function fetchAndRenderData() {
+      hideAllScreens();
+      loadingScreen.style.display = 'flex';
+      loadingText.innerText = 'Forcing refresh from Firebase...';
+      
+      const dbRef = ref(db, 'teacherGradebook');
+      get(dbRef).then((snapshot) => {
+        if (snapshot.exists()) {
+          globalGradebookData = snapshot.val();
+          renderDashboard(globalGradebookData, CLASS_CONFIG[currentActiveMode].code, true);
+        } else {
+          loadingText.innerText = 'Error: No gradebook data found in Firebase.';
+        }
+      }).catch((error) => {
+        loadingText.innerText = 'Database Access Denied or Network Error. Check Rules.';
+        console.error(error);
+      });
+    }
+
+    function renderDashboard(gradebook, subjectCode, wasRefreshed) {
+      hideAllScreens();
+      dashboard.style.display = 'flex';
+      
+      if (wasRefreshed && globalGradebookData) showToast("Database synchronized!");
+
+      const tabsDiv = document.getElementById('tabs');
+      const contentDiv = document.getElementById('content');
+      
+      tabsDiv.innerHTML = `
+        <div class="tab home-tab" onclick="window.goHome()">← Back to Classes</div>
+        <div class="tab refresh-tab" onclick="window.forceUpdate()">🔄 Sync DB</div>
+      `;
+      contentDiv.innerHTML = '';
+
+      const processedUnits = processFirebaseData(gradebook, subjectCode);
+
+      if (processedUnits.length === 0) {
+        contentDiv.innerHTML = `<h2 style="text-align:center; margin-top: 50px;">No assignments found for ${subjectCode}</h2>`;
+      }
+
+      processedUnits.forEach((unit, index) => {
+        const tab = document.createElement('div');
+        tab.className = 'tab' + (index === 0 ? ' active' : '');
+        tab.textContent = unit.unitName;
+        tab.onclick = () => window.showUnit(index);
+        tabsDiv.appendChild(tab);
+
+        const unitDiv = document.createElement('div');
+        unitDiv.className = 'unit' + (index === 0 ? ' active' : '');
+        unitDiv.id = 'unit-' + index;
+        unitDiv.innerHTML = buildUnitHTML(unit);
+        contentDiv.appendChild(unitDiv);
+      });
+
+      // Add logout to the bottom of tabs
+      const logoutTab = document.createElement('div');
+      logoutTab.className = 'tab logout-tab';
+      logoutTab.textContent = 'Sign Out';
+      logoutTab.onclick = window.handleLogout;
+      tabsDiv.appendChild(logoutTab);
+
+      // Bind copy buttons
+      document.querySelectorAll(".copy-btn").forEach(btn => {
+        btn.addEventListener("click", () => copyToClipboard(btn.dataset.copy));
+      });
+    }
+
+    // --- DATA PROCESSING & HTML BUILDERS ---
+
+function processFirebaseData(gradebook, subjectCode) {
+      const units = {}; 
+      const periodsSet = new Set();
+      const rawAssignments = [];
+
+      // PASS 1: Extract data safely
+      for (const classKey in gradebook) {
+        if (classKey.includes(subjectCode)) {
+          const pMatch = classKey.match(/P\d+/);
+          if (!pMatch) continue;
+          
+          const period = pMatch[0];
+          periodsSet.add(period);
+
+          const assignments = gradebook[classKey];
+          if (!assignments || typeof assignments !== 'object') continue;
+
+          for (const assignKey in assignments) {
+            const uMatch = assignKey.match(/U(\d+)/);
+            const aMatch = assignKey.match(/A(\d+)/);
+            if (!uMatch || !aMatch) continue;
+
+            const uCode = uMatch[0];
+            const aCode = aMatch[0];
+            const unitNum = parseInt(uMatch[1], 10);
+
+            const leafNodes = assignments[assignKey];
+            let rawTitle = "";
+            let rawUrl = "";
+            
+            if (leafNodes) {
+              if (leafNodes.title || leafNodes.url) {
+                rawTitle = leafNodes.title || "";
+                rawUrl = leafNodes.url || "";
+              } else {
+                for (const hashKey in leafNodes) {
+                   if (typeof leafNodes[hashKey] === 'object' && leafNodes[hashKey] !== null) {
+                     if(leafNodes[hashKey].title) rawTitle = leafNodes[hashKey].title;
+                     if(leafNodes[hashKey].url) rawUrl = leafNodes[hashKey].url;
+                   }
+                }
+              }
+            }
+
+            if (!rawUrl) continue; 
+            
+            // Cast to String to prevent silent crashes if a node is accidentally logged as a different data type
+            rawAssignments.push({ 
+              period, unitNum, uCode, aCode, 
+              rawTitle: String(rawTitle), 
+              rawUrl: String(rawUrl) 
+            });
+          }
+        }
+      }
+
+      const isMultiSection = periodsSet.size > 1;
+
+      // PASS 2: Format strings based on the new rules
+      rawAssignments.forEach(item => {
+        if (!units[item.unitNum]) units[item.unitNum] = { name: "Unit " + item.unitNum, assignments: {} };
+        
+        if (!units[item.unitNum].assignments[item.aCode]) {
+          units[item.unitNum].assignments[item.aCode] = { displayCode: item.aCode.replace('A', ''), data: {} };
+        }
+
+        const finalUrl = item.rawUrl.replace(/details?\/?$/, "submissions/flat/and-sort-last-name/all");
+
+        // 1. Strip the front prefix (e.g., CH_U03_A23_G or FS_U05_A04)
+        let cleanTitle = item.rawTitle.replace(/^[A-Z]{2}[_•]U\d{2}[_•]A\d{2}([_•][A-Z])?\s*/i, '');
+
+        let typeChar = 'U'; // Default
+        
+        // 2. THE NEW REGEX FIX: This matches " - word (word)" specifically at the end of the string
+        // It will ignore "Lab 12 - single replacement" completely.
+        const suffixRegex = /\s*-\s*([A-Za-z0-9\s]+)\s*\([^)]+\)\s*$/i;
+        const match = cleanTitle.match(suffixRegex);
+
+        if (match) {
+           const typeWord = match[1].toLowerCase();
+           if (typeWord.includes('practice')) typeChar = 'P';
+           else if (typeWord.includes('graded')) typeChar = 'G';
+           else if (typeWord.includes('review')) typeChar = 'R';
+           else if (typeWord.includes('unassigned')) typeChar = 'U';
+           
+           // Remove only the matched suffix (e.g. " - practice (printout)") from the string
+           cleanTitle = cleanTitle.replace(suffixRegex, '').trim();
+        }
+
+        // 3. Build the bulleted prefix
+        let prefix = "";
+        if (subjectCode === 'FS') {
+            // Forensics rule: Drop the type char entirely
+            prefix = `${subjectCode}•${item.uCode}•${item.aCode}`;
+        } else {
+            // Standard rule: Keep the type char
+            prefix = `${subjectCode}•${item.uCode}•${item.aCode}•${typeChar}`;
+        }
+
+        // 4. Assemble Final Title (Only inject P# if there are multiple sections)
+        let finalTitle = "";
+        if (isMultiSection) {
+          finalTitle = `${prefix} ${item.period} ${cleanTitle}`;
+        } else {
+          finalTitle = `${prefix} ${cleanTitle}`;
+        }
+
+        units[item.unitNum].assignments[item.aCode].data[item.period] = {
+          url: finalUrl,
+          title: finalTitle
+        };
+      });
+
+      const sortedPeriods = Array.from(periodsSet).sort();
+      const sortedUnitKeys = Object.keys(units).sort((a, b) => parseInt(a) - parseInt(b));
+      
+      return sortedUnitKeys.map(uKey => {
+        const uData = units[uKey];
+        const sortedAssignKeys = Object.keys(uData.assignments).sort((a, b) => {
+          return parseInt(a.replace('A','')) - parseInt(b.replace('A',''));
+        });
+
+        const assignmentsList = sortedAssignKeys.map(aCode => {
+          return { code: aCode, displayCode: uData.assignments[aCode].displayCode, data: uData.assignments[aCode].data };
+        });
+
+        return { unitName: uData.name, periods: sortedPeriods, assignments: assignmentsList };
+      });
+    }
+
+function buildUnitHTML(unitObj) {
+      if (!unitObj.assignments || unitObj.assignments.length === 0) return `<div class="unit-inner"><div class="unit-title">${unitObj.unitName}</div></div>`;
+
+      let html = '<div class="unit-inner"><div class="unit-title">' + unitObj.unitName + '</div>';
+
+      // 1. Link Grid
+      if (unitObj.periods.length > 0) {
+        html += "<table class='unit-table'><tr>";
+        unitObj.periods.forEach(p => html += '<th>' + p + '</th>');
+        html += "</tr><tr>";
+
+        unitObj.periods.forEach(p => {
+          html += "<td style='vertical-align: top;'><div class='grid-container'>";
+          unitObj.assignments.forEach(assign => {
+            const periodData = assign.data[p];
+            if (periodData && periodData.url) {
+              // Inject displayCode here (e.g., "23") instead of code ("A23")
+              html += `<a href="${periodData.url}" target="_blank"><div class="grid-item">${assign.displayCode}</div></a>`;
+            } else {
+              html += `<div class="grid-item" style="background:#ddd; color:#888;">N/A</div>`;
+            }
+          });
+          html += "</div></td>";
+        });
+        html += "</tr></table>";
+      }
+
+      // 2. Copy Titles Table
+      if (unitObj.periods.length > 0) {
+        html += '<table class="copy-table"><tr>';
+        unitObj.periods.forEach(p => html += '<th>' + p + ' Titles</th>');
+        html += '</tr>';
+
+        unitObj.assignments.forEach(assign => {
+          html += '<tr>';
+          unitObj.periods.forEach(p => {
+            const periodData = assign.data[p];
+            if (periodData && periodData.title) {
+              const attrText = escapeAttr(periodData.title);
+              const displayText = truncateDisplay(periodData.title);
+              html += `<td><button class="copy-btn" data-copy="${attrText}">${displayText}</button></td>`;
+            } else {
+              html += '<td></td>';
+            }
+          });
+          html += '</tr>';
+        });
+        html += '</table>';
+      }
+
+      html += '</div>';
+      return html;
+    }
+
+    function showUnit(index) {
+      const tabs = document.querySelectorAll("#tabs .tab:not(.home-tab):not(.refresh-tab):not(.logout-tab)");
+      const units = document.querySelectorAll(".unit");
+      tabs.forEach((t, i) => t.classList.toggle("active", i === index));
+      units.forEach((u, i) => u.classList.toggle("active", i === index));
+    }
+
+    function goHome() {
+      window.history.pushState({}, '', window.location.pathname);
+      currentActiveMode = null;
+      buildLandingPage();
+    }
+
+    // --- UTILITIES ---
+
+    function escapeAttr(str) { return str.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+    function truncateDisplay(str) { return str.length <= DISPLAY_LIMIT ? str : str.slice(0, DISPLAY_LIMIT) + "…"; }
+    
+    function copyToClipboard(text) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => showToast("Copied to clipboard!")).catch(() => fallbackCopy(text));
+      } else {
+        fallbackCopy(text);
+      }
+    }
+    
+    function fallbackCopy(text) {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand("copy"); showToast("Copied to clipboard!"); } catch (e) {}
+      document.body.removeChild(ta);
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById("toast");
+      toast.innerText = msg;
+      toast.className = "show";
+      setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 2500);
+    }
+  </script>
+</body>
+</html>
