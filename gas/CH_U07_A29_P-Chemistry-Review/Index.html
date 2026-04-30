@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Multiple Choice Review</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --primary: #38bdf8;
+            --success: #10b981;
+            --danger: #ef4444;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        html, body { overflow: hidden; width: 100vw; height: 100vh; background-color: var(--bg-color); }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-image: radial-gradient(circle at 50% -20%, #1e1b4b, #0f172a);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            width: 100%; padding: 20px; text-align: center; background: #0f172a;
+            border-bottom: 1px solid #1e293b; z-index: 100; flex-shrink: 0; 
+        }
+        
+        h1 { font-size: 1.4rem; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 1px; margin: 0; }
+        
+        .stats { display: flex; justify-content: center; gap: 15px; margin-top: 10px; font-size: 0.85rem; font-weight: 600; }
+        .stat-badge { padding: 4px 10px; border-radius: 20px; background: #1e293b; border: 1px solid #334155; }
+        .stat-mastered { color: var(--success); }
+        .stat-learning { color: #f59e0b; }
+
+        .progress-container { width: 100%; height: 4px; background: #1e293b; margin-top: 20px; border-radius: 2px; overflow: hidden; }
+        .progress-bar { height: 100%; background: var(--primary); width: 0%; transition: width 0.3s ease; }
+
+        main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 4vh 20px 20px 20px; width: 100%; }
+
+        .scene { width: 100%; max-width: 350px; height: 55vh; min-height: 380px; max-height: 480px; perspective: 1200px; flex-shrink: 1; margin-bottom: 20px; }
+
+        .card { width: 100%; height: 100%; position: relative; transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1); transform-style: preserve-3d; transform-origin: center center; will-change: transform; }
+        .card.is-flipped { transform: rotateY(180deg); }
+
+        .card-face {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            backface-visibility: hidden; -webkit-backface-visibility: hidden;
+            border-radius: 24px; padding: 20px; display: flex; flex-direction: column;
+            justify-content: flex-start; align-items: center; text-align: center;
+            border: 2px solid #334155; box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+        }
+
+        .card-face-front { background: linear-gradient(145deg, #1e293b, #0f172a); }
+        .card-face-back { background: linear-gradient(145deg, #064e3b, #0f172a); transform: rotateY(180deg); }
+
+        .tag, .card-text, .result-header, .options-container { transform: translateZ(20px); -webkit-transform: translateZ(20px); }
+        
+        .tag { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; color: var(--primary); margin-bottom: 10px; }
+        .card-text { font-size: 1.05rem; font-weight: 600; line-height: 1.4; margin-bottom: 15px; width: 100%; }
+        
+        .options-container { display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: auto; margin-bottom: auto; }
+
+        .mc-option { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: #fff; padding: 12px 15px; border-radius: 10px; font-family: 'Poppins', sans-serif; font-size: 0.9rem; text-align: left; cursor: pointer; transition: all 0.2s ease; }
+        .mc-option:active { transform: scale(0.98); }
+        .mc-correct { background: rgba(16, 185, 129, 0.2); border-color: var(--success); }
+        .mc-wrong { background: rgba(239, 68, 68, 0.2); border-color: var(--danger); }
+        .disabled { pointer-events: none; opacity: 0.8; }
+
+        .result-header { font-size: 1.6rem; font-weight: 800; margin-bottom: 15px; }
+        .result-correct { color: var(--success); }
+        .result-wrong { color: var(--danger); }
+        
+        .explanation { font-size: 0.95rem; font-weight: 400; text-align: left; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 12px; margin-top: 10px; overflow-y: auto;}
+
+        .actions { display: flex; width: 100%; max-width: 350px; height: 60px; flex-shrink: 0; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+        .actions.visible { opacity: 1; pointer-events: auto; }
+
+        .btn-continue { width: 100%; height: 100%; border-radius: 14px; border: none; font-size: 1rem; font-weight: 800; cursor: pointer; text-transform: uppercase; color: #fff; background: linear-gradient(135deg, var(--primary), #0284c7); box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3); }
+
+        #end-screen { display: none; flex-direction: column; align-items: center; text-align: center; margin-top: 10vh; }
+        #end-screen h2 { font-size: 2.2rem; color: var(--success); margin-bottom: 10px; }
+        .btn-reset { margin-top: 30px; background: var(--primary); padding: 15px 30px; width: auto; border:none; border-radius:12px; color:#fff; font-weight:bold; cursor:pointer;}
+
+        #loading-overlay { position: fixed; inset: 0; background: var(--bg-color); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 999; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #334155; border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        #save-indicator { position: fixed; bottom: 10px; right: 10px; font-size: 0.75rem; color: var(--text-muted); opacity: 0; transition: opacity 0.3s; }
+    </style>
+</head>
+<body>
+
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+        <div id="loading-text" style="font-weight: 600;">Authenticating & Loading Deck...</div>
+    </div>
+
+    <header>
+        <h1>Multiple Choice Review</h1>
+        <div class="stats">
+            <span class="stat-badge stat-unseen">New: <span id="count-unseen">0</span></span>
+            <span class="stat-badge stat-learning">Try Again: <span id="count-learning">0</span></span>
+            <span class="stat-badge stat-mastered">Known: <span id="count-mastered">0</span></span>
+        </div>
+        <div class="progress-container"><div class="progress-bar" id="progress-bar"></div></div>
+    </header>
+
+    <main>
+        <div id="end-screen">
+            <h2>Session Done! 🎉</h2>
+            <p>You've cleared the deck.</p>
+            <button class="btn-reset" onclick="resetDeck()">Restart Deck (Clears Progress)</button>
+        </div>
+
+        <div class="scene" id="card-scene">
+            <div class="card" id="flashcard">
+                <div class="card-face card-face-front">
+                    <div class="tag">Question</div>
+                    <div class="card-text" id="card-front-text">Loading...</div>
+                    <div class="options-container" id="options-container"></div>
+                </div>
+                
+                <div class="card-face card-face-back" id="card-back-bg">
+                    <div class="tag" id="back-tag">Result</div>
+                    <div class="result-header" id="result-header">Correct!</div>
+                    <div class="explanation" id="card-back-text">Loading...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="actions" id="action-buttons">
+            <button class="btn-continue" onclick="nextCard()">Next Question ➔</button>
+        </div>
+        <div id="save-indicator">Saving...</div>
+    </main>
+
+    <script>
+        let studentData = {};
+        let deckData = [];
+        let unseen = [];
+        let learning = [];
+        let mastered = [];
+        let currentCard = null;
+        let isFlipped = false;
+        let currentIsCorrect = false;
+
+        const cardEl = document.getElementById('flashcard');
+        const frontText = document.getElementById('card-front-text');
+        const optsContainer = document.getElementById('options-container');
+        const backText = document.getElementById('card-back-text');
+        const resultHeader = document.getElementById('result-header');
+        const actionsEl = document.getElementById('action-buttons');
+        const sceneEl = document.getElementById('card-scene');
+
+        function initApp() {
+            google.script.run
+                .withSuccessHandler(res => {
+                    studentData = res;
+                    deckData = res.deck;
+                    
+const savedMasteredIds = Object.values(res.savedState.mastered || {}).map(Number);
+const savedLearningIds = Object.values(res.savedState.learning || {}).map(Number);
+
+                    mastered = deckData.filter(c => savedMasteredIds.includes(c.id));
+                    learning = deckData.filter(c => savedLearningIds.includes(c.id));
+                    unseen = deckData.filter(c => !savedMasteredIds.includes(c.id) && !savedLearningIds.includes(c.id))
+                                     .sort(() => Math.random() - 0.5);
+
+                    document.getElementById('loading-overlay').style.display = 'none';
+                    updateUI();
+                    drawNextCard();
+                })
+                .withFailureHandler(err => {
+                    document.getElementById('loading-text').innerText = err.message;
+                    document.getElementById('loading-text').style.color = 'var(--danger)';
+                })
+                .getStudentInitialData();
+        }
+
+        function drawNextCard() {
+            if (unseen.length === 0 && learning.length === 0) {
+                sceneEl.style.display = 'none';
+                actionsEl.style.display = 'none';
+                document.getElementById('end-screen').style.display = 'flex';
+                saveProgressToServer(true); // Sending TRUE tells RTDB they finished!
+                return;
+            }
+            
+            currentCard = (unseen.length > 0) ? unseen.shift() : learning.shift();
+            isFlipped = false;
+            cardEl.classList.remove('is-flipped');
+            actionsEl.classList.remove('visible');
+            
+            setTimeout(() => {
+                frontText.innerHTML = currentCard.q;
+                optsContainer.innerHTML = "";
+                
+                currentCard.opts.forEach((opt, index) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'mc-option';
+                    btn.innerHTML = opt;
+                    btn.onclick = () => selectOption(index, btn);
+                    optsContainer.appendChild(btn);
+                });
+            }, 300);
+        }
+
+        function selectOption(selectedIndex, btnElement) {
+            const allBtns = optsContainer.querySelectorAll('.mc-option');
+            allBtns.forEach(b => b.classList.add('disabled'));
+
+            currentIsCorrect = (selectedIndex === currentCard.correct);
+
+            if (currentIsCorrect) {
+                mastered.push(currentCard);
+                btnElement.classList.add('mc-correct');
+            } else {
+                learning.push(currentCard);
+                btnElement.classList.add('mc-wrong');
+                allBtns[currentCard.correct].classList.add('mc-correct');
+            }
+
+            updateUI();
+            saveProgressToServer(false); // False because they are still playing
+
+            setTimeout(() => {
+                if (currentIsCorrect) {
+                    resultHeader.innerText = "Correct!";
+                    resultHeader.className = "result-header result-correct";
+                } else {
+                    resultHeader.innerText = "Incorrect";
+                    resultHeader.className = "result-header result-wrong";
+                }
+                
+                const correctText = currentCard.opts[currentCard.correct];
+                backText.innerHTML = `<strong>Answer:</strong> ${correctText}<br><br>${currentCard.exp}`;
+
+                flipCard();
+            }, 600);
+        }
+
+        function flipCard() {
+            isFlipped = true;
+            cardEl.classList.add('is-flipped');
+            actionsEl.classList.add('visible');
+        }
+
+        function nextCard() {
+            sceneEl.style.transition = 'all 0.3s ease';
+            sceneEl.style.transform = 'translateX(-100vw) rotate(-10deg)';
+            sceneEl.style.opacity = '0';
+            
+            setTimeout(() => {
+                drawNextCard();
+                sceneEl.style.transition = 'none';
+                sceneEl.style.transform = 'translateX(100vw)';
+                
+                setTimeout(() => {
+                    sceneEl.style.transition = 'all 0.4s cubic-bezier(0.4, 0.2, 0.2, 1)';
+                    sceneEl.style.transform = 'translateX(0)';
+                    sceneEl.style.opacity = '1';
+                }, 50);
+            }, 300);
+        }
+
+        function updateUI() {
+            document.getElementById('count-unseen').innerText = unseen.length;
+            document.getElementById('count-learning').innerText = learning.length;
+            document.getElementById('count-mastered').innerText = mastered.length;
+            
+            const total = deckData.length;
+            document.getElementById('progress-bar').style.width = `${(mastered.length / total) * 100}%`;
+        }
+
+        function saveProgressToServer(isFinished = false) {
+            const ind = document.getElementById('save-indicator');
+            ind.style.opacity = '1';
+            
+            const masteredIds = mastered.map(c => c.id);
+            const learningIds = learning.map(c => c.id);
+            
+            google.script.run
+                .withSuccessHandler(() => { ind.style.opacity = '0'; })
+                .saveProgress({
+                    saltedHash: studentData.saltedHash,
+                    allClassFolders: studentData.allClassFolders,
+                    masteredIds: masteredIds,
+                    learningIds: learningIds,
+                    isFinished: isFinished
+                });
+        }
+
+        function resetDeck() {
+            google.script.run
+                .withSuccessHandler(() => location.reload())
+                .saveProgress({
+                    saltedHash: studentData.saltedHash,
+                    allClassFolders: studentData.allClassFolders,
+                    masteredIds: [],
+                    learningIds: [],
+                    isFinished: false // Keep false so we don't accidentally log a new finish
+                });
+        }
+        
+        window.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>

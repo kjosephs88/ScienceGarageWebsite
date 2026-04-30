@@ -62,7 +62,7 @@
         document.getElementById('teacherBtn').disabled = false;
       }
 
-      function runSync() {
+ function runSync() {
         const classId = document.getElementById('classDropdown').value;
         const className = document.getElementById('classDropdown').options[document.getElementById('classDropdown').selectedIndex].text;
         
@@ -86,10 +86,8 @@
         google.script.run
           .withSuccessHandler(res => {
             status.style.color = '#4CAF50';
-            status.innerText = `Success: Synced ${res.count} items!`;
-            if (res.syncedTitles && res.syncedTitles.length > 0) {
-              res.syncedTitles.forEach(title => { listEl.innerHTML += `<li>${title}</li>`; });
-            }
+            // Updated to use res.syncedCount matching the backend!
+            status.innerText = `Success: Synced ${res.syncedCount} items!`;
             btn1.innerText = "1. Sync Assignments for Scheduler";
             btn1.disabled = false; btn2.disabled = false; btn3.disabled = false;
           })
