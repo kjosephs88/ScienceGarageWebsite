@@ -62,6 +62,22 @@
     .grouped-card .qq-slot + .qq-slot { margin-top: 2rem; border-top: 1px solid #f3f4f6; pt-6; }
     .grouped-card .qq-slot + .qq-slot .main-question-text { display: none; }
     #global-qq-content .main-question-text { display: block !important; margin-bottom: 0.25rem; }
+
+    /* Magnifying Glass Styles */
+    .zoom-container { position: relative; cursor: crosshair; }
+    .magnifier {
+      position: absolute;
+      width: 300px;
+      height: 300px;
+      border: 5px solid #673ab7;
+      border-radius: 50%;
+      pointer-events: none;
+      display: none;
+      z-index: 1000;
+      background-repeat: no-repeat;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5), inset 0 0 30px rgba(0,0,0,0.1);
+      background-color: white;
+    }
   </style>
 </head>
 <body class="text-gray-800 min-h-screen p-4 md:p-6 pb-32 relative">
@@ -184,7 +200,7 @@
       <div class="model2-table-wrapper bg-white p-4 rounded-lg border border-black shadow-sm overflow-x-auto mb-6">
         <table class="w-full border-collapse mb-8 text-sm border-black">
           <tr class="border-black">
-            <td rowspan="4" class="p-4 align-top border-r border-b border-black" style="border-top: none; border-left: none;">
+            <td rowspan="3" class="p-4 align-top border-r border-b border-black" style="border-top: none; border-left: none;">
               <ul class="list-disc pl-5 space-y-2 text-gray-700 font-medium text-xs md:text-sm">
                 <li>All beakers contain 10.0 g of water.</li>
                 <li>All beakers are kept at 20 °C.</li>
@@ -198,17 +214,13 @@
             <th class="border border-black p-2 bg-white font-bold text-sm" style="border-bottom: none;">Beaker A</th>
             <th class="border border-black p-2 bg-white font-bold text-sm" style="border-bottom: none;">Beaker B</th>
           </tr>
-          <tr class="h-40 border-black">
-            <td class="border border-black p-4 text-center text-xs text-gray-400 italic bg-white" style="border-top: none; border-bottom: none;">
-              <div class="beaker-img-placeholder">[Beaker A Image Placeholder]</div>
+          <tr class="h-64 border-black">
+            <td class="zoom-container border border-black p-4 text-center text-xs text-gray-400 italic bg-white" style="border-top: none;">
+                <div class="beaker-img-placeholder mb-2"><img src="https://docs.google.com/drawings/d/e/2PACX-1vQW3QJWCKNGbFe1MgkY409iThFgUdQWIp-NsWyD63coRGSYJUlwTxq_HbNqTqsNVy3VCjcBTHPIVLIu/pub?w=300&amp;h=300"></div><div class="text-gray-700 font-bold text-sm border-t border-gray-100 pt-2 mt-2">1.0 g of solute added</div>
             </td>
-            <td class="border border-black p-4 text-center text-xs text-gray-400 italic bg-white" style="border-top: none; border-bottom: none;">
-              <div class="beaker-img-placeholder">[Beaker B Image Placeholder]</div>
+            <td class="zoom-container border border-black p-4 text-center text-xs text-gray-400 italic bg-white" style="border-top: none;">
+                <div class="beaker-img-placeholder mb-2"><img src="https://docs.google.com/drawings/d/e/2PACX-1vREIGBL-uNkfIpEgBeqiShycrXqFo54d1xUR2GLvPV8yP4QFvQT3d71VyK5i-Twc3ItTRpVZ0K7-d5A/pub?w=300&amp;h=300"></div><div class="text-gray-700 font-bold text-sm border-t border-gray-100 pt-2 mt-2">2.0 g of solute added</div>
             </td>
-          </tr>
-          <tr class="border-black">
-            <td class="border border-black p-2 text-center text-gray-700 font-bold text-sm" style="border-top: none;">1.0 g of solute added</td>
-            <td class="border border-black p-2 text-center text-gray-700 font-bold text-sm" style="border-top: none;">2.0 g of solute added</td>
           </tr>
           <tr class="border-black">
             <th class="border border-black p-2 bg-gray-50 text-left text-xs text-gray-700">Number of dissolved particles</th>
@@ -237,23 +249,17 @@
             <th class="border border-black p-2 bg-white font-bold text-sm" style="border-bottom: none;">Beaker D</th>
             <th class="border border-black p-2 bg-white font-bold text-sm" style="border-bottom: none;">Beaker E</th>
           </tr>
-          <tr class="h-40 border-black">
+          <tr class="h-64 border-black">
             <td class="p-2 border-r border-black" style="border-top: none; border-left: none; border-bottom: none;"></td>
-            <td class="border border-black p-4 text-center text-xs text-gray-400 italic bg-white" style="border-top: none; border-bottom: none;">
-              <div class="beaker-img-placeholder">[Beaker C Image Placeholder]</div>
+            <td class="zoom-container border border-black p-4 text-center text-xs text-gray-400 italic bg-white" style="border-top: none;">
+                <div class="beaker-img-placeholder mb-2"><img src="https://docs.google.com/drawings/d/e/2PACX-1vR4bMjcfoaYjhwnzbsq9IEvn4jFive92yES6uttauz2divYH0cOsCJwY7-1SEEpDVlNggtluGt8sP85/pub?w=300&amp;h=300"></div><div class="text-gray-700 font-bold text-sm border-t border-gray-100 pt-2 mt-2">3.6 g of solute added</div>
             </td>
-            <td class="border border-black p-4 text-center text-xs text-gray-400 italic bg-white" style="border-top: none; border-bottom: none;">
-              <div class="beaker-img-placeholder">[Beaker D Image Placeholder]</div>
+            <td class="zoom-container border border-black p-4 text-center text-xs text-gray-400 italic bg-white" style="border-top: none;">
+                <div class="beaker-img-placeholder mb-2"><img src="https://docs.google.com/drawings/d/e/2PACX-1vRhG9YKqci8yo3SlarTrPX6Iew63NtxNg71MPdWln-F0jaLydNbnvctWplv2DCJMgDWyO30NTYh9Aze/pub?w=300&amp;h=300"></div><div class="text-gray-700 font-bold text-sm border-t border-gray-100 pt-2 mt-2">7.0 g of solute added</div>
             </td>
-            <td class="border border-black p-4 text-center text-xs text-gray-400 italic bg-white" style="border-top: none; border-bottom: none;">
-              <div class="beaker-img-placeholder">[Beaker E Image Placeholder]</div>
+            <td class="zoom-container border border-black p-4 text-center text-xs text-gray-400 italic bg-white" style="border-top: none;">
+                <div class="beaker-img-placeholder mb-2"><img src="https://docs.google.com/drawings/d/e/2PACX-1vS51GkiE6WzP-ZTb7fuQc3yYZv_i7o2yPd--XYXebldQxesqyugMizSKuZF3tMBGR5iV_ZyRWHNvZI-/pub?w=300&amp;h=300"></div><div class="text-gray-700 font-bold text-sm border-t border-gray-100 pt-2 mt-2">9.0 g of solute added</div>
             </td>
-          </tr>
-          <tr class="border-black">
-            <td class="p-2 border-r border-b border-black" style="border-top: none; border-left: none;"></td>
-            <td class="border border-black p-2 text-center text-gray-700 font-bold text-sm" style="border-top: none;">3.6 g of solute added</td>
-            <td class="border border-black p-2 text-center text-gray-700 font-bold text-sm" style="border-top: none;">7.0 g of solute added</td>
-            <td class="border border-black p-2 text-center text-gray-700 font-bold text-sm" style="border-top: none;">9.0 g of solute added</td>
           </tr>
           <tr class="border-black">
             <th class="border border-black p-2 bg-gray-50 text-left text-xs text-gray-700">Number of dissolved particles</th>
@@ -295,8 +301,8 @@
     
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 form-header-bar p-6 md:p-8 mb-4">
       <div class="mb-5 pb-4 border-b border-gray-100 flex flex-col items-start">
-        <div class="bg-gray-200 text-gray-800 text-xs font-bold tracking-wider uppercase px-2 py-1 mb-1 rounded-sm">Assignment Type: POGIL</div>
-        <div class="text-xs font-semibold text-gray-500 tracking-widest pl-2">UNIT 8: SOLUTIONS</div>
+        <div class="bg-gray-200 text-gray-800 text-xs font-bold tracking-wider uppercase px-2 py-1 mb-1 rounded-sm">Assignment Type: Graded</div>
+        <div class="text-xs font-semibold text-gray-500 tracking-widest pl-2">UNIT 8 - Assignment #5</div>
       </div>
       <h1 class="text-3xl font-normal text-gray-900 mb-4">Solubility and Saturation</h1>
       <p class="text-sm text-gray-600 font-medium italic">Refer to the Models on the right side of your screen to answer the questions.</p>
@@ -491,101 +497,91 @@
         <h2 class="text-xl font-bold mb-4 text-purple-700">Model 2 – Saturated and Unsaturated Solutions</h2>
         
         <div class="model2-table-wrapper bg-white p-4 rounded-lg border border-gray-300 shadow-sm overflow-x-auto mb-6">
-          <table class="w-full border-collapse mb-8 text-sm border-black">
-            <tr class="border-black">
-              <td rowspan="4" class="p-4 align-top border-r border-b border-black" style="border-top: none; border-left: none;">
-                <ul class="list-disc pl-5 space-y-2 text-gray-700 font-medium text-xs md:text-sm">
-                  <li>All beakers contain 10.0 g of water.</li>
-                  <li>All beakers are kept at 20 °C.</li>
-                  <li>All solutions are stirred for 2 hours.</li>
-                  <li>Solute is the same substance in all beakers.</li>
-                </ul>
-              </td>
-              <th colspan="2" class="border border-black p-3 bg-gray-50 uppercase tracking-widest text-lg font-extrabold text-purple-900 shadow-inner">Unsaturated Solutions</th>
-            </tr>
-            <tr class="border-black">
-              <th class="border border-black p-2 bg-white font-bold text-sm" style="border-bottom: none;">Beaker A</th>
-              <th class="border border-black p-2 bg-white font-bold text-sm" style="border-bottom: none;">Beaker B</th>
-            </tr>
-            <tr class="h-40 border-black">
-              <td class="border border-black p-4 text-center text-xs text-gray-400 italic bg-white" style="border-top: none; border-bottom: none;">
-                <div class="beaker-img-placeholder">[Beaker A Image Placeholder]</div>
-              </td>
-              <td class="border border-black p-4 text-center text-xs text-gray-400 italic bg-white" style="border-top: none; border-bottom: none;">
-                <div class="beaker-img-placeholder">[Beaker B Image Placeholder]</div>
-              </td>
-            </tr>
-            <tr class="border-black">
-              <td class="border border-black p-2 text-center text-gray-700 font-bold text-sm" style="border-top: none;">1.0 g of solute added</td>
-              <td class="border border-black p-2 text-center text-gray-700 font-bold text-sm" style="border-top: none;">2.0 g of solute added</td>
-            </tr>
-            <tr class="border-black">
-              <th class="border border-black p-2 bg-gray-50 text-left text-xs text-gray-700">Number of dissolved particles</th>
-              <td class="border border-black p-2 text-center font-bold text-blue-700 text-lg">5</td>
-              <td class="border border-black p-1">
-                <input type="text" data-field-id="m2-b-diss" data-save="m2-b-diss" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
-              </td>
-            </tr>
-            <tr class="border-black">
-              <th class="border border-black p-2 bg-gray-50 text-left text-xs text-gray-700">Number of solid particles</th>
-              <td class="border border-black p-1">
-                <input type="text" data-field-id="m2-a-solid" data-save="m2-a-solid" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
-              </td>
-              <td class="border border-black p-2 text-center font-bold text-blue-700 text-lg">0</td>
-            </tr>
-          </table>
+        <table class="w-full border-collapse mb-8 text-sm border-black">
+          <tr class="border-black">
+            <td rowspan="3" class="p-4 align-top border-r border-b border-black" style="border-top: none; border-left: none;">
+              <ul class="list-disc pl-5 space-y-2 text-gray-700 font-medium text-xs md:text-sm">
+                <li>All beakers contain 10.0 g of water.</li>
+                <li>All beakers are kept at 20 °C.</li>
+                <li>All solutions are stirred for 2 hours.</li>
+                <li>Solute is the same substance in all beakers.</li>
+              </ul>
+            </td>
+            <th colspan="2" class="border border-black p-3 bg-gray-50 uppercase tracking-widest text-lg font-extrabold text-purple-900 shadow-inner">Unsaturated Solutions</th>
+          </tr>
+          <tr class="border-black">
+            <th class="border border-black p-2 bg-white font-bold text-sm" style="border-bottom: none;">Beaker A</th>
+            <th class="border border-black p-2 bg-white font-bold text-sm" style="border-bottom: none;">Beaker B</th>
+          </tr>
+          <tr class="h-64 border-black">
+            <td class="zoom-container border border-black p-4 text-center text-xs text-gray-400 italic bg-white" style="border-top: none;">
+                <div class="beaker-img-placeholder mb-2"><img src="https://docs.google.com/drawings/d/e/2PACX-1vQW3QJWCKNGbFe1MgkY409iThFgUdQWIp-NsWyD63coRGSYJUlwTxq_HbNqTqsNVy3VCjcBTHPIVLIu/pub?w=300&amp;h=300"></div><div class="text-gray-700 font-bold text-sm border-t border-gray-100 pt-2 mt-2">1.0 g of solute added</div>
+            </td>
+            <td class="zoom-container border border-black p-4 text-center text-xs text-gray-400 italic bg-white" style="border-top: none;">
+                <div class="beaker-img-placeholder mb-2"><img src="https://docs.google.com/drawings/d/e/2PACX-1vREIGBL-uNkfIpEgBeqiShycrXqFo54d1xUR2GLvPV8yP4QFvQT3d71VyK5i-Twc3ItTRpVZ0K7-d5A/pub?w=300&amp;h=300"></div><div class="text-gray-700 font-bold text-sm border-t border-gray-100 pt-2 mt-2">2.0 g of solute added</div>
+            </td>
+          </tr>
+          <tr class="border-black">
+            <th class="border border-black p-2 bg-gray-50 text-left text-xs text-gray-700">Number of dissolved particles</th>
+            <td class="border border-black p-2 text-center font-bold text-blue-700 text-lg">5</td>
+            <td class="border border-black p-1">
+              <input type="text" data-field-id="m2-b-diss" data-save="m2-b-diss" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
+            </td>
+          </tr>
+          <tr class="border-black">
+            <th class="border border-black p-2 bg-gray-50 text-left text-xs text-gray-700">Number of solid particles</th>
+            <td class="border border-black p-1">
+              <input type="text" data-field-id="m2-a-solid" data-save="m2-a-solid" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
+            </td>
+            <td class="border border-black p-2 text-center font-bold text-blue-700 text-lg">0</td>
+          </tr>
+        </table>
 
-          <table class="w-full border-collapse text-sm border-black">
-            <tr class="border-black">
-              <td class="p-2 border-r border-black" style="border-top: none; border-left: none; border-bottom: none;"></td>
-              <th colspan="3" class="border border-black p-3 bg-gray-50 uppercase tracking-widest text-lg font-extrabold text-purple-900 shadow-inner">Saturated Solutions</th>
-            </tr>
-            <tr class="border-black">
-              <td class="p-2 border-r border-black" style="border-top: none; border-left: none; border-bottom: none;"></td>
-              <th class="border border-black p-2 bg-white font-bold text-sm" style="border-bottom: none;">Beaker C</th>
-              <th class="border border-black p-2 bg-white font-bold text-sm" style="border-bottom: none;">Beaker D</th>
-              <th class="border border-black p-2 bg-white font-bold text-sm" style="border-bottom: none;">Beaker E</th>
-            </tr>
-            <tr class="h-40 border-black">
-              <td class="p-2 border-r border-black" style="border-top: none; border-left: none; border-bottom: none;"></td>
-              <td class="border border-black p-4 text-center text-xs text-gray-400 italic bg-white" style="border-top: none; border-bottom: none;">
-                <div class="beaker-img-placeholder">[Beaker C Image Placeholder]</div>
-              </td>
-              <td class="border border-black p-4 text-center text-xs text-gray-400 italic bg-white" style="border-top: none; border-bottom: none;">
-                <div class="beaker-img-placeholder">[Beaker D Image Placeholder]</div>
-              </td>
-              <td class="border border-black p-4 text-center text-xs text-gray-400 italic bg-white" style="border-top: none; border-bottom: none;">
-                <div class="beaker-img-placeholder">[Beaker E Image Placeholder]</div>
-              </td>
-            </tr>
-            <tr class="border-black">
-              <td class="p-2 border-r border-b border-black" style="border-top: none; border-left: none;"></td>
-              <td class="border border-black p-2 text-center text-gray-700 font-bold text-sm" style="border-top: none;">3.6 g of solute added</td>
-              <td class="border border-black p-2 text-center text-gray-700 font-bold text-sm" style="border-top: none;">7.0 g of solute added</td>
-              <td class="border border-black p-2 text-center text-gray-700 font-bold text-sm" style="border-top: none;">9.0 g of solute added</td>
-            </tr>
-            <tr class="border-black">
-              <th class="border border-black p-2 bg-gray-50 text-left text-xs text-gray-700">Number of dissolved particles</th>
-              <td class="border border-black p-1">
-                <input type="text" data-field-id="m2-c-diss" data-save="m2-c-diss" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
-              </td>
-              <td class="border border-black p-1">
-                <input type="text" data-field-id="m2-d-diss" data-save="m2-d-diss" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
-              </td>
-              <td class="border border-black p-2 text-center font-bold text-blue-700 text-lg">18</td>
-            </tr>
-            <tr class="border-black">
-              <th class="border border-black p-2 bg-gray-50 text-left text-xs text-gray-700">Number of solid particles</th>
-              <td class="border border-black p-1">
-                <input type="text" data-field-id="m2-c-solid" data-save="m2-c-solid" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
-              </td>
-              <td class="border border-black p-2 text-center font-bold text-blue-700 text-lg">17</td>
-              <td class="border border-black p-1">
-                <input type="text" data-field-id="m2-e-solid" data-save="m2-e-solid" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
-              </td>
-            </tr>
-          </table>
-        </div>
+        <table class="w-full border-collapse text-sm border-black">
+          <tr class="border-black">
+            <td class="p-2 border-r border-black" style="border-top: none; border-left: none; border-bottom: none;"></td>
+            <th colspan="3" class="border border-black p-3 bg-gray-50 uppercase tracking-widest text-lg font-extrabold text-purple-900 shadow-inner">Saturated Solutions</th>
+          </tr>
+          <tr class="border-black">
+            <td class="p-2 border-r border-black" style="border-top: none; border-left: none; border-bottom: none;"></td>
+            <th class="border border-black p-2 bg-white font-bold text-sm" style="border-bottom: none;">Beaker C</th>
+            <th class="border border-black p-2 bg-white font-bold text-sm" style="border-bottom: none;">Beaker D</th>
+            <th class="border border-black p-2 bg-white font-bold text-sm" style="border-bottom: none;">Beaker E</th>
+          </tr>
+          <tr class="h-64 border-black">
+            <td class="p-2 border-r border-black" style="border-top: none; border-left: none; border-bottom: none;"></td>
+            <td class="zoom-container border border-black p-4 text-center text-xs text-gray-400 italic bg-white" style="border-top: none;">
+                <div class="beaker-img-placeholder mb-2"><img src="https://docs.google.com/drawings/d/e/2PACX-1vR4bMjcfoaYjhwnzbsq9IEvn4jFive92yES6uttauz2divYH0cOsCJwY7-1SEEpDVlNggtluGt8sP85/pub?w=300&amp;h=300"></div><div class="text-gray-700 font-bold text-sm border-t border-gray-100 pt-2 mt-2">3.6 g of solute added</div>
+            </td>
+            <td class="zoom-container border border-black p-4 text-center text-xs text-gray-400 italic bg-white" style="border-top: none;">
+                <div class="beaker-img-placeholder mb-2"><img src="https://docs.google.com/drawings/d/e/2PACX-1vRhG9YKqci8yo3SlarTrPX6Iew63NtxNg71MPdWln-F0jaLydNbnvctWplv2DCJMgDWyO30NTYh9Aze/pub?w=300&amp;h=300"></div><div class="text-gray-700 font-bold text-sm border-t border-gray-100 pt-2 mt-2">7.0 g of solute added</div>
+            </td>
+            <td class="zoom-container border border-black p-4 text-center text-xs text-gray-400 italic bg-white" style="border-top: none;">
+                <div class="beaker-img-placeholder mb-2"><img src="https://docs.google.com/drawings/d/e/2PACX-1vS51GkiE6WzP-ZTb7fuQc3yYZv_i7o2yPd--XYXebldQxesqyugMizSKuZF3tMBGR5iV_ZyRWHNvZI-/pub?w=300&amp;h=300"></div><div class="text-gray-700 font-bold text-sm border-t border-gray-100 pt-2 mt-2">9.0 g of solute added</div>
+            </td>
+          </tr>
+          <tr class="border-black">
+            <th class="border border-black p-2 bg-gray-50 text-left text-xs text-gray-700">Number of dissolved particles</th>
+            <td class="border border-black p-1">
+              <input type="text" data-field-id="m2-c-diss" data-save="m2-c-diss" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
+            </td>
+            <td class="border border-black p-1">
+              <input type="text" data-field-id="m2-d-diss" data-save="m2-d-diss" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
+            </td>
+            <td class="border border-black p-2 text-center font-bold text-blue-700 text-lg">18</td>
+          </tr>
+          <tr class="border-black">
+            <th class="border border-black p-2 bg-gray-50 text-left text-xs text-gray-700">Number of solid particles</th>
+            <td class="border border-black p-1">
+              <input type="text" data-field-id="m2-c-solid" data-save="m2-c-solid" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
+            </td>
+            <td class="border border-black p-2 text-center font-bold text-blue-700 text-lg">17</td>
+            <td class="border border-black p-1">
+              <input type="text" data-field-id="m2-e-solid" data-save="m2-e-solid" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
+            </td>
+          </tr>
+        </table>
+      </div>
       </div>
 
       <!-- Grouped Question 11 -->
@@ -616,7 +612,7 @@
 
       <div id="slot-q13" class="qq-slot" data-index="14">
         <div id="card-q13" class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-3xl mb-6">
-          <h3 class="text-gray-900 font-bold mb-4">13. Count the particles present in each beaker of Model 2. Enter the number of dissolved solute particles and the number of solid solute particles directly into the Model 2 table above.</h3>
+          <h3 class="text-gray-900 font-bold mb-4">13. Count the particles present in each beaker of Model 2. Enter the number of dissolved solute particles and the number of solid solute particles directly into the Model 2 table above. Hover your mouse over the images to get a close-up magnified view so you can count the particles easier. </h3>
         </div>
       </div>
 
@@ -777,6 +773,17 @@
           c.classList.remove('selected-cell');
         }
       });
+      debouncedSaveCells();
+    }
+
+    function debouncedSaveCells() {
+        if (saveDebounces['q4']) clearTimeout(saveDebounces['q4']);
+        saveDebounces['q4'] = setTimeout(() => {
+            const selected = Array.from(document.querySelectorAll('.selected-cell'))
+                .map(el => el.getAttribute('data-cell-id'))
+                .filter((v, i, a) => a.indexOf(v) === i); // Unique IDs
+            saveAnswer('q4', selected.join(','));
+        }, 1000);
     }
 
 
@@ -1008,6 +1015,14 @@
                     }
                 });
 
+                // Restore highlighting (Question 4)
+                if (liveData.q4 && liveData.q4.selection) {
+                    const selectedIds = liveData.q4.selection.split(',');
+                    selectedIds.forEach(cellId => {
+                        document.querySelectorAll(`[data-cell-id="${cellId}"]`).forEach(c => c.classList.add('selected-cell'));
+                    });
+                }
+
                 document.getElementById('gas-loader').classList.add('hidden');
                 checkLockStatus();
                 startSSEListener();
@@ -1083,6 +1098,43 @@
 
   // Hook into existing onload or add it
   window.addEventListener('load', initGas);
+
+  function initMagnifier() {
+    document.querySelectorAll('body > .magnifier').forEach(el => el.remove());
+    const magnifier = document.createElement('div');
+    magnifier.className = 'magnifier';
+    document.body.appendChild(magnifier);
+
+    const containers = document.querySelectorAll('.zoom-container');
+    containers.forEach(container => {
+        const img = container.querySelector('img');
+        if (!img) return;
+
+        container.addEventListener('mouseenter', () => {
+            magnifier.style.display = 'block';
+            magnifier.style.backgroundImage = `url('${img.src}')`;
+            magnifier.style.backgroundSize = `${container.offsetWidth * 3}px auto`; 
+        });
+
+        container.addEventListener('mouseleave', () => {
+            magnifier.style.display = 'none';
+        });
+
+        container.addEventListener('mousemove', (e) => {
+            magnifier.style.left = `${e.pageX - magnifier.offsetWidth / 2}px`;
+            magnifier.style.top = `${e.pageY - magnifier.offsetHeight / 2}px`;
+
+            const imgRect = img.getBoundingClientRect();
+            const x = e.clientX - imgRect.left;
+            const y = e.clientY - imgRect.top;
+
+            const px = (x / imgRect.width) * 100;
+            const py = (y / imgRect.height) * 100;
+            magnifier.style.backgroundPosition = `${px}% ${py}%`;
+        });
+    });
+  }
+  window.addEventListener('load', () => setTimeout(initMagnifier, 1500));
 </script>
 </body>
 </html>
