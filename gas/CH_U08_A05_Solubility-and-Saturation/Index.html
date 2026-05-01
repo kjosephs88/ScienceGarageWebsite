@@ -214,13 +214,13 @@
             <th class="border border-black p-2 bg-gray-50 text-left text-xs text-gray-700">Number of dissolved particles</th>
             <td class="border border-black p-2 text-center font-bold text-blue-700 text-lg">5</td>
             <td class="border border-black p-1">
-              <input type="text" data-field-id="m2-b-diss" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
+              <input type="text" data-field-id="m2-b-diss" data-save="m2-b-diss" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
             </td>
           </tr>
           <tr class="border-black">
             <th class="border border-black p-2 bg-gray-50 text-left text-xs text-gray-700">Number of solid particles</th>
             <td class="border border-black p-1">
-              <input type="text" data-field-id="m2-a-solid" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
+              <input type="text" data-field-id="m2-a-solid" data-save="m2-a-solid" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
             </td>
             <td class="border border-black p-2 text-center font-bold text-blue-700 text-lg">0</td>
           </tr>
@@ -258,21 +258,21 @@
           <tr class="border-black">
             <th class="border border-black p-2 bg-gray-50 text-left text-xs text-gray-700">Number of dissolved particles</th>
             <td class="border border-black p-1">
-              <input type="text" data-field-id="m2-c-diss" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
+              <input type="text" data-field-id="m2-c-diss" data-save="m2-c-diss" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
             </td>
             <td class="border border-black p-1">
-              <input type="text" data-field-id="m2-d-diss" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
+              <input type="text" data-field-id="m2-d-diss" data-save="m2-d-diss" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
             </td>
             <td class="border border-black p-2 text-center font-bold text-blue-700 text-lg">18</td>
           </tr>
           <tr class="border-black">
             <th class="border border-black p-2 bg-gray-50 text-left text-xs text-gray-700">Number of solid particles</th>
             <td class="border border-black p-1">
-              <input type="text" data-field-id="m2-c-solid" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
+              <input type="text" data-field-id="m2-c-solid" data-save="m2-c-solid" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
             </td>
             <td class="border border-black p-2 text-center font-bold text-blue-700 text-lg">17</td>
             <td class="border border-black p-1">
-              <input type="text" data-field-id="m2-e-solid" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
+              <input type="text" data-field-id="m2-e-solid" data-save="m2-e-solid" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
             </td>
           </tr>
         </table>
@@ -287,6 +287,7 @@
       </button>
       <h2 class="text-2xl font-bold mb-4 text-purple-700">Model 3 – Solubility Curves</h2>
       <p class="mb-6">Content for Model 3 will populate here once reached in the assignment.</p>
+      <div id="gas-loader" class="hidden absolute top-4 right-4 text-xs font-bold text-gray-500 bg-gray-100 px-3 py-1 rounded-full border border-gray-200">Authenticating...</div>
     </div>
   </div>
 
@@ -377,21 +378,21 @@
       <div id="slot-q1" class="qq-slot" data-index="0">
         <div id="card-q1" class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-3xl">
           <h3 class="text-gray-900 font-bold mb-4">1. Reread the previous paragraph and identify the variable(s) that were controlled among all three experiments in Model 1.</h3>
-          <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+          <textarea id="q1" data-save="q1" rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
         </div>
       </div>
 
       <div id="slot-q2" class="qq-slot" data-index="1">
         <div id="card-q2" class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-3xl mb-6">
           <h3 class="text-gray-900 font-bold mb-4">2. What variable(s) were changed purposefully among the three experiments in Model 1?</h3>
-          <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+          <textarea id="q2" data-save="q2" rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
         </div>
       </div>
 
       <div id="slot-q3" class="qq-slot" data-index="2">
         <div id="card-q3" class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-3xl mb-6">
           <h3 class="text-gray-900 font-bold mb-4">3. What experimental question can be answered by analyzing the data in the three experiments in Model 1? Use the words "solvent" and "solute" in your question.</h3>
-          <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+          <textarea id="q3" data-save="q3" rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
         </div>
       </div>
 
@@ -405,7 +406,7 @@
       <div id="slot-q5" class="qq-slot" data-index="4">
         <div id="card-q5" class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-3xl mb-6">
           <h3 class="text-gray-900 font-bold mb-4">5. Propose an explanation for why the mass of dissolved solute changed among the three Experiments.</h3>
-          <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+          <textarea id="q4" data-save="q4" rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
         </div>
       </div>
 
@@ -423,14 +424,14 @@
       <div id="slot-q6" class="qq-slot" data-index="6">
         <div id="card-q6" class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-3xl mb-6">
           <h3 class="text-gray-900 font-bold mb-4">6. Would it be acceptable for a student to use Trial 2 from Experiment 1 to determine the solubility of the solute in Model 1? Explain your answer in a complete sentence.</h3>
-          <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+          <textarea id="q6" data-save="q6" rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
         </div>
       </div>
 
       <div id="slot-q7" class="qq-slot" data-index="7">
         <div id="card-q7" class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-3xl mb-6">
           <h3 class="text-gray-900 font-bold mb-4">7. In Model 1 none of the experiments used 100 g of water. Use complete sentences to explain how the ratio "grams of solute per 100 g H₂O" can be calculated from the data given in Model 1.</h3>
-          <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+          <textarea id="q7" data-save="q7" rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
         </div>
       </div>
 
@@ -440,15 +441,15 @@
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <label class="block text-sm font-semibold text-gray-600 mb-1">Experiment 1:</label>
-              <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-1 text-blue-700 font-bold" placeholder="Value"></textarea>
+              <textarea id="q8a" data-save="q8a" id="q8" data-save="q8" rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-1 text-blue-700 font-bold" placeholder="Value"></textarea>
             </div>
             <div>
               <label class="block text-sm font-semibold text-gray-600 mb-1">Experiment 2:</label>
-              <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-1 text-blue-700 font-bold" placeholder="Value"></textarea>
+              <textarea id="q8b" data-save="q8b" rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-1 text-blue-700 font-bold" placeholder="Value"></textarea>
             </div>
             <div>
               <label class="block text-sm font-semibold text-gray-600 mb-1">Experiment 3:</label>
-              <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-1 text-blue-700 font-bold" placeholder="Value"></textarea>
+              <textarea id="q8c" data-save="q8c" rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-1 text-blue-700 font-bold" placeholder="Value"></textarea>
             </div>
           </div>
         </div>
@@ -460,17 +461,17 @@
           <div class="mb-6">
             <p class="mb-3 text-gray-800">a. When the volume of solvent increases, the mass of solute that can dissolve in a saturated solution...</p>
             <div class="flex flex-col gap-2 pl-4">
-              <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded w-max"><input type="radio" name="q9a" class="w-4 h-4 text-purple-600"> increases</label>
-              <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded w-max"><input type="radio" name="q9a" class="w-4 h-4 text-purple-600"> decreases</label>
-              <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded w-max"><input type="radio" name="q9a" class="w-4 h-4 text-purple-600"> stays the same</label>
+              <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded w-max"><input type="radio" name="q9a" data-save="q9a" class="w-4 h-4 text-purple-600"> increases</label>
+              <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded w-max"><input type="radio" name="q9a" data-save="q9a" class="w-4 h-4 text-purple-600"> decreases</label>
+              <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded w-max"><input type="radio" name="q9a" data-save="q9a" class="w-4 h-4 text-purple-600"> stays the same</label>
             </div>
           </div>
           <div>
             <p class="mb-3 text-gray-800">b. When the volume of solvent increases, the solubility of a solute at a given temperature...</p>
             <div class="flex flex-col gap-2 pl-4">
-              <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded w-max"><input type="radio" name="q9b" class="w-4 h-4 text-purple-600"> increases</label>
-              <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded w-max"><input type="radio" name="q9b" class="w-4 h-4 text-purple-600"> decreases</label>
-              <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded w-max"><input type="radio" name="q9b" class="w-4 h-4 text-purple-600"> stays the same</label>
+              <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded w-max"><input type="radio" name="q9b" data-save="q9b" class="w-4 h-4 text-purple-600"> increases</label>
+              <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded w-max"><input type="radio" name="q9b" data-save="q9b" class="w-4 h-4 text-purple-600"> decreases</label>
+              <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded w-max"><input type="radio" name="q9b" data-save="q9b" class="w-4 h-4 text-purple-600"> stays the same</label>
             </div>
           </div>
         </div>
@@ -479,7 +480,7 @@
       <div id="slot-q10" class="qq-slot" data-index="10">
         <div id="card-q10" class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-3xl mb-6">
           <h3 class="text-gray-900 font-bold mb-4">10. A student claims, "In Experiment 3, Trial 9, 18.0 grams of solute dissolves, whereas in Experiment 1, Trial 9, only 3.6 grams of solute dissolves. Obviously, the solubility is greater in Experiment 3." Devise a well-constructed response to this claim.</h3>
-          <textarea rows="3" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+          <textarea id="q9" data-save="q9" rows="3" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
         </div>
       </div>
       
@@ -522,13 +523,13 @@
               <th class="border border-black p-2 bg-gray-50 text-left text-xs text-gray-700">Number of dissolved particles</th>
               <td class="border border-black p-2 text-center font-bold text-blue-700 text-lg">5</td>
               <td class="border border-black p-1">
-                <input type="text" data-field-id="m2-b-diss" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
+                <input type="text" data-field-id="m2-b-diss" data-save="m2-b-diss" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
               </td>
             </tr>
             <tr class="border-black">
               <th class="border border-black p-2 bg-gray-50 text-left text-xs text-gray-700">Number of solid particles</th>
               <td class="border border-black p-1">
-                <input type="text" data-field-id="m2-a-solid" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
+                <input type="text" data-field-id="m2-a-solid" data-save="m2-a-solid" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
               </td>
               <td class="border border-black p-2 text-center font-bold text-blue-700 text-lg">0</td>
             </tr>
@@ -566,21 +567,21 @@
             <tr class="border-black">
               <th class="border border-black p-2 bg-gray-50 text-left text-xs text-gray-700">Number of dissolved particles</th>
               <td class="border border-black p-1">
-                <input type="text" data-field-id="m2-c-diss" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
+                <input type="text" data-field-id="m2-c-diss" data-save="m2-c-diss" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
               </td>
               <td class="border border-black p-1">
-                <input type="text" data-field-id="m2-d-diss" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
+                <input type="text" data-field-id="m2-d-diss" data-save="m2-d-diss" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
               </td>
               <td class="border border-black p-2 text-center font-bold text-blue-700 text-lg">18</td>
             </tr>
             <tr class="border-black">
               <th class="border border-black p-2 bg-gray-50 text-left text-xs text-gray-700">Number of solid particles</th>
               <td class="border border-black p-1">
-                <input type="text" data-field-id="m2-c-solid" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
+                <input type="text" data-field-id="m2-c-solid" data-save="m2-c-solid" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
               </td>
               <td class="border border-black p-2 text-center font-bold text-blue-700 text-lg">17</td>
               <td class="border border-black p-1">
-                <input type="text" data-field-id="m2-e-solid" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
+                <input type="text" data-field-id="m2-e-solid" data-save="m2-e-solid" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
               </td>
             </tr>
           </table>
@@ -593,7 +594,7 @@
           <div id="card-q11a">
             <h3 class="text-gray-900 font-bold main-question-text">11. Which beakers contain:</h3>
             <h3 class="text-gray-900 font-bold mb-4 pl-4">a. Only solutes dissolved in aqueous form</h3>
-            <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+            <textarea id="q11a" data-save="q11a" rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
           </div>
         </div>
 
@@ -601,7 +602,7 @@
           <div id="card-q11b" class="pt-6">
             <h3 class="text-gray-900 font-bold main-question-text">11. Which beakers contain:</h3>
             <h3 class="text-gray-900 font-bold mb-4 pl-4">b. Solutes dissolved in aqueous form and solids not dissolved in solution</h3>
-            <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+            <textarea id="q11b" data-save="q11b" rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
           </div>
         </div>
       </div>
@@ -609,7 +610,7 @@
       <div id="slot-q12" class="qq-slot" data-index="13">
         <div id="card-q12" class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-3xl mb-6">
           <h3 class="text-gray-900 font-bold mb-4">12. What variables are controlled in all five beakers of Model 2?</h3>
-          <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+          <textarea id="q12" data-save="q12" rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
         </div>
       </div>
 
@@ -625,7 +626,7 @@
           <div id="card-q14a">
             <h3 class="text-gray-900 font-bold main-question-text">14. Consider the beakers in Model 2.</h3>
             <h3 class="text-gray-900 font-bold mb-4 pl-4">a. Which beakers represent unsaturated solutions? Explain your choice.</h3>
-            <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+            <textarea id="q13" data-save="q13" rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
           </div>
         </div>
 
@@ -633,7 +634,7 @@
           <div id="card-q14b" class="pt-6">
             <h3 class="text-gray-900 font-bold main-question-text">14. Consider the beakers in Model 2.</h3>
             <h3 class="text-gray-900 font-bold mb-4 pl-4">b. Which beakers represent saturated solutions? Explain your choice.</h3>
-            <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+            <textarea id="q14b" data-save="q14b" rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
           </div>
         </div>
       </div>
@@ -644,7 +645,7 @@
           <div id="card-q15a">
             <h3 class="text-gray-900 font-bold main-question-text">15. Beakers A-E in Model 2 are modeled as representing 5 different solutions. They could also be considered as 5 snapshots of the same beaker over time. If additional measured quantities of solute were stirred into beaker A in small increments over time, then beakers B-E would result.</h3>
             <h3 class="text-gray-900 font-bold mb-4 pl-4 border-l-4 border-purple-200">a. When a small amount of additional solute is added to an unsaturated solution, what happens to the number of dissolved particles? Provide evidence from Model 2 to support your answer.</h3>
-            <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+            <textarea id="q15a" data-save="q15a" rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
           </div>
         </div>
 
@@ -652,7 +653,7 @@
           <div id="card-q15b" class="pt-6">
             <h3 class="text-gray-900 font-bold main-question-text">15. Beakers A-E in Model 2 are modeled as representing 5 different solutions. They could also be considered as 5 snapshots of the same beaker over time. If additional measured quantities of solute were stirred into beaker A in small increments over time, then beakers B-E would result.</h3>
             <h3 class="text-gray-900 font-bold mb-4 pl-4 border-l-4 border-purple-200">b. When a small amount of additional solute is added to a saturated solution, what happens to the number of dissolved particles? Provide specific evidence from Model 2 to support your answer.</h3>
-            <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+            <textarea id="q15b" data-save="q15b" rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
           </div>
         </div>
 
@@ -660,7 +661,7 @@
           <div id="card-q15c" class="pt-6">
             <h3 class="text-gray-900 font-bold main-question-text">15. Beakers A-E in Model 2 are modeled as representing 5 different solutions. They could also be considered as 5 snapshots of the same beaker over time. If additional measured quantities of solute were stirred into beaker A in small increments over time, then beakers B-E would result.</h3>
             <h3 class="text-gray-900 font-bold mb-4 pl-4 border-l-4 border-purple-200">c. Predict what would happen if a small amount of additional solute were stirred into beaker E in Model 2.</h3>
-            <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+            <textarea id="q15c" data-save="q15c" rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
           </div>
         </div>
       </div>
@@ -668,35 +669,35 @@
       <div id="slot-q16" class="qq-slot" data-index="20">
         <div id="card-q16" class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-3xl mb-6">
           <h3 class="text-gray-900 font-bold mb-4">16. Have each person in your group provide an example of the word "saturated" as it is used in an everyday context. Summarize the meaning of the word in the space below.</h3>
-          <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+          <textarea id="q16" data-save="q16" rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
         </div>
       </div>
 
       <div id="slot-q17" class="qq-slot" data-index="21">
         <div id="card-q17" class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-3xl mb-6">
           <h3 class="text-gray-900 font-bold mb-4">17. What feature in the beakers in Model 2 would typically enable a student to distinguish a saturated solution from an unsaturated one simply by looking at the beaker?</h3>
-          <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+          <textarea id="q17" data-save="q17" rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
         </div>
       </div>
 
       <div id="slot-q18" class="qq-slot" data-index="22">
         <div id="card-q18" class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-3xl mb-6">
           <h3 class="text-gray-900 font-bold mb-4">18. If you were handed a beaker containing a clear solution (with no solid solute at the bottom), and asked to identify it as "saturated" or "unsaturated," what simple test could you perform to determine the answer?</h3>
-          <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+          <textarea id="q18" data-save="q18" rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
         </div>
       </div>
 
       <div id="slot-q19" class="qq-slot" data-index="23">
         <div id="card-q19" class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-3xl mb-6">
           <h3 class="text-gray-900 font-bold mb-4">19. Four of the trials in Model 1 correspond to beakers A, B, D, and E from Model 2. Write the letters for those beakers next to the corresponding trial numbers in Model 1.</h3>
-          <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+          <textarea id="q19" data-save="q19" rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
         </div>
       </div>
 
       <div id="slot-q20" class="qq-slot" data-index="24">
         <div id="card-q20" class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-3xl mb-6">
           <h3 class="text-gray-900 font-bold mb-4">20. For Trial 8 in Model 1, determine the mass of solid solute remaining on the bottom of the beaker.</h3>
-          <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+          <textarea id="q20" data-save="q20" rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
         </div>
       </div>
 
@@ -706,7 +707,7 @@
           <div id="card-q21a">
             <h3 class="text-gray-900 font-bold main-question-text">21. Imagine that the contents of the beaker for Trial 8 in Model 1 are vigorously stirred and then poured into filter paper in a funnel.</h3>
             <h3 class="text-gray-900 font-bold mb-4 pl-4 border-l-4 border-blue-200">a. Is the liquid that drips from the filter (the filtrate) unsaturated or saturated? Explain.</h3>
-            <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+            <textarea id="q21a" data-save="q21a" rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
           </div>
         </div>
 
@@ -714,7 +715,7 @@
           <div id="card-q21b" class="pt-6">
             <h3 class="text-gray-900 font-bold main-question-text">21. Imagine that the contents of the beaker for Trial 8 in Model 1 are vigorously stirred and then poured into filter paper in a funnel.</h3>
             <h3 class="text-gray-900 font-bold mb-4 pl-4 border-l-4 border-blue-200">b. Which beaker in Model 1 best represents the filtrate that would be obtained?</h3>
-            <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+            <textarea id="q21b" data-save="q21b" rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
           </div>
         </div>
       </div>
@@ -722,7 +723,7 @@
       <div id="slot-q22" class="qq-slot" data-index="27">
         <div id="card-q22" class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-purple-200 w-full max-w-3xl mb-6">
           <h3 class="text-gray-900 font-bold mb-4">22. What factor(s) might also affect how much of a solute dissolves in a solution?</h3>
-          <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+          <textarea id="q22" data-save="q22" rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
         </div>
       </div>
     </div>
@@ -974,5 +975,114 @@
 
   </script>
 
+
+<script>
+  const databaseURL = "https://scigarage-default-rtdb.firebaseio.com";
+  let studentConfig = null;
+  let localState = {};
+  let saveDebounces = {};
+  
+  function initGas() {
+      // Check if we are inside GAS
+      if (typeof google !== 'undefined' && google.script) {
+          document.getElementById('gas-loader').classList.remove('hidden');
+          google.script.run
+            .withSuccessHandler(data => {
+                studentConfig = data;
+                const liveData = data.savedState || {};
+                window.studentLocked = (liveData && liveData.isLocked === true);
+                
+                // Initialize textareas and inputs
+                document.querySelectorAll('[data-save]').forEach(el => {
+                    const id = el.getAttribute('data-save');
+                    localState[id] = liveData[id] || { selection: "" };
+                    
+                    if (el.tagName === 'TEXTAREA' || el.type === 'text') {
+                        el.value = localState[id].selection;
+                        el.addEventListener('input', () => debouncedSave(id, el.value));
+                    } else if (el.type === 'radio') {
+                        if (localState[id].selection === el.nextSibling.textContent.trim()) {
+                            el.checked = true;
+                        }
+                        el.addEventListener('change', () => saveAnswer(id, el.nextSibling.textContent.trim()));
+                    }
+                });
+
+                document.getElementById('gas-loader').classList.add('hidden');
+                checkLockStatus();
+                startSSEListener();
+            })
+            .withFailureHandler(err => {
+                document.getElementById('gas-loader').innerText = "Access Denied: " + err.message;
+                document.getElementById('gas-loader').className = "absolute top-4 right-4 text-xs font-bold text-red-600 bg-red-50 px-3 py-1 rounded-full border border-red-200";
+            })
+            .getStudentInitialData();
+      }
+  }
+
+  function startSSEListener() {
+      if (!studentConfig || !studentConfig.basePaths || studentConfig.basePaths.length === 0) return;
+      const url = `${databaseURL}/${studentConfig.basePaths[0]}.json`;
+      const eventSource = new EventSource(url);
+      
+      const handleUpdate = (e) => {
+        const payload = JSON.parse(e.data);
+        const path = payload.path || "";
+        const data = payload.data || {};
+
+        if (path === "/") {
+            window.studentLocked = data.isLocked === true;
+        } else if (path === "/isLocked") {
+            window.studentLocked = data;
+        }
+        checkLockStatus();
+      };
+      eventSource.addEventListener('put', handleUpdate);
+      eventSource.addEventListener('patch', handleUpdate);
+  }
+
+  function checkLockStatus() {
+       if (window.studentLocked) {
+           document.querySelectorAll('[data-save]').forEach(el => el.disabled = true);
+           let lockMsg = document.getElementById('lock-message-container');
+           if(!lockMsg) {
+               lockMsg = document.createElement('div');
+               lockMsg.id = 'lock-message-container';
+               lockMsg.className = 'bg-white rounded-lg shadow-sm border-l-8 border-red-500 p-8 mb-4 text-center mt-4';
+               lockMsg.innerHTML = '<h2 class="text-2xl font-bold text-gray-800 mb-2">Assignment Closed</h2><p class="text-gray-600 leading-relaxed">This assignment has been closed. Please see your teacher.</p>';
+               document.querySelector('.form-header-bar').insertAdjacentElement('afterend', lockMsg);
+           }
+       } else {
+           document.querySelectorAll('[data-save]').forEach(el => el.disabled = false);
+           const lockMsg = document.getElementById('lock-message-container');
+           if (lockMsg) lockMsg.remove();
+       }
+  }
+
+  function debouncedSave(id, value) {
+      if (saveDebounces[id]) clearTimeout(saveDebounces[id]);
+      saveDebounces[id] = setTimeout(() => saveAnswer(id, value), 1000);
+  }
+
+  function saveAnswer(id, selection) {
+      if (!localState[id]) localState[id] = {};
+      localState[id].selection = selection; 
+      
+      if (!studentConfig || !studentConfig.basePaths) return;
+      
+      studentConfig.basePaths.forEach(path => {
+        fetch(`${databaseURL}/${path}.json`, {
+          method: 'PATCH',
+          body: JSON.stringify({
+            [`${id}/selection`]: selection,
+            lastUpdated: Date.now()
+          })
+        });
+      });
+  }
+
+  // Hook into existing onload or add it
+  window.addEventListener('load', initGas);
+</script>
 </body>
 </html>
