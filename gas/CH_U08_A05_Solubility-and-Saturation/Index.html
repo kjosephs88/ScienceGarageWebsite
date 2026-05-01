@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Solubility and Saturation POGIL</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+  <style>
+    body { font-family: 'Roboto', ui-sans-serif, system-ui, -apple-system, sans-serif; background-color: #f0ebf8; }
+    .form-header-bar { border-top: 10px solid #673ab7; }
+    
+    /* Textareas styling */
+    textarea { 
+      color: #0000ff !important; 
+      font-weight: 700 !important; 
+      resize: none; 
+      overflow: hidden; 
+    }
+    
+    /* Click & Drag Table Cells */
+    .selectable-cell { cursor: cell; user-select: none; transition: background-color 0.1s; }
+    .selectable-cell:hover { background-color: #f3e8ff; }
+    .selected-cell {
+      background-color: #e9d5ff !important; /* Tailwind purple-200 */
+      border: 2px solid #9333ea !important; /* Tailwind purple-600 */
+    }
+
+    /* Modal Overlay styling */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background-color: rgba(0, 0, 0, 0.6);
+      z-index: 1000;
+      justify-content: center;
+      align-items: flex-start; /* Align to top to leave room for QQ mode */
+      padding: 2rem 1rem; 
+      overflow-y: auto; /* Allow scrolling the overlay when QQ mode is active */
+    }
+    .modal-content {
+      background-color: #fff;
+      padding: 2rem;
+      border-radius: 0.5rem;
+      width: 100%;
+      max-width: 800px;
+      position: relative;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Q-by-Q Window Transitions and Minimized state */
+    #global-qq-window {
+      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .qq-window-minimized {
+      transform: translateX(-50%) translateY(calc(100% - 54px)) !important;
+    }
+
+    /* Grouped questions logic */
+    .grouped-card .qq-slot + .qq-slot { margin-top: 2rem; border-top: 1px solid #f3f4f6; pt-6; }
+    .grouped-card .qq-slot + .qq-slot .main-question-text { display: none; }
+    #global-qq-content .main-question-text { display: block !important; margin-bottom: 0.25rem; }
+  </style>
+</head>
+<body class="text-gray-800 min-h-screen p-4 md:p-6 pb-32 relative">
+
+  <div id="sidebar-container" class="fixed top-20 right-4 md:right-8 z-[1005] flex flex-col items-end gap-3">
+    <button id="sidebar-qq-btn" onclick="startQQModeFromSidebar()" class="flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-full py-2 px-4 shadow-lg hover:shadow-xl font-bold transition-all w-44 mb-2">
+      Q-by-Q Mode
+    </button>
+
+    <button id="btn-model1" onclick="openModal('modal-model1')" class="flex items-center gap-2 bg-white border border-gray-300 rounded-full py-2 px-4 shadow-md hover:bg-gray-50 text-purple-700 font-bold transition-all w-32 justify-center">
+      <span class="material-icons text-lg">info</span> Model 1
+    </button>
+    
+    <button id="btn-model2" onclick="openModal('modal-model2')" class="hidden items-center gap-2 bg-white border border-gray-300 rounded-full py-2 px-4 shadow-md hover:bg-gray-50 text-purple-700 font-bold transition-all w-32">
+      <span class="material-icons text-lg">opacity</span> Model 2
+    </button>
+    
+    <button id="btn-model3" onclick="openModal('modal-model3')" class="hidden items-center gap-2 bg-white border border-gray-300 rounded-full py-2 px-4 shadow-md hover:bg-gray-50 text-purple-700 font-bold transition-all w-32">
+      <span class="material-icons text-lg">show_chart</span> Model 3
+    </button>
+  </div>
+
+  <div id="global-qq-window" class="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-4xl bg-gray-100 shadow-[0_-10px_40px_rgba(0,0,0,0.3)] border-t-8 border-purple-600 rounded-t-xl z-[1010] hidden flex-col max-h-[45vh]">
+    <div class="flex justify-between items-center px-6 py-3 border-b bg-white rounded-t-lg cursor-pointer" onclick="toggleQQMinimize(event)">
+       <button onclick="changeQQ(-1); event.stopPropagation();" id="btn-qq-prev" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-1 px-4 rounded transition-colors">⬅ Previous</button>
+       <div class="flex items-center gap-2">
+         <span id="qq-minimize-icon" class="material-icons text-purple-600">expand_more</span>
+         <span class="font-bold text-purple-700 text-sm tracking-wide uppercase">Question Mode</span>
+       </div>
+       <div class="flex gap-2">
+         <button onclick="stopQQMode(); event.stopPropagation();" class="bg-red-100 hover:bg-red-200 text-red-700 font-bold py-1 px-4 rounded transition-colors text-sm">Exit</button>
+         <button onclick="changeQQ(1); event.stopPropagation();" id="btn-qq-next" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-1 px-4 rounded transition-colors">Next ➡</button>
+       </div>
+    </div>
+    <div id="global-qq-content" class="p-4 overflow-y-auto flex-grow flex flex-col items-center">
+      </div>
+  </div>
+
+  <div id="modal-model1" class="modal-overlay">
+    <div class="modal-content">
+      <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-400 hover:text-red-500 bg-gray-100 rounded-full p-1">
+        <span class="material-icons">close</span>
+      </button>
+      <h2 class="text-2xl font-bold mb-4 text-purple-700">Model 1 – Three Solutions</h2>
+      <p class="mb-4 text-sm md:text-base leading-relaxed">
+        The following data refer to three experiments in which solute is added to water in a beaker at 20°C. The mixtures are stirred and then allowed to sit for three hours before measuring the amount of solid that dissolves. Ten separate trials are conducted for each experiment. The same solute is used in all experiments.
+      </p>
+      
+      <div class="overflow-x-auto mb-6">
+        <table class="w-full text-center border-collapse text-sm select-none" onmouseleave="isSelecting = false;">
+          <thead>
+            <tr class="bg-gray-100">
+              <th class="border border-gray-300 p-2"></th>
+              <th colspan="2" class="border border-gray-300 p-2 font-bold">Experiment 1<br><span class="font-normal">In 10.0g of water</span></th>
+              <th colspan="2" class="border border-gray-300 p-2 font-bold">Experiment 2<br><span class="font-normal">In 20.0g of water</span></th>
+              <th colspan="2" class="border border-gray-300 p-2 font-bold">Experiment 3<br><span class="font-normal">In 50.0g of water</span></th>
+            </tr>
+            <tr class="bg-gray-50">
+              <th class="border border-gray-300 p-2 font-semibold">Trial</th>
+              <th class="border border-gray-300 p-2 font-semibold text-xs">Added (g)</th><th class="border border-gray-300 p-2 font-semibold text-xs">Dissolved (g)</th>
+              <th class="border border-gray-300 p-2 font-semibold text-xs">Added (g)</th><th class="border border-gray-300 p-2 font-semibold text-xs">Dissolved (g)</th>
+              <th class="border border-gray-300 p-2 font-semibold text-xs">Added (g)</th><th class="border border-gray-300 p-2 font-semibold text-xs">Dissolved (g)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="border border-gray-300 p-1 bg-gray-50">1</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e1-t1-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">1.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e1-t1-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">1.0</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e2-t1-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">1.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e2-t1-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">1.0</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e3-t1-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">3.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e3-t1-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">3.0</td></tr>
+            <tr><td class="border border-gray-300 p-1 bg-gray-50">2</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e1-t2-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">2.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e1-t2-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">2.0</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e2-t2-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">2.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e2-t2-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">2.0</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e3-t2-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">6.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e3-t2-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">6.0</td></tr>
+            <tr><td class="border border-gray-300 p-1 bg-gray-50">3</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e1-t3-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">3.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e1-t3-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">3.0</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e2-t3-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">3.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e2-t3-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">3.0</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e3-t3-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">9.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e3-t3-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">9.0</td></tr>
+            <tr><td class="border border-gray-300 p-1 bg-gray-50">4</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e1-t4-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">4.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e1-t4-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">3.6</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e2-t4-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">4.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e2-t4-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">4.0</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e3-t4-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">12.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e3-t4-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">12.0</td></tr>
+            <tr><td class="border border-gray-300 p-1 bg-gray-50">5</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e1-t5-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">5.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e1-t5-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">3.6</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e2-t5-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">5.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e2-t5-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">5.0</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e3-t5-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">15.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e3-t5-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">15.0</td></tr>
+            <tr><td class="border border-gray-300 p-1 bg-gray-50">6</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e1-t6-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">6.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e1-t6-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">3.6</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e2-t6-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">6.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e2-t6-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">6.0</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e3-t6-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">18.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e3-t6-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">18.0</td></tr>
+            <tr><td class="border border-gray-300 p-1 bg-gray-50">7</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e1-t7-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">7.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e1-t7-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">3.6</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e2-t7-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">7.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e2-t7-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">7.0</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e3-t7-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">21.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e3-t7-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">18.0</td></tr>
+            <tr><td class="border border-gray-300 p-1 bg-gray-50">8</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e1-t8-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">8.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e1-t8-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">3.6</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e2-t8-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">8.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e2-t8-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">7.2</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e3-t8-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">24.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e3-t8-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">18.0</td></tr>
+            <tr><td class="border border-gray-300 p-1 bg-gray-50">9</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e1-t9-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">9.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e1-t9-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">3.6</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e2-t9-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">9.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e2-t9-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">7.2</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e3-t9-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">27.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e3-t9-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">18.0</td></tr>
+            <tr><td class="border border-gray-300 p-1 bg-gray-50">10</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e1-t10-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">10.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e1-t10-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">3.6</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e2-t10-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">10.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e2-t10-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">7.2</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e3-t10-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">30.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e3-t10-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">18.0</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-model2" class="modal-overlay">
+    <div class="modal-content">
+      <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-400 hover:text-red-500 bg-gray-100 rounded-full p-1">
+        <span class="material-icons">close</span>
+      </button>
+      <h2 class="text-2xl font-bold mb-4 text-purple-700 border-b-2 border-purple-100 pb-2">Model 2 – Saturated and Unsaturated Solutions</h2>
+      
+      <!-- Model 2 Table Template -->
+      <div class="model2-table-wrapper bg-white p-4 rounded-lg border border-black shadow-sm overflow-x-auto mb-6">
+        <table class="w-full border-collapse mb-8 text-sm border-black">
+          <tr class="border-black">
+            <td rowspan="4" class="p-4 align-top border-r border-b border-black" style="border-top: none; border-left: none;">
+              <ul class="list-disc pl-5 space-y-2 text-gray-700 font-medium text-xs md:text-sm">
+                <li>All beakers contain 10.0 g of water.</li>
+                <li>All beakers are kept at 20 °C.</li>
+                <li>All solutions are stirred for 2 hours.</li>
+                <li>Solute is the same substance in all beakers.</li>
+              </ul>
+            </td>
+            <th colspan="2" class="border border-black p-3 bg-gray-50 uppercase tracking-widest text-lg font-extrabold text-purple-900 shadow-inner">Unsaturated Solutions</th>
+          </tr>
+          <tr class="border-black">
+            <th class="border border-black p-2 bg-white font-bold text-sm" style="border-bottom: none;">Beaker A</th>
+            <th class="border border-black p-2 bg-white font-bold text-sm" style="border-bottom: none;">Beaker B</th>
+          </tr>
+          <tr class="h-40 border-black">
+            <td class="border border-black p-4 text-center text-xs text-gray-400 italic bg-white" style="border-top: none; border-bottom: none;">
+              <div class="beaker-img-placeholder">[Beaker A Image Placeholder]</div>
+            </td>
+            <td class="border border-black p-4 text-center text-xs text-gray-400 italic bg-white" style="border-top: none; border-bottom: none;">
+              <div class="beaker-img-placeholder">[Beaker B Image Placeholder]</div>
+            </td>
+          </tr>
+          <tr class="border-black">
+            <td class="border border-black p-2 text-center text-gray-700 font-bold text-sm" style="border-top: none;">1.0 g of solute added</td>
+            <td class="border border-black p-2 text-center text-gray-700 font-bold text-sm" style="border-top: none;">2.0 g of solute added</td>
+          </tr>
+          <tr class="border-black">
+            <th class="border border-black p-2 bg-gray-50 text-left text-xs text-gray-700">Number of dissolved particles</th>
+            <td class="border border-black p-2 text-center font-bold text-blue-700 text-lg">5</td>
+            <td class="border border-black p-1">
+              <input type="text" data-field-id="m2-b-diss" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
+            </td>
+          </tr>
+          <tr class="border-black">
+            <th class="border border-black p-2 bg-gray-50 text-left text-xs text-gray-700">Number of solid particles</th>
+            <td class="border border-black p-1">
+              <input type="text" data-field-id="m2-a-solid" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
+            </td>
+            <td class="border border-black p-2 text-center font-bold text-blue-700 text-lg">0</td>
+          </tr>
+        </table>
+
+        <table class="w-full border-collapse text-sm border-black">
+          <tr class="border-black">
+            <td class="p-2 border-r border-black" style="border-top: none; border-left: none; border-bottom: none;"></td>
+            <th colspan="3" class="border border-black p-3 bg-gray-50 uppercase tracking-widest text-lg font-extrabold text-purple-900 shadow-inner">Saturated Solutions</th>
+          </tr>
+          <tr class="border-black">
+            <td class="p-2 border-r border-black" style="border-top: none; border-left: none; border-bottom: none;"></td>
+            <th class="border border-black p-2 bg-white font-bold text-sm" style="border-bottom: none;">Beaker C</th>
+            <th class="border border-black p-2 bg-white font-bold text-sm" style="border-bottom: none;">Beaker D</th>
+            <th class="border border-black p-2 bg-white font-bold text-sm" style="border-bottom: none;">Beaker E</th>
+          </tr>
+          <tr class="h-40 border-black">
+            <td class="p-2 border-r border-black" style="border-top: none; border-left: none; border-bottom: none;"></td>
+            <td class="border border-black p-4 text-center text-xs text-gray-400 italic bg-white" style="border-top: none; border-bottom: none;">
+              <div class="beaker-img-placeholder">[Beaker C Image Placeholder]</div>
+            </td>
+            <td class="border border-black p-4 text-center text-xs text-gray-400 italic bg-white" style="border-top: none; border-bottom: none;">
+              <div class="beaker-img-placeholder">[Beaker D Image Placeholder]</div>
+            </td>
+            <td class="border border-black p-4 text-center text-xs text-gray-400 italic bg-white" style="border-top: none; border-bottom: none;">
+              <div class="beaker-img-placeholder">[Beaker E Image Placeholder]</div>
+            </td>
+          </tr>
+          <tr class="border-black">
+            <td class="p-2 border-r border-b border-black" style="border-top: none; border-left: none;"></td>
+            <td class="border border-black p-2 text-center text-gray-700 font-bold text-sm" style="border-top: none;">3.6 g of solute added</td>
+            <td class="border border-black p-2 text-center text-gray-700 font-bold text-sm" style="border-top: none;">7.0 g of solute added</td>
+            <td class="border border-black p-2 text-center text-gray-700 font-bold text-sm" style="border-top: none;">9.0 g of solute added</td>
+          </tr>
+          <tr class="border-black">
+            <th class="border border-black p-2 bg-gray-50 text-left text-xs text-gray-700">Number of dissolved particles</th>
+            <td class="border border-black p-1">
+              <input type="text" data-field-id="m2-c-diss" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
+            </td>
+            <td class="border border-black p-1">
+              <input type="text" data-field-id="m2-d-diss" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
+            </td>
+            <td class="border border-black p-2 text-center font-bold text-blue-700 text-lg">18</td>
+          </tr>
+          <tr class="border-black">
+            <th class="border border-black p-2 bg-gray-50 text-left text-xs text-gray-700">Number of solid particles</th>
+            <td class="border border-black p-1">
+              <input type="text" data-field-id="m2-c-solid" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
+            </td>
+            <td class="border border-black p-2 text-center font-bold text-blue-700 text-lg">17</td>
+            <td class="border border-black p-1">
+              <input type="text" data-field-id="m2-e-solid" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-model3" class="modal-overlay">
+    <div class="modal-content">
+      <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-400 hover:text-red-500 bg-gray-100 rounded-full p-1">
+        <span class="material-icons">close</span>
+      </button>
+      <h2 class="text-2xl font-bold mb-4 text-purple-700">Model 3 – Solubility Curves</h2>
+      <p class="mb-6">Content for Model 3 will populate here once reached in the assignment.</p>
+    </div>
+  </div>
+
+  <div class="max-w-3xl mx-auto w-full relative z-0">
+    
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 form-header-bar p-6 md:p-8 mb-4">
+      <div class="mb-5 pb-4 border-b border-gray-100 flex flex-col items-start">
+        <div class="bg-gray-200 text-gray-800 text-xs font-bold tracking-wider uppercase px-2 py-1 mb-1 rounded-sm">Assignment Type: POGIL</div>
+        <div class="text-xs font-semibold text-gray-500 tracking-widest pl-2">UNIT 8: SOLUTIONS</div>
+      </div>
+      <h1 class="text-3xl font-normal text-gray-900 mb-4">Solubility and Saturation</h1>
+      <p class="text-sm text-gray-600 font-medium italic">Refer to the Models on the right side of your screen to answer the questions.</p>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 md:p-8 mb-6 text-gray-800 leading-relaxed text-sm md:text-base">
+      <p class="mb-0">When we add salt to a pot of boiling water or sugar to a pitcher of iced tea, we expect that the added solute will completely dissolve. It requires a large quantity of these solutes to saturate a solution. On the other hand, water has flowed over rock riverbeds for centuries and only dissolved enough material in some cases to provide a trace of certain minerals in the water. Different solutes, such as salt, sugar, or minerals, dissolve to very different extents in water. In this activity you will learn how to quantify the amount of solute that is dissolved in a saturated solution.</p>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-sm border border-purple-200 p-6 md:p-8 mb-6">
+      <h2 class="text-xl font-bold mb-4 text-purple-700">Model 1 – Three Solutions</h2>
+      <p class="mb-4 text-sm md:text-base leading-relaxed text-gray-700">
+        The following data refer to three experiments in which solute is added to water in a beaker at 20°C. The mixtures are stirred and then allowed to sit for three hours before measuring the amount of solid that dissolves. Ten separate trials are conducted for each experiment. The same solute is used in all experiments.
+      </p>
+      
+      <div class="overflow-x-auto">
+        <table class="w-full text-center border-collapse text-xs md:text-sm select-none" onmouseleave="isSelecting = false;">
+          <thead>
+            <tr class="bg-gray-100">
+              <th class="border border-gray-300 p-2"></th>
+              <th colspan="2" class="border border-gray-300 p-2 font-bold">Experiment 1<br><span class="font-normal text-xs">In 10.0g of water</span></th>
+              <th colspan="2" class="border border-gray-300 p-2 font-bold">Experiment 2<br><span class="font-normal text-xs">In 20.0g of water</span></th>
+              <th colspan="2" class="border border-gray-300 p-2 font-bold">Experiment 3<br><span class="font-normal text-xs">In 50.0g of water</span></th>
+            </tr>
+            <tr class="bg-gray-50">
+              <th class="border border-gray-300 p-2 font-semibold">Trial</th>
+              <th class="border border-gray-300 p-2 font-semibold text-[10px] md:text-xs">Added (g)</th><th class="border border-gray-300 p-2 font-semibold text-[10px] md:text-xs">Dissolved (g)</th>
+              <th class="border border-gray-300 p-2 font-semibold text-[10px] md:text-xs">Added (g)</th><th class="border border-gray-300 p-2 font-semibold text-[10px] md:text-xs">Dissolved (g)</th>
+              <th class="border border-gray-300 p-2 font-semibold text-[10px] md:text-xs">Added (g)</th><th class="border border-gray-300 p-2 font-semibold text-[10px] md:text-xs">Dissolved (g)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="border border-gray-300 p-1 bg-gray-50">1</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e1-t1-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">1.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e1-t1-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">1.0</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e2-t1-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">1.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e2-t1-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">1.0</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e3-t1-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">3.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e3-t1-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">3.0</td></tr>
+            <tr><td class="border border-gray-300 p-1 bg-gray-50">2</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e1-t2-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">2.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e1-t2-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">2.0</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e2-t2-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">2.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e2-t2-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">2.0</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e3-t2-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">6.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e3-t2-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">6.0</td></tr>
+            <tr><td class="border border-gray-300 p-1 bg-gray-50">3</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e1-t3-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">3.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e1-t3-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">3.0</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e2-t3-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">3.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e2-t3-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">3.0</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e3-t3-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">9.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e3-t3-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">9.0</td></tr>
+            <tr><td class="border border-gray-300 p-1 bg-gray-50">4</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e1-t4-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">4.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e1-t4-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">3.6</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e2-t4-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">4.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e2-t4-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">4.0</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e3-t4-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">12.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e3-t4-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">12.0</td></tr>
+            <tr><td class="border border-gray-300 p-1 bg-gray-50">5</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e1-t5-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">5.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e1-t5-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">3.6</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e2-t5-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">5.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e2-t5-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">5.0</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e3-t5-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">15.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e3-t5-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">15.0</td></tr>
+            <tr><td class="border border-gray-300 p-1 bg-gray-50">6</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e1-t6-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">6.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e1-t6-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">3.6</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e2-t6-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">6.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e2-t6-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">6.0</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e3-t6-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">18.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e3-t6-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">18.0</td></tr>
+            <tr><td class="border border-gray-300 p-1 bg-gray-50">7</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e1-t7-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">7.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e1-t7-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">3.6</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e2-t7-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">7.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e2-t7-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">7.0</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e3-t7-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">21.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e3-t7-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">18.0</td></tr>
+            <tr><td class="border border-gray-300 p-1 bg-gray-50">8</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e1-t8-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">8.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e1-t8-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">3.6</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e2-t8-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">8.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e2-t8-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">7.2</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e3-t8-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">24.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e3-t8-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">18.0</td></tr>
+            <tr><td class="border border-gray-300 p-1 bg-gray-50">9</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e1-t9-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">9.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e1-t9-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">3.6</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e2-t9-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">9.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e2-t9-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">7.2</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e3-t9-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">27.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e3-t9-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">18.0</td></tr>
+            <tr><td class="border border-gray-300 p-1 bg-gray-50">10</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e1-t10-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">10.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e1-t10-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">3.6</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e2-t10-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">10.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e2-t10-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">7.2</td>
+              <td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e3-t10-a" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">30.0</td><td class="border border-gray-300 p-1 selectable-cell" data-cell-id="e3-t10-d" onmousedown="startDrag(event)" onmouseenter="dragEnter(event)">18.0</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="space-y-4 mb-6">
+      <div id="slot-q1" class="qq-slot" data-index="0">
+        <div id="card-q1" class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-3xl">
+          <h3 class="text-gray-900 font-bold mb-4">1. Reread the previous paragraph and identify the variable(s) that were controlled among all three experiments in Model 1.</h3>
+          <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+        </div>
+      </div>
+
+      <div id="slot-q2" class="qq-slot" data-index="1">
+        <div id="card-q2" class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-3xl mb-6">
+          <h3 class="text-gray-900 font-bold mb-4">2. What variable(s) were changed purposefully among the three experiments in Model 1?</h3>
+          <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+        </div>
+      </div>
+
+      <div id="slot-q3" class="qq-slot" data-index="2">
+        <div id="card-q3" class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-3xl mb-6">
+          <h3 class="text-gray-900 font-bold mb-4">3. What experimental question can be answered by analyzing the data in the three experiments in Model 1? Use the words "solvent" and "solute" in your question.</h3>
+          <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+        </div>
+      </div>
+
+      <div id="slot-q4" class="qq-slot" data-index="3">
+        <div id="card-q4" class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-3xl mb-6">
+          <h3 class="text-gray-900 font-bold mb-4">4. In each of the three experiments in Model 1, determine the point in the experiment that the beakers became saturated. Highlight the entire section of data in the Model 1 table that represents saturated solutions.</h3>
+          <p class="text-sm italic text-gray-500 mb-2">Click and drag across the cells in the Model 1 table (above or in the floating window) to highlight your selection.</p>
+        </div>
+      </div>
+
+      <div id="slot-q5" class="qq-slot" data-index="4">
+        <div id="card-q5" class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-3xl mb-6">
+          <h3 class="text-gray-900 font-bold mb-4">5. Propose an explanation for why the mass of dissolved solute changed among the three Experiments.</h3>
+          <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+        </div>
+      </div>
+
+      <div id="slot-concept" class="qq-slot" data-index="5">
+        <div id="card-concept" class="bg-blue-50 border-l-8 border-blue-500 p-6 md:p-8 rounded-r-lg shadow-sm w-full max-w-3xl">
+          <h3 class="text-sm font-extrabold text-blue-700 uppercase tracking-wider mb-3 flex items-center gap-2">
+            <span class="material-icons">menu_book</span> Foundational Concept
+          </h3>
+          <p class="text-gray-800 leading-relaxed">
+            <strong>Solubility</strong> is a measure of the maximum amount of solute that can dissolve in a given amount of solvent at a specific temperature. It is the ratio of solute to solvent in a saturated solution at a specific temperature. Solubility is typically reported as grams of solute per 100 g H₂O. If a maximum of 20.4 g of table sugar (sucrose) dissolves in 10.0 g of water at 20°C, then the solubility of sucrose would be 204 g sucrose/100 g H₂O.
+          </p>
+        </div>
+      </div>
+
+      <div id="slot-q6" class="qq-slot" data-index="6">
+        <div id="card-q6" class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-3xl mb-6">
+          <h3 class="text-gray-900 font-bold mb-4">6. Would it be acceptable for a student to use Trial 2 from Experiment 1 to determine the solubility of the solute in Model 1? Explain your answer in a complete sentence.</h3>
+          <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+        </div>
+      </div>
+
+      <div id="slot-q7" class="qq-slot" data-index="7">
+        <div id="card-q7" class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-3xl mb-6">
+          <h3 class="text-gray-900 font-bold mb-4">7. In Model 1 none of the experiments used 100 g of water. Use complete sentences to explain how the ratio "grams of solute per 100 g H₂O" can be calculated from the data given in Model 1.</h3>
+          <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+        </div>
+      </div>
+
+      <div id="slot-q8" class="qq-slot" data-index="8">
+        <div id="card-q8" class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-3xl mb-6">
+          <h3 class="text-gray-900 font-bold mb-4">8. Use the data in Model 1 to calculate the solubility of the solute per 100g solvent at 20°C for all three experiments.</h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <label class="block text-sm font-semibold text-gray-600 mb-1">Experiment 1:</label>
+              <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-1 text-blue-700 font-bold" placeholder="Value"></textarea>
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-600 mb-1">Experiment 2:</label>
+              <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-1 text-blue-700 font-bold" placeholder="Value"></textarea>
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-600 mb-1">Experiment 3:</label>
+              <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-1 text-blue-700 font-bold" placeholder="Value"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="slot-q9" class="qq-slot" data-index="9">
+        <div id="card-q9" class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-3xl mb-6">
+          <h3 class="text-gray-900 font-bold mb-4">9. Select the word or phrase that best completes each of the statements below.</h3>
+          <div class="mb-6">
+            <p class="mb-3 text-gray-800">a. When the volume of solvent increases, the mass of solute that can dissolve in a saturated solution...</p>
+            <div class="flex flex-col gap-2 pl-4">
+              <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded w-max"><input type="radio" name="q9a" class="w-4 h-4 text-purple-600"> increases</label>
+              <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded w-max"><input type="radio" name="q9a" class="w-4 h-4 text-purple-600"> decreases</label>
+              <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded w-max"><input type="radio" name="q9a" class="w-4 h-4 text-purple-600"> stays the same</label>
+            </div>
+          </div>
+          <div>
+            <p class="mb-3 text-gray-800">b. When the volume of solvent increases, the solubility of a solute at a given temperature...</p>
+            <div class="flex flex-col gap-2 pl-4">
+              <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded w-max"><input type="radio" name="q9b" class="w-4 h-4 text-purple-600"> increases</label>
+              <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded w-max"><input type="radio" name="q9b" class="w-4 h-4 text-purple-600"> decreases</label>
+              <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded w-max"><input type="radio" name="q9b" class="w-4 h-4 text-purple-600"> stays the same</label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="slot-q10" class="qq-slot" data-index="10">
+        <div id="card-q10" class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-3xl mb-6">
+          <h3 class="text-gray-900 font-bold mb-4">10. A student claims, "In Experiment 3, Trial 9, 18.0 grams of solute dissolves, whereas in Experiment 1, Trial 9, only 3.6 grams of solute dissolves. Obviously, the solubility is greater in Experiment 3." Devise a well-constructed response to this claim.</h3>
+          <textarea rows="3" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+        </div>
+      </div>
+      
+      
+
+      <!-- Main Document Model 2 Table in a Card -->
+      <div id="model2-main-card" class="bg-white rounded-lg shadow-sm border border-purple-200 p-6 md:p-8 mb-8 w-full max-w-3xl">
+        <h2 class="text-xl font-bold mb-4 text-purple-700">Model 2 – Saturated and Unsaturated Solutions</h2>
+        
+        <div class="model2-table-wrapper bg-white p-4 rounded-lg border border-gray-300 shadow-sm overflow-x-auto mb-6">
+          <table class="w-full border-collapse mb-8 text-sm border-black">
+            <tr class="border-black">
+              <td rowspan="4" class="p-4 align-top border-r border-b border-black" style="border-top: none; border-left: none;">
+                <ul class="list-disc pl-5 space-y-2 text-gray-700 font-medium text-xs md:text-sm">
+                  <li>All beakers contain 10.0 g of water.</li>
+                  <li>All beakers are kept at 20 °C.</li>
+                  <li>All solutions are stirred for 2 hours.</li>
+                  <li>Solute is the same substance in all beakers.</li>
+                </ul>
+              </td>
+              <th colspan="2" class="border border-black p-3 bg-gray-50 uppercase tracking-widest text-lg font-extrabold text-purple-900 shadow-inner">Unsaturated Solutions</th>
+            </tr>
+            <tr class="border-black">
+              <th class="border border-black p-2 bg-white font-bold text-sm" style="border-bottom: none;">Beaker A</th>
+              <th class="border border-black p-2 bg-white font-bold text-sm" style="border-bottom: none;">Beaker B</th>
+            </tr>
+            <tr class="h-40 border-black">
+              <td class="border border-black p-4 text-center text-xs text-gray-400 italic bg-white" style="border-top: none; border-bottom: none;">
+                <div class="beaker-img-placeholder">[Beaker A Image Placeholder]</div>
+              </td>
+              <td class="border border-black p-4 text-center text-xs text-gray-400 italic bg-white" style="border-top: none; border-bottom: none;">
+                <div class="beaker-img-placeholder">[Beaker B Image Placeholder]</div>
+              </td>
+            </tr>
+            <tr class="border-black">
+              <td class="border border-black p-2 text-center text-gray-700 font-bold text-sm" style="border-top: none;">1.0 g of solute added</td>
+              <td class="border border-black p-2 text-center text-gray-700 font-bold text-sm" style="border-top: none;">2.0 g of solute added</td>
+            </tr>
+            <tr class="border-black">
+              <th class="border border-black p-2 bg-gray-50 text-left text-xs text-gray-700">Number of dissolved particles</th>
+              <td class="border border-black p-2 text-center font-bold text-blue-700 text-lg">5</td>
+              <td class="border border-black p-1">
+                <input type="text" data-field-id="m2-b-diss" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
+              </td>
+            </tr>
+            <tr class="border-black">
+              <th class="border border-black p-2 bg-gray-50 text-left text-xs text-gray-700">Number of solid particles</th>
+              <td class="border border-black p-1">
+                <input type="text" data-field-id="m2-a-solid" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
+              </td>
+              <td class="border border-black p-2 text-center font-bold text-blue-700 text-lg">0</td>
+            </tr>
+          </table>
+
+          <table class="w-full border-collapse text-sm border-black">
+            <tr class="border-black">
+              <td class="p-2 border-r border-black" style="border-top: none; border-left: none; border-bottom: none;"></td>
+              <th colspan="3" class="border border-black p-3 bg-gray-50 uppercase tracking-widest text-lg font-extrabold text-purple-900 shadow-inner">Saturated Solutions</th>
+            </tr>
+            <tr class="border-black">
+              <td class="p-2 border-r border-black" style="border-top: none; border-left: none; border-bottom: none;"></td>
+              <th class="border border-black p-2 bg-white font-bold text-sm" style="border-bottom: none;">Beaker C</th>
+              <th class="border border-black p-2 bg-white font-bold text-sm" style="border-bottom: none;">Beaker D</th>
+              <th class="border border-black p-2 bg-white font-bold text-sm" style="border-bottom: none;">Beaker E</th>
+            </tr>
+            <tr class="h-40 border-black">
+              <td class="p-2 border-r border-black" style="border-top: none; border-left: none; border-bottom: none;"></td>
+              <td class="border border-black p-4 text-center text-xs text-gray-400 italic bg-white" style="border-top: none; border-bottom: none;">
+                <div class="beaker-img-placeholder">[Beaker C Image Placeholder]</div>
+              </td>
+              <td class="border border-black p-4 text-center text-xs text-gray-400 italic bg-white" style="border-top: none; border-bottom: none;">
+                <div class="beaker-img-placeholder">[Beaker D Image Placeholder]</div>
+              </td>
+              <td class="border border-black p-4 text-center text-xs text-gray-400 italic bg-white" style="border-top: none; border-bottom: none;">
+                <div class="beaker-img-placeholder">[Beaker E Image Placeholder]</div>
+              </td>
+            </tr>
+            <tr class="border-black">
+              <td class="p-2 border-r border-b border-black" style="border-top: none; border-left: none;"></td>
+              <td class="border border-black p-2 text-center text-gray-700 font-bold text-sm" style="border-top: none;">3.6 g of solute added</td>
+              <td class="border border-black p-2 text-center text-gray-700 font-bold text-sm" style="border-top: none;">7.0 g of solute added</td>
+              <td class="border border-black p-2 text-center text-gray-700 font-bold text-sm" style="border-top: none;">9.0 g of solute added</td>
+            </tr>
+            <tr class="border-black">
+              <th class="border border-black p-2 bg-gray-50 text-left text-xs text-gray-700">Number of dissolved particles</th>
+              <td class="border border-black p-1">
+                <input type="text" data-field-id="m2-c-diss" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
+              </td>
+              <td class="border border-black p-1">
+                <input type="text" data-field-id="m2-d-diss" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
+              </td>
+              <td class="border border-black p-2 text-center font-bold text-blue-700 text-lg">18</td>
+            </tr>
+            <tr class="border-black">
+              <th class="border border-black p-2 bg-gray-50 text-left text-xs text-gray-700">Number of solid particles</th>
+              <td class="border border-black p-1">
+                <input type="text" data-field-id="m2-c-solid" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
+              </td>
+              <td class="border border-black p-2 text-center font-bold text-blue-700 text-lg">17</td>
+              <td class="border border-black p-1">
+                <input type="text" data-field-id="m2-e-solid" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
+              </td>
+            </tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- Grouped Question 11 -->
+      <div class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-3xl mb-6 grouped-card">
+        <div id="slot-q11a" class="qq-slot" data-index="11">
+          <div id="card-q11a">
+            <h3 class="text-gray-900 font-bold main-question-text">11. Which beakers contain:</h3>
+            <h3 class="text-gray-900 font-bold mb-4 pl-4">a. Only solutes dissolved in aqueous form</h3>
+            <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+          </div>
+        </div>
+
+        <div id="slot-q11b" class="qq-slot" data-index="12">
+          <div id="card-q11b" class="pt-6">
+            <h3 class="text-gray-900 font-bold main-question-text">11. Which beakers contain:</h3>
+            <h3 class="text-gray-900 font-bold mb-4 pl-4">b. Solutes dissolved in aqueous form and solids not dissolved in solution</h3>
+            <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div id="slot-q12" class="qq-slot" data-index="13">
+        <div id="card-q12" class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-3xl mb-6">
+          <h3 class="text-gray-900 font-bold mb-4">12. What variables are controlled in all five beakers of Model 2?</h3>
+          <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+        </div>
+      </div>
+
+      <div id="slot-q13" class="qq-slot" data-index="14">
+        <div id="card-q13" class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-3xl mb-6">
+          <h3 class="text-gray-900 font-bold mb-4">13. Count the particles present in each beaker of Model 2. Enter the number of dissolved solute particles and the number of solid solute particles directly into the Model 2 table above.</h3>
+        </div>
+      </div>
+
+      <!-- Grouped Question 14 -->
+      <div class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-3xl mb-6 grouped-card">
+        <div id="slot-q14a" class="qq-slot" data-index="15">
+          <div id="card-q14a">
+            <h3 class="text-gray-900 font-bold main-question-text">14. Consider the beakers in Model 2.</h3>
+            <h3 class="text-gray-900 font-bold mb-4 pl-4">a. Which beakers represent unsaturated solutions? Explain your choice.</h3>
+            <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+          </div>
+        </div>
+
+        <div id="slot-q14b" class="qq-slot" data-index="16">
+          <div id="card-q14b" class="pt-6">
+            <h3 class="text-gray-900 font-bold main-question-text">14. Consider the beakers in Model 2.</h3>
+            <h3 class="text-gray-900 font-bold mb-4 pl-4">b. Which beakers represent saturated solutions? Explain your choice.</h3>
+            <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Grouped Question 15 -->
+      <div class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-3xl mb-6 grouped-card">
+        <div id="slot-q15a" class="qq-slot" data-index="17">
+          <div id="card-q15a">
+            <h3 class="text-gray-900 font-bold main-question-text">15. Beakers A-E in Model 2 are modeled as representing 5 different solutions. They could also be considered as 5 snapshots of the same beaker over time. If additional measured quantities of solute were stirred into beaker A in small increments over time, then beakers B-E would result.</h3>
+            <h3 class="text-gray-900 font-bold mb-4 pl-4 border-l-4 border-purple-200">a. When a small amount of additional solute is added to an unsaturated solution, what happens to the number of dissolved particles? Provide evidence from Model 2 to support your answer.</h3>
+            <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+          </div>
+        </div>
+
+        <div id="slot-q15b" class="qq-slot" data-index="18">
+          <div id="card-q15b" class="pt-6">
+            <h3 class="text-gray-900 font-bold main-question-text">15. Beakers A-E in Model 2 are modeled as representing 5 different solutions. They could also be considered as 5 snapshots of the same beaker over time. If additional measured quantities of solute were stirred into beaker A in small increments over time, then beakers B-E would result.</h3>
+            <h3 class="text-gray-900 font-bold mb-4 pl-4 border-l-4 border-purple-200">b. When a small amount of additional solute is added to a saturated solution, what happens to the number of dissolved particles? Provide specific evidence from Model 2 to support your answer.</h3>
+            <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+          </div>
+        </div>
+
+        <div id="slot-q15c" class="qq-slot" data-index="19">
+          <div id="card-q15c" class="pt-6">
+            <h3 class="text-gray-900 font-bold main-question-text">15. Beakers A-E in Model 2 are modeled as representing 5 different solutions. They could also be considered as 5 snapshots of the same beaker over time. If additional measured quantities of solute were stirred into beaker A in small increments over time, then beakers B-E would result.</h3>
+            <h3 class="text-gray-900 font-bold mb-4 pl-4 border-l-4 border-purple-200">c. Predict what would happen if a small amount of additional solute were stirred into beaker E in Model 2.</h3>
+            <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div id="slot-q16" class="qq-slot" data-index="20">
+        <div id="card-q16" class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-3xl mb-6">
+          <h3 class="text-gray-900 font-bold mb-4">16. Have each person in your group provide an example of the word "saturated" as it is used in an everyday context. Summarize the meaning of the word in the space below.</h3>
+          <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+        </div>
+      </div>
+
+      <div id="slot-q17" class="qq-slot" data-index="21">
+        <div id="card-q17" class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-3xl mb-6">
+          <h3 class="text-gray-900 font-bold mb-4">17. What feature in the beakers in Model 2 would typically enable a student to distinguish a saturated solution from an unsaturated one simply by looking at the beaker?</h3>
+          <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+        </div>
+      </div>
+
+      <div id="slot-q18" class="qq-slot" data-index="22">
+        <div id="card-q18" class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-3xl mb-6">
+          <h3 class="text-gray-900 font-bold mb-4">18. If you were handed a beaker containing a clear solution (with no solid solute at the bottom), and asked to identify it as "saturated" or "unsaturated," what simple test could you perform to determine the answer?</h3>
+          <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+        </div>
+      </div>
+
+      <div id="slot-q19" class="qq-slot" data-index="23">
+        <div id="card-q19" class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-3xl mb-6">
+          <h3 class="text-gray-900 font-bold mb-4">19. Four of the trials in Model 1 correspond to beakers A, B, D, and E from Model 2. Write the letters for those beakers next to the corresponding trial numbers in Model 1.</h3>
+          <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+        </div>
+      </div>
+
+      <div id="slot-q20" class="qq-slot" data-index="24">
+        <div id="card-q20" class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-3xl mb-6">
+          <h3 class="text-gray-900 font-bold mb-4">20. For Trial 8 in Model 1, determine the mass of solid solute remaining on the bottom of the beaker.</h3>
+          <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+        </div>
+      </div>
+
+      <!-- Grouped Question 21 -->
+      <div class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-3xl mb-6 grouped-card">
+        <div id="slot-q21a" class="qq-slot" data-index="25">
+          <div id="card-q21a">
+            <h3 class="text-gray-900 font-bold main-question-text">21. Imagine that the contents of the beaker for Trial 8 in Model 1 are vigorously stirred and then poured into filter paper in a funnel.</h3>
+            <h3 class="text-gray-900 font-bold mb-4 pl-4 border-l-4 border-blue-200">a. Is the liquid that drips from the filter (the filtrate) unsaturated or saturated? Explain.</h3>
+            <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+          </div>
+        </div>
+
+        <div id="slot-q21b" class="qq-slot" data-index="26">
+          <div id="card-q21b" class="pt-6">
+            <h3 class="text-gray-900 font-bold main-question-text">21. Imagine that the contents of the beaker for Trial 8 in Model 1 are vigorously stirred and then poured into filter paper in a funnel.</h3>
+            <h3 class="text-gray-900 font-bold mb-4 pl-4 border-l-4 border-blue-200">b. Which beaker in Model 1 best represents the filtrate that would be obtained?</h3>
+            <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div id="slot-q22" class="qq-slot" data-index="27">
+        <div id="card-q22" class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-purple-200 w-full max-w-3xl mb-6">
+          <h3 class="text-gray-900 font-bold mb-4">22. What factor(s) might also affect how much of a solute dissolves in a solution?</h3>
+          <textarea rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+        </div>
+      </div>
+    </div>
+
+  <script>
+    /* ==============================================================
+       1. Auto-Expanding Textareas
+       ============================================================== */
+    function autoResize() {
+      this.style.height = 'auto';
+      this.style.height = this.scrollHeight + 'px';
+    }
+    document.querySelectorAll('textarea').forEach(ta => {
+      ta.addEventListener('input', autoResize);
+      // Initialize size slightly deferred to ensure render
+      setTimeout(() => { ta.style.height = ta.scrollHeight + 'px'; }, 100);
+    });
+
+
+    /* ==============================================================
+       2. Click & Drag Table Cell Highlighting Logic
+       ============================================================== */
+    let isSelecting = false;
+    let selectMode = true; // true = adding selection, false = removing
+
+    // Prevent default selection behavior to allow smooth dragging
+    window.addEventListener('mouseup', () => { isSelecting = false; });
+
+    function startDrag(e) {
+      isSelecting = true;
+      selectMode = !e.target.classList.contains('selected-cell');
+      applySelectionToSyncedCells(e.target);
+      e.preventDefault(); 
+    }
+
+    function dragEnter(e) {
+      if (isSelecting) {
+        applySelectionToSyncedCells(e.target);
+      }
+    }
+
+    function applySelectionToSyncedCells(cell) {
+      const cellId = cell.getAttribute('data-cell-id');
+      if (!cellId) return;
+      
+      // Update ALL cells with this ID (syncs inline table and modal table)
+      document.querySelectorAll(`[data-cell-id="${cellId}"]`).forEach(c => {
+        if (selectMode) {
+          c.classList.add('selected-cell');
+        } else {
+          c.classList.remove('selected-cell');
+        }
+      });
+    }
+
+
+    /* ==============================================================
+       3. Modal Logic & Cross-Modal State
+       ============================================================== */
+    let activeModalId = null;
+
+    function openModal(id) {
+      const wasQQActive = qqModeActive;
+      
+      if (activeModalId && activeModalId !== id) {
+        closeModal(true); // pass true to indicate it's a soft close (don't break QQ mode entirely)
+      }
+      
+      activeModalId = id;
+      document.getElementById(id).style.display = 'flex';
+      document.body.style.overflow = 'hidden'; 
+      
+      // If they were in QQ mode, keep it going smoothly in the new modal
+      if (wasQQActive) {
+        document.querySelectorAll('.qq-trigger-btn').forEach(b => b.classList.add('hidden'));
+      }
+    }
+
+    function closeModal(isSoftClose = false) {
+      if (activeModalId) {
+        document.getElementById(activeModalId).style.display = 'none';
+        document.body.style.overflow = 'auto';
+        activeModalId = null;
+      }
+      if (!isSoftClose && qqModeActive) {
+        stopQQMode();
+      }
+    }
+
+
+    /* ==============================================================
+       4. Question-by-Question (QQ) Mode Logic
+       ============================================================== */
+    let qqModeActive = false;
+    let currentQIndex = -1;
+    const qqSlots = [
+      'slot-q1', 'slot-q2', 'slot-q3', 'slot-q4', 'slot-q5', 
+      'slot-concept', 'slot-q6', 'slot-q7', 'slot-q8', 'slot-q9', 'slot-q10',
+      'slot-q11a', 'slot-q11b', 'slot-q12', 'slot-q13', 'slot-q14a', 'slot-q14b',
+      'slot-q15a', 'slot-q15b', 'slot-q15c', 'slot-q16', 'slot-q17', 'slot-q18',
+      'slot-q19', 'slot-q20', 'slot-q21a', 'slot-q21b', 'slot-q22'
+    ];
+
+    function startQQModeFromSidebar() {
+      // If a modal is not already open, open the first one by default.
+      if (!activeModalId) {
+        openModal('modal-model1');
+      }
+      startQQMode();
+    }
+
+    function getClosestQuestionIndex() {
+      let closestIndex = 0;
+      let minDistance = Infinity;
+      const viewportCenter = window.innerHeight / 2;
+
+      qqSlots.forEach((slotId, index) => {
+        const el = document.getElementById(slotId);
+        if (el) {
+          const rect = el.getBoundingClientRect();
+          const elementCenter = rect.top + (rect.height / 2);
+          const distance = Math.abs(viewportCenter - elementCenter);
+          if (distance < minDistance) {
+            minDistance = distance;
+            closestIndex = index;
+          }
+        }
+      });
+      return closestIndex;
+    }
+
+    function startQQMode() {
+      qqModeActive = true;
+      
+      // Hide all "Answer question by question" buttons
+      document.querySelectorAll('.qq-trigger-btn').forEach(btn => btn.classList.add('hidden'));
+      document.getElementById('sidebar-qq-btn').classList.add('hidden');
+      
+      // Show the global floating window
+      const globalWindow = document.getElementById('global-qq-window');
+      globalWindow.classList.remove('hidden');
+      globalWindow.classList.add('flex');
+
+      // Make space for the QQ window so the modal can be scrolled fully
+      setTimeout(() => {
+        const qqWindowHeight = globalWindow.offsetHeight;
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+          overlay.style.paddingBottom = `calc(2rem + ${qqWindowHeight}px)`;
+        });
+      }, 50);
+
+      // Determine starting question based on background scroll
+      currentQIndex = getClosestQuestionIndex();
+      renderQQCard();
+    }
+
+    function stopQQMode() {
+      qqModeActive = false;
+      
+      // Return card to original slot
+      if (currentQIndex !== -1) {
+        const slot = document.getElementById(qqSlots[currentQIndex]);
+        const contentArea = document.getElementById('global-qq-content');
+        if (contentArea.firstElementChild) {
+          slot.appendChild(contentArea.firstElementChild);
+        }
+      }
+      
+      // Hide window, restore trigger buttons
+      const globalWindow = document.getElementById('global-qq-window');
+      globalWindow.classList.add('hidden');
+      globalWindow.classList.remove('flex');
+      document.querySelectorAll('.qq-trigger-btn').forEach(btn => btn.classList.remove('hidden'));
+      document.getElementById('sidebar-qq-btn').classList.remove('hidden');
+
+      // Reset padding on all overlays
+      document.querySelectorAll('.modal-overlay').forEach(overlay => {
+        overlay.style.paddingBottom = '';
+      });
+
+      currentQIndex = -1;
+      // Ensure it's not minimized for the next time it opens
+      document.getElementById('global-qq-window').classList.remove('qq-window-minimized');
+      document.getElementById('qq-minimize-icon').innerText = 'expand_more';
+    }
+
+    function toggleQQMinimize(e) {
+      const window = document.getElementById('global-qq-window');
+      const icon = document.getElementById('qq-minimize-icon');
+      const isMinimized = window.classList.toggle('qq-window-minimized');
+      icon.innerText = isMinimized ? 'expand_less' : 'expand_more';
+    }
+
+    function changeQQ(direction) {
+      if (currentQIndex + direction >= 0 && currentQIndex + direction < qqSlots.length) {
+        // Put current card back
+        const oldSlot = document.getElementById(qqSlots[currentQIndex]);
+        const contentArea = document.getElementById('global-qq-content');
+        if (contentArea.firstElementChild) {
+          oldSlot.appendChild(contentArea.firstElementChild);
+        }
+        
+        currentQIndex += direction;
+        renderQQCard();
+      }
+    }
+
+    function renderQQCard() {
+      const slotId = qqSlots[currentQIndex];
+      const slot = document.getElementById(slotId);
+      const contentArea = document.getElementById('global-qq-content');
+      
+      // Move the card DOM element into the floating window
+      // This preserves all input data, auto-resize listeners, and states natively!
+      if (slot.firstElementChild) {
+        contentArea.appendChild(slot.firstElementChild);
+      }
+
+      // Automatically scroll the background so when they exit, they are in the right place
+      slot.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+      // Update button disabled states
+      document.getElementById('btn-qq-prev').disabled = (currentQIndex === 0);
+      document.getElementById('btn-qq-prev').style.opacity = (currentQIndex === 0) ? '0.5' : '1';
+      document.getElementById('btn-qq-next').disabled = (currentQIndex === qqSlots.length - 1);
+      document.getElementById('btn-qq-next').style.opacity = (currentQIndex === qqSlots.length - 1) ? '0.5' : '1';
+    }
+
+
+    /* ==============================================================
+       5. Scroll Reveal Logic for Sidebar
+       ============================================================== */
+     window.addEventListener('scroll', () => {
+      const m2Card = document.getElementById('model2-main-card');
+      const btnModel2 = document.getElementById('btn-model2');
+      if (m2Card && btnModel2) {
+        const rect = m2Card.getBoundingClientRect();
+        // If the top of the card is in the viewport, or we've scrolled past it
+        if (rect.top <= window.innerHeight) {
+          btnModel2.classList.remove('hidden');
+          btnModel2.classList.add('flex');
+        } else {
+          // Keep it hidden if they scroll back up above it
+          btnModel2.classList.add('hidden');
+          btnModel2.classList.remove('flex');
+        }
+      }
+    });
+
+  </script>
+
+</body>
+</html>
