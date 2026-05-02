@@ -226,13 +226,13 @@
             <th class="border border-black p-2 bg-gray-50 text-left text-xs text-gray-700">Number of dissolved particles</th>
             <td class="border border-black p-2 text-center font-bold text-blue-700 text-lg">5</td>
             <td class="border border-black p-1">
-              <input type="text" data-field-id="m2-b-diss" data-save="m2-b-diss" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
+              <input type="text" data-field-id="m2-b-diss" oninput="handleM2Input(this)" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
             </td>
           </tr>
           <tr class="border-black">
             <th class="border border-black p-2 bg-gray-50 text-left text-xs text-gray-700">Number of solid particles</th>
             <td class="border border-black p-1">
-              <input type="text" data-field-id="m2-a-solid" data-save="m2-a-solid" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
+              <input type="text" data-field-id="m2-a-solid" oninput="handleM2Input(this)" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
             </td>
             <td class="border border-black p-2 text-center font-bold text-blue-700 text-lg">0</td>
           </tr>
@@ -264,21 +264,21 @@
           <tr class="border-black">
             <th class="border border-black p-2 bg-gray-50 text-left text-xs text-gray-700">Number of dissolved particles</th>
             <td class="border border-black p-1">
-              <input type="text" data-field-id="m2-c-diss" data-save="m2-c-diss" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
+              <input type="text" data-field-id="m2-c-diss" oninput="handleM2Input(this)" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
             </td>
             <td class="border border-black p-1">
-              <input type="text" data-field-id="m2-d-diss" data-save="m2-d-diss" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
+              <input type="text" data-field-id="m2-d-diss" oninput="handleM2Input(this)" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
             </td>
             <td class="border border-black p-2 text-center font-bold text-blue-700 text-lg">18</td>
           </tr>
           <tr class="border-black">
             <th class="border border-black p-2 bg-gray-50 text-left text-xs text-gray-700">Number of solid particles</th>
             <td class="border border-black p-1">
-              <input type="text" data-field-id="m2-c-solid" data-save="m2-c-solid" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
+              <input type="text" data-field-id="m2-c-solid" oninput="handleM2Input(this)" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
             </td>
             <td class="border border-black p-2 text-center font-bold text-blue-700 text-lg">17</td>
             <td class="border border-black p-1">
-              <input type="text" data-field-id="m2-e-solid" data-save="m2-e-solid" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
+              <input type="text" data-field-id="m2-e-solid" oninput="handleM2Input(this)" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
             </td>
           </tr>
         </table>
@@ -305,7 +305,7 @@
         <div class="text-xs font-semibold text-gray-500 tracking-widest pl-2">UNIT 8 - Assignment #5</div>
       </div>
       <h1 class="text-3xl font-normal text-gray-900 mb-4">Solubility and Saturation</h1>
-      <p class="text-sm text-gray-600 font-medium italic">Refer to the Models on the right side of your screen to answer the questions.</p>
+      <p class="text-sm text-gray-600 font-medium italic">Refer to the Models in this document to help you answer questions. The models are in the regular flow of questions but can also be access by pressing the buttons to the right. You can also enter "question-by-question" mode by pressing the Q-by-Q button so that the question and the model are both visible. Questions can be quickly toggled to minimized in this mode to better see the charts and diagrams.</p>
     </div>
 
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 md:p-8 mb-6 text-gray-800 leading-relaxed text-sm md:text-base">
@@ -406,13 +406,14 @@
         <div id="card-q4" class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-3xl mb-6">
           <h3 class="text-gray-900 font-bold mb-4">4. In each of the three experiments in Model 1, determine the point in the experiment that the beakers became saturated. Highlight the entire section of data in the Model 1 table that represents saturated solutions.</h3>
           <p class="text-sm italic text-gray-500 mb-2">Click and drag across the cells in the Model 1 table (above or in the floating window) to highlight your selection.</p>
+          <div data-save="q4" class="hidden"></div>
         </div>
       </div>
 
       <div id="slot-q5" class="qq-slot" data-index="4">
         <div id="card-q5" class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-3xl mb-6">
           <h3 class="text-gray-900 font-bold mb-4">5. Propose an explanation for why the mass of dissolved solute changed among the three Experiments.</h3>
-          <textarea id="q4" data-save="q4" rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+          <textarea id="q5" data-save="q5" rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
         </div>
       </div>
 
@@ -443,17 +444,17 @@
 
       <div id="slot-q8" class="qq-slot" data-index="8">
         <div id="card-q8" class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-3xl mb-6">
-          <h3 class="text-gray-900 font-bold mb-4">8. Use the data in Model 1 to calculate the solubility of the solute per 100g solvent at 20°C for all three experiments.</h3>
+          <h3 class="text-gray-900 font-bold mb-4">8. Use the data in Model 1 to calculate the solubility of the solute per 100g solvent at 20°C for all three experiments. Please identify the numerical values you use to put into your calculation and show the equation setup as well as the answer for each part below.</h3>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
+            <div class="pl-4 border-l-4 border-purple-200">
               <label class="block text-sm font-semibold text-gray-600 mb-1">Experiment 1:</label>
-              <textarea id="q8a" data-save="q8a" id="q8" data-save="q8" rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-1 text-blue-700 font-bold" placeholder="Value"></textarea>
+              <textarea id="q8a" data-save="q8a" rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-1 text-blue-700 font-bold" placeholder="Value"></textarea>
             </div>
-            <div>
+            <div class="pl-4 border-l-4 border-purple-200">
               <label class="block text-sm font-semibold text-gray-600 mb-1">Experiment 2:</label>
               <textarea id="q8b" data-save="q8b" rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-1 text-blue-700 font-bold" placeholder="Value"></textarea>
             </div>
-            <div>
+            <div class="pl-4 border-l-4 border-purple-200">
               <label class="block text-sm font-semibold text-gray-600 mb-1">Experiment 3:</label>
               <textarea id="q8c" data-save="q8c" rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-1 text-blue-700 font-bold" placeholder="Value"></textarea>
             </div>
@@ -465,7 +466,7 @@
         <div id="card-q9" class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-3xl mb-6">
           <h3 class="text-gray-900 font-bold mb-4">9. Select the word or phrase that best completes each of the statements below.</h3>
           <div class="mb-6">
-            <p class="mb-3 text-gray-800">a. When the volume of solvent increases, the mass of solute that can dissolve in a saturated solution...</p>
+            <p class="mb-3 text-gray-800 pl-4 border-l-4 border-purple-200">a. When the volume of solvent increases, the mass of solute that can dissolve in a saturated solution...</p>
             <div class="flex flex-col gap-2 pl-4">
               <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded w-max"><input type="radio" name="q9a" data-save="q9a" class="w-4 h-4 text-purple-600"> increases</label>
               <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded w-max"><input type="radio" name="q9a" data-save="q9a" class="w-4 h-4 text-purple-600"> decreases</label>
@@ -473,7 +474,7 @@
             </div>
           </div>
           <div>
-            <p class="mb-3 text-gray-800">b. When the volume of solvent increases, the solubility of a solute at a given temperature...</p>
+            <p class="mb-3 text-gray-800 pl-4 border-l-4 border-purple-200">b. When the volume of solvent increases, the solubility of a solute at a given temperature...</p>
             <div class="flex flex-col gap-2 pl-4">
               <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded w-max"><input type="radio" name="q9b" data-save="q9b" class="w-4 h-4 text-purple-600"> increases</label>
               <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded w-max"><input type="radio" name="q9b" data-save="q9b" class="w-4 h-4 text-purple-600"> decreases</label>
@@ -486,7 +487,7 @@
       <div id="slot-q10" class="qq-slot" data-index="10">
         <div id="card-q10" class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-3xl mb-6">
           <h3 class="text-gray-900 font-bold mb-4">10. A student claims, "In Experiment 3, Trial 9, 18.0 grams of solute dissolves, whereas in Experiment 1, Trial 9, only 3.6 grams of solute dissolves. Obviously, the solubility is greater in Experiment 3." Devise a well-constructed response to this claim.</h3>
-          <textarea id="q9" data-save="q9" rows="3" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+          <textarea id="q10" data-save="q10" rows="3" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
         </div>
       </div>
       
@@ -525,13 +526,13 @@
             <th class="border border-black p-2 bg-gray-50 text-left text-xs text-gray-700">Number of dissolved particles</th>
             <td class="border border-black p-2 text-center font-bold text-blue-700 text-lg">5</td>
             <td class="border border-black p-1">
-              <input type="text" data-field-id="m2-b-diss" data-save="m2-b-diss" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
+              <input type="text" data-field-id="m2-b-diss" oninput="handleM2Input(this)" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
             </td>
           </tr>
           <tr class="border-black">
             <th class="border border-black p-2 bg-gray-50 text-left text-xs text-gray-700">Number of solid particles</th>
             <td class="border border-black p-1">
-              <input type="text" data-field-id="m2-a-solid" data-save="m2-a-solid" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
+              <input type="text" data-field-id="m2-a-solid" oninput="handleM2Input(this)" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
             </td>
             <td class="border border-black p-2 text-center font-bold text-blue-700 text-lg">0</td>
           </tr>
@@ -563,21 +564,21 @@
           <tr class="border-black">
             <th class="border border-black p-2 bg-gray-50 text-left text-xs text-gray-700">Number of dissolved particles</th>
             <td class="border border-black p-1">
-              <input type="text" data-field-id="m2-c-diss" data-save="m2-c-diss" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
+              <input type="text" data-field-id="m2-c-diss" oninput="handleM2Input(this)" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
             </td>
             <td class="border border-black p-1">
-              <input type="text" data-field-id="m2-d-diss" data-save="m2-d-diss" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
+              <input type="text" data-field-id="m2-d-diss" oninput="handleM2Input(this)" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
             </td>
             <td class="border border-black p-2 text-center font-bold text-blue-700 text-lg">18</td>
           </tr>
           <tr class="border-black">
             <th class="border border-black p-2 bg-gray-50 text-left text-xs text-gray-700">Number of solid particles</th>
             <td class="border border-black p-1">
-              <input type="text" data-field-id="m2-c-solid" data-save="m2-c-solid" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
+              <input type="text" data-field-id="m2-c-solid" oninput="handleM2Input(this)" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
             </td>
             <td class="border border-black p-2 text-center font-bold text-blue-700 text-lg">17</td>
             <td class="border border-black p-1">
-              <input type="text" data-field-id="m2-e-solid" data-save="m2-e-solid" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
+              <input type="text" data-field-id="m2-e-solid" oninput="handleM2Input(this)" class="m2-particle-input w-full text-center font-bold text-blue-700 outline-none bg-blue-50/50 rounded py-1 border border-blue-400" placeholder="?">
             </td>
           </tr>
         </table>
@@ -589,7 +590,7 @@
         <div id="slot-q11a" class="qq-slot" data-index="11">
           <div id="card-q11a">
             <h3 class="text-gray-900 font-bold main-question-text">11. Which beakers contain:</h3>
-            <h3 class="text-gray-900 font-bold mb-4 pl-4">a. Only solutes dissolved in aqueous form</h3>
+            <h3 class="text-gray-900 font-bold mb-4 pl-4 border-l-4 border-purple-200">a. Only solutes dissolved in aqueous form</h3>
             <textarea id="q11a" data-save="q11a" rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
           </div>
         </div>
@@ -597,7 +598,7 @@
         <div id="slot-q11b" class="qq-slot" data-index="12">
           <div id="card-q11b" class="pt-6">
             <h3 class="text-gray-900 font-bold main-question-text">11. Which beakers contain:</h3>
-            <h3 class="text-gray-900 font-bold mb-4 pl-4">b. Solutes dissolved in aqueous form and solids not dissolved in solution</h3>
+            <h3 class="text-gray-900 font-bold mb-4 pl-4 border-l-4 border-purple-200">b. Solutes dissolved in aqueous form and solids not dissolved in solution</h3>
             <textarea id="q11b" data-save="q11b" rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
           </div>
         </div>
@@ -613,6 +614,15 @@
       <div id="slot-q13" class="qq-slot" data-index="14">
         <div id="card-q13" class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-3xl mb-6">
           <h3 class="text-gray-900 font-bold mb-4">13. Count the particles present in each beaker of Model 2. Enter the number of dissolved solute particles and the number of solid solute particles directly into the Model 2 table above. Hover your mouse over the images to get a close-up magnified view so you can count the particles easier. </h3>
+          <div id="comment-container-q13" class="w-full mt-4">
+             <button data-comment-btn="q13" onclick="toggleStudentCommentArea('q13')" class="hidden text-xs font-bold px-3 py-1 border-2 rounded-full transition-all bg-white border-gray-300 text-gray-600 opacity-75 hover:opacity-100 items-center shadow-sm">
+                  💡 Teacher Comment
+             </button>
+             <div data-comment-area="q13" class="hidden mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg shadow-inner">
+                  <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-500"></span> Note from Teacher:</div>
+                  <div data-comment-text="q13" class="text-blue-900 font-bold whitespace-pre-wrap ml-3 leading-relaxed" style="font-size: 15px;"></div>
+             </div>
+          </div>
         </div>
       </div>
 
@@ -621,15 +631,15 @@
         <div id="slot-q14a" class="qq-slot" data-index="15">
           <div id="card-q14a">
             <h3 class="text-gray-900 font-bold main-question-text">14. Consider the beakers in Model 2.</h3>
-            <h3 class="text-gray-900 font-bold mb-4 pl-4">a. Which beakers represent unsaturated solutions? Explain your choice.</h3>
-            <textarea id="q13" data-save="q13" rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+            <h3 class="text-gray-900 font-bold mb-4 pl-4 border-l-4 border-purple-200">a. Which beakers represent unsaturated solutions? Explain your choice.</h3>
+            <textarea id="q14a" data-save="q14a" rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
           </div>
         </div>
 
         <div id="slot-q14b" class="qq-slot" data-index="16">
           <div id="card-q14b" class="pt-6">
             <h3 class="text-gray-900 font-bold main-question-text">14. Consider the beakers in Model 2.</h3>
-            <h3 class="text-gray-900 font-bold mb-4 pl-4">b. Which beakers represent saturated solutions? Explain your choice.</h3>
+            <h3 class="text-gray-900 font-bold mb-4 pl-4 border-l-4 border-purple-200">b. Which beakers represent saturated solutions? Explain your choice.</h3>
             <textarea id="q14b" data-save="q14b" rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
           </div>
         </div>
@@ -664,7 +674,7 @@
 
       <div id="slot-q16" class="qq-slot" data-index="20">
         <div id="card-q16" class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-3xl mb-6">
-          <h3 class="text-gray-900 font-bold mb-4">16. Have each person in your group provide an example of the word "saturated" as it is used in an everyday context. Summarize the meaning of the word in the space below.</h3>
+          <h3 class="text-gray-900 font-bold mb-4">16. Provide an example of the word "saturated" as it is used in an everyday context. Summarize the meaning of the word in the space below.</h3>
           <textarea id="q16" data-save="q16" rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
         </div>
       </div>
@@ -685,8 +695,107 @@
 
       <div id="slot-q19" class="qq-slot" data-index="23">
         <div id="card-q19" class="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-3xl mb-6">
-          <h3 class="text-gray-900 font-bold mb-4">19. Four of the trials in Model 1 correspond to beakers A, B, D, and E from Model 2. Write the letters for those beakers next to the corresponding trial numbers in Model 1.</h3>
-          <textarea id="q19" data-save="q19" rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
+          <h3 class="text-gray-900 font-bold mb-4">19. Four of the trials in Model 1 correspond to beakers A, B, D, and E from Model 2. Match the beakers to their corresponding Experiment and Trial.</h3>
+          
+          <div class="overflow-x-auto">
+            <table id="grid-q19" class="w-full border-collapse text-sm border border-gray-300">
+              <thead>
+                <tr class="bg-gray-100">
+                  <th class="border border-gray-300 p-3 text-left">Beaker (Model 2)</th>
+                  <th class="border border-gray-300 p-3 text-left">Experiment (Model 1)</th>
+                  <th class="border border-gray-300 p-3 text-left">Trial (Model 1)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="hover:bg-gray-50">
+                  <td class="border border-gray-300 p-3 font-bold text-purple-700">Beaker A</td>
+                  <td class="border border-gray-300 p-3">
+                    <select data-grid-row="Beaker A" data-grid-col="experiment" onchange="saveGridAnswer('q19', 'grid-q19')" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 outline-none font-bold text-blue-700">
+                      <option value="">-- Select --</option>
+                      <option>Experiment 1</option>
+                      <option>Experiment 2</option>
+                      <option>Experiment 3</option>
+                    </select>
+                  </td>
+                  <td class="border border-gray-300 p-3">
+                    <select data-grid-row="Beaker A" data-grid-col="trial" onchange="saveGridAnswer('q19', 'grid-q19')" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 outline-none font-bold text-blue-700">
+                      <option value="">-- Select --</option>
+                      <option>Trial 1</option><option>Trial 2</option><option>Trial 3</option><option>Trial 4</option>
+                      <option>Trial 5</option><option>Trial 6</option><option>Trial 7</option><option>Trial 8</option>
+                      <option>Trial 9</option><option>Trial 10</option>
+                    </select>
+                  </td>
+                </tr>
+                <tr class="hover:bg-gray-50">
+                  <td class="border border-gray-300 p-3 font-bold text-purple-700">Beaker B</td>
+                  <td class="border border-gray-300 p-3">
+                    <select data-grid-row="Beaker B" data-grid-col="experiment" onchange="saveGridAnswer('q19', 'grid-q19')" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 outline-none font-bold text-blue-700">
+                      <option value="">-- Select --</option>
+                      <option>Experiment 1</option>
+                      <option>Experiment 2</option>
+                      <option>Experiment 3</option>
+                    </select>
+                  </td>
+                  <td class="border border-gray-300 p-3">
+                    <select data-grid-row="Beaker B" data-grid-col="trial" onchange="saveGridAnswer('q19', 'grid-q19')" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 outline-none font-bold text-blue-700">
+                      <option value="">-- Select --</option>
+                      <option>Trial 1</option><option>Trial 2</option><option>Trial 3</option><option>Trial 4</option>
+                      <option>Trial 5</option><option>Trial 6</option><option>Trial 7</option><option>Trial 8</option>
+                      <option>Trial 9</option><option>Trial 10</option>
+                    </select>
+                  </td>
+                </tr>
+                <tr class="hover:bg-gray-50">
+                  <td class="border border-gray-300 p-3 font-bold text-purple-700">Beaker D</td>
+                  <td class="border border-gray-300 p-3">
+                    <select data-grid-row="Beaker D" data-grid-col="experiment" onchange="saveGridAnswer('q19', 'grid-q19')" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 outline-none font-bold text-blue-700">
+                      <option value="">-- Select --</option>
+                      <option>Experiment 1</option>
+                      <option>Experiment 2</option>
+                      <option>Experiment 3</option>
+                    </select>
+                  </td>
+                  <td class="border border-gray-300 p-3">
+                    <select data-grid-row="Beaker D" data-grid-col="trial" onchange="saveGridAnswer('q19', 'grid-q19')" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 outline-none font-bold text-blue-700">
+                      <option value="">-- Select --</option>
+                      <option>Trial 1</option><option>Trial 2</option><option>Trial 3</option><option>Trial 4</option>
+                      <option>Trial 5</option><option>Trial 6</option><option>Trial 7</option><option>Trial 8</option>
+                      <option>Trial 9</option><option>Trial 10</option>
+                    </select>
+                  </td>
+                </tr>
+                <tr class="hover:bg-gray-50">
+                  <td class="border border-gray-300 p-3 font-bold text-purple-700">Beaker E</td>
+                  <td class="border border-gray-300 p-3">
+                    <select data-grid-row="Beaker E" data-grid-col="experiment" onchange="saveGridAnswer('q19', 'grid-q19')" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 outline-none font-bold text-blue-700">
+                      <option value="">-- Select --</option>
+                      <option>Experiment 1</option>
+                      <option>Experiment 2</option>
+                      <option>Experiment 3</option>
+                    </select>
+                  </td>
+                  <td class="border border-gray-300 p-3">
+                    <select data-grid-row="Beaker E" data-grid-col="trial" onchange="saveGridAnswer('q19', 'grid-q19')" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 outline-none font-bold text-blue-700">
+                      <option value="">-- Select --</option>
+                      <option>Trial 1</option><option>Trial 2</option><option>Trial 3</option><option>Trial 4</option>
+                      <option>Trial 5</option><option>Trial 6</option><option>Trial 7</option><option>Trial 8</option>
+                      <option>Trial 9</option><option>Trial 10</option>
+                    </select>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <!-- Question 19 also needs a teacher comment container since it's now custom HTML -->
+          <div id="comment-container-q19" class="w-full mt-4">
+             <button data-comment-btn="q19" onclick="toggleStudentCommentArea('q19')" class="hidden text-xs font-bold px-3 py-1 border-2 rounded-full transition-all bg-white border-gray-300 text-gray-600 opacity-75 hover:opacity-100 items-center shadow-sm">
+                  💡 Teacher Comment
+             </button>
+             <div data-comment-area="q19" class="hidden mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg shadow-inner">
+                  <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-500"></span> Note from Teacher:</div>
+                  <div data-comment-text="q19" class="text-blue-900 font-bold whitespace-pre-wrap ml-3 leading-relaxed" style="font-size: 15px;"></div>
+             </div>
+          </div>
         </div>
       </div>
 
@@ -702,7 +811,7 @@
         <div id="slot-q21a" class="qq-slot" data-index="25">
           <div id="card-q21a">
             <h3 class="text-gray-900 font-bold main-question-text">21. Imagine that the contents of the beaker for Trial 8 in Model 1 are vigorously stirred and then poured into filter paper in a funnel.</h3>
-            <h3 class="text-gray-900 font-bold mb-4 pl-4 border-l-4 border-blue-200">a. Is the liquid that drips from the filter (the filtrate) unsaturated or saturated? Explain.</h3>
+            <h3 class="text-gray-900 font-bold mb-4 pl-4 border-l-4 border-purple-200">a. Is the liquid that drips from the filter (the filtrate) unsaturated or saturated? Explain.</h3>
             <textarea id="q21a" data-save="q21a" rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
           </div>
         </div>
@@ -710,7 +819,7 @@
         <div id="slot-q21b" class="qq-slot" data-index="26">
           <div id="card-q21b" class="pt-6">
             <h3 class="text-gray-900 font-bold main-question-text">21. Imagine that the contents of the beaker for Trial 8 in Model 1 are vigorously stirred and then poured into filter paper in a funnel.</h3>
-            <h3 class="text-gray-900 font-bold mb-4 pl-4 border-l-4 border-blue-200">b. Which beaker in Model 1 best represents the filtrate that would be obtained?</h3>
+            <h3 class="text-gray-900 font-bold mb-4 pl-4 border-l-4 border-purple-200">b. Which beaker in Model 1 best represents the filtrate that would be obtained?</h3>
             <textarea id="q21b" data-save="q21b" rows="2" class="w-full border-b-2 border-gray-300 focus:border-purple-600 outline-none py-2 text-blue-700 font-bold" placeholder="Your answer..."></textarea>
           </div>
         </div>
@@ -896,6 +1005,8 @@
         const contentArea = document.getElementById('global-qq-content');
         if (contentArea.firstElementChild) {
           slot.appendChild(contentArea.firstElementChild);
+          // Scroll only when exiting to prevent "haywire" scrolling during card swaps
+          slot.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
       }
       
@@ -948,9 +1059,6 @@
       if (slot.firstElementChild) {
         contentArea.appendChild(slot.firstElementChild);
       }
-
-      // Automatically scroll the background so when they exit, they are in the right place
-      slot.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
       // Update button disabled states
       document.getElementById('btn-qq-prev').disabled = (currentQIndex === 0);
@@ -1005,13 +1113,80 @@
                     localState[id] = liveData[id] || { selection: "" };
                     
                     if (el.tagName === 'TEXTAREA' || el.type === 'text') {
-                        el.value = localState[id].selection;
-                        el.addEventListener('input', () => debouncedSave(id, el.value));
+                        el.value = localState[id].selection || "";
+                        el.addEventListener('input', (e) => {
+                             // Sync all inputs with the same data-save id (fixes Model 2 synchronization)
+                             document.querySelectorAll(`[data-save="${id}"]`).forEach(otherEl => {
+                                 if (otherEl !== e.target) otherEl.value = e.target.value;
+                             });
+                             debouncedSave(id, e.target.value);
+                        });
                     } else if (el.type === 'radio') {
                         if (localState[id].selection === el.nextSibling.textContent.trim()) {
                             el.checked = true;
                         }
                         el.addEventListener('change', () => saveAnswer(id, el.nextSibling.textContent.trim()));
+                    }
+
+                    // Dynamically inject teacher comment UI for each answerable element
+                    // Use generic query attributes instead of IDs to prevent duplicates in Model 2
+                    const container = document.createElement('div');
+                    container.className = "w-full mt-2";
+                    container.innerHTML = `
+                        <button data-comment-btn="${id}" onclick="toggleStudentCommentArea('${id}')" class="hidden text-xs font-bold px-3 py-1 border-2 rounded-full transition-all bg-white border-gray-300 text-gray-600 opacity-75 hover:opacity-100 items-center shadow-sm">
+                             💡 Teacher Comment
+                        </button>
+                        <div data-comment-area="${id}" class="hidden mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg shadow-inner">
+                             <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-500"></span> Note from Teacher:</div>
+                             <div data-comment-text="${id}" class="text-blue-900 font-bold whitespace-pre-wrap ml-3 leading-relaxed" style="font-size: 15px;"></div>
+                        </div>
+                    `;
+                    
+                    if (el.type === 'radio') {
+                        const flexCol = el.closest('.flex-col');
+                        if (flexCol && !flexCol.parentNode.querySelector(`[data-comment-wrap-id="${id}"]`)) {
+                            container.setAttribute('data-comment-wrap-id', id);
+                            flexCol.parentNode.appendChild(container);
+                        }
+                    } else {
+                        // Prevent duplicate injection for identical elements
+                        el.parentNode.appendChild(container);
+                    }
+                });
+
+                // Restore Grid values for q19
+                const q19Data = liveData['q19'] ? liveData['q19'].selection : null;
+                if (q19Data) {
+                    try {
+                        const parsed = JSON.parse(q19Data);
+                        const table = document.getElementById('grid-q19');
+                        if (table) {
+                            table.querySelectorAll('select').forEach(sel => {
+                                const row = sel.getAttribute('data-grid-row');
+                                const col = sel.getAttribute('data-grid-col');
+                                if (parsed[row] && parsed[row][col]) {
+                                    sel.value = parsed[row][col];
+                                }
+                            });
+                        }
+                    } catch (e) {}
+                }
+                
+                // Restore Q13 values
+                const q13Data = liveData['q13'] ? liveData['q13'].selection : null;
+                if (q13Data) {
+                    try {
+                        const parsed = JSON.parse(q13Data);
+                        Object.keys(parsed).forEach(field => {
+                            document.querySelectorAll(`[data-field-id="${field}"]`).forEach(el => el.value = parsed[field]);
+                        });
+                    } catch(e) {}
+                }
+
+                // Render initial comments if they exist
+                Object.keys(liveData).forEach(key => {
+                    if (typeof liveData[key] === 'object' && liveData[key] !== null && 'teacherComment' in liveData[key]) {
+                        renderCommentUI(key, liveData[key]);
                     }
                 });
 
@@ -1035,25 +1210,125 @@
       }
   }
 
+  let commentVisibility = {};
+
+  function renderCommentUI(qId, qData) {
+      if (!localState[qId]) localState[qId] = {};
+      if (qData.teacherComment !== undefined) localState[qId].teacherComment = qData.teacherComment;
+      if (qData.commentUnread !== undefined) localState[qId].commentUnread = qData.commentUnread;
+
+      const currentComment = localState[qId].teacherComment || "";
+      const isUnread = localState[qId].commentUnread === true;
+      
+      const btns = document.querySelectorAll(`[data-comment-btn="${qId}"]`);
+      const textDivs = document.querySelectorAll(`[data-comment-text="${qId}"]`);
+      const areas = document.querySelectorAll(`[data-comment-area="${qId}"]`);
+
+      if (btns.length > 0) {
+          btns.forEach(btn => {
+              if (currentComment.trim() !== "") {
+                  btn.classList.remove('hidden');
+                  btn.classList.add('flex');
+                  if (isUnread) {
+                      btn.classList.add('bg-orange-50', 'border-orange-500', 'text-orange-700', 'ring-2', 'ring-orange-300');
+                      btn.classList.remove('bg-white', 'border-gray-300', 'text-gray-600', 'opacity-75');
+                  } else {
+                      btn.classList.remove('bg-orange-50', 'border-orange-500', 'text-orange-700', 'ring-2', 'ring-orange-300');
+                      btn.classList.add('bg-white', 'border-gray-300', 'text-gray-600', 'opacity-75');
+                  }
+              } else {
+                  btn.classList.add('hidden');
+                  btn.classList.remove('flex');
+              }
+          });
+          
+          textDivs.forEach(textDiv => textDiv.innerText = currentComment);
+          
+          areas.forEach(area => {
+              if (currentComment.trim() !== "" && commentVisibility[qId]) {
+                  area.classList.remove('hidden');
+              } else {
+                  area.classList.add('hidden');
+              }
+          });
+      }
+  }
+
+  function toggleStudentCommentArea(qId) {
+      const areas = document.querySelectorAll(`[data-comment-area="${qId}"]`);
+      if (areas.length === 0) return;
+      
+      let isCurrentlyHidden = areas[0].classList.contains('hidden');
+      isCurrentlyHidden = !isCurrentlyHidden; // Toggle logic
+      
+      areas.forEach(area => {
+          if (isCurrentlyHidden) area.classList.add('hidden');
+          else area.classList.remove('hidden');
+      });
+      
+      commentVisibility[qId] = !isCurrentlyHidden;
+      
+      if (!isCurrentlyHidden && localState[qId] && localState[qId].commentUnread === true) {
+         localState[qId].commentUnread = false; 
+         
+         studentConfig.basePaths.forEach(path => {
+            fetch(`${databaseURL}/${path}/${qId}.json`, {
+               method: 'PATCH',
+               body: JSON.stringify({ commentUnread: false })
+            });
+         });
+         
+         document.querySelectorAll(`[data-comment-btn="${qId}"]`).forEach(btn => {
+             btn.classList.remove('bg-orange-50', 'border-orange-500', 'text-orange-700', 'ring-2', 'ring-orange-300');
+             btn.classList.add('bg-white', 'border-gray-300', 'text-gray-600', 'opacity-75');
+         });
+      }
+  }
+
   function startSSEListener() {
       if (!studentConfig || !studentConfig.basePaths || studentConfig.basePaths.length === 0) return;
-      const url = `${databaseURL}/${studentConfig.basePaths[0]}.json`;
-      const eventSource = new EventSource(url);
       
-      const handleUpdate = (e) => {
-        const payload = JSON.parse(e.data);
-        const path = payload.path || "";
-        const data = payload.data || {};
+      // Listen to ALL classes the student is in
+      studentConfig.basePaths.forEach(basePath => {
+          const url = `${databaseURL}/${basePath}.json`;
+          const eventSource = new EventSource(url);
+          
+          const handleUpdate = (e) => {
+            const payload = JSON.parse(e.data);
+            const pathEvent = payload.path || "";
+            const data = payload.data;
 
-        if (path === "/") {
-            window.studentLocked = data.isLocked === true;
-        } else if (path === "/isLocked") {
-            window.studentLocked = data;
-        }
-        checkLockStatus();
-      };
-      eventSource.addEventListener('put', handleUpdate);
-      eventSource.addEventListener('patch', handleUpdate);
+            if (pathEvent === "/") {
+                window.studentLocked = data && data.isLocked === true;
+                if (data) {
+                    Object.keys(data).forEach(key => {
+                        if (typeof data[key] === 'object' && data[key] !== null) {
+                            renderCommentUI(key, data[key]);
+                        }
+                    });
+                }
+            } else if (pathEvent === "/isLocked") {
+                window.studentLocked = data;
+            } else {
+                const parts = pathEvent.split('/').filter(p => p);
+                if (parts.length === 1) {
+                    const qId = parts[0];
+                    if (data !== null && typeof data === 'object') {
+                        renderCommentUI(qId, data);
+                    }
+                } else if (parts.length === 2) {
+                    const qId = parts[0];
+                    const field = parts[1];
+                    if (!localState[qId]) localState[qId] = {};
+                    localState[qId][field] = data;
+                    renderCommentUI(qId, localState[qId]);
+                }
+            }
+            checkLockStatus();
+          };
+          eventSource.addEventListener('put', handleUpdate);
+          eventSource.addEventListener('patch', handleUpdate);
+      });
   }
 
   function checkLockStatus() {
@@ -1094,6 +1369,36 @@
           })
         });
       });
+  }
+
+  function saveGridAnswer(qId, tableId) {
+      const table = document.getElementById(tableId);
+      const data = {};
+      table.querySelectorAll('select').forEach(sel => {
+          const row = sel.getAttribute('data-grid-row');
+          const col = sel.getAttribute('data-grid-col');
+          if (!data[row]) data[row] = {};
+          data[row][col] = sel.value;
+      });
+      saveAnswer(qId, JSON.stringify(data));
+  }
+
+  function handleM2Input(el) {
+      const fieldId = el.getAttribute('data-field-id');
+      document.querySelectorAll(`[data-field-id="${fieldId}"]`).forEach(other => {
+          if (other !== el) other.value = el.value;
+      });
+      
+      if (saveDebounces['q13']) clearTimeout(saveDebounces['q13']);
+      saveDebounces['q13'] = setTimeout(() => {
+          const data = {};
+          const fields = ['m2-a-solid', 'm2-b-diss', 'm2-c-solid', 'm2-c-diss', 'm2-d-diss', 'm2-e-solid'];
+          fields.forEach(f => {
+              const fieldEl = document.querySelector(`[data-field-id="${f}"]`);
+              if (fieldEl) data[f] = fieldEl.value;
+          });
+          saveAnswer('q13', JSON.stringify(data));
+      }, 1000);
   }
 
   // Hook into existing onload or add it

@@ -6,34 +6,39 @@ const FIREBASE_SECRET = PropertiesService.getScriptProperties().getProperty("FIR
 const EMAIL_SALT = PropertiesService.getScriptProperties().getProperty("EMAIL_SALT");
 const ADMIN_EMAILS = ['pianodemon88@gmail.com', 'kjosephs@ocsdny.org'];
 
-const ASSIGNMENT_CODE = "CH_U08_A01_P";
+const ASSIGNMENT_CODE = "CH_U08_A02_G";
 const ASSIGNMENT_TITLE = "Introduction to Solutions";
 
 // 🖼️ IMAGE PLACEHOLDERS
 const IMAGE_URLS = {
-  q6: "https://docs.google.com/drawings/d/e/2PACX-1vQAOL8npL5ugKKPh6jdcwD5cge7tZ0OCNhScvh9f1qLaEQ400LV1FjZdXHhMl8JVJWI_9189hRhCXaF/pub?w=960&h=720",
-  reading_pg2: "https://docs.google.com/drawings/d/e/2PACX-1vQUHylpJpsL37zdRRhxH1wxtpRbUXzvhl5jr03gs5z86ljBelPwJ0_vDTTTegrBURKavLvDNNwc7u_d/pub?w=417&h=688"
+  // Put your 4 image links for Question 8's options here:
+  q8_opt1: "https://docs.google.com/drawings/d/e/2PACX-1vRqlkB6BTx1ti1K6UA6YYUFVO45_aD8c2V5VSVCqZUG6rqHsHK2GIvqEF7BdNVrjq-7W2JZbxngdZ_a/pub?w=960&h=720",
+  q8_opt2: "https://docs.google.com/drawings/d/e/2PACX-1vQ29EQsJ2iVUpC0_hZ4PuBoHKmzYjU13v3dvhvFTfSIb9t4CKls0NoP3lToG11_fdf-BaWd_fetvtS-/pub?w=960&h=720",
+  q8_opt3: "https://docs.google.com/drawings/d/e/2PACX-1vQpoI2kwrQXej67Yr-179RB416FPKjC1pEWKiDNA_53Rsu-vkA98zBpsFhnuNAZZoC9YL_qz2gqnkt6/pub?w=960&h=720",
+  q8_opt4: "https://docs.google.com/drawings/d/e/2PACX-1vR4fv9Le5jQnXBc-yGP7lzuYwF9GhNYbN5KEq7Y-CbciZMeRiN6i8QHAdIC8fNk2uZkQEn4PBK5JAos/pub?w=960&h=720"
 };
 
 const QUESTIONS_ARRAY = [
-  { id: 1, type: "mc", text: "When a teaspoon of sugar is added to water in a beaker, the sugar dissolves. The resulting mixture is", options: ["a compound", "a homogeneous solution", "a heterogeneous solution", "an emulsion"] },
-  { id: 2, type: "mc", text: "A small quantity of salt is stirred into a liter of water until it dissolves. In the resulting mixture, the water is", options: ["the solvent", "the solute", "dispersed material", "a precipitate"] },
-  { id: 3, type: "mc", text: "A solution", options: ["will separate on standing", "may have color", "can be cloudy", "can be heterogeneous"] },
-  { id: 4, type: "mc", text: "Nonpolar solvents will most easily dissolve solids that are", options: ["ionic", "covalent", "metallic", "heterogenous"] },
-  { id: 5, type: "mc", text: "Under which conditions are gases most soluble", options: ["high temperature and high pressure", "high temperature and low pressure", "low temperature and high pressure", "low temperature and low pressure"] },
-  { id: 6, type: "mc", text: `The diagrams below represent an ionic crystal being dissolved in water.<br><br><img src='${IMAGE_URLS.q6}' alt='Question 6 Diagram' class='my-4 max-w-full h-auto border border-gray-300 rounded shadow-sm'><br>According to the diagrams the dissolving process takes place by`, options: ["hydrogen bond formation", "metallic bonding", "dipole-dipole attractions", "molecule-ion attractions"] },
-  { id: 7, type: "mc", text: "What happens when KI(s) is dissolved in water?", options: ["I⁻ ions are attracted to the oxygen atoms of the water.", "K⁺ ions are attracted to the oxygen atoms of the water.", "K⁺ ions are attracted to the hydrogen atoms of the water.", "No attractions are involved; the crystals just fall apart."] },
-  { id: 8, type: "mc", text: "Which two compounds contain only polar molecules?", options: ["CCl₄ and CH₄", "HCl and Cl₂", "HCl and NH₃", "CO and CO₂"] },
-  { id: 9, type: "mc", text: "Stainless steel is a solution because", options: ["It is an element formed between two metals.", "It is a compound formed between two metals.", "It is a homogeneous mixture between two metals.", "It is a heterogenous mixture between two metals."] },
-  { id: 10, type: "mc", text: "The term \"like dissolves like\" means that", options: ["An attraction exists between an electron and a proton.", "An attraction exists between two protons.", "A nonpolar substance will dissolve a polar substance.", "A nonpolar substance will dissolve a nonpolar substance."] },
-  { id: 11, type: "mc", text: "A solution cannot be cloudy because solutions", options: ["don't disperse light.", "can have color.", "are mixtures.", "are compounds."] },
-  { id: 12, type: "mc", text: "A solution does not disperse light because", options: ["the solvent particles are too large.", "the solvent particles are too small.", "the solute particles are too large.", "the solute particles are too small."] },
-  { id: 13, type: "mc", text: "Dissolved particles pass through a filter because", options: ["the solvent particles are too large pass through the filter.", "the solvent particles are small enough to pass through the filter.", "the solute particles are too large pass through the filter.", "the solute particles are small enough to pass through the filter."] },
-  { id: 14, type: "mc", text: "Dissolved particles can be separated from a solvent by", options: ["filtering the solution.", "evaporating the solvent.", "stirring the solution.", "adding more solute to the solution."] }
+  { id: 1, type: "mc", text: "In a true solution, the dissolved particles", options: ["are visible to the eye", "will settle out on standing", "are always solids", "cannot be removed by filtration"] },
+  { id: 2, type: "mc", text: "When a teaspoon of sugar is added to water and stirred, the sugar", options: ["melts", "dissolves", "condenses", "evaporates"] },
+  { id: 3, type: "mc", text: "In an aqueous solution of potassium chloride, the solute is", options: ["Cl⁻ only", "K⁺ only", "K⁺Cl⁻", "H₂O"] },
+  { id: 4, type: "mc", text: "Which sample of matter is a mixture?", options: ["H₂O(s)", "H₂O(l)", "NaCl(l)", "NaCl(aq)"] },
+  { id: 5, type: "mc", text: "Most ionic substances are soluble in water because water molecules are", options: ["nonpolar", "inorganic", "ionic", "polar"] },
+  { id: 6, type: "mc", text: "An aqueous solution of copper sulfate is poured into a filter paper cone. What passes through the filter paper?", options: ["only the solvent", "only the solute", "both solvent and solute", "neither the solute nor solvent"] },
+  { id: 7, type: "mc", text: "Nonpolar solvents will most easily dissolve solids that are", options: ["ionic", "covalent", "metallic", "colored"] },
+  { id: 8, type: "mc", text: "Which diagram best illustrates the ion-molecule attractions that occur when ions of NaCl(s) are added to water?", options: [
+    `<img src='${IMAGE_URLS.q8_opt1}' class='max-w-full h-auto rounded border border-gray-200 shadow-sm'>`,
+    `<img src='${IMAGE_URLS.q8_opt2}' class='max-w-full h-auto rounded border border-gray-200 shadow-sm'>`,
+    `<img src='${IMAGE_URLS.q8_opt3}' class='max-w-full h-auto rounded border border-gray-200 shadow-sm'>`,
+    `<img src='${IMAGE_URLS.q8_opt4}' class='max-w-full h-auto rounded border border-gray-200 shadow-sm'>`
+  ] },
+  { id: 9, type: "mc", text: "What happens when NaCl(s) is dissolved in water?", options: ["Cl⁻ ions are attracted to the oxygen atoms of the water.", "Cl⁻ ions are attracted to the hydrogen atoms of the water.", "Na⁺ ions are attracted to the hydrogen atoms of the water.", "No attractions are involved; the crystal just falls apart."] },
+  { id: 10, type: "mc", text: "A solution", options: ["will separate on standing", "may have color", "can be cloudy", "can be heterogeneous"] }
 ];
 
 const TOTAL_QUESTIONS = QUESTIONS_ARRAY.length;
-const ANSWER_KEY = { 1: 1, 2: 0, 3: 1, 4: 1, 5: 2, 6: 3, 7: 1, 8: 2, 9: 2, 10: 3, 11: 0, 12: 3, 13: 3, 14: 1 };
+// 0-indexed Answer Key based on the graded PDF
+const ANSWER_KEY = { 1: 3, 2: 1, 3: 2, 4: 3, 5: 3, 6: 2, 7: 1, 8: 0, 9: 1, 10: 1 };
 
 // ==========================================
 // DASHBOARD ROSTER MAP GENERATION
@@ -62,7 +67,6 @@ function getSaltedStudentHash(email) {
 function doGet(e) {
   const userEmail = Session.getActiveUser().getEmail().toLowerCase().trim();
   
-  // Format the sub-header for BOTH views so they look identical to the printout
   let headerSub = `Assignment: ${ASSIGNMENT_CODE}`; 
   try {
     const parts = ASSIGNMENT_CODE.split('_'); 
@@ -107,15 +111,12 @@ function doGet(e) {
   return template.evaluate().setTitle(`Assignment: ${ASSIGNMENT_CODE}`).setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
-
 // ==========================================
 // DASHBOARD ROSTER FETCHING
 // ==========================================
 function getDashboardRoster() {
   const url = `${FIREBASE_DB_URL}/studentRoster.json?auth=${FIREBASE_SECRET}`;
   const nameMap = generateNameMap(); 
-  
-  // Extract the prefix (e.g., "CH") from the assignment code
   const subjectPrefix = ASSIGNMENT_CODE.split('_')[0]; 
   
   try {
@@ -123,14 +124,9 @@ function getDashboardRoster() {
     const data = JSON.parse(response.getContentText()) || {};
     let roster = [];
     
-    // Look through every student's hash in the RTDB roster
     for (let hash in data) {
       const studentClasses = data[hash];
-      
-      // Look at the classes this specific student is enrolled in
       for (let className in studentClasses) {
-        
-        // ONLY add the student to the dashboard if the class matches the prefix!
         if (className.startsWith(subjectPrefix)) {
           roster.push({
             uid: hash,
@@ -145,8 +141,6 @@ function getDashboardRoster() {
     return [];
   }
 }
-
-
 
 // ==========================================
 // MULTI-CLASS ROUTING & DATA FETCHING
