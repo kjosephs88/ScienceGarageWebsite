@@ -1,0 +1,1860 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lab 18 - Solution Concentration</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Roboto', ui-sans-serif, system-ui, -apple-system, sans-serif;
+      background-color: #f0ebf8;
+    }
+
+    .form-header-bar {
+      border-top: 10px solid #673ab7;
+    }
+
+    /* Textareas styling */
+    textarea {
+      color: #0000ff !important;
+      font-weight: 700 !important;
+      resize: none;
+      overflow: hidden;
+    }
+
+    /* Magnifying Glass Styles */
+    .zoom-container {
+      position: relative;
+      cursor: crosshair;
+    }
+
+    .magnifier {
+      position: absolute;
+      width: 300px;
+      height: 300px;
+      border: 5px solid #673ab7;
+      border-radius: 50%;
+      pointer-events: none;
+      display: none;
+      z-index: 1000;
+      background-repeat: no-repeat;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), inset 0 0 30px rgba(0, 0, 0, 0.1);
+      background-color: white;
+    }
+
+    select {
+      text-align: center;
+      text-align-last: center;
+      -moz-text-align-last: center;
+      font-size: 2em;
+    }
+  </style>
+</head>
+
+<body class="text-gray-800 min-h-screen p-4 md:p-6 pb-32 relative">
+
+  <div id="gas-loader"
+    class="hidden absolute top-4 right-4 text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full border border-blue-200 animate-pulse z-50">
+    Connecting to Lab Server...
+  </div>
+
+  <div class="w-[1202px] mx-auto relative z-0">
+
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 form-header-bar p-6 md:p-8 mb-4">
+      <div class="mb-5 pb-4 border-b border-gray-100 flex flex-col items-start">
+        <div class="bg-gray-200 text-gray-800 text-xs font-bold tracking-wider uppercase px-2 py-1 mb-1 rounded-sm">
+          Assignment Type: Graded</div>
+        <div class="text-xs font-semibold text-gray-500 tracking-widest pl-2">UNIT 8 - Assignment #6</div>
+      </div>
+      <h1 class="text-3xl font-normal text-gray-900 mb-4">Lab 18 - Solution Concentration</h1>
+      <p class="text-sm text-gray-600 font-medium italic">Please read through the introductory material and define the
+        terms below.</p>
+    </div>
+
+    <!-- Objectives -->
+    <div class="bg-white rounded-lg shadow-sm border border-purple-200 p-6 md:p-8 mb-6">
+      <h2 class="text-xl font-bold mb-4 text-purple-700">Objectives</h2>
+      <ol class="list-decimal pl-5 space-y-2 text-gray-800 font-medium">
+        <li>Calculate the mass of solute needed to make a specific solution concentration and prepare it.</li>
+        <li>Compare concentration strength of different drink samples using the sense of taste.</li>
+      </ol>
+    </div>
+
+    <!-- Discussion -->
+    <div class="bg-white rounded-lg shadow-sm border border-purple-200 p-6 md:p-8 mb-6">
+      <h2 class="text-xl font-bold mb-4 text-purple-700">Discussion</h2>
+      <p class="mb-4 text-gray-800 leading-relaxed font-medium">
+        When performing many chemical reactions, it is important to measure and know the concentration of solutions that
+        partake in the reaction. This is because the number of moles contained in a sample of solution must be known so
+        the proper amount of solution can be used. Given the required number of moles and the concentration of solution,
+        the needed volume can be calculated.
+      </p>
+      <p class="mb-6 text-gray-800 leading-relaxed font-medium">
+        To prepare a solution of desired concentration requires the use of a mathematical relationship and a
+        mathematical model from the reference tables, shown below:
+      </p>
+
+      <div class="flex flex-col md:flex-row gap-6 mb-6 justify-center max-w-2xl mx-auto">
+        <div class="flex-1 border-[3px] border-black p-4 text-center">
+          <h3 class="font-bold mb-6 text-lg">Mathematical Relationship</h3>
+          <p class="text-2xl mb-4">1 mole = molar mass (g)</p>
+        </div>
+        <div class="flex-1 border-[3px] border-black p-4 text-center flex flex-col justify-center items-center">
+          <h3 class="font-bold mb-4 text-lg">Mathematical Model</h3>
+          <div class="flex justify-center items-center gap-6 text-xl">
+            <div class="text-3xl italic font-bold">n = MV</div>
+            <div class="text-left text-sm italic">
+              n = moles<br>
+              M = Molarity<br>
+              V = volume
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p class="text-gray-800 leading-relaxed font-medium">
+        This lab requires the preparation of drink mix with specific concentrations. See the example problem below that
+        explains how to determine the mass of a solute required to make a solution of desired concentration.
+      </p>
+    </div>
+
+    <!-- How to Prepare a Solution of Desired Concentration -->
+    <div class="bg-white rounded-lg shadow-sm border-[3px] border-black p-6 md:p-8 mb-8">
+      <h3 class="font-bold mb-6 text-center text-lg">How to Prepare a Solution of Desired Concentration</h3>
+      <p class="mb-6 font-medium text-gray-800">A 250-mL solution of NaOH with a concentration of 2 M is desired. How
+        would this be prepared?</p>
+
+      <ol class="list-decimal pl-5 space-y-8 font-medium text-gray-800">
+        <li>
+          Determine the moles of NaOH needed with the mathematical model <span class="italic">n = MV</span>:
+          <div class="text-center mt-6">
+            <div class="text-xl my-2 flex justify-center items-center gap-2">
+              <span class="italic">n = MV &rarr; n = </span>
+              <span class="flex flex-col items-center mx-1">
+                <span class="border-b border-black block px-2 pb-1">2 mol NaOH</span>
+                <span class="block pt-1 relative">
+                  L
+                  <div class="absolute inset-0 flex items-center justify-center">
+                    <div class="w-[120%] h-px bg-black transform -rotate-[45deg]"></div>
+                  </div>
+                </span>
+              </span>
+              <span> &times; 0.250 </span>
+              <span class="relative mx-1">
+                L
+                <div class="absolute inset-0 flex items-center justify-center">
+                  <div class="w-[120%] h-px bg-black transform -rotate-[45deg]"></div>
+                </div>
+              </span>
+              <span> = 0.5 mol NaOH</span>
+            </div>
+          </div>
+        </li>
+        <li>
+          Determine the mass of NaOH needed using its molar mass (40 g NaOH/ 1 mole NaOH):
+          <div class="text-center mt-6">
+            <div class="text-xl my-2 flex justify-center items-center gap-2">
+              <span>0.5 <span class="relative inline-block px-1">mol NaOH<div
+                    class="absolute inset-0 flex items-center justify-center">
+                    <div class="w-full h-px bg-black transform -rotate-6"></div>
+                  </div></span> &times;</span>
+              <span class="inline-block text-center mx-1"><span class="border-b border-black block pb-1">40 g
+                  NaOH</span><span class="block pt-1 relative">1 mol NaOH<div
+                    class="absolute inset-0 flex items-center justify-center">
+                    <div class="w-full h-px bg-black transform -rotate-6"></div>
+                  </div></span></span>
+              <span>= 20 g NaOH</span>
+            </div>
+          </div>
+        </li>
+        <li>Place a container with graduations on a scale and tare it. Measure the calculated mass from step 2 into the
+          container.</li>
+        <li>Add water to the proper volume desired. In this case: 0.250 L, or 250 mL.</li>
+        <li>Stir the mixture until all the solute is dissolved.</li>
+      </ol>
+    </div>
+
+    <!-- Definitions -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 md:p-8 mb-6">
+      <h2 class="text-2xl font-bold mb-4 text-black">Definitions</h2>
+      <p class="text-gray-800 leading-relaxed mb-8">Please define the terms below in your own words. It is important to
+        understand all these terms when completing concentration calculations. Make sure to understand their meaning and
+        to not mindlessly write down definitions. Writing these definitions in your own words can help.</p>
+
+      <div class="space-y-8">
+        <div class="flex flex-col md:flex-row gap-4 w-full items-start" data-comment-anchor="q1">
+          <label class="md:w-32 font-medium text-gray-800 shrink-0 pt-1">Solute:</label>
+          <div class="w-full">
+            <textarea data-save="q1" rows="1"
+              class="w-full border-b border-black focus:border-purple-600 focus:border-b-2 outline-none py-1 text-blue-700 font-bold leading-relaxed bg-transparent"
+              placeholder=""></textarea>
+          </div>
+        </div>
+
+        <div class="flex flex-col md:flex-row gap-4 w-full items-start" data-comment-anchor="q2">
+          <label class="md:w-32 font-medium text-gray-800 shrink-0 pt-1">Solvent:</label>
+          <div class="w-full">
+            <textarea data-save="q2" rows="1"
+              class="w-full border-b border-black focus:border-purple-600 focus:border-b-2 outline-none py-1 text-blue-700 font-bold leading-relaxed bg-transparent"
+              placeholder=""></textarea>
+          </div>
+        </div>
+
+        <div class="flex flex-col md:flex-row gap-4 w-full items-start" data-comment-anchor="q3">
+          <label class="md:w-32 font-medium text-gray-800 shrink-0 pt-1">Solution:</label>
+          <div class="w-full">
+            <textarea data-save="q3" rows="1"
+              class="w-full border-b border-black focus:border-purple-600 focus:border-b-2 outline-none py-1 text-blue-700 font-bold leading-relaxed bg-transparent"
+              placeholder=""></textarea>
+          </div>
+        </div>
+
+        <div class="flex flex-col md:flex-row gap-4 w-full items-start" data-comment-anchor="q4">
+          <label class="md:w-32 font-medium text-gray-800 shrink-0 pt-1">Mole:</label>
+          <div class="w-full">
+            <textarea data-save="q4" rows="1"
+              class="w-full border-b border-black focus:border-purple-600 focus:border-b-2 outline-none py-1 text-blue-700 font-bold leading-relaxed bg-transparent"
+              placeholder=""></textarea>
+          </div>
+        </div>
+
+        <div class="flex flex-col md:flex-row gap-4 w-full items-start" data-comment-anchor="q5">
+          <label class="md:w-32 font-medium text-gray-800 shrink-0 pt-1">Molar mass:</label>
+          <div class="w-full">
+            <textarea data-save="q5" rows="1"
+              class="w-full border-b border-black focus:border-purple-600 focus:border-b-2 outline-none py-1 text-blue-700 font-bold leading-relaxed bg-transparent"
+              placeholder=""></textarea>
+          </div>
+        </div>
+
+        <div class="flex flex-col md:flex-row gap-4 w-full items-start" data-comment-anchor="q6">
+          <label class="md:w-32 font-medium text-gray-800 shrink-0 pt-1">Mass:</label>
+          <div class="w-full">
+            <textarea data-save="q6" rows="1"
+              class="w-full border-b border-black focus:border-purple-600 focus:border-b-2 outline-none py-1 text-blue-700 font-bold leading-relaxed bg-transparent"
+              placeholder=""></textarea>
+          </div>
+        </div>
+
+        <div class="flex flex-col md:flex-row gap-4 w-full items-start" data-comment-anchor="q7">
+          <label class="md:w-32 font-medium text-gray-800 shrink-0 pt-1">Concentration:</label>
+          <div class="w-full">
+            <textarea data-save="q7" rows="1"
+              class="w-full border-b border-black focus:border-purple-600 focus:border-b-2 outline-none py-1 text-blue-700 font-bold leading-relaxed bg-transparent"
+              placeholder=""></textarea>
+          </div>
+        </div>
+
+        <div class="flex flex-col md:flex-row gap-4 w-full items-start" data-comment-anchor="q8">
+          <label class="md:w-32 font-medium text-gray-800 shrink-0 pt-1">Molarity:</label>
+          <div class="w-full">
+            <textarea data-save="q8" rows="1"
+              class="w-full border-b border-black focus:border-purple-600 focus:border-b-2 outline-none py-1 text-blue-700 font-bold leading-relaxed bg-transparent"
+              placeholder=""></textarea>
+          </div>
+        </div>
+
+        <div class="flex flex-col md:flex-row gap-4 w-full items-start" data-comment-anchor="q9">
+          <label class="md:w-32 font-medium text-gray-800 shrink-0 pt-1">Volume:</label>
+          <div class="w-full">
+            <textarea data-save="q9" rows="1"
+              class="w-full border-b border-black focus:border-purple-600 focus:border-b-2 outline-none py-1 text-blue-700 font-bold leading-relaxed bg-transparent"
+              placeholder=""></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Materials & Safety -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      <!-- Materials Card -->
+      <div class="bg-white rounded-lg shadow-sm border-l-8 border-green-500 p-6 md:p-8">
+        <h2 class="text-2xl font-bold mb-4 text-green-700 flex items-center gap-2">
+          <span class="material-icons">inventory_2</span> Materials
+        </h2>
+        <ul class="list-disc pl-5 space-y-3 text-gray-800 font-medium leading-relaxed">
+          <li><b>Scooping spoon</b> (For drink mix. Place back in cup after use. <span class="text-red-600">DO NOT place
+              directly on the table.</span>)</li>
+          <li><b>Mixing cup</b> (For mixing the desired solution.)</li>
+          <li><b>Water cup</b> (To precisely pour the correct amount of water.)</li>
+          <li><b>Stirring spoon</b> (Place in water cup when not in use. <span class="text-red-600">DO NOT place
+              directly on the table.</span>)</li>
+          <li><b>Four small cups</b> (Marked with solution #, concentration, and volume.)</li>
+          <li><b>Drink mix</b></li>
+          <li><b>Bottled drinking water</b> (<span class="text-red-600 font-bold underline">DO NOT use tap
+              water.</span>)</li>
+        </ul>
+      </div>
+
+      <!-- Safety Note Card -->
+      <div class="bg-white rounded-lg shadow-sm border-l-8 border-yellow-500 p-6 md:p-8">
+        <h2 class="text-2xl font-bold mb-4 text-yellow-700 flex items-center gap-2">
+          <span class="material-icons">warning</span> Safety Note
+        </h2>
+        <p class="mb-4 text-gray-800 font-bold italic leading-relaxed">
+          This lab allows you to taste the results. This is highly unusual in a chemistry lab. To ensure the safety of
+          all that this entails, make sure to adhere to the following:
+        </p>
+        <ol class="list-decimal pl-5 space-y-3 text-gray-800 font-medium leading-relaxed">
+          <li><b>Measure all solute in the mixing cup:</b> Tare out the cup and then scoop the proper mass of solute
+            into it.</li>
+          <li><b>Never place a spoon on the counter:</b> Always place it down in a designated cup.</li>
+          <li><b>Accidental measurement:</b> If you measure too much solute, throw it away. Do not put it back into the
+            container.</li>
+          <li><b>Water Source:</b> Only use bottled water to prepare the solution.</li>
+        </ol>
+      </div>
+    </div>
+
+    <!-- Procedure Card -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 md:p-8 mb-6">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+        <h2 class="text-2xl font-bold text-black flex items-center gap-2">
+          <span class="material-icons text-blue-600">format_list_numbered</span> Procedure
+        </h2>
+        <div
+          class="bg-red-600 text-white font-bold px-6 py-2 rounded-lg shadow-md animate-pulse border-2 border-red-800">
+          ⚠️ DO NOT DRINK THE SOLUTIONS UNTIL ALL HAVE BEEN PREPARED!
+        </div>
+      </div>
+
+      <ol class="list-decimal pl-6 space-y-6 text-gray-800 font-medium leading-relaxed">
+        <li>Form a group of four partners with two pairs of lab partners.</li>
+        <li>
+          Complete the required calculations for each solution on the table <b>below</b>.
+          <p class="text-sm text-gray-600 italic mt-1">Make sure to show all work, including the equation and
+            substitution of variables. Check your work among lab members.</p>
+        </li>
+        <li>Shade in the required amount of both solution and solute on the visual representation diagrams.</li>
+        <li>
+          Using the instructions on the front of this lab, make each solution following the instructions below:
+          <ul class="list-[lower-alpha] pl-8 mt-3 space-y-3">
+            <li>Each pair of lab partners will prepare two solutions, and the other pair will prepare the remaining two.
+              Discuss which pair makes which solution.</li>
+            <li>Using the provided equipment, make the first solution in the mixing cup.</li>
+            <li>Divide the prepared solution into four equal amounts for each lab partner's personal small cup. Ensure
+              it is placed in the properly labeled cup.</li>
+            <li>Prepare the other solutions and distribute them into each lab partner's cups.</li>
+          </ul>
+        </li>
+        <li>Observe the intensity of the colors for each solution and record your observations on the data table.</li>
+        <li>Taste a little bit of each solution and record how strong the taste is in the data table. If necessary,
+          cleanse your palate with water between tastings.</li>
+      </ol>
+    </div>
+
+    <!-- Calculations -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 md:p-8 mb-6">
+      <h2 class="text-2xl font-bold mb-4 text-black">Calculations</h2>
+      <p class="text-gray-800 leading-relaxed mb-4 font-medium">Complete the table below and clearly show all calculated
+        work for each solution, including the equation used.</p>
+      <p class="text-gray-800 leading-relaxed mb-6 font-bold text-lg">The molar mass of the drink mix solute is 37.2
+        g/mol.</p>
+
+      <div>
+        <table class="w-full border-collapse border-[3px] border-black text-center text-sm">
+          <thead>
+            <tr class="bg-gray-200 font-bold uppercase tracking-wider">
+              <th class="bg-white border-b-[2px] border-r-[2px] border-black p-4 w-1/5"
+                style="border-top: none; border-left: none;"></th>
+              <th class="border-[2px] border-black p-4">Solution #1</th>
+              <th class="border-[2px] border-black p-4">Solution #2</th>
+              <th class="border-[2px] border-black p-4">Solution #3</th>
+              <th class="border-[2px] border-black p-4">Solution #4</th>
+            </tr>
+          </thead>
+          <tbody class="font-bold">
+            <tr>
+              <td class="border-[2px] border-black p-3 bg-gray-100 uppercase text-xs">Solution Concentration (M)</td>
+              <td class="border-[2px] border-black p-3 text-lg">2 M</td>
+              <td class="border-[2px] border-black p-3 text-lg">4 M</td>
+              <td class="border-[2px] border-black p-3 text-lg">2 M</td>
+              <td class="border-[2px] border-black p-3 text-lg">1 M</td>
+            </tr>
+            <tr>
+              <td class="border-[2px] border-black p-3 bg-gray-100 uppercase text-xs">Solution Volume (L)</td>
+              <td class="border-[2px] border-black p-3 text-lg">0.20 L</td>
+              <td class="border-[2px] border-black p-3 text-lg">0.10 L</td>
+              <td class="border-[2px] border-black p-3 text-lg">0.14 L</td>
+              <td class="border-[2px] border-black p-3 text-lg">0.14 L</td>
+            </tr>
+            <tr data-comment-anchor="q10">
+              <td class="border-[2px] border-black p-3 bg-gray-100 uppercase text-xs">Moles of Solute</td>
+              <td class="border-[2px] border-black p-2 align-top">
+                <textarea data-save="q10_sol1_moles"
+                  class="w-full min-h-[120px] border-none outline-none p-1 text-blue-700 font-bold resize-none bg-transparent"
+                  placeholder="Show work..."></textarea>
+              </td>
+              <td class="border-[2px] border-black p-2 align-top">
+                <textarea data-save="q10_sol2_moles"
+                  class="w-full min-h-[120px] border-none outline-none p-1 text-blue-700 font-bold resize-none bg-transparent"
+                  placeholder="Show work..."></textarea>
+              </td>
+              <td class="border-[2px] border-black p-2 align-top">
+                <textarea data-save="q10_sol3_moles"
+                  class="w-full min-h-[120px] border-none outline-none p-1 text-blue-700 font-bold resize-none bg-transparent"
+                  placeholder="Show work..."></textarea>
+              </td>
+              <td class="border-[2px] border-black p-2 align-top">
+                <textarea data-save="q10_sol4_moles"
+                  class="w-full min-h-[120px] border-none outline-none p-1 text-blue-700 font-bold resize-none bg-transparent"
+                  placeholder="Show work..."></textarea>
+              </td>
+            </tr>
+            <tr data-comment-anchor="q11">
+              <td class="border-[2px] border-black p-3 bg-gray-100 uppercase text-xs">Mass of Solute</td>
+              <td class="border-[2px] border-black p-2 align-top">
+                <textarea data-save="q11_sol1_mass"
+                  class="w-full min-h-[120px] border-none outline-none p-1 text-blue-700 font-bold resize-none bg-transparent"
+                  placeholder="Show work..."></textarea>
+              </td>
+              <td class="border-[2px] border-black p-2 align-top">
+                <textarea data-save="q11_sol2_mass"
+                  class="w-full min-h-[120px] border-none outline-none p-1 text-blue-700 font-bold resize-none bg-transparent"
+                  placeholder="Show work..."></textarea>
+              </td>
+              <td class="border-[2px] border-black p-2 align-top">
+                <textarea data-save="q11_sol3_mass"
+                  class="w-full min-h-[120px] border-none outline-none p-1 text-blue-700 font-bold resize-none bg-transparent"
+                  placeholder="Show work..."></textarea>
+              </td>
+              <td class="border-[2px] border-black p-2 align-top">
+                <textarea data-save="q11_sol4_mass"
+                  class="w-full min-h-[120px] border-none outline-none p-1 text-blue-700 font-bold resize-none bg-transparent"
+                  placeholder="Show work..."></textarea>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Visual Representations -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 md:p-8 mb-6">
+      <h2 class="text-2xl font-bold mb-4 text-black">Visual Representations</h2>
+      <p class="text-gray-800 leading-relaxed mb-6 font-medium">Use the sliders below each shape to show the amount of
+        solute and volume of solvent used in each solution to create a visual representation. Use these visual
+        representations to give you a better sense of the purpose of this lab.</p>
+
+      <div>
+        <table class="w-full border-collapse border-[3px] border-black text-center">
+          <thead>
+            <tr class="bg-gray-200 font-bold uppercase tracking-wider text-sm">
+              <th class="bg-white border-b-[2px] border-r-[2px] border-black p-4 w-1/5"
+                style="border-top: #ffffff; border-left: #ffffff;"></th>
+              <th class="border-[2px] border-black p-4">Solution #1</th>
+              <th class="border-[2px] border-black p-4">Solution #2</th>
+              <th class="border-[2px] border-black p-4">Solution #3</th>
+              <th class="border-[2px] border-black p-4">Solution #4</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Mass of Solute Row -->
+            <tr data-comment-anchor="q12">
+              <td class="border-[2px] border-black p-4 bg-gray-100 font-bold uppercase text-xs w-32">
+                <div class="flex items-center justify-center h-full text-center">MASS OF SOLUTE</div>
+              </td>
+              <!-- Solution 1 -->
+              <td class="border-[2px] border-black p-4 align-top">
+                <div class="widget-mass flex flex-col items-center w-[210px] mx-auto">
+                  <svg width="210" height="265" viewBox="0 0 903 1136" xmlns="http://www.w3.org/2000/svg" class="block"
+                    style="transform: translateX(-25px);">
+                    <g transform="translate(-1535 -1485)">
+                      <path class="fill-path" fill="#ff4a4a" d="" />
+                      <g>
+                        <text fill="#000000" font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                          transform="matrix(1 0 0 1 1703.18 2382)">5 g</text>
+                        <path d="M0 0 571.654 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1860.5 1572.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 2557.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 2506.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 2454.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 2402.5)" />
+                        <path d="M0 0 571.654 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1860.5 2350.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 2298.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 2247.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 2195.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 2039.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 1936.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 2143.5)" />
+                        <path d="M0 0 571.654 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1860.5 2091.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 1988.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 1884.5)" />
+                        <path d="M0 0 571.654 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1860.5 1832.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 1780.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 1729.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 1677.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 1625.5)" />
+                        <rect x="1912" y="1572" width="519" height="1039" stroke="#000000" stroke-width="13.75"
+                          fill="none" />
+                        <text fill="#000000" font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                          transform="matrix(1 0 0 1 1654.48 2119)">10 g</text>
+                        <text fill="#000000" font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                          transform="matrix(1 0 0 1 1654.48 1860)">15 g</text>
+                        <text fill="#000000" font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                          transform="matrix(1 0 0 1 1654.48 1599)">20 g</text>
+                      </g>
+                    </g>
+                  </svg>
+                  <div class="w-[140px] mt-2 flex justify-center" style="transform: translateX(18px);">
+                    <input type="range" data-save="q12_sol1_mass" class="value-slider cursor-pointer w-full" min="0"
+                      max="20" step="0.1" value="0">
+                  </div>
+                </div>
+              </td>
+              <!-- Solution 2 -->
+              <td class="border-[2px] border-black p-4 align-top">
+                <div class="widget-mass flex flex-col items-center w-[210px] mx-auto">
+                  <svg width="210" height="265" viewBox="0 0 903 1136" xmlns="http://www.w3.org/2000/svg" class="block"
+                    style="transform: translateX(-25px);">
+                    <g transform="translate(-1535 -1485)">
+                      <path class="fill-path" fill="#ff4a4a" d="" />
+                      <g>
+                        <text fill="#000000" font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                          transform="matrix(1 0 0 1 1703.18 2382)">5 g</text>
+                        <path d="M0 0 571.654 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1860.5 1572.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 2557.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 2506.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 2454.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 2402.5)" />
+                        <path d="M0 0 571.654 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1860.5 2350.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 2298.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 2247.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 2195.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 2039.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 1936.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 2143.5)" />
+                        <path d="M0 0 571.654 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1860.5 2091.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 1988.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 1884.5)" />
+                        <path d="M0 0 571.654 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1860.5 1832.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 1780.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 1729.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 1677.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 1625.5)" />
+                        <rect x="1912" y="1572" width="519" height="1039" stroke="#000000" stroke-width="13.75"
+                          fill="none" />
+                        <text fill="#000000" font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                          transform="matrix(1 0 0 1 1654.48 2119)">10 g</text>
+                        <text fill="#000000" font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                          transform="matrix(1 0 0 1 1654.48 1860)">15 g</text>
+                        <text fill="#000000" font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                          transform="matrix(1 0 0 1 1654.48 1599)">20 g</text>
+                      </g>
+                    </g>
+                  </svg>
+                  <div class="w-[140px] mt-2 flex justify-center" style="transform: translateX(18px);">
+                    <input type="range" data-save="q12_sol2_mass" class="value-slider cursor-pointer w-full" min="0"
+                      max="20" step="0.1" value="0">
+                  </div>
+                </div>
+              </td>
+              <!-- Solution 3 -->
+              <td class="border-[2px] border-black p-4 align-top">
+                <div class="widget-mass flex flex-col items-center w-[210px] mx-auto">
+                  <svg width="210" height="265" viewBox="0 0 903 1136" xmlns="http://www.w3.org/2000/svg" class="block"
+                    style="transform: translateX(-25px);">
+                    <g transform="translate(-1535 -1485)">
+                      <path class="fill-path" fill="#ff4a4a" d="" />
+                      <g>
+                        <text fill="#000000" font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                          transform="matrix(1 0 0 1 1703.18 2382)">5 g</text>
+                        <path d="M0 0 571.654 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1860.5 1572.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 2557.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 2506.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 2454.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 2402.5)" />
+                        <path d="M0 0 571.654 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1860.5 2350.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 2298.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 2247.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 2195.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 2039.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 1936.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 2143.5)" />
+                        <path d="M0 0 571.654 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1860.5 2091.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 1988.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 1884.5)" />
+                        <path d="M0 0 571.654 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1860.5 1832.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 1780.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 1729.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 1677.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 1625.5)" />
+                        <rect x="1912" y="1572" width="519" height="1039" stroke="#000000" stroke-width="13.75"
+                          fill="none" />
+                        <text fill="#000000" font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                          transform="matrix(1 0 0 1 1654.48 2119)">10 g</text>
+                        <text fill="#000000" font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                          transform="matrix(1 0 0 1 1654.48 1860)">15 g</text>
+                        <text fill="#000000" font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                          transform="matrix(1 0 0 1 1654.48 1599)">20 g</text>
+                      </g>
+                    </g>
+                  </svg>
+                  <div class="w-[140px] mt-2 flex justify-center" style="transform: translateX(18px);">
+                    <input type="range" data-save="q12_sol3_mass" class="value-slider cursor-pointer w-full" min="0"
+                      max="20" step="0.1" value="0">
+                  </div>
+                </div>
+              </td>
+              <!-- Solution 4 -->
+              <td class="border-[2px] border-black p-4 align-top">
+                <div class="widget-mass flex flex-col items-center w-[210px] mx-auto">
+                  <svg width="210" height="265" viewBox="0 0 903 1136" xmlns="http://www.w3.org/2000/svg" class="block"
+                    style="transform: translateX(-25px);">
+                    <g transform="translate(-1535 -1485)">
+                      <path class="fill-path" fill="#ff4a4a" d="" />
+                      <g>
+                        <text fill="#000000" font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                          transform="matrix(1 0 0 1 1703.18 2382)">5 g</text>
+                        <path d="M0 0 571.654 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1860.5 1572.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 2557.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 2506.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 2454.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 2402.5)" />
+                        <path d="M0 0 571.654 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1860.5 2350.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 2298.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 2247.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 2195.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 2039.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 1936.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 2143.5)" />
+                        <path d="M0 0 571.654 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1860.5 2091.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 1988.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 1884.5)" />
+                        <path d="M0 0 571.654 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1860.5 1832.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 1780.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 1729.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 1677.5)" />
+                        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 1912.5 1625.5)" />
+                        <rect x="1912" y="1572" width="519" height="1039" stroke="#000000" stroke-width="13.75"
+                          fill="none" />
+                        <text fill="#000000" font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                          transform="matrix(1 0 0 1 1654.48 2119)">10 g</text>
+                        <text fill="#000000" font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                          transform="matrix(1 0 0 1 1654.48 1860)">15 g</text>
+                        <text fill="#000000" font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                          transform="matrix(1 0 0 1 1654.48 1599)">20 g</text>
+                      </g>
+                    </g>
+                  </svg>
+                  <div class="w-[140px] mt-2 flex justify-center" style="transform: translateX(18px);">
+                    <input type="range" data-save="q12_sol4_mass" class="value-slider cursor-pointer w-full" min="0"
+                      max="20" step="0.1" value="0">
+                  </div>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Volume of Solution Row -->
+            <tr data-comment-anchor="q13">
+              <td class="border-[2px] border-black p-4 bg-gray-100 font-bold uppercase text-xs w-32">
+                <div class="flex items-center justify-center h-full text-center">VOLUME OF SOLUTION</div>
+              </td>
+              <!-- Solution 1 -->
+              <td class="border-[2px] border-black p-4 align-top">
+                <div class="widget-cup flex flex-col items-center w-[175px] mx-auto">
+                  <svg width="175" height="265" viewBox="0 0 702 1059" xmlns="http://www.w3.org/2000/svg" class="block">
+                    <g transform="translate(-2543 -540)">
+                      <path class="fill-path" fill="#48fafa" d="" />
+                      <g>
+                        <path d="M0 0 90.9449 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 1530.5)" />
+                        <path d="M0 0 96.1417 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 1473.5)" />
+                        <path d="M0 0 102.638 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 1418.5)" />
+                        <path d="M0 0 106.535 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 1365.5)" />
+                        <path d="M0 0 155.906 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3005.5 1314.5)" />
+                        <path d="M0 0 122.126 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 1265.5)" />
+                        <path d="M0 0 126.024 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 1218.5)" />
+                        <path d="M0 0 129.921 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 1173.5)" />
+                        <path d="M0 0 133.819 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 1127.5)" />
+                        <path d="M0 0 177.992 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3005.5 1084.5)" />
+                        <path d="M0 0 142.913 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 1043.5)" />
+                        <path d="M0 0 145.512 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 1003.5)" />
+                        <path d="M0 0 149.409 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 962.5)" />
+                        <path d="M0 0 153.307 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 925.5)" />
+                        <path d="M0 0 196.181 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3005.5 887.5)" />
+                        <path d="M0 0 161.102 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 849.5)" />
+                        <path d="M0 0 163.701 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 814.5)" />
+                        <path d="M0 0 167.598 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 779.5)" />
+                        <path d="M0 0 170.197 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 744.5)" />
+                        <path d="M0 0 213.071 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3005.5 710.5)" />
+                        <path d="M0 0 176.693 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 678.5)" />
+                        <path d="M0 0 179.291 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 645.5)" />
+                        <path d="M0 0 183.189 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 614.5)" />
+                        <path d="M0 0 185.787 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 583.5)" />
+                        <text fill="#000000" font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                          transform="matrix(1 0 0 1 2713.51 1344)">50 mL</text>
+                        <text fill="#000000" font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                          transform="matrix(1 0 0 1 2665.25 1118)">100 mL</text>
+                        <path d="M3234 552 3136.71 1591 2681.29 1591 2584 552Z" stroke="#000000" stroke-width="13.75"
+                          fill="none" />
+                        <text fill="#000000" font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                          transform="matrix(1 0 0 1 2665.25 917)">150 mL</text>
+                        <text fill="#000000" font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                          transform="matrix(1 0 0 1 2665.25 744)">200 mL</text>
+                      </g>
+                    </g>
+                  </svg>
+                  <div class="w-[130px] mt-2 flex justify-center" style="transform: translateX(5px);">
+                    <input type="range" data-save="q13_sol1_vol" class="value-slider cursor-pointer w-full" min="0"
+                      max="250" step="0.1" value="0">
+                  </div>
+                </div>
+              </td>
+              <!-- Solution 2 -->
+              <td class="border-[2px] border-black p-4 align-top">
+                <div class="widget-cup flex flex-col items-center w-[175px] mx-auto">
+                  <svg width="175" height="265" viewBox="0 0 702 1059" xmlns="http://www.w3.org/2000/svg" class="block">
+                    <g transform="translate(-2543 -540)">
+                      <path class="fill-path" fill="#48fafa" d="" />
+                      <g>
+                        <path d="M0 0 90.9449 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 1530.5)" />
+                        <path d="M0 0 96.1417 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 1473.5)" />
+                        <path d="M0 0 102.638 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 1418.5)" />
+                        <path d="M0 0 106.535 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 1365.5)" />
+                        <path d="M0 0 155.906 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3005.5 1314.5)" />
+                        <path d="M0 0 122.126 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 1265.5)" />
+                        <path d="M0 0 126.024 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 1218.5)" />
+                        <path d="M0 0 129.921 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 1173.5)" />
+                        <path d="M0 0 133.819 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 1127.5)" />
+                        <path d="M0 0 177.992 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3005.5 1084.5)" />
+                        <path d="M0 0 142.913 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 1043.5)" />
+                        <path d="M0 0 145.512 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 1003.5)" />
+                        <path d="M0 0 149.409 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 962.5)" />
+                        <path d="M0 0 153.307 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 925.5)" />
+                        <path d="M0 0 196.181 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3005.5 887.5)" />
+                        <path d="M0 0 161.102 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 849.5)" />
+                        <path d="M0 0 163.701 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 814.5)" />
+                        <path d="M0 0 167.598 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 779.5)" />
+                        <path d="M0 0 170.197 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 744.5)" />
+                        <path d="M0 0 213.071 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3005.5 710.5)" />
+                        <path d="M0 0 176.693 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 678.5)" />
+                        <path d="M0 0 179.291 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 645.5)" />
+                        <path d="M0 0 183.189 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 614.5)" />
+                        <path d="M0 0 185.787 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 583.5)" />
+                        <text fill="#000000" font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                          transform="matrix(1 0 0 1 2713.51 1344)">50 mL</text>
+                        <text fill="#000000" font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                          transform="matrix(1 0 0 1 2665.25 1118)">100 mL</text>
+                        <path d="M3234 552 3136.71 1591 2681.29 1591 2584 552Z" stroke="#000000" stroke-width="13.75"
+                          fill="none" />
+                        <text fill="#000000" font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                          transform="matrix(1 0 0 1 2665.25 917)">150 mL</text>
+                        <text fill="#000000" font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                          transform="matrix(1 0 0 1 2665.25 744)">200 mL</text>
+                      </g>
+                    </g>
+                  </svg>
+                  <div class="w-[130px] mt-2 flex justify-center" style="transform: translateX(5px);">
+                    <input type="range" data-save="q13_sol2_vol" class="value-slider cursor-pointer w-full" min="0"
+                      max="250" step="0.1" value="0">
+                  </div>
+                </div>
+              </td>
+              <!-- Solution 3 -->
+              <td class="border-[2px] border-black p-4 align-top">
+                <div class="widget-cup flex flex-col items-center w-[175px] mx-auto">
+                  <svg width="175" height="265" viewBox="0 0 702 1059" xmlns="http://www.w3.org/2000/svg" class="block">
+                    <g transform="translate(-2543 -540)">
+                      <path class="fill-path" fill="#48fafa" d="" />
+                      <g>
+                        <path d="M0 0 90.9449 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 1530.5)" />
+                        <path d="M0 0 96.1417 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 1473.5)" />
+                        <path d="M0 0 102.638 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 1418.5)" />
+                        <path d="M0 0 106.535 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 1365.5)" />
+                        <path d="M0 0 155.906 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3005.5 1314.5)" />
+                        <path d="M0 0 122.126 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 1265.5)" />
+                        <path d="M0 0 126.024 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 1218.5)" />
+                        <path d="M0 0 129.921 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 1173.5)" />
+                        <path d="M0 0 133.819 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 1127.5)" />
+                        <path d="M0 0 177.992 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3005.5 1084.5)" />
+                        <path d="M0 0 142.913 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 1043.5)" />
+                        <path d="M0 0 145.512 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 1003.5)" />
+                        <path d="M0 0 149.409 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 962.5)" />
+                        <path d="M0 0 153.307 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 925.5)" />
+                        <path d="M0 0 196.181 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3005.5 887.5)" />
+                        <path d="M0 0 161.102 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 849.5)" />
+                        <path d="M0 0 163.701 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 814.5)" />
+                        <path d="M0 0 167.598 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 779.5)" />
+                        <path d="M0 0 170.197 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 744.5)" />
+                        <path d="M0 0 213.071 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3005.5 710.5)" />
+                        <path d="M0 0 176.693 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 678.5)" />
+                        <path d="M0 0 179.291 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 645.5)" />
+                        <path d="M0 0 183.189 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 614.5)" />
+                        <path d="M0 0 185.787 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 583.5)" />
+                        <text fill="#000000" font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                          transform="matrix(1 0 0 1 2713.51 1344)">50 mL</text>
+                        <text fill="#000000" font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                          transform="matrix(1 0 0 1 2665.25 1118)">100 mL</text>
+                        <path d="M3234 552 3136.71 1591 2681.29 1591 2584 552Z" stroke="#000000" stroke-width="13.75"
+                          fill="none" />
+                        <text fill="#000000" font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                          transform="matrix(1 0 0 1 2665.25 917)">150 mL</text>
+                        <text fill="#000000" font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                          transform="matrix(1 0 0 1 2665.25 744)">200 mL</text>
+                      </g>
+                    </g>
+                  </svg>
+                  <div class="w-[130px] mt-2 flex justify-center" style="transform: translateX(5px);">
+                    <input type="range" data-save="q13_sol3_vol" class="value-slider cursor-pointer w-full" min="0"
+                      max="250" step="0.1" value="0">
+                  </div>
+                </div>
+              </td>
+              <!-- Solution 4 -->
+              <td class="border-[2px] border-black p-4 align-top">
+                <div class="widget-cup flex flex-col items-center w-[175px] mx-auto">
+                  <svg width="175" height="265" viewBox="0 0 702 1059" xmlns="http://www.w3.org/2000/svg" class="block">
+                    <g transform="translate(-2543 -540)">
+                      <path class="fill-path" fill="#48fafa" d="" />
+                      <g>
+                        <path d="M0 0 90.9449 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 1530.5)" />
+                        <path d="M0 0 96.1417 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 1473.5)" />
+                        <path d="M0 0 102.638 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 1418.5)" />
+                        <path d="M0 0 106.535 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 1365.5)" />
+                        <path d="M0 0 155.906 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3005.5 1314.5)" />
+                        <path d="M0 0 122.126 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 1265.5)" />
+                        <path d="M0 0 126.024 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 1218.5)" />
+                        <path d="M0 0 129.921 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 1173.5)" />
+                        <path d="M0 0 133.819 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 1127.5)" />
+                        <path d="M0 0 177.992 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3005.5 1084.5)" />
+                        <path d="M0 0 142.913 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 1043.5)" />
+                        <path d="M0 0 145.512 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 1003.5)" />
+                        <path d="M0 0 149.409 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 962.5)" />
+                        <path d="M0 0 153.307 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 925.5)" />
+                        <path d="M0 0 196.181 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3005.5 887.5)" />
+                        <path d="M0 0 161.102 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 849.5)" />
+                        <path d="M0 0 163.701 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 814.5)" />
+                        <path d="M0 0 167.598 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 779.5)" />
+                        <path d="M0 0 170.197 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 744.5)" />
+                        <path d="M0 0 213.071 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3005.5 710.5)" />
+                        <path d="M0 0 176.693 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 678.5)" />
+                        <path d="M0 0 179.291 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 645.5)" />
+                        <path d="M0 0 183.189 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 614.5)" />
+                        <path d="M0 0 185.787 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                          transform="matrix(1 0 0 -1 3047.5 583.5)" />
+                        <text fill="#000000" font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                          transform="matrix(1 0 0 1 2713.51 1344)">50 mL</text>
+                        <text fill="#000000" font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                          transform="matrix(1 0 0 1 2665.25 1118)">100 mL</text>
+                        <path d="M3234 552 3136.71 1591 2681.29 1591 2584 552Z" stroke="#000000" stroke-width="13.75"
+                          fill="none" />
+                        <text fill="#000000" font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                          transform="matrix(1 0 0 1 2665.25 917)">150 mL</text>
+                        <text fill="#000000" font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                          transform="matrix(1 0 0 1 2665.25 744)">200 mL</text>
+                      </g>
+                    </g>
+                  </svg>
+                  <div class="w-[130px] mt-2 flex justify-center" style="transform: translateX(5px);">
+                    <input type="range" data-save="q13_sol4_vol" class="value-slider cursor-pointer w-full" min="0"
+                      max="250" step="0.1" value="0">
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Data Section -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 md:p-8 mb-6">
+      <h2 class="text-2xl font-bold mb-4 text-black uppercase tracking-tight">Data</h2>
+      <p class="text-gray-800 leading-relaxed mb-6 font-medium">Record the color strength for each solution compared to
+        each other. Then taste each solution and record how strong they taste compared to each other.</p>
+
+      <div>
+        <table class="w-full border-collapse border-[3px] border-black text-center">
+          <thead>
+            <tr class="bg-gray-200 font-bold uppercase tracking-wider text-sm">
+              <th class="bg-white border-b-[2px] border-r-[2px] border-black p-4 w-1/5"
+                style="border-top: #ffffff; border-left: #ffffff;"></th>
+              <th class="border-[2px] border-black p-4">Solution #1</th>
+              <th class="border-[2px] border-black p-4">Solution #2</th>
+              <th class="border-[2px] border-black p-4">Solution #3</th>
+              <th class="border-[2px] border-black p-4">Solution #4</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="relative row-comment-container" data-comment-anchor="q14">
+              <td class="border-[2px] border-black p-4 bg-gray-100 font-bold uppercase text-xs w-32">
+                <div class="flex items-center justify-center h-full text-center">SOLUTION COLOR INTENSITY</div>
+              </td>
+              <td class="border-[2px] border-black p-4 align-middle">
+                <div class="color-widget flex flex-col items-center w-full mx-auto">
+                  <div
+                    class="color-box w-24 h-24 border-2 border-gray-400 bg-white mb-4 rounded shadow-inner transition-colors duration-75">
+                  </div>
+                  <input type="range" data-save="q14_sol1_hue" class="color-slider cursor-pointer w-[80%]" min="0"
+                    max="100" value="0">
+                </div>
+              </td>
+              <td class="border-[2px] border-black p-4 align-middle">
+                <div class="color-widget flex flex-col items-center w-full mx-auto">
+                  <div
+                    class="color-box w-24 h-24 border-2 border-gray-400 bg-white mb-4 rounded shadow-inner transition-colors duration-75">
+                  </div>
+                  <input type="range" data-save="q14_sol2_hue" class="color-slider cursor-pointer w-[80%]" min="0"
+                    max="100" value="0">
+                </div>
+              </td>
+              <td class="border-[2px] border-black p-4 align-middle">
+                <div class="color-widget flex flex-col items-center w-full mx-auto">
+                  <div
+                    class="color-box w-24 h-24 border-2 border-gray-400 bg-white mb-4 rounded shadow-inner transition-colors duration-75">
+                  </div>
+                  <input type="range" data-save="q14_sol3_hue" class="color-slider cursor-pointer w-[80%]" min="0"
+                    max="100" value="0">
+                </div>
+              </td>
+              <td class="border-[2px] border-black p-4 align-middle">
+                <div class="color-widget flex flex-col items-center w-full mx-auto">
+                  <div
+                    class="color-box w-24 h-24 border-2 border-gray-400 bg-white mb-4 rounded shadow-inner transition-colors duration-75">
+                  </div>
+                  <input type="range" data-save="q14_sol4_hue" class="color-slider cursor-pointer w-[80%]" min="0"
+                    max="100" value="0">
+                </div>
+              </td>
+            </tr>
+            <tr class="relative row-comment-container" data-comment-anchor="q15">
+              <td class="border-[2px] border-black p-4 bg-gray-100 font-bold uppercase text-xs w-32">
+                <div class="flex items-center justify-center h-full text-center">SOLUTION TASTE STRENGTH</div>
+              </td>
+              <td class="border-[2px] border-black p-2 align-top">
+                <textarea data-save="q15_sol1_taste"
+                  class="w-full min-h-[80px] border-none outline-none p-1 text-blue-700 font-bold resize-none bg-transparent"
+                  placeholder="Describe taste..."></textarea>
+              </td>
+              <td class="border-[2px] border-black p-2 align-top">
+                <textarea data-save="q15_sol2_taste"
+                  class="w-full min-h-[80px] border-none outline-none p-1 text-blue-700 font-bold resize-none bg-transparent"
+                  placeholder="Describe taste..."></textarea>
+              </td>
+              <td class="border-[2px] border-black p-2 align-top">
+                <textarea data-save="q15_sol3_taste"
+                  class="w-full min-h-[80px] border-none outline-none p-1 text-blue-700 font-bold resize-none bg-transparent"
+                  placeholder="Describe taste..."></textarea>
+              </td>
+              <td class="border-[2px] border-black p-2 align-top">
+                <textarea data-save="q15_sol4_taste"
+                  class="w-full min-h-[80px] border-none outline-none p-1 text-blue-700 font-bold resize-none bg-transparent"
+                  placeholder="Describe taste..."></textarea>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <!-- Data Analysis Section -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 md:p-8 mb-6">
+      <h2 class="text-2xl font-bold mb-4 text-black tracking-tight">Data Analysis</h2>
+      <p class="text-gray-800 leading-relaxed mb-8 font-medium">Rank the requested property of each solution below.
+        Choose the solution numbers from the dropdowns and select either a "less than" or "equal" sign between each.</p>
+
+      <div class="space-y-8">
+        <!-- SOLUTE MASS -->
+        <div class="border-[3px] border-black relative row-comment-container" data-comment-anchor="q16">
+          <div class="bg-gray-200 p-2 text-center font-bold uppercase border-b-[3px] border-black">SOLUTE MASS</div>
+          <div class="ranking-group p-6 flex flex-wrap items-center justify-center gap-2 md:gap-4">
+            <select data-save="q16_sm_pos1"
+              class="ranking-select border-b border-black/10 outline-none bg-transparent text-blue-700 font-bold px-2 py-1 w-48 text-center appearance-none cursor-pointer text-[2em]">
+              <option value="">--</option>
+              <option value="Solution #1">Solution #1</option>
+              <option value="Solution #2">Solution #2</option>
+              <option value="Solution #3">Solution #3</option>
+              <option value="Solution #4">Solution #4</option>
+            </select>
+            <select data-save="q16_sm_op1"
+              class="border-b border-black/10 outline-none bg-transparent text-blue-700 font-bold px-1 py-1 w-12 text-3xl text-center appearance-none cursor-pointer">
+              <option value="">--</option>
+              <option value="<">&lt;</option>
+              <option value="=">=</option>
+            </select>
+            <select data-save="q16_sm_pos2"
+              class="ranking-select border-b border-black/10 outline-none bg-transparent text-blue-700 font-bold px-2 py-1 w-48 text-center appearance-none cursor-pointer text-[2em]">
+              <option value="">--</option>
+              <option value="Solution #1">Solution #1</option>
+              <option value="Solution #2">Solution #2</option>
+              <option value="Solution #3">Solution #3</option>
+              <option value="Solution #4">Solution #4</option>
+            </select>
+            <select data-save="q16_sm_op2"
+              class="border-b border-black/10 outline-none bg-transparent text-blue-700 font-bold px-1 py-1 w-12 text-3xl text-center appearance-none cursor-pointer">
+              <option value="">--</option>
+              <option value="<">&lt;</option>
+              <option value="=">=</option>
+            </select>
+            <select data-save="q16_sm_pos3"
+              class="ranking-select border-b border-black/10 outline-none bg-transparent text-blue-700 font-bold px-2 py-1 w-48 text-center appearance-none cursor-pointer text-[2em]">
+              <option value="">--</option>
+              <option value="Solution #1">Solution #1</option>
+              <option value="Solution #2">Solution #2</option>
+              <option value="Solution #3">Solution #3</option>
+              <option value="Solution #4">Solution #4</option>
+            </select>
+            <select data-save="q16_sm_op3"
+              class="border-b border-black/10 outline-none bg-transparent text-blue-700 font-bold px-1 py-1 w-12 text-3xl text-center appearance-none cursor-pointer">
+              <option value="">--</option>
+              <option value="<">&lt;</option>
+              <option value="=">=</option>
+            </select>
+            <select data-save="q16_sm_pos4"
+              class="ranking-select border-b border-black/10 outline-none bg-transparent text-blue-700 font-bold px-2 py-1 w-48 text-center appearance-none cursor-pointer text-[2em]">
+              <option value="">--</option>
+              <option value="Solution #1">Solution #1</option>
+              <option value="Solution #2">Solution #2</option>
+              <option value="Solution #3">Solution #3</option>
+              <option value="Solution #4">Solution #4</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- SOLUTE MOLES -->
+        <div class="border-[3px] border-black relative row-comment-container" data-comment-anchor="q17">
+          <div class="bg-gray-200 p-2 text-center font-bold uppercase border-b-[3px] border-black">SOLUTE MOLES</div>
+          <div class="ranking-group p-6 flex flex-wrap items-center justify-center gap-2 md:gap-4">
+            <select data-save="q17_mo_pos1"
+              class="ranking-select border-b border-black/10 outline-none bg-transparent text-blue-700 font-bold px-2 py-1 w-48 text-center appearance-none cursor-pointer text-[2em]">
+              <option value="">--</option>
+              <option value="Solution #1">Solution #1</option>
+              <option value="Solution #2">Solution #2</option>
+              <option value="Solution #3">Solution #3</option>
+              <option value="Solution #4">Solution #4</option>
+            </select>
+            <select data-save="q17_mo_op1"
+              class="border-b border-black/10 outline-none bg-transparent text-blue-700 font-bold px-1 py-1 w-12 text-3xl text-center appearance-none cursor-pointer">
+              <option value="">--</option>
+              <option value="<">&lt;</option>
+              <option value="=">=</option>
+            </select>
+            <select data-save="q17_mo_pos2"
+              class="ranking-select border-b border-black/10 outline-none bg-transparent text-blue-700 font-bold px-2 py-1 w-48 text-center appearance-none cursor-pointer text-[2em]">
+              <option value="">--</option>
+              <option value="Solution #1">Solution #1</option>
+              <option value="Solution #2">Solution #2</option>
+              <option value="Solution #3">Solution #3</option>
+              <option value="Solution #4">Solution #4</option>
+            </select>
+            <select data-save="q17_mo_op2"
+              class="border-b border-black/10 outline-none bg-transparent text-blue-700 font-bold px-1 py-1 w-12 text-3xl text-center appearance-none cursor-pointer">
+              <option value="">--</option>
+              <option value="<">&lt;</option>
+              <option value="=">=</option>
+            </select>
+            <select data-save="q17_mo_pos3"
+              class="ranking-select border-b border-black/10 outline-none bg-transparent text-blue-700 font-bold px-2 py-1 w-48 text-center appearance-none cursor-pointer text-[2em]">
+              <option value="">--</option>
+              <option value="Solution #1">Solution #1</option>
+              <option value="Solution #2">Solution #2</option>
+              <option value="Solution #3">Solution #3</option>
+              <option value="Solution #4">Solution #4</option>
+            </select>
+            <select data-save="q17_mo_op3"
+              class="border-b border-black/10 outline-none bg-transparent text-blue-700 font-bold px-1 py-1 w-12 text-3xl text-center appearance-none cursor-pointer">
+              <option value="">--</option>
+              <option value="<">&lt;</option>
+              <option value="=">=</option>
+            </select>
+            <select data-save="q17_mo_pos4"
+              class="ranking-select border-b border-black/10 outline-none bg-transparent text-blue-700 font-bold px-2 py-1 w-48 text-center appearance-none cursor-pointer text-[2em]">
+              <option value="">--</option>
+              <option value="Solution #1">Solution #1</option>
+              <option value="Solution #2">Solution #2</option>
+              <option value="Solution #3">Solution #3</option>
+              <option value="Solution #4">Solution #4</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- SOLUTION VOLUME -->
+        <div class="border-[3px] border-black relative row-comment-container" data-comment-anchor="q18">
+          <div class="bg-gray-200 p-2 text-center font-bold uppercase border-b-[3px] border-black">SOLUTION VOLUME</div>
+          <div class="ranking-group p-6 flex flex-wrap items-center justify-center gap-2 md:gap-4">
+            <select data-save="q18_sv_pos1"
+              class="ranking-select border-b border-black/10 outline-none bg-transparent text-blue-700 font-bold px-2 py-1 w-48 text-center appearance-none cursor-pointer text-[2em]">
+              <option value="">--</option>
+              <option value="Solution #1">Solution #1</option>
+              <option value="Solution #2">Solution #2</option>
+              <option value="Solution #3">Solution #3</option>
+              <option value="Solution #4">Solution #4</option>
+            </select>
+            <select data-save="q18_sv_op1"
+              class="border-b border-black/10 outline-none bg-transparent text-blue-700 font-bold px-1 py-1 w-12 text-3xl text-center appearance-none cursor-pointer">
+              <option value="">--</option>
+              <option value="<">&lt;</option>
+              <option value="=">=</option>
+            </select>
+            <select data-save="q18_sv_pos2"
+              class="ranking-select border-b border-black/10 outline-none bg-transparent text-blue-700 font-bold px-2 py-1 w-48 text-center appearance-none cursor-pointer text-[2em]">
+              <option value="">--</option>
+              <option value="Solution #1">Solution #1</option>
+              <option value="Solution #2">Solution #2</option>
+              <option value="Solution #3">Solution #3</option>
+              <option value="Solution #4">Solution #4</option>
+            </select>
+            <select data-save="q18_sv_op2"
+              class="border-b border-black/10 outline-none bg-transparent text-blue-700 font-bold px-1 py-1 w-12 text-3xl text-center appearance-none cursor-pointer">
+              <option value="">--</option>
+              <option value="<">&lt;</option>
+              <option value="=">=</option>
+            </select>
+            <select data-save="q18_sv_pos3"
+              class="ranking-select border-b border-black/10 outline-none bg-transparent text-blue-700 font-bold px-2 py-1 w-48 text-center appearance-none cursor-pointer text-[2em]">
+              <option value="">--</option>
+              <option value="Solution #1">Solution #1</option>
+              <option value="Solution #2">Solution #2</option>
+              <option value="Solution #3">Solution #3</option>
+              <option value="Solution #4">Solution #4</option>
+            </select>
+            <select data-save="q18_sv_op3"
+              class="border-b border-black/10 outline-none bg-transparent text-blue-700 font-bold px-1 py-1 w-12 text-3xl text-center appearance-none cursor-pointer">
+              <option value="">--</option>
+              <option value="<">&lt;</option>
+              <option value="=">=</option>
+            </select>
+            <select data-save="q18_sv_pos4"
+              class="ranking-select border-b border-black/10 outline-none bg-transparent text-blue-700 font-bold px-2 py-1 w-48 text-center appearance-none cursor-pointer text-[2em]">
+              <option value="">--</option>
+              <option value="Solution #1">Solution #1</option>
+              <option value="Solution #2">Solution #2</option>
+              <option value="Solution #3">Solution #3</option>
+              <option value="Solution #4">Solution #4</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- SOLUTION CONCENTRATION -->
+        <div class="border-[3px] border-black relative row-comment-container" data-comment-anchor="q19">
+          <div class="bg-gray-200 p-2 text-center font-bold uppercase border-b-[3px] border-black">SOLUTION
+            CONCENTRATION</div>
+          <div class="ranking-group p-6 flex flex-wrap items-center justify-center gap-2 md:gap-4">
+            <select data-save="q19_sc_pos1"
+              class="ranking-select border-b border-black/10 outline-none bg-transparent text-blue-700 font-bold px-2 py-1 w-48 text-center appearance-none cursor-pointer text-[2em]">
+              <option value="">--</option>
+              <option value="Solution #1">Solution #1</option>
+              <option value="Solution #2">Solution #2</option>
+              <option value="Solution #3">Solution #3</option>
+              <option value="Solution #4">Solution #4</option>
+            </select>
+            <select data-save="q19_sc_op1"
+              class="border-b border-black/10 outline-none bg-transparent text-blue-700 font-bold px-1 py-1 w-12 text-3xl text-center appearance-none cursor-pointer">
+              <option value="">--</option>
+              <option value="<">&lt;</option>
+              <option value="=">=</option>
+            </select>
+            <select data-save="q19_sc_pos2"
+              class="ranking-select border-b border-black/10 outline-none bg-transparent text-blue-700 font-bold px-2 py-1 w-48 text-center appearance-none cursor-pointer text-[2em]">
+              <option value="">--</option>
+              <option value="Solution #1">Solution #1</option>
+              <option value="Solution #2">Solution #2</option>
+              <option value="Solution #3">Solution #3</option>
+              <option value="Solution #4">Solution #4</option>
+            </select>
+            <select data-save="q19_sc_op2"
+              class="border-b border-black/10 outline-none bg-transparent text-blue-700 font-bold px-1 py-1 w-12 text-3xl text-center appearance-none cursor-pointer">
+              <option value="">--</option>
+              <option value="<">&lt;</option>
+              <option value="=">=</option>
+            </select>
+            <select data-save="q19_sc_pos3"
+              class="ranking-select border-b border-black/10 outline-none bg-transparent text-blue-700 font-bold px-2 py-1 w-48 text-center appearance-none cursor-pointer text-[2em]">
+              <option value="">--</option>
+              <option value="Solution #1">Solution #1</option>
+              <option value="Solution #2">Solution #2</option>
+              <option value="Solution #3">Solution #3</option>
+              <option value="Solution #4">Solution #4</option>
+            </select>
+            <select data-save="q19_sc_op3"
+              class="border-b border-black/10 outline-none bg-transparent text-blue-700 font-bold px-1 py-1 w-12 text-3xl text-center appearance-none cursor-pointer">
+              <option value="">--</option>
+              <option value="<">&lt;</option>
+              <option value="=">=</option>
+            </select>
+            <select data-save="q19_sc_pos4"
+              class="ranking-select border-b border-black/10 outline-none bg-transparent text-blue-700 font-bold px-2 py-1 w-48 text-center appearance-none cursor-pointer text-[2em]">
+              <option value="">--</option>
+              <option value="Solution #1">Solution #1</option>
+              <option value="Solution #2">Solution #2</option>
+              <option value="Solution #3">Solution #3</option>
+              <option value="Solution #4">Solution #4</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- SOLUTION TASTE STRENGTH -->
+        <div class="border-[3px] border-black relative row-comment-container" data-comment-anchor="q20">
+          <div class="bg-gray-200 p-2 text-center font-bold uppercase border-b-[3px] border-black">SOLUTION TASTE
+            STRENGTH</div>
+          <div class="ranking-group p-6 flex flex-wrap items-center justify-center gap-2 md:gap-4">
+            <select data-save="q20_ts_pos1"
+              class="ranking-select border-b border-black/10 outline-none bg-transparent text-blue-700 font-bold px-2 py-1 w-48 text-center appearance-none cursor-pointer text-[2em]">
+              <option value="">--</option>
+              <option value="Solution #1">Solution #1</option>
+              <option value="Solution #2">Solution #2</option>
+              <option value="Solution #3">Solution #3</option>
+              <option value="Solution #4">Solution #4</option>
+            </select>
+            <select data-save="q20_ts_op1"
+              class="border-b border-black/10 outline-none bg-transparent text-blue-700 font-bold px-1 py-1 w-12 text-3xl text-center appearance-none cursor-pointer">
+              <option value="">--</option>
+              <option value="<">&lt;</option>
+              <option value="=">=</option>
+            </select>
+            <select data-save="q20_ts_pos2"
+              class="ranking-select border-b border-black/10 outline-none bg-transparent text-blue-700 font-bold px-2 py-1 w-48 text-center appearance-none cursor-pointer text-[2em]">
+              <option value="">--</option>
+              <option value="Solution #1">Solution #1</option>
+              <option value="Solution #2">Solution #2</option>
+              <option value="Solution #3">Solution #3</option>
+              <option value="Solution #4">Solution #4</option>
+            </select>
+            <select data-save="q20_ts_op2"
+              class="border-b border-black/10 outline-none bg-transparent text-blue-700 font-bold px-1 py-1 w-12 text-3xl text-center appearance-none cursor-pointer">
+              <option value="">--</option>
+              <option value="<">&lt;</option>
+              <option value="=">=</option>
+            </select>
+            <select data-save="q20_ts_pos3"
+              class="ranking-select border-b border-black/10 outline-none bg-transparent text-blue-700 font-bold px-2 py-1 w-48 text-center appearance-none cursor-pointer text-[2em]">
+              <option value="">--</option>
+              <option value="Solution #1">Solution #1</option>
+              <option value="Solution #2">Solution #2</option>
+              <option value="Solution #3">Solution #3</option>
+              <option value="Solution #4">Solution #4</option>
+            </select>
+            <select data-save="q20_ts_op3"
+              class="border-b border-black/10 outline-none bg-transparent text-blue-700 font-bold px-1 py-1 w-12 text-3xl text-center appearance-none cursor-pointer">
+              <option value="">--</option>
+              <option value="<">&lt;</option>
+              <option value="=">=</option>
+            </select>
+            <select data-save="q20_ts_pos4"
+              class="ranking-select border-b border-black/10 outline-none bg-transparent text-blue-700 font-bold px-2 py-1 w-48 text-center appearance-none cursor-pointer text-[2em]">
+              <option value="">--</option>
+              <option value="Solution #1">Solution #1</option>
+              <option value="Solution #2">Solution #2</option>
+              <option value="Solution #3">Solution #3</option>
+              <option value="Solution #4">Solution #4</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Conclusions Card -->
+    <div class="bg-white rounded-lg shadow-sm border border-purple-200 p-6 md:p-8 mb-6">
+      <h2 class="text-2xl font-bold mb-6 text-purple-700">Conclusions</h2>
+
+      <div class="space-y-10">
+        <div class="flex flex-col gap-3 relative" data-comment-anchor="q21">
+          <label class="font-medium text-gray-800 leading-relaxed">
+            21. Using evidence collected during this lab, explain how two solutions can contain the same number of moles
+            of solute, but have different concentrations.
+          </label>
+          <textarea data-save="q21" rows="2"
+            class="w-full border-b border-black focus:border-purple-600 focus:border-b-2 outline-none py-1 text-blue-700 font-bold leading-relaxed bg-transparent"
+            placeholder="Type your explanation..."></textarea>
+        </div>
+
+        <div class="flex flex-col gap-3 relative" data-comment-anchor="q22">
+          <label class="font-medium text-gray-800 leading-relaxed">
+            22. Using evidence collected during this lab, explain how two solutions can have the same volume, but
+            different concentrations.
+          </label>
+          <textarea data-save="q22" rows="2"
+            class="w-full border-b border-black focus:border-purple-600 focus:border-b-2 outline-none py-1 text-blue-700 font-bold leading-relaxed bg-transparent"
+            placeholder="Type your explanation..."></textarea>
+        </div>
+
+        <div class="flex flex-col gap-3 relative" data-comment-anchor="q23">
+          <label class="font-medium text-gray-800 leading-relaxed">
+            23. Which two solutions tasted the same, or should have tasted the same? Use numerical evidence from the lab
+            to support your answer.
+          </label>
+          <textarea data-save="q23" rows="2"
+            class="w-full border-b border-black focus:border-purple-600 focus:border-b-2 outline-none py-1 text-blue-700 font-bold leading-relaxed bg-transparent"
+            placeholder="Type your answer..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Post-Lab Questions Card -->
+    <div class="bg-white rounded-lg shadow-sm border border-purple-200 p-6 md:p-8 mb-8">
+      <h2 class="text-2xl font-bold mb-6 text-purple-700">Post-Lab Questions</h2>
+
+      <div class="space-y-10">
+        <div class="flex flex-col gap-3 relative" data-comment-anchor="q24">
+          <label class="font-medium text-gray-800 leading-relaxed">
+            24. What is the molarity of a 2-liter sample of solution that contains 28 grams of KOH? Show all
+            calculations with equations and units.
+          </label>
+          <textarea data-save="q24" rows="2"
+            class="w-full border-b border-black focus:border-purple-600 focus:border-b-2 outline-none py-1 text-blue-700 font-bold leading-relaxed bg-transparent"
+            placeholder="Show work..."></textarea>
+        </div>
+
+        <div class="flex flex-col gap-3 relative" data-comment-anchor="q25">
+          <label class="font-medium text-gray-800 leading-relaxed">
+            25. How many moles of KNO<sub>3</sub> are required to make a 0.50-liter sample with a concentration of 2.0
+            M? Show all calculations with equations and units.
+          </label>
+          <textarea data-save="q25" rows="2"
+            class="w-full border-b border-black focus:border-purple-600 focus:border-b-2 outline-none py-1 text-blue-700 font-bold leading-relaxed bg-transparent"
+            placeholder="Show work..."></textarea>
+        </div>
+
+        <div class="flex flex-col gap-3 relative" data-comment-anchor="q26">
+          <label class="font-medium text-gray-800 leading-relaxed">
+            26. Which is more concentrated, an 8 molar 200-mL sample of NaOH or a 4 molar 500-mL sample of NaOH?
+            Explain.
+          </label>
+          <textarea data-save="q26" rows="2"
+            class="w-full border-b border-black focus:border-purple-600 focus:border-b-2 outline-none py-1 text-blue-700 font-bold leading-relaxed bg-transparent"
+            placeholder="Type your explanation..."></textarea>
+        </div>
+
+        <div class="flex flex-col gap-3 relative" data-comment-anchor="q27">
+          <label class="font-medium text-gray-800 leading-relaxed">
+            27. Explain if it is possible for a solution with a smaller volume and greater amount of solute to be less
+            concentrated than a solution with greater volume and a smaller amount of solute.
+          </label>
+          <textarea data-save="q27" rows="2"
+            class="w-full border-b border-black focus:border-purple-600 focus:border-b-2 outline-none py-1 text-blue-700 font-bold leading-relaxed bg-transparent"
+            placeholder="Type your explanation..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Submit Button card removed as requested -->
+  </div>
+
+  <script>
+    const databaseURL = "https://scigarage-default-rtdb.firebaseio.com";
+    let studentConfig = null;
+    let localState = {};
+    let saveDebounces = {};
+    let commentVisibility = {};
+
+    /* ==============================================================
+       1. Initialization & Core Logic
+       ============================================================== */
+    function initGas() {
+      if (typeof google !== 'undefined' && google.script) {
+        document.getElementById('gas-loader').classList.remove('hidden');
+        google.script.run
+          .withSuccessHandler(data => {
+            studentConfig = data;
+            const liveData = data.savedState || {};
+            Object.assign(localState, liveData); // Restore saved data into local memory
+            window.studentLocked = (liveData && liveData.isLocked === true);
+
+            const handledPrefixes = new Set();
+            document.querySelectorAll('[data-save]').forEach(el => {
+              const id = el.getAttribute('data-save');
+              const prefix = id.split('_')[0];
+              if (!localState[id]) localState[id] = {};
+
+              if (el.tagName === 'TEXTAREA' || el.type === 'text' || el.type === 'range' || el.tagName === 'SELECT') {
+                el.value = localState[id].selection || (el.type === 'range' ? 0 : "");
+
+                if (el.type === 'range') {
+                  const event = new Event('input');
+                  el.dispatchEvent(event);
+                }
+
+                if (el.type === 'range' || el.tagName === 'SELECT') {
+                  el.addEventListener('change', (e) => saveAnswer(id, e.target.value));
+                } else {
+                  el.addEventListener('input', (e) => {
+                    debouncedSave(id, e.target.value);
+                    if (el.tagName === 'TEXTAREA') autoResize.call(e.target);
+                  });
+                }
+                if (el.tagName === 'TEXTAREA') autoResize.call(el);
+              }
+
+              // Inject Teacher Comment UI once per prefix (q1, q10, q15 etc)
+              if (!handledPrefixes.has(prefix)) {
+                let anchor = el.closest(`[data-comment-anchor="${prefix}"]`) ||
+                  el.closest('tr') ||
+                  el.closest('.rounded-lg');
+                if (anchor) {
+                  // If the anchor is a table row, inject into the last cell to avoid browser hoisting
+                  let target = anchor;
+                  if (anchor.tagName === 'TR') {
+                    target = anchor.cells[anchor.cells.length - 1];
+                  }
+                  target.classList.add('relative');
+                  injectCommentUI(target, prefix);
+                  handledPrefixes.add(prefix);
+                }
+              }
+            });
+
+            // Trigger ranking updates after all values are set from RTDB
+            document.querySelectorAll('.ranking-group').forEach(g => updateRankingOptions(g));
+
+            // Render initial comments
+            Object.keys(liveData).forEach(key => {
+              const prefix = key.split('_')[0];
+              if (typeof liveData[key] === 'object' && liveData[key] !== null && 'teacherComment' in liveData[key]) {
+                renderCommentUI(prefix, liveData[key]);
+              }
+            });
+
+            document.getElementById('gas-loader').classList.add('hidden');
+            checkLockStatus();
+            startSSEListener();
+          })
+          .withFailureHandler(err => {
+            const loader = document.getElementById('gas-loader');
+            loader.innerText = "Error: " + err.message;
+            loader.className = "absolute top-4 right-4 text-xs font-bold text-red-600 bg-red-50 px-3 py-1 rounded-full border border-red-200 animate-none";
+          })
+          .getStudentInitialData();
+      }
+    }
+
+    function handleFinalSubmit() {
+      if (!confirm("Are you sure you want to finalize your submission? This will lock your assignment.")) return;
+
+      google.script.run
+        .withSuccessHandler(res => {
+          alert("Submission successful! Your assignment is now locked.");
+          window.studentLocked = true;
+          checkLockStatus();
+        })
+        .withFailureHandler(err => alert("Error: " + err.message))
+        .gradeSubmission(studentConfig);
+    }
+
+    function autoResize() {
+      this.style.height = 'auto';
+      this.style.height = this.scrollHeight + 'px';
+    }
+
+    /* ==============================================================
+       2. Data Persistence (RTDB)
+       ============================================================== */
+    function debouncedSave(id, value) {
+      if (saveDebounces[id]) clearTimeout(saveDebounces[id]);
+      saveDebounces[id] = setTimeout(() => saveAnswer(id, value), 1500);
+    }
+
+    function saveAnswer(id, selection) {
+      if (!localState[id]) localState[id] = {};
+      localState[id].selection = selection;
+      if (!studentConfig || !studentConfig.basePaths) return;
+      studentConfig.basePaths.forEach(path => {
+        fetch(`${databaseURL}/${path}.json`, {
+          method: 'PATCH',
+          body: JSON.stringify({ [`${id}/selection`]: selection, lastUpdated: Date.now() })
+        });
+      });
+    }
+
+    function startSSEListener() {
+      if (!studentConfig || !studentConfig.basePaths) return;
+      studentConfig.basePaths.forEach(basePath => {
+        const url = `${databaseURL}/${basePath}.json`;
+        const eventSource = new EventSource(url);
+        const handleUpdate = (e) => {
+          const payload = JSON.parse(e.data);
+          const pathEvent = payload.path || "";
+          const data = payload.data;
+          if (pathEvent === "/") {
+            window.studentLocked = data && data.isLocked === true;
+            if (data) {
+              Object.keys(data).forEach(key => {
+                if (typeof data[key] === 'object' && data[key] !== null) renderCommentUI(key.split('_')[0], data[key]);
+              });
+            }
+          } else if (pathEvent === "/isLocked") {
+            window.studentLocked = data;
+          } else {
+            const parts = pathEvent.split('/').filter(p => p);
+            if (parts.length >= 1) {
+              const qId = parts[0];
+              if (data !== null && typeof data === 'object') renderCommentUI(qId.split('_')[0], data);
+            }
+          }
+          checkLockStatus();
+        };
+        eventSource.addEventListener('put', handleUpdate);
+        eventSource.addEventListener('patch', handleUpdate);
+      });
+    }
+
+    function checkLockStatus() {
+      const locked = window.studentLocked;
+      document.querySelectorAll('[data-save]').forEach(el => el.disabled = locked);
+      let lockMsg = document.getElementById('lock-message-container');
+      if (locked && !lockMsg) {
+        lockMsg = document.createElement('div');
+        lockMsg.id = 'lock-message-container';
+        lockMsg.className = 'bg-white rounded-lg shadow-sm border-l-8 border-red-500 p-8 mb-4 text-center mt-4';
+        lockMsg.innerHTML = '<h2 class="text-2xl font-bold text-gray-800 mb-2">Assignment Closed</h2><p class="text-gray-600 leading-relaxed"><strong>This assignment is not yet open.</strong> You may look it over, but you cannot yet edit it.</p>';
+        document.querySelector('.form-header-bar').insertAdjacentElement('afterend', lockMsg);
+      } else if (!locked && lockMsg) {
+        lockMsg.remove();
+      }
+    }
+
+    /* ==============================================================
+       3. Teacher Comments UI (Prefix-based Pills)
+       ============================================================== */
+    function injectCommentUI(anchor, qPrefix) {
+      if (!anchor) return;
+      const container = document.createElement('div');
+      container.className = "absolute -right-4 top-1/2 -translate-y-1/2 translate-x-full flex flex-col items-start z-20 pointer-events-none";
+      container.style.minWidth = "220px";
+      container.innerHTML = `
+        <button data-comment-btn="${qPrefix}" onclick="toggleStudentCommentArea('${qPrefix}')" class="hidden text-[10px] font-bold px-3 py-1 border-2 rounded-full transition-all bg-white border-purple-300 text-purple-600 opacity-90 hover:opacity-100 items-center shadow-md pointer-events-auto whitespace-nowrap">
+             💡 Teacher Comment
+        </button>
+        <div data-comment-area="${qPrefix}" class="hidden mt-2 p-3 bg-white border-2 border-purple-200 rounded-xl shadow-xl pointer-events-auto w-full relative">
+             <button onclick="toggleStudentCommentArea('${qPrefix}')" class="absolute top-2 right-2 text-gray-400 hover:text-red-500 transition-colors">
+               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+             </button>
+             <div class="text-[10px] font-bold text-purple-400 uppercase tracking-widest mb-2 flex items-center gap-1 border-b border-purple-50 pb-1 pr-6">
+               <span class="w-2 h-2 rounded-full bg-purple-500"></span> Teacher Feedback
+             </div>
+             <div data-comment-text="${qPrefix}" class="text-gray-800 font-bold whitespace-pre-wrap leading-relaxed" style="font-size: 14px;"></div>
+        </div>
+      `;
+      anchor.appendChild(container);
+    }
+
+    function renderCommentUI(prefix, qData) {
+      const btn = document.querySelector(`[data-comment-btn="${prefix}"]`);
+      const textDiv = document.querySelector(`[data-comment-text="${prefix}"]`);
+      if (!btn || !textDiv) return;
+
+      // Merge incoming data with what we already know to avoid disappearing on partial updates (like marking as read)
+      if (!localState[prefix]) localState[prefix] = { teacherComment: "", commentUnread: false };
+
+      // Only update if the property exists in the incoming qData
+      if (qData.teacherComment !== undefined) localState[prefix].teacherComment = qData.teacherComment;
+      if (qData.commentUnread !== undefined) localState[prefix].commentUnread = qData.commentUnread;
+
+      const currentComment = localState[prefix].teacherComment;
+
+      // CRITICAL: Only hide if we explicitly have an empty string or null for teacherComment.
+      // If teacherComment is undefined in this specific qData payload, we keep the previous state.
+      if (currentComment === null || currentComment.trim() === "") {
+        btn.classList.add('hidden');
+        btn.classList.remove('flex');
+        return;
+      }
+
+      btn.classList.remove('hidden');
+      btn.classList.add('flex');
+      textDiv.innerHTML = currentComment;
+
+      const isUnread = localState[prefix].commentUnread === true;
+      if (!isUnread) {
+        btn.classList.add('bg-gray-50', 'border-gray-200', 'text-gray-400');
+        btn.classList.remove('border-purple-300', 'text-purple-600', 'animate-bounce');
+      } else {
+        btn.classList.add('bg-white', 'border-purple-300', 'text-purple-600', 'animate-bounce');
+        btn.classList.remove('bg-gray-50', 'border-gray-200', 'text-gray-400', 'animate-bounce');
+      }
+    }
+
+    function toggleStudentCommentArea(prefix) {
+      const area = document.querySelector(`[data-comment-area="${prefix}"]`);
+      const btn = document.querySelector(`[data-comment-btn="${prefix}"]`);
+      if (!area || !btn) return;
+
+      const willBeVisible = area.classList.contains('hidden');
+      area.classList.toggle('hidden');
+
+      // If we are opening it OR closing it, it means the student has interacted with it.
+      // We should stop the bounce and mark as read.
+      btn.classList.remove('animate-bounce');
+      btn.classList.add('bg-gray-50', 'border-gray-200', 'text-gray-400');
+      btn.classList.remove('border-purple-300', 'text-purple-600');
+
+      if (studentConfig && studentConfig.basePaths) {
+        studentConfig.basePaths.forEach(path => {
+          fetch(`${databaseURL}/${path}/${prefix}.json`, { method: 'PATCH', body: JSON.stringify({ commentUnread: false }) });
+        });
+      }
+    }
+
+    /* ==============================================================
+       4. Visual Enhancements & Sliders
+       ============================================================== */
+    function initMagnifier() {
+      document.querySelectorAll('body > .magnifier').forEach(el => el.remove());
+      const magnifier = document.createElement('div');
+      magnifier.className = 'magnifier';
+      document.body.appendChild(magnifier);
+      const containers = document.querySelectorAll('.zoom-container');
+      containers.forEach(container => {
+        const img = container.querySelector('img');
+        if (!img) return;
+        container.addEventListener('mouseenter', () => {
+          magnifier.style.display = 'block';
+          magnifier.style.backgroundImage = `url('${img.src}')`;
+          magnifier.style.backgroundSize = `${container.offsetWidth * 3}px auto`;
+        });
+        container.addEventListener('mouseleave', () => magnifier.style.display = 'none');
+        container.addEventListener('mousemove', (e) => {
+          magnifier.style.left = `${e.pageX - magnifier.offsetWidth / 2}px`;
+          magnifier.style.top = `${e.pageY - magnifier.offsetHeight / 2}px`;
+          const imgRect = img.getBoundingClientRect();
+          const px = ((e.clientX - imgRect.left) / imgRect.width) * 100;
+          const py = ((e.clientY - imgRect.top) / imgRect.height) * 100;
+          magnifier.style.backgroundPosition = `${px}% ${py}%`;
+        });
+      });
+    }
+
+    function updateMassFill(widget, value) {
+      const waterPath = widget.querySelector('.fill-path');
+      const X_LEFT = 1912, X_RIGHT = 2431, Y_BOTTOM = 2611;
+      const PIXELS_PER_GRAM = (Y_BOTTOM - 1572) / 20;
+      if (parseFloat(value) === 0) { waterPath.setAttribute('d', ''); return; }
+      const yPos = Y_BOTTOM - (parseFloat(value) * PIXELS_PER_GRAM);
+      waterPath.setAttribute('d', `M ${X_LEFT} ${Y_BOTTOM} L ${X_RIGHT} ${Y_BOTTOM} L ${X_RIGHT} ${yPos} L ${X_LEFT} ${yPos} Z`);
+    }
+
+    function updateCupFill(widget, value) {
+      const waterPath = widget.querySelector('.fill-path');
+      const yMarks = [1591, 1530.5, 1473.5, 1418.5, 1365.5, 1314.5, 1265.5, 1218.5, 1173.5, 1127.5, 1084.5, 1043.5, 1003.5, 962.5, 925.5, 887.5, 849.5, 814.5, 779.5, 744.5, 710.5, 678.5, 645.5, 614.5, 583.5, 552];
+      const X_BOT_LEFT = 2681.29, X_BOT_RIGHT = 3136.71, Y_BOTTOM = 1591, TAPER_SLOPE = 0.093638;
+      const volume = parseFloat(value);
+      if (volume === 0) { waterPath.setAttribute('d', ''); return; }
+      const lowerIndex = Math.floor(volume / 10), upperIndex = Math.ceil(volume / 10);
+      let yPos = (lowerIndex === upperIndex) ? yMarks[lowerIndex] : yMarks[lowerIndex] + ((volume % 10) / 10) * (yMarks[upperIndex] - yMarks[lowerIndex]);
+      const xLeftEdge = X_BOT_LEFT + ((yPos - Y_BOTTOM) * TAPER_SLOPE);
+      const xRightEdge = X_BOT_RIGHT - ((yPos - Y_BOTTOM) * TAPER_SLOPE);
+      waterPath.setAttribute('d', `M ${X_BOT_LEFT} ${Y_BOTTOM} L ${X_BOT_RIGHT} ${Y_BOTTOM} L ${xRightEdge} ${yPos} L ${xLeftEdge} ${yPos} Z`);
+    }
+
+    function updateColor(widget, value) {
+      const colorBox = widget.querySelector('.color-box');
+      const gbValue = Math.round(255 - (181 * (parseInt(value, 10) / 100)));
+      colorBox.style.backgroundColor = `rgb(255, ${gbValue}, ${gbValue})`;
+    }
+
+    function updateRankingOptions(group) {
+      const selects = Array.from(group.querySelectorAll('.ranking-select'));
+      const selectedValues = selects.map(s => s.value).filter(v => v !== "");
+      selects.forEach(select => {
+        const currentValue = select.value;
+        Array.from(select.options).forEach(option => {
+          if (option.value === "") return;
+          option.disabled = (option.value !== currentValue && selectedValues.includes(option.value));
+        });
+      });
+    }
+
+    window.addEventListener('load', initGas);
+    window.addEventListener('load', () => setTimeout(initMagnifier, 1500));
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('.widget-mass').forEach(w => {
+        const s = w.querySelector('.value-slider');
+        s.addEventListener('input', (e) => updateMassFill(w, e.target.value));
+        updateMassFill(w, s.value);
+      });
+      document.querySelectorAll('.widget-cup').forEach(w => {
+        const s = w.querySelector('.value-slider');
+        s.addEventListener('input', (e) => updateCupFill(w, e.target.value));
+        updateCupFill(w, s.value);
+      });
+      document.querySelectorAll('.color-widget').forEach(w => {
+        const s = w.querySelector('.color-slider');
+        s.addEventListener('input', (e) => updateColor(w, e.target.value));
+        updateColor(w, s.value);
+      });
+      document.querySelectorAll('.ranking-group').forEach(g => {
+        g.querySelectorAll('.ranking-select').forEach(s => s.addEventListener('change', () => updateRankingOptions(g)));
+        updateRankingOptions(g);
+      });
+    });
+  </script>
+</body>
+
+</html>
