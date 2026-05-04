@@ -6,6 +6,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Lab 18 - Solution Concentration</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/mhchem.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" 
+          onload="renderMathInElement(document.body);"></script>
 
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
@@ -53,6 +58,39 @@
       -moz-text-align-last: center;
       font-size: 2em;
     }
+
+    /* Range slider styling */
+    input[type="range"] {
+      -webkit-appearance: none;
+      background: #a1a1a1;
+      height: 8px;
+      border-radius: 4px;
+      outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      background: #4a4a4a;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid #fff;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    }
+
+
+    /* Teacher Feedback Styling */
+    .student-comment-row {
+      background-color: #faf5ff; /* purple-50 */
+    }
+    .auto-grow-textarea {
+      resize: none; 
+      overflow: hidden; 
+      min-height: 40px;
+    }
+
+
   </style>
 </head>
 
@@ -107,7 +145,7 @@
         <div class="flex-1 border-[3px] border-black p-4 text-center flex flex-col justify-center items-center">
           <h3 class="font-bold mb-4 text-lg">Mathematical Model</h3>
           <div class="flex justify-center items-center gap-6 text-xl">
-            <div class="text-3xl italic font-bold">n = MV</div>
+            <div class="text-2xl italic">n = MV</div>
             <div class="text-left text-sm italic">
               n = moles<br>
               M = Molarity<br>
@@ -117,67 +155,39 @@
         </div>
       </div>
 
-      <p class="text-gray-800 leading-relaxed font-medium">
+      <p class="text-gray-800 leading-relaxed font-medium mb-6">
         This lab requires the preparation of drink mix with specific concentrations. See the example problem below that
         explains how to determine the mass of a solute required to make a solution of desired concentration.
       </p>
-    </div>
 
-    <!-- How to Prepare a Solution of Desired Concentration -->
-    <div class="bg-white rounded-lg shadow-sm border-[3px] border-black p-6 md:p-8 mb-8">
-      <h3 class="font-bold mb-6 text-center text-lg">How to Prepare a Solution of Desired Concentration</h3>
-      <p class="mb-6 font-medium text-gray-800">A 250-mL solution of NaOH with a concentration of 2 M is desired. How
-        would this be prepared?</p>
+      <table class="w-[1000px] mx-auto border-[3px] border-black border-collapse bg-white shadow-sm mb-4">
+        <tr>
+          <td class="p-6 md:p-8">
+            <h3 class="font-bold mb-6 text-center text-lg">How to Prepare a Solution of Desired Concentration</h3>
+            <p class="mb-6 font-medium text-gray-800">A 250-mL solution of NaOH with a concentration of 2 M is desired. How would this be prepared?</p>
 
-      <ol class="list-decimal pl-5 space-y-8 font-medium text-gray-800">
-        <li>
-          Determine the moles of NaOH needed with the mathematical model <span class="italic">n = MV</span>:
-          <div class="text-center mt-6">
-            <div class="text-xl my-2 flex justify-center items-center gap-2">
-              <span class="italic">n = MV &rarr; n = </span>
-              <span class="flex flex-col items-center mx-1">
-                <span class="border-b border-black block px-2 pb-1">2 mol NaOH</span>
-                <span class="block pt-1 relative">
-                  L
-                  <div class="absolute inset-0 flex items-center justify-center">
-                    <div class="w-[120%] h-px bg-black transform -rotate-[45deg]"></div>
-                  </div>
-                </span>
-              </span>
-              <span> &times; 0.250 </span>
-              <span class="relative mx-1">
-                L
-                <div class="absolute inset-0 flex items-center justify-center">
-                  <div class="w-[120%] h-px bg-black transform -rotate-[45deg]"></div>
+            <ol class="list-decimal pl-5 space-y-8 font-medium text-gray-800">
+              <li>
+                Determine the moles of NaOH needed with the mathematical model <span class="italic">n = MV</span>:
+                <div class="text-center mt-6 text-xl">
+                  $$ n=MV\rightarrow n=\frac{\text{2 mol }\ce{NaOH}}{\cancel{\text{L}}}\times\text{0.250 }\cancel{\text{L}}=\text{0.5 mol }\ce{NaOH} $$
                 </div>
-              </span>
-              <span> = 0.5 mol NaOH</span>
-            </div>
-          </div>
-        </li>
-        <li>
-          Determine the mass of NaOH needed using its molar mass (40 g NaOH/ 1 mole NaOH):
-          <div class="text-center mt-6">
-            <div class="text-xl my-2 flex justify-center items-center gap-2">
-              <span>0.5 <span class="relative inline-block px-1">mol NaOH<div
-                    class="absolute inset-0 flex items-center justify-center">
-                    <div class="w-full h-px bg-black transform -rotate-6"></div>
-                  </div></span> &times;</span>
-              <span class="inline-block text-center mx-1"><span class="border-b border-black block pb-1">40 g
-                  NaOH</span><span class="block pt-1 relative">1 mol NaOH<div
-                    class="absolute inset-0 flex items-center justify-center">
-                    <div class="w-full h-px bg-black transform -rotate-6"></div>
-                  </div></span></span>
-              <span>= 20 g NaOH</span>
-            </div>
-          </div>
-        </li>
-        <li>Place a container with graduations on a scale and tare it. Measure the calculated mass from step 2 into the
-          container.</li>
-        <li>Add water to the proper volume desired. In this case: 0.250 L, or 250 mL.</li>
-        <li>Stir the mixture until all the solute is dissolved.</li>
-      </ol>
+              </li>
+              <li>
+                Determine the mass of NaOH needed using its molar mass (40 g NaOH/ 1 mole NaOH):
+                <div class="text-center mt-6 text-xl">
+                  $$ \text{0.5 }\cancel{\text{mol }\ce{NaOH}} \times \frac{\text{40 g }\ce{NaOH}}{\text{1 }\cancel{\text{mol }\ce{NaOH}}} = \text{20 g }\ce{NaOH} $$
+                </div>
+              </li>
+              <li>Place a container with graduations on a scale and tare it. Measure the calculated mass from step 2 into the container.</li>
+              <li>Add water to the proper volume desired. In this case: 0.250 L, or 250 mL.</li>
+              <li>Stir the mixture until all the solute is dissolved.</li>
+            </ol>
+          </td>
+        </tr>
+      </table>
     </div>
+
 
     <!-- Definitions -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 md:p-8 mb-6">
@@ -357,73 +367,84 @@
         g/mol.</p>
 
       <div>
-        <table class="w-full border-collapse border-[3px] border-black text-center text-sm">
+        <table class="w-full border-collapse text-center uppercase text-lg border-b-[3px] border-r-[3px] border-black">
           <thead>
             <tr class="bg-gray-200 font-bold uppercase tracking-wider">
-              <th class="bg-white border-b-[2px] border-r-[2px] border-black p-4 w-1/5"
-                style="border-top: none; border-left: none;"></th>
-              <th class="border-[2px] border-black p-4">Solution #1</th>
-              <th class="border-[2px] border-black p-4">Solution #2</th>
-              <th class="border-[2px] border-black p-4">Solution #3</th>
-              <th class="border-[2px] border-black p-4">Solution #4</th>
+              <th class="bg-white border-b-[3px] border-r-[3px] border-black p-4 w-1/5"></th>
+              <th class="border-b-[3px] border-r-[2px] border-t-[3px] border-black p-4">Solution #1</th>
+              <th class="border-b-[3px] border-r-[2px] border-t-[3px] border-black p-4">Solution #2</th>
+              <th class="border-b-[3px] border-r-[2px] border-t-[3px] border-black p-4">Solution #3</th>
+              <th class="border-b-[3px] border-r-[2px] border-t-[3px] border-black p-4">Solution #4</th>
             </tr>
           </thead>
           <tbody class="font-bold">
             <tr>
-              <td class="border-[2px] border-black p-3 bg-gray-100 uppercase text-xs">Solution Concentration (M)</td>
-              <td class="border-[2px] border-black p-3 text-lg">2 M</td>
-              <td class="border-[2px] border-black p-3 text-lg">4 M</td>
-              <td class="border-[2px] border-black p-3 text-lg">2 M</td>
-              <td class="border-[2px] border-black p-3 text-lg">1 M</td>
+              <td
+                class="border-b-[2px] border-r-[3px] border-l-[3px] border-black p-3 bg-gray-100 text-sm leading-tight">
+                <div class="mx-auto w-32">SOLUTION CONCENTRATION (M)</div>
+              </td>
+              <td class="border-b-[2px] border-r-[2px] border-black p-3 text-lg">2 M</td>
+              <td class="border-b-[2px] border-r-[2px] border-black p-3 text-lg">4 M</td>
+              <td class="border-b-[2px] border-r-[2px] border-black p-3 text-lg">2 M</td>
+              <td class="border-b-[2px] border-black p-3 text-lg">1 M</td>
             </tr>
             <tr>
-              <td class="border-[2px] border-black p-3 bg-gray-100 uppercase text-xs">Solution Volume (L)</td>
-              <td class="border-[2px] border-black p-3 text-lg">0.20 L</td>
-              <td class="border-[2px] border-black p-3 text-lg">0.10 L</td>
-              <td class="border-[2px] border-black p-3 text-lg">0.14 L</td>
-              <td class="border-[2px] border-black p-3 text-lg">0.14 L</td>
+              <td
+                class="border-b-[2px] border-r-[3px] border-l-[3px] border-black p-3 bg-gray-100 uppercase text-sm leading-tight">
+                <div class="mx-auto w-32">Solution Volume (L)</div>
+              </td>
+              <td class="border-b-[2px] border-r-[2px] border-black p-3 text-lg">0.20 L</td>
+              <td class="border-b-[2px] border-r-[2px] border-black p-3 text-lg">0.10 L</td>
+              <td class="border-b-[2px] border-r-[2px] border-black p-3 text-lg">0.14 L</td>
+              <td class="border-b-[2px] border-r-[2px] border-black p-3 text-lg">0.14 L</td>
             </tr>
             <tr data-comment-anchor="q10">
-              <td class="border-[2px] border-black p-3 bg-gray-100 uppercase text-xs">Moles of Solute</td>
-              <td class="border-[2px] border-black p-2 align-top">
+              <td
+                class="border-b-[2px] border-r-[3px] border-l-[3px] border-black p-3 bg-gray-100 uppercase text-sm leading-tight">
+                <div class="mx-auto w-32">Moles of Solute</div>
+              </td>
+              <td class="border-b-[2px] border-r-[2px] border-black p-2 align-top">
                 <textarea data-save="q10_sol1_moles"
                   class="w-full min-h-[120px] border-none outline-none p-1 text-blue-700 font-bold resize-none bg-transparent"
                   placeholder="Show work..."></textarea>
               </td>
-              <td class="border-[2px] border-black p-2 align-top">
+              <td class="border-b-[2px] border-r-[2px] border-black p-2 align-top">
                 <textarea data-save="q10_sol2_moles"
                   class="w-full min-h-[120px] border-none outline-none p-1 text-blue-700 font-bold resize-none bg-transparent"
                   placeholder="Show work..."></textarea>
               </td>
-              <td class="border-[2px] border-black p-2 align-top">
+              <td class="border-b-[2px] border-r-[2px] border-black p-2 align-top">
                 <textarea data-save="q10_sol3_moles"
                   class="w-full min-h-[120px] border-none outline-none p-1 text-blue-700 font-bold resize-none bg-transparent"
                   placeholder="Show work..."></textarea>
               </td>
-              <td class="border-[2px] border-black p-2 align-top">
+              <td class="border-b-[2px] border-r-[2px] border-black p-2 align-top">
                 <textarea data-save="q10_sol4_moles"
                   class="w-full min-h-[120px] border-none outline-none p-1 text-blue-700 font-bold resize-none bg-transparent"
                   placeholder="Show work..."></textarea>
               </td>
             </tr>
             <tr data-comment-anchor="q11">
-              <td class="border-[2px] border-black p-3 bg-gray-100 uppercase text-xs">Mass of Solute</td>
-              <td class="border-[2px] border-black p-2 align-top">
+              <td
+                class="border-b-[2px] border-r-[3px] border-l-[3px] border-black p-3 bg-gray-100 uppercase text-sm leading-tight">
+                <div class="mx-auto w-32">Mass of Solute</div>
+              </td>
+              <td class="border-b-[2px] border-r-[2px] border-black p-2 align-top">
                 <textarea data-save="q11_sol1_mass"
                   class="w-full min-h-[120px] border-none outline-none p-1 text-blue-700 font-bold resize-none bg-transparent"
                   placeholder="Show work..."></textarea>
               </td>
-              <td class="border-[2px] border-black p-2 align-top">
+              <td class="border-b-[2px] border-r-[2px] border-black p-2 align-top">
                 <textarea data-save="q11_sol2_mass"
                   class="w-full min-h-[120px] border-none outline-none p-1 text-blue-700 font-bold resize-none bg-transparent"
                   placeholder="Show work..."></textarea>
               </td>
-              <td class="border-[2px] border-black p-2 align-top">
+              <td class="border-b-[2px] border-r-[2px] border-black p-2 align-top">
                 <textarea data-save="q11_sol3_mass"
                   class="w-full min-h-[120px] border-none outline-none p-1 text-blue-700 font-bold resize-none bg-transparent"
                   placeholder="Show work..."></textarea>
               </td>
-              <td class="border-[2px] border-black p-2 align-top">
+              <td class="border-b-[2px] border-r-[2px] border-black p-2 align-top">
                 <textarea data-save="q11_sol4_mass"
                   class="w-full min-h-[120px] border-none outline-none p-1 text-blue-700 font-bold resize-none bg-transparent"
                   placeholder="Show work..."></textarea>
@@ -442,25 +463,25 @@
         representations to give you a better sense of the purpose of this lab.</p>
 
       <div>
-        <table class="w-full border-collapse border-[3px] border-black text-center">
+        <table class="w-full border-collapse border-b-[3px] border-r-[3px] border-black text-center">
           <thead>
-            <tr class="bg-gray-200 font-bold uppercase tracking-wider text-sm">
-              <th class="bg-white border-b-[2px] border-r-[2px] border-black p-4 w-1/5"
-                style="border-top: #ffffff; border-left: #ffffff;"></th>
-              <th class="border-[2px] border-black p-4">Solution #1</th>
-              <th class="border-[2px] border-black p-4">Solution #2</th>
-              <th class="border-[2px] border-black p-4">Solution #3</th>
-              <th class="border-[2px] border-black p-4">Solution #4</th>
+            <tr class="bg-gray-200 font-bold uppercase tracking-wider text-lg">
+              <th class="bg-white border-b-[3px] border-r-[3px] border-black p-4 w-1/5"></th>
+              <th class="border-b-[3px] border-r-[2px] border-t-[3px] border-black p-4">Solution #1</th>
+              <th class="border-b-[3px] border-r-[2px] border-t-[3px] border-black p-4">Solution #2</th>
+              <th class="border-b-[3px] border-r-[2px] border-t-[3px] border-black p-4">Solution #3</th>
+              <th class="border-b-[3px] border-r-[2px] border-t-[3px] border-black p-4">Solution #4</th>
             </tr>
           </thead>
           <tbody>
             <!-- Mass of Solute Row -->
             <tr data-comment-anchor="q12">
-              <td class="border-[2px] border-black p-4 bg-gray-100 font-bold uppercase text-xs w-32">
-                <div class="flex items-center justify-center h-full text-center">MASS OF SOLUTE</div>
+              <td
+                class="border-b-[2px] border-r-[3px] border-l-[3px] border-black p-4 bg-gray-100 font-bold uppercase text-sm leading-tight w-32">
+                <div class="mx-auto w-32 flex items-center justify-center h-full text-center">MASS OF SOLUTE</div>
               </td>
               <!-- Solution 1 -->
-              <td class="border-[2px] border-black p-4 align-top">
+              <td class="border-b-[2px] border-r-[2px] border-black p-4 align-top">
                 <div class="widget-mass flex flex-col items-center w-[210px] mx-auto">
                   <svg width="210" height="265" viewBox="0 0 903 1136" xmlns="http://www.w3.org/2000/svg" class="block"
                     style="transform: translateX(-25px);">
@@ -527,7 +548,7 @@
                 </div>
               </td>
               <!-- Solution 2 -->
-              <td class="border-[2px] border-black p-4 align-top">
+              <td class="border-b-[2px] border-r-[2px] border-black p-4 align-top">
                 <div class="widget-mass flex flex-col items-center w-[210px] mx-auto">
                   <svg width="210" height="265" viewBox="0 0 903 1136" xmlns="http://www.w3.org/2000/svg" class="block"
                     style="transform: translateX(-25px);">
@@ -594,7 +615,7 @@
                 </div>
               </td>
               <!-- Solution 3 -->
-              <td class="border-[2px] border-black p-4 align-top">
+              <td class="border-b-[2px] border-r-[2px] border-black p-4 align-top">
                 <div class="widget-mass flex flex-col items-center w-[210px] mx-auto">
                   <svg width="210" height="265" viewBox="0 0 903 1136" xmlns="http://www.w3.org/2000/svg" class="block"
                     style="transform: translateX(-25px);">
@@ -661,7 +682,7 @@
                 </div>
               </td>
               <!-- Solution 4 -->
-              <td class="border-[2px] border-black p-4 align-top">
+              <td class="border-b-[2px] border-r-[2px] border-black p-4 align-top">
                 <div class="widget-mass flex flex-col items-center w-[210px] mx-auto">
                   <svg width="210" height="265" viewBox="0 0 903 1136" xmlns="http://www.w3.org/2000/svg" class="block"
                     style="transform: translateX(-25px);">
@@ -731,11 +752,12 @@
 
             <!-- Volume of Solution Row -->
             <tr data-comment-anchor="q13">
-              <td class="border-[2px] border-black p-4 bg-gray-100 font-bold uppercase text-xs w-32">
-                <div class="flex items-center justify-center h-full text-center">VOLUME OF SOLUTION</div>
+              <td
+                class="border-b-[2px] border-r-[3px] border-l-[3px] border-black p-4 bg-gray-100 font-bold uppercase text-sm leading-tight w-32">
+                <div class="mx-auto w-32 flex items-center justify-center h-full text-center">VOLUME OF SOLUTION</div>
               </td>
               <!-- Solution 1 -->
-              <td class="border-[2px] border-black p-4 align-top">
+              <td class="border-b-[2px] border-r-[2px] border-black p-4 align-top">
                 <div class="widget-cup flex flex-col items-center w-[175px] mx-auto">
                   <svg width="175" height="265" viewBox="0 0 702 1059" xmlns="http://www.w3.org/2000/svg" class="block">
                     <g transform="translate(-2543 -540)">
@@ -809,7 +831,7 @@
                 </div>
               </td>
               <!-- Solution 2 -->
-              <td class="border-[2px] border-black p-4 align-top">
+              <td class="border-b-[2px] border-r-[2px] border-black p-4 align-top">
                 <div class="widget-cup flex flex-col items-center w-[175px] mx-auto">
                   <svg width="175" height="265" viewBox="0 0 702 1059" xmlns="http://www.w3.org/2000/svg" class="block">
                     <g transform="translate(-2543 -540)">
@@ -883,7 +905,7 @@
                 </div>
               </td>
               <!-- Solution 3 -->
-              <td class="border-[2px] border-black p-4 align-top">
+              <td class="border-b-[2px] border-r-[2px] border-black p-4 align-top">
                 <div class="widget-cup flex flex-col items-center w-[175px] mx-auto">
                   <svg width="175" height="265" viewBox="0 0 702 1059" xmlns="http://www.w3.org/2000/svg" class="block">
                     <g transform="translate(-2543 -540)">
@@ -957,7 +979,7 @@
                 </div>
               </td>
               <!-- Solution 4 -->
-              <td class="border-[2px] border-black p-4 align-top">
+              <td class="border-b-[2px] border-r-[2px] border-black p-4 align-top">
                 <div class="widget-cup flex flex-col items-center w-[175px] mx-auto">
                   <svg width="175" height="265" viewBox="0 0 702 1059" xmlns="http://www.w3.org/2000/svg" class="block">
                     <g transform="translate(-2543 -540)">
@@ -1043,23 +1065,24 @@
         each other. Then taste each solution and record how strong they taste compared to each other.</p>
 
       <div>
-        <table class="w-full border-collapse border-[3px] border-black text-center">
+        <table class="w-full border-collapse border-b-[3px] border-r-[3px] border-black text-center">
           <thead>
-            <tr class="bg-gray-200 font-bold uppercase tracking-wider text-sm">
-              <th class="bg-white border-b-[2px] border-r-[2px] border-black p-4 w-1/5"
-                style="border-top: #ffffff; border-left: #ffffff;"></th>
-              <th class="border-[2px] border-black p-4">Solution #1</th>
-              <th class="border-[2px] border-black p-4">Solution #2</th>
-              <th class="border-[2px] border-black p-4">Solution #3</th>
-              <th class="border-[2px] border-black p-4">Solution #4</th>
+            <tr class="bg-gray-200 font-bold uppercase tracking-wider text-lg">
+              <th class="bg-white border-b-[3px] border-r-[3px] border-black p-4 w-1/5"></th>
+              <th class="border-b-[3px] border-r-[2px] border-t-[3px] border-black p-4">Solution #1</th>
+              <th class="border-b-[3px] border-r-[2px] border-t-[3px] border-black p-4">Solution #2</th>
+              <th class="border-b-[3px] border-r-[2px] border-t-[3px] border-black p-4">Solution #3</th>
+              <th class="border-b-[3px] border-r-[2px] border-t-[3px] border-black p-4">Solution #4</th>
             </tr>
           </thead>
           <tbody>
             <tr class="relative row-comment-container" data-comment-anchor="q14">
-              <td class="border-[2px] border-black p-4 bg-gray-100 font-bold uppercase text-xs w-32">
-                <div class="flex items-center justify-center h-full text-center">SOLUTION COLOR INTENSITY</div>
+              <td
+                class="border-b-[2px] border-r-[3px] border-l-[3px] border-black p-4 bg-gray-100 font-bold uppercase text-sm leading-tight w-32">
+                <div class="mx-auto w-32 flex items-center justify-center h-full text-center">SOLUTION COLOR INTENSITY
+                </div>
               </td>
-              <td class="border-[2px] border-black p-4 align-middle">
+              <td class="border-b-[2px] border-r-[2px] border-black p-4 align-middle">
                 <div class="color-widget flex flex-col items-center w-full mx-auto">
                   <div
                     class="color-box w-24 h-24 border-2 border-gray-400 bg-white mb-4 rounded shadow-inner transition-colors duration-75">
@@ -1068,7 +1091,7 @@
                     max="100" value="0">
                 </div>
               </td>
-              <td class="border-[2px] border-black p-4 align-middle">
+              <td class="border-b-[2px] border-r-[2px] border-black p-4 align-middle">
                 <div class="color-widget flex flex-col items-center w-full mx-auto">
                   <div
                     class="color-box w-24 h-24 border-2 border-gray-400 bg-white mb-4 rounded shadow-inner transition-colors duration-75">
@@ -1077,7 +1100,7 @@
                     max="100" value="0">
                 </div>
               </td>
-              <td class="border-[2px] border-black p-4 align-middle">
+              <td class="border-b-[2px] border-r-[2px] border-black p-4 align-middle">
                 <div class="color-widget flex flex-col items-center w-full mx-auto">
                   <div
                     class="color-box w-24 h-24 border-2 border-gray-400 bg-white mb-4 rounded shadow-inner transition-colors duration-75">
@@ -1086,7 +1109,7 @@
                     max="100" value="0">
                 </div>
               </td>
-              <td class="border-[2px] border-black p-4 align-middle">
+              <td class="border-b-[2px] border-r-[2px] border-black p-4 align-middle">
                 <div class="color-widget flex flex-col items-center w-full mx-auto">
                   <div
                     class="color-box w-24 h-24 border-2 border-gray-400 bg-white mb-4 rounded shadow-inner transition-colors duration-75">
@@ -1097,25 +1120,27 @@
               </td>
             </tr>
             <tr class="relative row-comment-container" data-comment-anchor="q15">
-              <td class="border-[2px] border-black p-4 bg-gray-100 font-bold uppercase text-xs w-32">
-                <div class="flex items-center justify-center h-full text-center">SOLUTION TASTE STRENGTH</div>
+              <td
+                class="border-b-[2px] border-r-[3px] border-l-[3px] border-black p-4 bg-gray-100 font-bold uppercase text-sm leading-tight w-32">
+                <div class="mx-auto w-32 flex items-center justify-center h-full text-center">SOLUTION TASTE STRENGTH
+                </div>
               </td>
-              <td class="border-[2px] border-black p-2 align-top">
+              <td class="border-b-[2px] border-r-[2px] border-black p-2 align-top">
                 <textarea data-save="q15_sol1_taste"
                   class="w-full min-h-[80px] border-none outline-none p-1 text-blue-700 font-bold resize-none bg-transparent"
                   placeholder="Describe taste..."></textarea>
               </td>
-              <td class="border-[2px] border-black p-2 align-top">
+              <td class="border-b-[2px] border-r-[2px] border-black p-2 align-top">
                 <textarea data-save="q15_sol2_taste"
                   class="w-full min-h-[80px] border-none outline-none p-1 text-blue-700 font-bold resize-none bg-transparent"
                   placeholder="Describe taste..."></textarea>
               </td>
-              <td class="border-[2px] border-black p-2 align-top">
+              <td class="border-b-[2px] border-r-[2px] border-black p-2 align-top">
                 <textarea data-save="q15_sol3_taste"
                   class="w-full min-h-[80px] border-none outline-none p-1 text-blue-700 font-bold resize-none bg-transparent"
                   placeholder="Describe taste..."></textarea>
               </td>
-              <td class="border-[2px] border-black p-2 align-top">
+              <td class="border-b-[2px] border-r-[2px] border-black p-2 align-top">
                 <textarea data-save="q15_sol4_taste"
                   class="w-full min-h-[80px] border-none outline-none p-1 text-blue-700 font-bold resize-none bg-transparent"
                   placeholder="Describe taste..."></textarea>
@@ -1428,8 +1453,7 @@
       <div class="space-y-10">
         <div class="flex flex-col gap-3 relative" data-comment-anchor="q21">
           <label class="font-medium text-gray-800 leading-relaxed">
-            21. Using evidence collected during this lab, explain how two solutions can contain the same number of moles
-            of solute, but have different concentrations.
+            21. A claim states "Two solutions can contain the same number of moles of solute but have different concentrations". Use evidence collected during this lab to either support or refute this claim.
           </label>
           <textarea data-save="q21" rows="2"
             class="w-full border-b border-black focus:border-purple-600 focus:border-b-2 outline-none py-1 text-blue-700 font-bold leading-relaxed bg-transparent"
@@ -1438,8 +1462,7 @@
 
         <div class="flex flex-col gap-3 relative" data-comment-anchor="q22">
           <label class="font-medium text-gray-800 leading-relaxed">
-            22. Using evidence collected during this lab, explain how two solutions can have the same volume, but
-            different concentrations.
+            22. A claim states "Two solutions can have the same volume but different concentrations". Use evidence collected during this lab to either support or refute this claim.
           </label>
           <textarea data-save="q22" rows="2"
             class="w-full border-b border-black focus:border-purple-600 focus:border-b-2 outline-none py-1 text-blue-700 font-bold leading-relaxed bg-transparent"
@@ -1673,92 +1696,162 @@
         lockMsg = document.createElement('div');
         lockMsg.id = 'lock-message-container';
         lockMsg.className = 'bg-white rounded-lg shadow-sm border-l-8 border-red-500 p-8 mb-4 text-center mt-4';
-        lockMsg.innerHTML = '<h2 class="text-2xl font-bold text-gray-800 mb-2">Assignment Closed</h2><p class="text-gray-600 leading-relaxed"><strong>This assignment is not yet open.</strong> You may look it over, but you cannot yet edit it.</p>';
+        lockMsg.innerHTML = '<h2 class="text-2xl font-bold text-gray-800 mb-2">Assignment Closed</h2><p class="text-gray-600 leading-relaxed"><strong>This assignment is not yet open. You may look it over, but you cannot yet edit it.</strong></p>';
         document.querySelector('.form-header-bar').insertAdjacentElement('afterend', lockMsg);
       } else if (!locked && lockMsg) {
         lockMsg.remove();
       }
     }
 
-    /* ==============================================================
-       3. Teacher Comments UI (Prefix-based Pills)
+/* ==============================================================
+       3. Teacher Comments UI (Prefix-based Pills & Inline Rows)
        ============================================================== */
     function injectCommentUI(anchor, qPrefix) {
       if (!anchor) return;
       const container = document.createElement('div');
+      // Keep the button floating on the right edge, but remove the popup div
       container.className = "absolute -right-4 top-1/2 -translate-y-1/2 translate-x-full flex flex-col items-start z-20 pointer-events-none";
-      container.style.minWidth = "220px";
+      container.style.minWidth = "150px";
       container.innerHTML = `
         <button data-comment-btn="${qPrefix}" onclick="toggleStudentCommentArea('${qPrefix}')" class="hidden text-[10px] font-bold px-3 py-1 border-2 rounded-full transition-all bg-white border-purple-300 text-purple-600 opacity-90 hover:opacity-100 items-center shadow-md pointer-events-auto whitespace-nowrap">
              💡 Teacher Comment
         </button>
-        <div data-comment-area="${qPrefix}" class="hidden mt-2 p-3 bg-white border-2 border-purple-200 rounded-xl shadow-xl pointer-events-auto w-full relative">
-             <button onclick="toggleStudentCommentArea('${qPrefix}')" class="absolute top-2 right-2 text-gray-400 hover:text-red-500 transition-colors">
-               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-             </button>
-             <div class="text-[10px] font-bold text-purple-400 uppercase tracking-widest mb-2 flex items-center gap-1 border-b border-purple-50 pb-1 pr-6">
-               <span class="w-2 h-2 rounded-full bg-purple-500"></span> Teacher Feedback
-             </div>
-             <div data-comment-text="${qPrefix}" class="text-gray-800 font-bold whitespace-pre-wrap leading-relaxed" style="font-size: 14px;"></div>
-        </div>
       `;
       anchor.appendChild(container);
     }
 
     function renderCommentUI(prefix, qData) {
       const btn = document.querySelector(`[data-comment-btn="${prefix}"]`);
-      const textDiv = document.querySelector(`[data-comment-text="${prefix}"]`);
-      if (!btn || !textDiv) return;
+      if (!btn) return;
 
-      // Merge incoming data with what we already know to avoid disappearing on partial updates (like marking as read)
       if (!localState[prefix]) localState[prefix] = { teacherComment: "", commentUnread: false };
 
-      // Only update if the property exists in the incoming qData
       if (qData.teacherComment !== undefined) localState[prefix].teacherComment = qData.teacherComment;
       if (qData.commentUnread !== undefined) localState[prefix].commentUnread = qData.commentUnread;
 
       const currentComment = localState[prefix].teacherComment;
 
-      // CRITICAL: Only hide if we explicitly have an empty string or null for teacherComment.
-      // If teacherComment is undefined in this specific qData payload, we keep the previous state.
+      // Hide the bubble if there is no comment
       if (currentComment === null || currentComment.trim() === "") {
         btn.classList.add('hidden');
         btn.classList.remove('flex');
+        
+        // If the inline area happens to be open, hide it
+        const area = document.getElementById(`comment-area-${prefix}`);
+        if (area) area.classList.add('hidden');
         return;
       }
 
+      // Show the bubble
       btn.classList.remove('hidden');
       btn.classList.add('flex');
-      textDiv.innerHTML = currentComment;
 
+      // If the student already has the comment open, dynamically update the text and height
+      const openTextarea = document.getElementById(`teacher-comment-input-${prefix}`);
+      if (openTextarea) {
+         openTextarea.value = currentComment;
+         openTextarea.style.height = 'auto';
+         openTextarea.style.height = openTextarea.scrollHeight + 'px';
+      }
+
+      // Handle pulsing/colors for read vs unread
       const isUnread = localState[prefix].commentUnread === true;
       if (!isUnread) {
         btn.classList.add('bg-gray-50', 'border-gray-200', 'text-gray-400');
-        btn.classList.remove('border-purple-300', 'text-purple-600', 'animate-bounce');
+        btn.classList.remove('bg-white', 'border-purple-300', 'text-purple-600', 'animate-bounce');
       } else {
         btn.classList.add('bg-white', 'border-purple-300', 'text-purple-600', 'animate-bounce');
-        btn.classList.remove('bg-gray-50', 'border-gray-200', 'text-gray-400', 'animate-bounce');
+        btn.classList.remove('bg-gray-50', 'border-gray-200', 'text-gray-400');
       }
     }
 
     function toggleStudentCommentArea(prefix) {
-      const area = document.querySelector(`[data-comment-area="${prefix}"]`);
       const btn = document.querySelector(`[data-comment-btn="${prefix}"]`);
-      if (!area || !btn) return;
+      if (!btn) return;
 
-      const willBeVisible = area.classList.contains('hidden');
-      area.classList.toggle('hidden');
+      // 1. Find where to anchor this new row
+      const inputEl = document.querySelector(`[data-save^="${prefix}"]`) || document.querySelector(`[data-comment-anchor="${prefix}"]`);
+      if (!inputEl) return;
 
-      // If we are opening it OR closing it, it means the student has interacted with it.
-      // We should stop the bounce and mark as read.
-      btn.classList.remove('animate-bounce');
-      btn.classList.add('bg-gray-50', 'border-gray-200', 'text-gray-400');
-      btn.classList.remove('border-purple-300', 'text-purple-600');
+      let anchor = inputEl.closest('tr');
+      let isTable = true;
+      
+// If it's not in a table, specifically target the wrapper for this exact question
+      if (!anchor) {
+         anchor = inputEl.closest(`[data-comment-anchor="${prefix}"]`) || inputEl.parentNode;
+         isTable = false;
+      }
 
-      if (studentConfig && studentConfig.basePaths) {
-        studentConfig.basePaths.forEach(path => {
-          fetch(`${databaseURL}/${path}/${prefix}.json`, { method: 'PATCH', body: JSON.stringify({ commentUnread: false }) });
-        });
+      // 2. Check if we've already built this inline comment area
+      let commentArea = document.getElementById(`comment-area-${prefix}`);
+      
+      // 3. If it doesn't exist, generate it on the fly and insert it
+      if (!commentArea) {
+        if (isTable) {
+          commentArea = document.createElement('tr');
+          commentArea.className = 'hidden student-comment-row';
+          const td = document.createElement('td');
+          td.colSpan = anchor.cells ? anchor.cells.length : 5; 
+          td.className = 'p-4 border-b-[2px] border-r-[3px] border-l-[3px] border-black';
+          td.innerHTML = `
+            <div class="flex flex-col gap-1">
+              <label class="text-[10px] font-bold text-purple-600 uppercase tracking-wider flex items-center gap-1">
+                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zm-4 0H9v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd"></path></svg> Teacher Feedback
+              </label>
+              <textarea id="teacher-comment-input-${prefix}" readonly class="auto-grow-textarea w-full p-2 border border-purple-200 rounded text-sm text-blue-700 font-bold bg-white outline-none shadow-sm"></textarea>
+            </div>
+          `;
+          commentArea.appendChild(td);
+        } else {
+          commentArea = document.createElement('div');
+          commentArea.className = 'hidden mt-2 p-4 bg-purple-50 border border-purple-100 rounded-lg shadow-inner w-full';
+          commentArea.innerHTML = `
+            <div class="flex flex-col gap-1">
+              <label class="text-[10px] font-bold text-purple-600 uppercase tracking-wider flex items-center gap-1">
+                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zm-4 0H9v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd"></path></svg> Teacher Feedback
+              </label>
+              <textarea id="teacher-comment-input-${prefix}" readonly class="auto-grow-textarea w-full p-2 border border-purple-200 rounded text-sm text-blue-700 font-bold bg-white outline-none shadow-sm"></textarea>
+            </div>
+          `;
+        }
+        commentArea.id = `comment-area-${prefix}`;
+        
+        // Wedge it correctly based on the container type
+        if (!isTable && anchor.classList.contains('border-[3px]')) {
+          // If it is a bordered Data Analysis box, put the comment INSIDE the black border
+          anchor.appendChild(commentArea);
+        } else {
+          // Otherwise, wedge it exactly below the question row/card
+          anchor.parentNode.insertBefore(commentArea, anchor.nextSibling);
+        }
+      } // <--- THIS WAS THE MISSING BRACE!
+
+      // 4. Populate text and toggle visibility
+      const textarea = commentArea.querySelector('textarea');
+      textarea.value = localState[prefix].teacherComment || "";
+
+      const isVisibleNow = !commentArea.classList.toggle('hidden');
+
+      if (isVisibleNow) {
+        // Run the auto-grow math calculation
+        textarea.style.height = "5px"; 
+        textarea.style.height = (textarea.scrollHeight) + "px"; 
+
+        // Turn the bubble gray and stop the bounce
+        btn.classList.remove('animate-bounce', 'bg-white', 'border-purple-300', 'text-purple-600');
+        btn.classList.add('bg-gray-50', 'border-gray-200', 'text-gray-400');
+        
+        localState[prefix].commentUnread = false;
+
+        // Fire the read receipt back to Firebase
+        if (studentConfig && studentConfig.basePaths) {
+          studentConfig.basePaths.forEach(path => {
+            fetch(`${databaseURL}/${path}/${prefix}.json`, { 
+              method: 'PATCH', 
+              body: JSON.stringify({ commentUnread: false }) 
+            });
+          });
+        }
       }
     }
 

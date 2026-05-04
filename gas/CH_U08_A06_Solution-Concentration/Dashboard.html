@@ -1,71 +1,1332 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f3f4f6; }
-    .table-container { overflow-x: auto; background: white; max-width: 100%; height: 100%; }
-    table#dashboard-table { width: max-content; border-collapse: collapse; }
-    #dashboard-table th, #dashboard-table td { border: 1px solid #e5e7eb; padding: 10px; text-align: center; font-size: 13px; }
-    .score-col { width: 75px; min-width: 75px; max-width: 75px; }
-    .q-col { width: 55px; min-width: 55px; max-width: 55px; }
-    #dashboard-table th { background-color: #f9fafb; font-weight: 600; color: #4b5563; position: sticky; top: 0; z-index: 10; }
-    .name-column-width { width: 280px !important; min-width: 280px !important; max-width: 280px !important; }
-    .student-name { position: sticky; left: 0; background-color: inherit; z-index: 15; text-align: left; padding: 0 !important; border-right: 3px solid #cbd5e1; box-shadow: 3px 0 6px -2px rgba(0,0,0,0.1); }
-    #dashboard-table th.student-name { z-index: 25; background-color: #f9fafb; padding: 10px 0 10px 16px !important; }
-    .correct { color: #16a34a; font-size: 1.2em; font-weight: bold; }
-    .incorrect { color: #dc2626; font-size: 1.2em; font-weight: bold; }
-    .empty { color: #9ca3af; font-weight: normal; }
-    .cleared-row { background-color: #bbf7d0; }
+    body {
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f3f4f6;
+    }
+
+    .table-container {
+      overflow-x: auto;
+      background: white;
+      max-width: 100%;
+      height: 100%;
+    }
+
+    table#dashboard-table {
+      width: max-content;
+      border-collapse: collapse;
+    }
+
+    #dashboard-table th,
+    #dashboard-table td {
+      border: 1px solid #e5e7eb;
+      padding: 10px;
+      text-align: center;
+      font-size: 13px;
+    }
+
+    .score-col {
+      width: 75px;
+      min-width: 75px;
+      max-width: 75px;
+    }
+
+    .q-col {
+      width: 55px;
+      min-width: 55px;
+      max-width: 55px;
+    }
+
+    #dashboard-table th {
+      background-color: #f9fafb;
+      font-weight: 600;
+      color: #4b5563;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .name-column-width {
+      width: 280px !important;
+      min-width: 280px !important;
+      max-width: 280px !important;
+    }
+
+    .student-name {
+      position: sticky;
+      left: 0;
+      background-color: inherit;
+      z-index: 15;
+      text-align: left;
+      padding: 0 !important;
+      border-right: 3px solid #cbd5e1;
+      box-shadow: 3px 0 6px -2px rgba(0, 0, 0, 0.1);
+    }
+
+    #dashboard-table th.student-name {
+      z-index: 25;
+      background-color: #f9fafb;
+      padding: 10px 0 10px 16px !important;
+    }
+
+    .correct {
+      color: #16a34a;
+      font-size: 1.2em;
+      font-weight: bold;
+    }
+
+    .incorrect {
+      color: #dc2626;
+      font-size: 1.2em;
+      font-weight: bold;
+    }
+
+    .empty {
+      color: #9ca3af;
+      font-weight: normal;
+    }
+
+    .cleared-row {
+      background-color: #bbf7d0;
+    }
+
+    /* Student Mirror Styles */
+    textarea {
+      color: #0000ff !important;
+      font-weight: 700 !important;
+      resize: none;
+      overflow: hidden;
+    }
+
+    select {
+      text-align: center;
+      text-align-last: center;
+      -moz-text-align-last: center;
+      font-size: 1.5em;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      background: #a1a1a1;
+      height: 8px;
+      border-radius: 4px;
+      outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      background: #4a4a4a;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid #fff;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    }
+
+    .ranking-select {
+      appearance: none;
+      -webkit-appearance: none;
+      border-bottom: 2px solid #e5e7eb;
+    }
+
+    .mirror-card {
+      background: white;
+      border-radius: 0.5rem;
+      border: 1px solid #e5e7eb;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      position: relative;
+    }
+
+    .comment-bubble-btn {
+      position: absolute;
+      top: -10px;
+      right: -10px;
+      z-index: 50;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 9999px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+      border: 1px solid white;
+    }
+
+    .comment-area-tr {
+      background-color: #faf5ff;
+      /* yellow-50 */
+    }
+
+    /* Prevent clipping in tables */
+    td.relative {
+      overflow: visible !important;
+    }
+
+    tr.relative {
+      overflow: visible !important;
+    }
+
+    table {
+      border-collapse: separate !important;
+    }
+
+    /* Sometimes helps with clipping */
   </style>
 </head>
+
 <body class="h-screen overflow-hidden flex flex-col">
 
   <div class="bg-white border-b-4 border-gray-800 px-6 py-6 shrink-0 z-30 relative shadow-sm">
     <div class="w-full max-w-6xl mx-auto relative">
       <div class="flex justify-between items-end border-b border-black pb-2 mb-6">
         <div>
-          <div class="bg-gray-200 text-black text-sm font-bold px-2 py-1 inline-block border border-black mb-1 shadow-sm">Assignment Type: <?= HEADER_TYPE ?></div>
-          <div class="text-lg font-semibold text-black tracking-wide mt-1"><?= HEADER_SUB ?></div>
+          <div
+            class="bg-gray-200 text-black text-sm font-bold px-2 py-1 inline-block border border-black mb-1 shadow-sm">
+            Assignment Type:
+            <?= HEADER_TYPE ?>
+          </div>
+          <div class="text-lg font-semibold text-black tracking-wide mt-1">
+            <?= HEADER_SUB ?>
+          </div>
         </div>
-        
+
         <div class="flex items-center gap-3 shrink-0">
           <div class="flex items-center gap-2 bg-gray-50 border border-gray-300 rounded px-2 py-1 shadow-sm">
             <label class="text-xs font-bold text-gray-600 uppercase tracking-wider hidden md:block">Class:</label>
-            <select id="class-filter" onchange="handleClassChange()" class="bg-transparent text-sm font-bold text-gray-800 focus:outline-none cursor-pointer">
+            <select id="class-filter" onchange="handleClassChange()"
+              class="bg-transparent text-sm font-bold text-gray-800 focus:outline-none cursor-pointer">
               <option value="ALL">Loading...</option>
             </select>
           </div>
-          <button id="btn-return-grid" onclick="showGridView()" class="hidden bg-gray-800 text-white hover:bg-black px-4 py-1.5 rounded font-bold text-sm transition whitespace-nowrap shadow-sm">Grid View</button>
-          <span id="status-indicator" class="bg-gray-100 text-gray-500 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide flex items-center gap-2 border border-gray-300 whitespace-nowrap">Connecting...</span>
+          <button id="btn-return-grid" onclick="showGridView()"
+            class="hidden bg-gray-800 text-white hover:bg-black px-4 py-1.5 rounded font-bold text-sm transition whitespace-nowrap shadow-sm">Grid
+            View</button>
+          <span id="status-indicator"
+            class="bg-gray-100 text-gray-500 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide flex items-center gap-2 border border-gray-300 whitespace-nowrap">Connecting...</span>
         </div>
       </div>
-      
-      <h1 class="text-4xl md:text-5xl font-extrabold text-black text-center mb-2 tracking-tight"><?= ASSIGNMENT_TITLE ?></h1>
+
+      <h1 class="text-4xl md:text-5xl font-extrabold text-black text-center mb-2 tracking-tight">
+        <?= ASSIGNMENT_TITLE ?>
+      </h1>
     </div>
   </div>
 
   <div class="flex flex-1 overflow-hidden relative">
-    <div id="sidebar-container" class="hidden name-column-width bg-white border-r border-gray-200 flex flex-col shrink-0 z-10 shadow-sm relative">
+    <div id="sidebar-container"
+      class="hidden name-column-width bg-white border-r border-gray-200 flex flex-col shrink-0 z-10 shadow-sm relative">
       <div id="student-list" class="flex-1 overflow-y-auto p-2"></div>
     </div>
     <div class="flex-1 overflow-y-auto bg-gray-50 p-0 md:p-6 relative">
-      <div id="grid-view" class="bg-white md:rounded-lg md:shadow border-y md:border border-gray-200 h-full md:h-auto overflow-hidden">
+
+      <div id="grid-view"
+        class="bg-white md:rounded-lg md:shadow border-y md:border border-gray-200 h-full md:h-auto overflow-hidden">
         <div class="table-container md:rounded-lg h-full">
           <table id="dashboard-table">
             <thead id="table-head"></thead>
             <tbody id="table-body">
-              <tr><td id="sync-msg" class="py-10 text-gray-500 bg-white text-center">Syncing roster...</td></tr>
+              <tr>
+                <td id="sync-msg" class="py-10 text-gray-500 bg-white text-center">Syncing roster...</td>
+              </tr>
             </tbody>
           </table>
         </div>
       </div>
-      <div id="detail-view" class="hidden max-w-3xl mx-auto p-6 md:p-0">
+
+      <div id="detail-view" class="hidden max-w-5xl mx-auto p-6 md:p-0">
         <div class="mb-6 pb-4 border-b border-gray-300">
           <h2 id="detail-name" class="text-3xl font-bold text-gray-800">Student Name</h2>
-          <p class="text-sm font-medium text-gray-500 mt-1 uppercase tracking-wide">Live Student Progress Feed</p>
+          <p class="text-sm font-medium text-gray-500 mt-1 uppercase tracking-wide">Live Student Progress Mirror</p>
         </div>
-        <div id="detail-questions" class="space-y-4 pb-20"></div>
+
+        <!-- The Mirror UI Container -->
+        <div id="detail-questions" class="pb-20">
+          <!-- Definitions -->
+          <div class="mirror-card">
+            <h2 class="text-2xl font-bold mb-4 text-black">Definitions</h2>
+            <div class="space-y-6">
+              <div class="flex flex-col md:flex-row gap-4 w-full items-start relative" data-comment-anchor="q1">
+                <label class="md:w-32 font-medium text-gray-800 shrink-0 pt-1">Solute:</label>
+                <div class="w-full"><textarea data-save="q1" rows="1"
+                    class="w-full border-b border-black outline-none py-1 bg-transparent" readonly></textarea></div>
+              </div>
+              <div class="flex flex-col md:flex-row gap-4 w-full items-start relative" data-comment-anchor="q2">
+                <label class="md:w-32 font-medium text-gray-800 shrink-0 pt-1">Solvent:</label>
+                <div class="w-full"><textarea data-save="q2" rows="1"
+                    class="w-full border-b border-black outline-none py-1 bg-transparent" readonly></textarea></div>
+              </div>
+              <div class="flex flex-col md:flex-row gap-4 w-full items-start relative" data-comment-anchor="q3">
+                <label class="md:w-32 font-medium text-gray-800 shrink-0 pt-1">Solution:</label>
+                <div class="w-full"><textarea data-save="q3" rows="1"
+                    class="w-full border-b border-black outline-none py-1 bg-transparent" readonly></textarea></div>
+              </div>
+              <div class="flex flex-col md:flex-row gap-4 w-full items-start relative" data-comment-anchor="q4">
+                <label class="md:w-32 font-medium text-gray-800 shrink-0 pt-1">Mole:</label>
+                <div class="w-full"><textarea data-save="q4" rows="1"
+                    class="w-full border-b border-black outline-none py-1 bg-transparent" readonly></textarea></div>
+              </div>
+              <div class="flex flex-col md:flex-row gap-4 w-full items-start relative" data-comment-anchor="q5">
+                <label class="md:w-32 font-medium text-gray-800 shrink-0 pt-1">Molar mass:</label>
+                <div class="w-full"><textarea data-save="q5" rows="1"
+                    class="w-full border-b border-black outline-none py-1 bg-transparent" readonly></textarea></div>
+              </div>
+              <div class="flex flex-col md:flex-row gap-4 w-full items-start relative" data-comment-anchor="q6">
+                <label class="md:w-32 font-medium text-gray-800 shrink-0 pt-1">Mass:</label>
+                <div class="w-full"><textarea data-save="q6" rows="1"
+                    class="w-full border-b border-black outline-none py-1 bg-transparent" readonly></textarea></div>
+              </div>
+              <div class="flex flex-col md:flex-row gap-4 w-full items-start relative" data-comment-anchor="q7">
+                <label class="md:w-32 font-medium text-gray-800 shrink-0 pt-1">Concentration:</label>
+                <div class="w-full"><textarea data-save="q7" rows="1"
+                    class="w-full border-b border-black outline-none py-1 bg-transparent" readonly></textarea></div>
+              </div>
+              <div class="flex flex-col md:flex-row gap-4 w-full items-start relative" data-comment-anchor="q8">
+                <label class="md:w-32 font-medium text-gray-800 shrink-0 pt-1">Molarity:</label>
+                <div class="w-full"><textarea data-save="q8" rows="1"
+                    class="w-full border-b border-black outline-none py-1 bg-transparent" readonly></textarea></div>
+              </div>
+              <div class="flex flex-col md:flex-row gap-4 w-full items-start relative" data-comment-anchor="q9">
+                <label class="md:w-32 font-medium text-gray-800 shrink-0 pt-1">Volume:</label>
+                <div class="w-full"><textarea data-save="q9" rows="1"
+                    class="w-full border-b border-black outline-none py-1 bg-transparent" readonly></textarea></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Calculations -->
+          <div class="mirror-card">
+            <h2 class="text-2xl font-bold mb-4 text-black">Calculations</h2>
+            <div class="overflow-x-auto">
+              <table class="w-full border-collapse text-center uppercase border-b-[3px] border-r-[3px] border-black">
+                <thead>
+                  <tr class="bg-gray-200 font-bold">
+                    <th class="bg-white border-b-[3px] border-r-[3px] border-black p-4 w-1/5"></th>
+                    <th class="border-b-[3px] border-r-[2px] border-t-[3px] border-black p-4">Solution #1</th>
+                    <th class="border-b-[3px] border-r-[2px] border-t-[3px] border-black p-4">Solution #2</th>
+                    <th class="border-b-[3px] border-r-[2px] border-t-[3px] border-black p-4">Solution #3</th>
+                    <th class="border-b-[3px] border-t-[3px] border-black p-4">Solution #4</th>
+                  </tr>
+                </thead>
+                <tbody class="font-bold text-sm">
+                  <tr>
+                    <td class="border-b-[2px] border-r-[3px] border-l-[3px] border-black p-3 bg-gray-100 leading-tight">
+                      <div class="mx-auto w-32">SOLUTION CONCENTRATION (M)</div>
+                    </td>
+                    <td class="border-b-[2px] border-r-[2px] border-black p-3">2 M</td>
+                    <td class="border-b-[2px] border-r-[2px] border-black p-3">4 M</td>
+                    <td class="border-b-[2px] border-r-[2px] border-black p-3">2 M</td>
+                    <td class="border-b-[2px] border-black p-3">1 M</td>
+                  </tr>
+                  <tr>
+                    <td class="border-b-[2px] border-r-[3px] border-l-[3px] border-black p-3 bg-gray-100 leading-tight">
+                      <div class="mx-auto w-32">Solution Volume (L)</div>
+                    </td>
+                    <td class="border-b-[2px] border-r-[2px] border-black p-3">0.20 L</td>
+                    <td class="border-b-[2px] border-r-[2px] border-black p-3">0.10 L</td>
+                    <td class="border-b-[2px] border-r-[2px] border-black p-3">0.14 L</td>
+                    <td class="border-b-[2px] border-black p-3">0.14 L</td>
+                  </tr>
+                  <tr class="relative" data-comment-anchor="q10">
+                    <td class="border-b-[2px] border-r-[3px] border-l-[3px] border-black p-3 bg-gray-100 leading-tight">
+                      <div class="mx-auto w-32">Moles of Solute</div>
+                    </td>
+                    <td class="border-b-[2px] border-r-[2px] border-black p-2"><textarea data-save="q10_sol1_moles"
+                        class="w-full min-h-[100px] border-none outline-none bg-transparent" readonly></textarea></td>
+                    <td class="border-b-[2px] border-r-[2px] border-black p-2"><textarea data-save="q10_sol2_moles"
+                        class="w-full min-h-[100px] border-none outline-none bg-transparent" readonly></textarea></td>
+                    <td class="border-b-[2px] border-r-[2px] border-black p-2"><textarea data-save="q10_sol3_moles"
+                        class="w-full min-h-[100px] border-none outline-none bg-transparent" readonly></textarea></td>
+                    <td class="border-b-[2px] border-black p-2"><textarea data-save="q10_sol4_moles"
+                        class="w-full min-h-[100px] border-none outline-none bg-transparent" readonly></textarea></td>
+                  </tr>
+                  <tr class="relative" data-comment-anchor="q11">
+                    <td class="border-b-[2px] border-r-[3px] border-l-[3px] border-black p-3 bg-gray-100 leading-tight">
+                      <div class="mx-auto w-32">Mass of Solute</div>
+                    </td>
+                    <td class="border-b-[2px] border-r-[2px] border-black p-2"><textarea data-save="q11_sol1_mass"
+                        class="w-full min-h-[100px] border-none outline-none bg-transparent" readonly></textarea></td>
+                    <td class="border-b-[2px] border-r-[2px] border-black p-2"><textarea data-save="q11_sol2_mass"
+                        class="w-full min-h-[100px] border-none outline-none bg-transparent" readonly></textarea></td>
+                    <td class="border-b-[2px] border-r-[2px] border-black p-2"><textarea data-save="q11_sol3_mass"
+                        class="w-full min-h-[100px] border-none outline-none bg-transparent" readonly></textarea></td>
+                    <td class="border-b-[2px] border-black p-2"><textarea data-save="q11_sol4_mass"
+                        class="w-full min-h-[100px] border-none outline-none bg-transparent" readonly></textarea></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Visual Representations -->
+          <div class="mirror-card">
+            <h2 class="text-2xl font-bold mb-4 text-black">Visual Representations</h2>
+            <div class="overflow-x-auto">
+              <table class="w-full border-collapse border-b-[3px] border-r-[3px] border-black text-center">
+                <thead>
+                  <tr class="bg-gray-200 font-bold uppercase tracking-wider text-sm">
+                    <th class="bg-white border-b-[3px] border-r-[3px] border-black p-4 w-1/5"></th>
+                    <th class="border-b-[3px] border-r-[2px] border-t-[3px] border-black p-4">Solution #1</th>
+                    <th class="border-b-[3px] border-r-[2px] border-t-[3px] border-black p-4">Solution #2</th>
+                    <th class="border-b-[3px] border-r-[2px] border-t-[3px] border-black p-4">Solution #3</th>
+                    <th class="border-b-[3px] border-t-[3px] border-black p-4">Solution #4</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Mass Rows -->
+                  <tr class="relative" data-comment-anchor="q12">
+                    <td
+                      class="border-b-[2px] border-r-[3px] border-l-[3px] border-black p-4 bg-gray-100 font-bold text-[10px] w-32">
+                      MASS OF SOLUTE</td>
+                    <!-- SVG MASS CELLS (1-4) -->
+                    <td class="border-b-[2px] border-r-[2px] border-black p-4">
+                      <div class="widget-mass flex flex-col items-center w-[160px] mx-auto">
+                        <svg width="160" height="200" viewBox="0 0 903 1136" class="block"
+                          style="transform: translateX(-20px);">
+                          <g transform="translate(-1535 -1485)">
+                            <path class="fill-path" fill="#ff4a4a" d="" />
+                            <g><text fill="#000000" font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                                transform="matrix(1 0 0 1 1703.18 2382)">5 g</text>
+                              <path d="M0 0 571.654 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1860.5 1572.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 2557.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 2506.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 2454.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 2402.5)" />
+                              <path d="M0 0 571.654 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1860.5 2350.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 2298.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 2247.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 2195.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 2039.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 1936.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 2143.5)" />
+                              <path d="M0 0 571.654 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1860.5 2091.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 1988.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 1884.5)" />
+                              <path d="M0 0 571.654 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1860.5 1832.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 1780.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 1729.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 1677.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 1625.5)" />
+                              <rect x="1912" y="1572" width="519" height="1039" stroke="#000000" stroke-width="13.75"
+                                fill="none" /><text fill="#000000" font-family="Aptos,sans-serif" font-weight="700"
+                                font-size="92" transform="matrix(1 0 0 1 1654.48 2119)">10 g</text><text fill="#000000"
+                                font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                                transform="matrix(1 0 0 1 1654.48 1860)">15 g</text><text fill="#000000"
+                                font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                                transform="matrix(1 0 0 1 1654.48 1599)">20 g</text>
+                            </g>
+                          </g>
+                        </svg>
+                        <input type="range" data-save="q12_sol1_mass" class="value-slider w-full mt-2" min="0" max="20"
+                          step="0.1" disabled>
+                      </div>
+                    </td>
+                    <td class="border-b-[2px] border-r-[2px] border-black p-4">
+                      <div class="widget-mass flex flex-col items-center w-[160px] mx-auto">
+                        <svg width="160" height="200" viewBox="0 0 903 1136" class="block"
+                          style="transform: translateX(-20px);">
+                          <g transform="translate(-1535 -1485)">
+                            <path class="fill-path" fill="#ff4a4a" d="" />
+                            <g><text fill="#000000" font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                                transform="matrix(1 0 0 1 1703.18 2382)">5 g</text>
+                              <path d="M0 0 571.654 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1860.5 1572.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 2557.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 2506.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 2454.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 2402.5)" />
+                              <path d="M0 0 571.654 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1860.5 2350.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 2298.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 2247.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 2195.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 2039.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 1936.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 2143.5)" />
+                              <path d="M0 0 571.654 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1860.5 2091.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 1988.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 1884.5)" />
+                              <path d="M0 0 571.654 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1860.5 1832.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 1780.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 1729.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 1677.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 1625.5)" />
+                              <rect x="1912" y="1572" width="519" height="1039" stroke="#000000" stroke-width="13.75"
+                                fill="none" /><text fill="#000000" font-family="Aptos,sans-serif" font-weight="700"
+                                font-size="92" transform="matrix(1 0 0 1 1654.48 2119)">10 g</text><text fill="#000000"
+                                font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                                transform="matrix(1 0 0 1 1654.48 1860)">15 g</text><text fill="#000000"
+                                font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                                transform="matrix(1 0 0 1 1654.48 1599)">20 g</text>
+                            </g>
+                          </g>
+                        </svg>
+                        <input type="range" data-save="q12_sol2_mass" class="value-slider w-full mt-2" min="0" max="20"
+                          step="0.1" disabled>
+                      </div>
+                    </td>
+                    <td class="border-b-[2px] border-r-[2px] border-black p-4">
+                      <div class="widget-mass flex flex-col items-center w-[160px] mx-auto">
+                        <svg width="160" height="200" viewBox="0 0 903 1136" class="block"
+                          style="transform: translateX(-20px);">
+                          <g transform="translate(-1535 -1485)">
+                            <path class="fill-path" fill="#ff4a4a" d="" />
+                            <g><text fill="#000000" font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                                transform="matrix(1 0 0 1 1703.18 2382)">5 g</text>
+                              <path d="M0 0 571.654 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1860.5 1572.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 2557.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 2506.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 2454.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 2402.5)" />
+                              <path d="M0 0 571.654 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1860.5 2350.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 2298.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 2247.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 2195.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 2039.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 1936.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 2143.5)" />
+                              <path d="M0 0 571.654 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1860.5 2091.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 1988.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 1884.5)" />
+                              <path d="M0 0 571.654 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1860.5 1832.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 1780.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 1729.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 1677.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 1625.5)" />
+                              <rect x="1912" y="1572" width="519" height="1039" stroke="#000000" stroke-width="13.75"
+                                fill="none" /><text fill="#000000" font-family="Aptos,sans-serif" font-weight="700"
+                                font-size="92" transform="matrix(1 0 0 1 1654.48 2119)">10 g</text><text fill="#000000"
+                                font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                                transform="matrix(1 0 0 1 1654.48 1860)">15 g</text><text fill="#000000"
+                                font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                                transform="matrix(1 0 0 1 1654.48 1599)">20 g</text>
+                            </g>
+                          </g>
+                        </svg>
+                        <input type="range" data-save="q12_sol3_mass" class="value-slider w-full mt-2" min="0" max="20"
+                          step="0.1" disabled>
+                      </div>
+                    </td>
+                    <td class="border-b-[2px] border-black p-4">
+                      <div class="widget-mass flex flex-col items-center w-[160px] mx-auto">
+                        <svg width="160" height="200" viewBox="0 0 903 1136" class="block"
+                          style="transform: translateX(-20px);">
+                          <g transform="translate(-1535 -1485)">
+                            <path class="fill-path" fill="#ff4a4a" d="" />
+                            <g><text fill="#000000" font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                                transform="matrix(1 0 0 1 1703.18 2382)">5 g</text>
+                              <path d="M0 0 571.654 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1860.5 1572.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 2557.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 2506.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 2454.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 2402.5)" />
+                              <path d="M0 0 571.654 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1860.5 2350.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 2298.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 2247.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 2195.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 2039.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 1936.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 2143.5)" />
+                              <path d="M0 0 571.654 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1860.5 2091.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 1988.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 1884.5)" />
+                              <path d="M0 0 571.654 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1860.5 1832.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 1780.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 1729.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 1677.5)" />
+                              <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 1912.5 1625.5)" />
+                              <rect x="1912" y="1572" width="519" height="1039" stroke="#000000" stroke-width="13.75"
+                                fill="none" /><text fill="#000000" font-family="Aptos,sans-serif" font-weight="700"
+                                font-size="92" transform="matrix(1 0 0 1 1654.48 2119)">10 g</text><text fill="#000000"
+                                font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                                transform="matrix(1 0 0 1 1654.48 1860)">15 g</text><text fill="#000000"
+                                font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                                transform="matrix(1 0 0 1 1654.48 1599)">20 g</text>
+                            </g>
+                          </g>
+                        </svg>
+                        <input type="range" data-save="q12_sol4_mass" class="value-slider w-full mt-2" min="0" max="20"
+                          step="0.1" disabled>
+                      </div>
+                    </td>
+                  </tr>
+                  <!-- Volume Rows -->
+                  <tr class="relative" data-comment-anchor="q13">
+                    <td
+                      class="border-b-[2px] border-r-[3px] border-l-[3px] border-black p-4 bg-gray-100 font-bold text-[10px] w-32">
+                      VOLUME OF SOLUTION</td>
+                    <!-- SVG CUP CELLS (1-4) -->
+                    <td class="border-b-[2px] border-r-[2px] border-black p-4">
+                      <div class="widget-cup flex flex-col items-center w-[140px] mx-auto">
+                        <svg width="140" height="200" viewBox="0 0 702 1059" class="block">
+                          <g transform="translate(-2543 -540)">
+                            <path class="fill-path" fill="#48fafa" d="" />
+                            <g>
+                              <path d="M0 0 90.9449 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 1530.5)" />
+                              <path d="M0 0 96.1417 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 1473.5)" />
+                              <path d="M0 0 102.638 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 1418.5)" />
+                              <path d="M0 0 106.535 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 1365.5)" />
+                              <path d="M0 0 155.906 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3005.5 1314.5)" />
+                              <path d="M0 0 122.126 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 1265.5)" />
+                              <path d="M0 0 126.024 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 1218.5)" />
+                              <path d="M0 0 129.921 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 1173.5)" />
+                              <path d="M0 0 133.819 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 1127.5)" />
+                              <path d="M0 0 177.992 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3005.5 1084.5)" />
+                              <path d="M0 0 142.913 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 1043.5)" />
+                              <path d="M0 0 145.512 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 1003.5)" />
+                              <path d="M0 0 149.409 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 962.5)" />
+                              <path d="M0 0 153.307 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 925.5)" />
+                              <path d="M0 0 196.181 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3005.5 887.5)" />
+                              <path d="M0 0 161.102 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 849.5)" />
+                              <path d="M0 0 163.701 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 814.5)" />
+                              <path d="M0 0 167.598 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 779.5)" />
+                              <path d="M0 0 170.197 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 744.5)" />
+                              <path d="M0 0 213.071 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3005.5 710.5)" />
+                              <path d="M0 0 176.693 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 678.5)" />
+                              <path d="M0 0 179.291 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 645.5)" />
+                              <path d="M0 0 183.189 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 614.5)" />
+                              <path d="M0 0 185.787 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 583.5)" /><text fill="#000000"
+                                font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                                transform="matrix(1 0 0 1 2713.51 1344)">50 mL</text><text fill="#000000"
+                                font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                                transform="matrix(1 0 0 1 2665.25 1118)">100 mL</text>
+                              <path d="M3234 552 3136.71 1591 2681.29 1591 2584 552Z" stroke="#000000"
+                                stroke-width="13.75" fill="none" /><text fill="#000000" font-family="Aptos,sans-serif"
+                                font-weight="700" font-size="92" transform="matrix(1 0 0 1 2665.25 917)">150
+                                mL</text><text fill="#000000" font-family="Aptos,sans-serif" font-weight="700"
+                                font-size="92" transform="matrix(1 0 0 1 2665.25 744)">200 mL</text>
+                            </g>
+                          </g>
+                        </svg>
+                        <input type="range" data-save="q13_sol1_vol" class="value-slider w-full mt-2" min="0" max="250"
+                          step="0.1" disabled>
+                      </div>
+                    </td>
+                    <td class="border-b-[2px] border-r-[2px] border-black p-4">
+                      <div class="widget-cup flex flex-col items-center w-[140px] mx-auto">
+                        <svg width="140" height="200" viewBox="0 0 702 1059" class="block">
+                          <g transform="translate(-2543 -540)">
+                            <path class="fill-path" fill="#48fafa" d="" />
+                            <g>
+                              <path d="M0 0 90.9449 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 1530.5)" />
+                              <path d="M0 0 96.1417 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 1473.5)" />
+                              <path d="M0 0 102.638 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 1418.5)" />
+                              <path d="M0 0 106.535 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 1365.5)" />
+                              <path d="M0 0 155.906 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3005.5 1314.5)" />
+                              <path d="M0 0 122.126 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 1265.5)" />
+                              <path d="M0 0 126.024 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 1218.5)" />
+                              <path d="M0 0 129.921 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 1173.5)" />
+                              <path d="M0 0 133.819 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 1127.5)" />
+                              <path d="M0 0 177.992 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3005.5 1084.5)" />
+                              <path d="M0 0 142.913 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 1043.5)" />
+                              <path d="M0 0 145.512 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 1003.5)" />
+                              <path d="M0 0 149.409 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 962.5)" />
+                              <path d="M0 0 153.307 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 925.5)" />
+                              <path d="M0 0 196.181 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3005.5 887.5)" />
+                              <path d="M0 0 161.102 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 849.5)" />
+                              <path d="M0 0 163.701 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 814.5)" />
+                              <path d="M0 0 167.598 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 779.5)" />
+                              <path d="M0 0 170.197 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 744.5)" />
+                              <path d="M0 0 213.071 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3005.5 710.5)" />
+                              <path d="M0 0 176.693 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 678.5)" />
+                              <path d="M0 0 179.291 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 645.5)" />
+                              <path d="M0 0 183.189 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 614.5)" />
+                              <path d="M0 0 185.787 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 583.5)" /><text fill="#000000"
+                                font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                                transform="matrix(1 0 0 1 2713.51 1344)">50 mL</text><text fill="#000000"
+                                font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                                transform="matrix(1 0 0 1 2665.25 1118)">100 mL</text>
+                              <path d="M3234 552 3136.71 1591 2681.29 1591 2584 552Z" stroke="#000000"
+                                stroke-width="13.75" fill="none" /><text fill="#000000" font-family="Aptos,sans-serif"
+                                font-weight="700" font-size="92" transform="matrix(1 0 0 1 2665.25 917)">150
+                                mL</text><text fill="#000000" font-family="Aptos,sans-serif" font-weight="700"
+                                font-size="92" transform="matrix(1 0 0 1 2665.25 744)">200 mL</text>
+                            </g>
+                          </g>
+                        </svg>
+                        <input type="range" data-save="q13_sol2_vol" class="value-slider w-full mt-2" min="0" max="250"
+                          step="0.1" disabled>
+                      </div>
+                    </td>
+                    <td class="border-b-[2px] border-r-[2px] border-black p-4">
+                      <div class="widget-cup flex flex-col items-center w-[140px] mx-auto">
+                        <svg width="140" height="200" viewBox="0 0 702 1059" class="block">
+                          <g transform="translate(-2543 -540)">
+                            <path class="fill-path" fill="#48fafa" d="" />
+                            <g>
+                              <path d="M0 0 90.9449 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 1530.5)" />
+                              <path d="M0 0 96.1417 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 1473.5)" />
+                              <path d="M0 0 102.638 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 1418.5)" />
+                              <path d="M0 0 106.535 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 1365.5)" />
+                              <path d="M0 0 155.906 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3005.5 1314.5)" />
+                              <path d="M0 0 122.126 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 1265.5)" />
+                              <path d="M0 0 126.024 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 1218.5)" />
+                              <path d="M0 0 129.921 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 1173.5)" />
+                              <path d="M0 0 133.819 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 1127.5)" />
+                              <path d="M0 0 177.992 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3005.5 1084.5)" />
+                              <path d="M0 0 142.913 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 1043.5)" />
+                              <path d="M0 0 145.512 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 1003.5)" />
+                              <path d="M0 0 149.409 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 962.5)" />
+                              <path d="M0 0 153.307 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 925.5)" />
+                              <path d="M0 0 196.181 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3005.5 887.5)" />
+                              <path d="M0 0 161.102 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 849.5)" />
+                              <path d="M0 0 163.701 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 814.5)" />
+                              <path d="M0 0 167.598 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 779.5)" />
+                              <path d="M0 0 170.197 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 744.5)" />
+                              <path d="M0 0 213.071 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3005.5 710.5)" />
+                              <path d="M0 0 176.693 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 678.5)" />
+                              <path d="M0 0 179.291 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 645.5)" />
+                              <path d="M0 0 183.189 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 614.5)" />
+                              <path d="M0 0 185.787 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 583.5)" /><text fill="#000000"
+                                font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                                transform="matrix(1 0 0 1 2713.51 1344)">50 mL</text><text fill="#000000"
+                                font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                                transform="matrix(1 0 0 1 2665.25 1118)">100 mL</text>
+                              <path d="M3234 552 3136.71 1591 2681.29 1591 2584 552Z" stroke="#000000"
+                                stroke-width="13.75" fill="none" /><text fill="#000000" font-family="Aptos,sans-serif"
+                                font-weight="700" font-size="92" transform="matrix(1 0 0 1 2665.25 917)">150
+                                mL</text><text fill="#000000" font-family="Aptos,sans-serif" font-weight="700"
+                                font-size="92" transform="matrix(1 0 0 1 2665.25 744)">200 mL</text>
+                            </g>
+                          </g>
+                        </svg>
+                        <input type="range" data-save="q13_sol3_vol" class="value-slider w-full mt-2" min="0" max="250"
+                          step="0.1" disabled>
+                      </div>
+                    </td>
+                    <td class="border-b-[2px] border-black p-4">
+                      <div class="widget-cup flex flex-col items-center w-[140px] mx-auto">
+                        <svg width="140" height="200" viewBox="0 0 702 1059" class="block">
+                          <g transform="translate(-2543 -540)">
+                            <path class="fill-path" fill="#48fafa" d="" />
+                            <g>
+                              <path d="M0 0 90.9449 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 1530.5)" />
+                              <path d="M0 0 96.1417 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 1473.5)" />
+                              <path d="M0 0 102.638 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 1418.5)" />
+                              <path d="M0 0 106.535 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 1365.5)" />
+                              <path d="M0 0 155.906 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3005.5 1314.5)" />
+                              <path d="M0 0 122.126 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 1265.5)" />
+                              <path d="M0 0 126.024 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 1218.5)" />
+                              <path d="M0 0 129.921 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 1173.5)" />
+                              <path d="M0 0 133.819 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 1127.5)" />
+                              <path d="M0 0 177.992 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3005.5 1084.5)" />
+                              <path d="M0 0 142.913 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 1043.5)" />
+                              <path d="M0 0 145.512 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 1003.5)" />
+                              <path d="M0 0 149.409 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 962.5)" />
+                              <path d="M0 0 153.307 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 925.5)" />
+                              <path d="M0 0 196.181 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3005.5 887.5)" />
+                              <path d="M0 0 161.102 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 849.5)" />
+                              <path d="M0 0 163.701 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 814.5)" />
+                              <path d="M0 0 167.598 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 779.5)" />
+                              <path d="M0 0 170.197 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 744.5)" />
+                              <path d="M0 0 213.071 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3005.5 710.5)" />
+                              <path d="M0 0 176.693 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 678.5)" />
+                              <path d="M0 0 179.291 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 645.5)" />
+                              <path d="M0 0 183.189 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 614.5)" />
+                              <path d="M0 0 185.787 0.000360892" stroke="#7F7F7F" stroke-width="6.875"
+                                transform="matrix(1 0 0 -1 3047.5 583.5)" /><text fill="#000000"
+                                font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                                transform="matrix(1 0 0 1 2713.51 1344)">50 mL</text><text fill="#000000"
+                                font-family="Aptos,sans-serif" font-weight="700" font-size="92"
+                                transform="matrix(1 0 0 1 2665.25 1118)">100 mL</text>
+                              <path d="M3234 552 3136.71 1591 2681.29 1591 2584 552Z" stroke="#000000"
+                                stroke-width="13.75" fill="none" /><text fill="#000000" font-family="Aptos,sans-serif"
+                                font-weight="700" font-size="92" transform="matrix(1 0 0 1 2665.25 917)">150
+                                mL</text><text fill="#000000" font-family="Aptos,sans-serif" font-weight="700"
+                                font-size="92" transform="matrix(1 0 0 1 2665.25 744)">200 mL</text>
+                            </g>
+                          </g>
+                        </svg>
+                        <input type="range" data-save="q13_sol4_vol" class="value-slider w-full mt-2" min="0" max="250"
+                          step="0.1" disabled>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Data -->
+          <div class="mirror-card">
+            <h2 class="text-2xl font-bold mb-4 text-black">Data</h2>
+            <div class="overflow-x-auto">
+              <table class="w-full border-collapse border-b-[3px] border-r-[3px] border-black text-center">
+                <thead>
+                  <tr class="bg-gray-200 font-bold uppercase tracking-wider text-sm">
+                    <th class="bg-white border-b-[3px] border-r-[3px] border-black p-4 w-1/5"></th>
+                    <th class="border-b-[3px] border-r-[2px] border-t-[3px] border-black p-4">Solution #1</th>
+                    <th class="border-b-[3px] border-r-[2px] border-t-[3px] border-black p-4">Solution #2</th>
+                    <th class="border-b-[3px] border-r-[2px] border-t-[3px] border-black p-4">Solution #3</th>
+                    <th class="border-b-[3px] border-t-[3px] border-black p-4">Solution #4</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="relative" data-comment-anchor="q14">
+                    <td
+                      class="border-b-[2px] border-r-[3px] border-l-[3px] border-black p-4 bg-gray-100 font-bold text-[10px] w-32">
+                      COLOR INTENSITY</td>
+                    <!-- COLOR WIDGETS -->
+                    <td class="border-b-[2px] border-r-[2px] border-black p-4">
+                      <div class="color-widget flex flex-col items-center w-full">
+                        <div class="color-box w-16 h-16 border-2 border-gray-400 bg-white mb-2 rounded shadow-inner">
+                        </div>
+                        <input type="range" data-save="q14_sol1_hue" class="color-slider w-[80%]" disabled>
+                      </div>
+                    </td>
+                    <td class="border-b-[2px] border-r-[2px] border-black p-4">
+                      <div class="color-widget flex flex-col items-center w-full">
+                        <div class="color-box w-16 h-16 border-2 border-gray-400 bg-white mb-2 rounded shadow-inner">
+                        </div>
+                        <input type="range" data-save="q14_sol2_hue" class="color-slider w-[80%]" disabled>
+                      </div>
+                    </td>
+                    <td class="border-b-[2px] border-r-[2px] border-black p-4">
+                      <div class="color-widget flex flex-col items-center w-full">
+                        <div class="color-box w-16 h-16 border-2 border-gray-400 bg-white mb-2 rounded shadow-inner">
+                        </div>
+                        <input type="range" data-save="q14_sol3_hue" class="color-slider w-[80%]" disabled>
+                      </div>
+                    </td>
+                    <td class="border-b-[2px] border-black p-4">
+                      <div class="color-widget flex flex-col items-center w-full">
+                        <div class="color-box w-16 h-16 border-2 border-gray-400 bg-white mb-2 rounded shadow-inner">
+                        </div>
+                        <input type="range" data-save="q14_sol4_hue" class="color-slider w-[80%]" disabled>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr class="relative" data-comment-anchor="q15">
+                    <td
+                      class="border-b-[2px] border-r-[3px] border-l-[3px] border-black p-4 bg-gray-100 font-bold text-[10px] w-32">
+                      TASTE STRENGTH</td>
+                    <td class="border-b-[2px] border-r-[2px] border-black p-2"><textarea data-save="q15_sol1_taste"
+                        class="w-full min-h-[60px] border-none outline-none bg-transparent" readonly></textarea></td>
+                    <td class="border-b-[2px] border-r-[2px] border-black p-2"><textarea data-save="q15_sol2_taste"
+                        class="w-full min-h-[60px] border-none outline-none bg-transparent" readonly></textarea></td>
+                    <td class="border-b-[2px] border-r-[2px] border-black p-2"><textarea data-save="q15_sol3_taste"
+                        class="w-full min-h-[60px] border-none outline-none bg-transparent" readonly></textarea></td>
+                    <td class="border-b-[2px] border-black p-2"><textarea data-save="q15_sol4_taste"
+                        class="w-full min-h-[60px] border-none outline-none bg-transparent" readonly></textarea></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Data Analysis -->
+          <div class="mirror-card">
+            <h2 class="text-2xl font-bold mb-4 text-black">Data Analysis</h2>
+            <div class="space-y-6">
+              <div class="border-[2px] border-black rounded relative" data-comment-anchor="q16">
+                <div class="bg-gray-100 p-1 text-center font-bold text-xs border-b-[2px] border-black">SOLUTE MASS</div>
+                <div class="ranking-group p-4 flex flex-wrap items-center justify-center gap-2">
+                  <select data-save="q16_sm_pos1" class="ranking-select font-bold text-blue-700 bg-transparent w-32"
+                    disabled>
+                    <option value=""></option>
+                    <option>Solution #1</option>
+                    <option>Solution #2</option>
+                    <option>Solution #3</option>
+                    <option>Solution #4</option>
+                  </select>
+                  <select data-save="q16_sm_op1" class="ranking-select font-bold text-blue-700 bg-transparent w-10"
+                    disabled>
+                    <option value=""></option>
+                    <option value="<">&lt;</option>
+                    <option value="=">=</option>
+                  </select>
+                  <select data-save="q16_sm_pos2" class="ranking-select font-bold text-blue-700 bg-transparent w-32"
+                    disabled>
+                    <option value=""></option>
+                    <option>Solution #1</option>
+                    <option>Solution #2</option>
+                    <option>Solution #3</option>
+                    <option>Solution #4</option>
+                  </select>
+                  <select data-save="q16_sm_op2" class="ranking-select font-bold text-blue-700 bg-transparent w-10"
+                    disabled>
+                    <option value=""></option>
+                    <option value="<">&lt;</option>
+                    <option value="=">=</option>
+                  </select>
+                  <select data-save="q16_sm_pos3" class="ranking-select font-bold text-blue-700 bg-transparent w-32"
+                    disabled>
+                    <option value=""></option>
+                    <option>Solution #1</option>
+                    <option>Solution #2</option>
+                    <option>Solution #3</option>
+                    <option>Solution #4</option>
+                  </select>
+                  <select data-save="q16_sm_op3" class="ranking-select font-bold text-blue-700 bg-transparent w-10"
+                    disabled>
+                    <option value=""></option>
+                    <option value="<">&lt;</option>
+                    <option value="=">=</option>
+                  </select>
+                  <select data-save="q16_sm_pos4" class="ranking-select font-bold text-blue-700 bg-transparent w-32"
+                    disabled>
+                    <option value=""></option>
+                    <option>Solution #1</option>
+                    <option>Solution #2</option>
+                    <option>Solution #3</option>
+                    <option>Solution #4</option>
+                  </select>
+                </div>
+              </div>
+              <div class="border-[2px] border-black rounded relative" data-comment-anchor="q17">
+                <div class="bg-gray-100 p-1 text-center font-bold text-xs border-b-[2px] border-black">SOLUTE MOLES
+                </div>
+                <div class="ranking-group p-4 flex flex-wrap items-center justify-center gap-2">
+                  <select data-save="q17_mo_pos1" class="ranking-select font-bold text-blue-700 bg-transparent w-32"
+                    disabled>
+                    <option value=""></option>
+                    <option>Solution #1</option>
+                    <option>Solution #2</option>
+                    <option>Solution #3</option>
+                    <option>Solution #4</option>
+                  </select>
+                  <select data-save="q17_mo_op1" class="ranking-select font-bold text-blue-700 bg-transparent w-10"
+                    disabled>
+                    <option value=""></option>
+                    <option value="<">&lt;</option>
+                    <option value="=">=</option>
+                  </select>
+                  <select data-save="q17_mo_pos2" class="ranking-select font-bold text-blue-700 bg-transparent w-32"
+                    disabled>
+                    <option value=""></option>
+                    <option>Solution #1</option>
+                    <option>Solution #2</option>
+                    <option>Solution #3</option>
+                    <option>Solution #4</option>
+                  </select>
+                  <select data-save="q17_mo_op2" class="ranking-select font-bold text-blue-700 bg-transparent w-10"
+                    disabled>
+                    <option value=""></option>
+                    <option value="<">&lt;</option>
+                    <option value="=">=</option>
+                  </select>
+                  <select data-save="q17_mo_pos3" class="ranking-select font-bold text-blue-700 bg-transparent w-32"
+                    disabled>
+                    <option value=""></option>
+                    <option>Solution #1</option>
+                    <option>Solution #2</option>
+                    <option>Solution #3</option>
+                    <option>Solution #4</option>
+                  </select>
+                  <select data-save="q17_mo_op3" class="ranking-select font-bold text-blue-700 bg-transparent w-10"
+                    disabled>
+                    <option value=""></option>
+                    <option value="<">&lt;</option>
+                    <option value="=">=</option>
+                  </select>
+                  <select data-save="q17_mo_pos4" class="ranking-select font-bold text-blue-700 bg-transparent w-32"
+                    disabled>
+                    <option value=""></option>
+                    <option>Solution #1</option>
+                    <option>Solution #2</option>
+                    <option>Solution #3</option>
+                    <option>Solution #4</option>
+                  </select>
+                </div>
+              </div>
+              <div class="border-[2px] border-black rounded relative" data-comment-anchor="q18">
+                <div class="bg-gray-100 p-1 text-center font-bold text-xs border-b-[2px] border-black">SOLUTION VOLUME
+                </div>
+                <div class="ranking-group p-4 flex flex-wrap items-center justify-center gap-2">
+                  <select data-save="q18_sv_pos1" class="ranking-select font-bold text-blue-700 bg-transparent w-32"
+                    disabled>
+                    <option value=""></option>
+                    <option>Solution #1</option>
+                    <option>Solution #2</option>
+                    <option>Solution #3</option>
+                    <option>Solution #4</option>
+                  </select>
+                  <select data-save="q18_sv_op1" class="ranking-select font-bold text-blue-700 bg-transparent w-10"
+                    disabled>
+                    <option value=""></option>
+                    <option value="<">&lt;</option>
+                    <option value="=">=</option>
+                  </select>
+                  <select data-save="q18_sv_pos2" class="ranking-select font-bold text-blue-700 bg-transparent w-32"
+                    disabled>
+                    <option value=""></option>
+                    <option>Solution #1</option>
+                    <option>Solution #2</option>
+                    <option>Solution #3</option>
+                    <option>Solution #4</option>
+                  </select>
+                  <select data-save="q18_sv_op2" class="ranking-select font-bold text-blue-700 bg-transparent w-10"
+                    disabled>
+                    <option value=""></option>
+                    <option value="<">&lt;</option>
+                    <option value="=">=</option>
+                  </select>
+                  <select data-save="q18_sv_pos3" class="ranking-select font-bold text-blue-700 bg-transparent w-32"
+                    disabled>
+                    <option value=""></option>
+                    <option>Solution #1</option>
+                    <option>Solution #2</option>
+                    <option>Solution #3</option>
+                    <option>Solution #4</option>
+                  </select>
+                  <select data-save="q18_sv_op3" class="ranking-select font-bold text-blue-700 bg-transparent w-10"
+                    disabled>
+                    <option value=""></option>
+                    <option value="<">&lt;</option>
+                    <option value="=">=</option>
+                  </select>
+                  <select data-save="q18_sv_pos4" class="ranking-select font-bold text-blue-700 bg-transparent w-32"
+                    disabled>
+                    <option value=""></option>
+                    <option>Solution #1</option>
+                    <option>Solution #2</option>
+                    <option>Solution #3</option>
+                    <option>Solution #4</option>
+                  </select>
+                </div>
+              </div>
+              <div class="border-[2px] border-black rounded relative" data-comment-anchor="q19">
+                <div class="bg-gray-100 p-1 text-center font-bold text-xs border-b-[2px] border-black">CONCENTRATION
+                </div>
+                <div class="ranking-group p-4 flex flex-wrap items-center justify-center gap-2">
+                  <select data-save="q19_sc_pos1" class="ranking-select font-bold text-blue-700 bg-transparent w-32"
+                    disabled>
+                    <option value=""></option>
+                    <option>Solution #1</option>
+                    <option>Solution #2</option>
+                    <option>Solution #3</option>
+                    <option>Solution #4</option>
+                  </select>
+                  <select data-save="q19_sc_op1" class="ranking-select font-bold text-blue-700 bg-transparent w-10"
+                    disabled>
+                    <option value=""></option>
+                    <option value="<">&lt;</option>
+                    <option value="=">=</option>
+                  </select>
+                  <select data-save="q19_sc_pos2" class="ranking-select font-bold text-blue-700 bg-transparent w-32"
+                    disabled>
+                    <option value=""></option>
+                    <option>Solution #1</option>
+                    <option>Solution #2</option>
+                    <option>Solution #3</option>
+                    <option>Solution #4</option>
+                  </select>
+                  <select data-save="q19_sc_op2" class="ranking-select font-bold text-blue-700 bg-transparent w-10"
+                    disabled>
+                    <option value=""></option>
+                    <option value="<">&lt;</option>
+                    <option value="=">=</option>
+                  </select>
+                  <select data-save="q19_sc_pos3" class="ranking-select font-bold text-blue-700 bg-transparent w-32"
+                    disabled>
+                    <option value=""></option>
+                    <option>Solution #1</option>
+                    <option>Solution #2</option>
+                    <option>Solution #3</option>
+                    <option>Solution #4</option>
+                  </select>
+                  <select data-save="q19_sc_op3" class="ranking-select font-bold text-blue-700 bg-transparent w-10"
+                    disabled>
+                    <option value=""></option>
+                    <option value="<">&lt;</option>
+                    <option value="=">=</option>
+                  </select>
+                  <select data-save="q19_sc_pos4" class="ranking-select font-bold text-blue-700 bg-transparent w-32"
+                    disabled>
+                    <option value=""></option>
+                    <option>Solution #1</option>
+                    <option>Solution #2</option>
+                    <option>Solution #3</option>
+                    <option>Solution #4</option>
+                  </select>
+                </div>
+              </div>
+              <div class="border-[2px] border-black rounded relative" data-comment-anchor="q20">
+                <div class="bg-gray-100 p-1 text-center font-bold text-xs border-b-[2px] border-black">TASTE STRENGTH
+                </div>
+                <div class="ranking-group p-4 flex flex-wrap items-center justify-center gap-2">
+                  <select data-save="q20_ts_pos1" class="ranking-select font-bold text-blue-700 bg-transparent w-32"
+                    disabled>
+                    <option value=""></option>
+                    <option>Solution #1</option>
+                    <option>Solution #2</option>
+                    <option>Solution #3</option>
+                    <option>Solution #4</option>
+                  </select>
+                  <select data-save="q20_ts_op1" class="ranking-select font-bold text-blue-700 bg-transparent w-10"
+                    disabled>
+                    <option value=""></option>
+                    <option value="<">&lt;</option>
+                    <option value="=">=</option>
+                  </select>
+                  <select data-save="q20_ts_pos2" class="ranking-select font-bold text-blue-700 bg-transparent w-32"
+                    disabled>
+                    <option value=""></option>
+                    <option>Solution #1</option>
+                    <option>Solution #2</option>
+                    <option>Solution #3</option>
+                    <option>Solution #4</option>
+                  </select>
+                  <select data-save="q20_ts_op2" class="ranking-select font-bold text-blue-700 bg-transparent w-10"
+                    disabled>
+                    <option value=""></option>
+                    <option value="<">&lt;</option>
+                    <option value="=">=</option>
+                  </select>
+                  <select data-save="q20_ts_pos3" class="ranking-select font-bold text-blue-700 bg-transparent w-32"
+                    disabled>
+                    <option value=""></option>
+                    <option>Solution #1</option>
+                    <option>Solution #2</option>
+                    <option>Solution #3</option>
+                    <option>Solution #4</option>
+                  </select>
+                  <select data-save="q20_ts_op3" class="ranking-select font-bold text-blue-700 bg-transparent w-10"
+                    disabled>
+                    <option value=""></option>
+                    <option value="<">&lt;</option>
+                    <option value="=">=</option>
+                  </select>
+                  <select data-save="q20_ts_pos4" class="ranking-select font-bold text-blue-700 bg-transparent w-32"
+                    disabled>
+                    <option value=""></option>
+                    <option>Solution #1</option>
+                    <option>Solution #2</option>
+                    <option>Solution #3</option>
+                    <option>Solution #4</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Conclusions -->
+          <div class="mirror-card">
+            <h2 class="text-2xl font-bold mb-4 text-purple-700">Conclusions</h2>
+            <div class="space-y-8">
+              <div class="flex flex-col gap-2 relative" data-comment-anchor="q21">
+                <label class="font-medium text-gray-800">21. Same moles, different concentrations?</label>
+                <textarea data-save="q21" rows="2" class="w-full border-b border-black outline-none bg-transparent"
+                  readonly></textarea>
+              </div>
+              <div class="flex flex-col gap-2 relative" data-comment-anchor="q22">
+                <label class="font-medium text-gray-800">22. Same volume, different concentrations?</label>
+                <textarea data-save="q22" rows="2" class="w-full border-b border-black outline-none bg-transparent"
+                  readonly></textarea>
+              </div>
+              <div class="flex flex-col gap-2 relative" data-comment-anchor="q23">
+                <label class="font-medium text-gray-800">23. Which tasted the same?</label>
+                <textarea data-save="q23" rows="2" class="w-full border-b border-black outline-none bg-transparent"
+                  readonly></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- Post Lab -->
+          <div class="mirror-card">
+            <h2 class="text-2xl font-bold mb-4 text-purple-700">Post-Lab Questions</h2>
+            <div class="space-y-8">
+              <div class="flex flex-col gap-2 relative" data-comment-anchor="q24">
+                <label class="font-medium text-gray-800">24. Molarity of 2L with 28g KOH?</label>
+                <textarea data-save="q24" rows="2" class="w-full border-b border-black outline-none bg-transparent"
+                  readonly></textarea>
+              </div>
+              <div class="flex flex-col gap-2 relative" data-comment-anchor="q25">
+                <label class="font-medium text-gray-800">25. Moles for 0.50L 2.0M KNO3?</label>
+                <textarea data-save="q25" rows="2" class="w-full border-b border-black outline-none bg-transparent"
+                  readonly></textarea>
+              </div>
+              <div class="flex flex-col gap-2 relative" data-comment-anchor="q26">
+                <label class="font-medium text-gray-800">26. More concentrated: 8M 200mL vs 4M 500mL?</label>
+                <textarea data-save="q26" rows="2" class="w-full border-b border-black outline-none bg-transparent"
+                  readonly></textarea>
+              </div>
+              <div class="flex flex-col gap-2 relative" data-comment-anchor="q27">
+                <label class="font-medium text-gray-800">27. Smaller volume/greater solute less concentrated?</label>
+                <textarea data-save="q27" rows="2" class="w-full border-b border-black outline-none bg-transparent"
+                  readonly></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -75,339 +1336,389 @@
     const FIREBASE_SECRET = "<?= FIREBASE_SECRET ?>";
     const ASSIGNMENT_CODE = "<?= ASSIGNMENT_CODE ?>";
     const SECURE_ANSWER_KEY = JSON.parse('<?= ANSWER_KEY ?>');
-    const questions = JSON.parse('<?= QUESTIONS ?>'); 
+    const questions = JSON.parse('<?= QUESTIONS ?>');
     const NAME_MAP = JSON.parse('<?= NAME_MAP ?>');
 
     let currentLiveData = {};
     let activeStudentUid = null;
-    let activeStudentPeriod = null; 
+    let activeStudentPeriod = null;
     let selectedClassFolder = null;
-    let classAssignmentKeys = {}; 
-    let activeEventSources = []; 
+    let classAssignmentKeys = {};
+    let activeEventSources = [];
     let openCommentAreas = new Set();
-    let relevantClasses = []; 
+    let relevantClasses = [];
 
     function formatPeriodName(folder) {
-        if (!folder || folder === 'ALL') return folder === 'ALL' ? 'All Classes' : folder;
-        const match = folder.match(/_P(\d+)/i);
-        return match ? `Period ${match[1]}` : folder;
+      if (!folder || folder === 'ALL') return folder === 'ALL' ? 'All Classes' : folder;
+      const match = folder.match(/_P(\d+)/i);
+      return match ? `Period ${match[1]}` : folder;
     }
 
     function updateNestedData(root, path, value) {
-        const parts = path.split('/').filter(p => p.trim() !== '');
-        let current = root;
-        for (let i = 0; i < parts.length - 1; i++) {
-            if (!current[parts[i]]) current[parts[i]] = {};
-            current = current[parts[i]];
-        }
-        if (parts.length > 0) {
-            const lastPart = parts[parts.length - 1];
-            if (value === null) {
-                delete current[lastPart];
-            } else {
-                current[lastPart] = value;
-            }
-        }
+      const parts = path.split('/').filter(p => p.trim() !== '');
+      let current = root;
+      for (let i = 0; i < parts.length - 1; i++) {
+        if (!current[parts[i]]) current[parts[i]] = {};
+        current = current[parts[i]];
+      }
+      if (parts.length > 0) {
+        const lastPart = parts[parts.length - 1];
+        if (value === null) delete current[lastPart];
+        else current[lastPart] = value;
+      }
     }
 
-    function init() { 
-      let headHtml = `<tr>
-        <th class="student-name name-column-width">
-          <div class="flex items-center justify-between pr-4">
-            <span>Student Name</span>
-            <button onclick="toggleAllLocks()" class="p-1 hover:bg-gray-200 rounded transition-colors text-gray-500" title="Toggle Lock for All Visible">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-            </button>
-          </div>
-        </th>
-        <th class="score-col">Score</th>`;
-      questions.forEach((q, idx) => { 
-        const formattedId = String(q.id).replace(/^q/, 'Q');
-        headHtml += `<th class="q-col">${formattedId}</th>`; 
-      });
+    function init() {
+      let headHtml = `<tr><th class="student-name name-column-width"><div class="flex items-center justify-between pr-4"><span>Student Name</span><button onclick="toggleAllLocks()" class="p-1 hover:bg-gray-200 rounded transition-colors text-gray-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg></button></div></th><th class="score-col">Score</th>`;
+      questions.forEach(q => { headHtml += `<th class="q-col">${String(q.id).replace(/^q/, 'Q')}</th>`; });
       headHtml += `</tr>`;
       document.getElementById('table-head').innerHTML = headHtml;
-      
       document.getElementById('sync-msg').colSpan = questions.length + 2;
-      document.getElementById('sync-msg').innerText = "Loading master class roster...";
+      google.script.run.withSuccessHandler(initializeWithRoster).getDashboardRoster();
 
-      google.script.run.withSuccessHandler(initializeWithRoster).getDashboardRoster(); 
+      // Inject Teacher Comment UI slots into the mirror
+      injectCommentButtonsToMirror();
     }
 
     function initializeWithRoster(rosterData) {
       classRoster = rosterData;
-      
       const targetPrefix = ASSIGNMENT_CODE.split('_')[0];
       relevantClasses = [...new Set(classRoster.map(s => s.period))].filter(c => c.startsWith(targetPrefix)).sort();
-      
       const filterSelect = document.getElementById('class-filter');
       filterSelect.innerHTML = '';
-      
-      if (relevantClasses.length === 0) {
-          document.getElementById('sync-msg').innerText = "No students found in the roster for this unit.";
-          return;
-      }
-
       if (relevantClasses.length > 1) {
-          const allOpt = document.createElement('option');
-          allOpt.value = 'ALL'; allOpt.innerText = 'All Classes';
-          filterSelect.appendChild(allOpt);
-          selectedClassFolder = 'ALL';
+        const allOpt = document.createElement('option'); allOpt.value = 'ALL'; allOpt.innerText = 'All Classes';
+        filterSelect.appendChild(allOpt);
+        selectedClassFolder = 'ALL';
       }
-
       relevantClasses.forEach((c, idx) => {
-          const opt = document.createElement('option');
-          opt.value = c; opt.innerText = formatPeriodName(c);
-          filterSelect.appendChild(opt);
-          if (!selectedClassFolder && idx === 0) { selectedClassFolder = c; }
+        const opt = document.createElement('option'); opt.value = c; opt.innerText = formatPeriodName(c);
+        filterSelect.appendChild(opt);
+        if (!selectedClassFolder && idx === 0) selectedClassFolder = c;
       });
-      
       if (selectedClassFolder) filterSelect.value = selectedClassFolder;
       handleClassChange();
     }
 
     function handleClassChange() {
-        const oldSelection = selectedClassFolder;
-        selectedClassFolder = document.getElementById('class-filter').value;
-        
-        if (activeStudentUid && oldSelection !== selectedClassFolder) {
-            const newSorted = getSortedStudents();
-            if (newSorted.length > 0) {
-                showStudentDetail(newSorted[0].uid, newSorted[0].name, newSorted[0].period);
-            } else {
-                showGridView();
-            }
-        }
-
-        currentLiveData = {}; 
-        classAssignmentKeys = {};
-        activeEventSources.forEach(es => es.close());
-        activeEventSources = [];
-        
-        document.getElementById('table-body').innerHTML = `<tr><td colspan="${questions.length + 2}" class="py-10 text-gray-500 bg-white text-center">Fetching live assignment data...</td></tr>`;
-        
-        const foldersToFetch = selectedClassFolder === 'ALL' ? relevantClasses : [selectedClassFolder];
-        
-        let fetchCount = 0;
-        foldersToFetch.forEach(folder => {
-            const tgUrl = `${databaseURL}/teacherGradebook/${folder}.json?auth=${FIREBASE_SECRET}&shallow=true`;
-            fetch(tgUrl).then(r=>r.json()).then(keys => {
-                const classroomId = folder.split('_').pop();
-                const provisionalKey = `${ASSIGNMENT_CODE}_${classroomId}`;
-                const key = Object.keys(keys || {}).find(k => k.startsWith(ASSIGNMENT_CODE) && k !== provisionalKey) || provisionalKey;
-                
-                classAssignmentKeys[folder] = key;
-                startLiveDatabaseListener(folder, key);
-                
-                fetchCount++;
-                if (fetchCount === foldersToFetch.length) {
-                    const indicator = document.getElementById('status-indicator');
-                    indicator.className = "bg-green-100 text-green-700 px-3 py-1.5 border border-green-300 rounded-full text-xs font-bold uppercase tracking-wide flex items-center gap-2 shadow-sm whitespace-nowrap";
-                    indicator.innerHTML = `<span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> LIVE (${formatPeriodName(selectedClassFolder)})`;
-                }
-            });
+      const oldSelection = selectedClassFolder;
+      selectedClassFolder = document.getElementById('class-filter').value;
+      if (activeStudentUid && oldSelection !== selectedClassFolder) {
+        const newSorted = getSortedStudents();
+        if (newSorted.length > 0) showStudentDetail(newSorted[0].uid, newSorted[0].name, newSorted[0].period);
+        else showGridView();
+      }
+      currentLiveData = {}; classAssignmentKeys = {};
+      activeEventSources.forEach(es => es.close());
+      activeEventSources = [];
+      document.getElementById('table-body').innerHTML = `<tr><td colspan="${questions.length + 2}" class="py-10 text-gray-500 bg-white text-center">Fetching live data...</td></tr>`;
+      const foldersToFetch = selectedClassFolder === 'ALL' ? relevantClasses : [selectedClassFolder];
+      foldersToFetch.forEach(folder => {
+        const tgUrl = `${databaseURL}/teacherGradebook/${folder}.json?auth=${FIREBASE_SECRET}&shallow=true`;
+        fetch(tgUrl).then(r => r.json()).then(keys => {
+          const classroomId = folder.split('_').pop();
+          const provKey = `${ASSIGNMENT_CODE}_${classroomId}`;
+          const key = Object.keys(keys || {}).find(k => k.startsWith(ASSIGNMENT_CODE) && k !== provKey) || provKey;
+          classAssignmentKeys[folder] = key;
+          startLiveDatabaseListener(folder, key);
+          const indicator = document.getElementById('status-indicator');
+          indicator.className = "bg-green-100 text-green-700 px-3 py-1.5 border border-green-300 rounded-full text-xs font-bold flex items-center gap-2 whitespace-nowrap";
+          indicator.innerHTML = `<span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> LIVE`;
         });
+      });
     }
 
     function startLiveDatabaseListener(classFolder, assignmentKey) {
-        const url = `${databaseURL}/teacherGradebook/${classFolder}/${assignmentKey}.json?auth=${FIREBASE_SECRET}`;
-        const es = new EventSource(url);
-        activeEventSources.push(es);
-        
-        if (!currentLiveData[classFolder]) currentLiveData[classFolder] = {};
-
-        const handleFirebaseEvent = function(e) {
-           const payload = JSON.parse(e.data);
-           const path = payload.path || "";
-           const data = payload.data;
-
-           if (e.type === 'put') {
-               if (path === "/") {
-                  currentLiveData[classFolder] = data || {};
-               } else {
-                  updateNestedData(currentLiveData[classFolder], path, data);
-               }
-           } else if (e.type === 'patch') {
-               for (let key in data) {
-                   const fullPath = path === '/' ? '/' + key : path + '/' + key;
-                   updateNestedData(currentLiveData[classFolder], fullPath, data[key]);
-               }
-           }
-
-           updateGrid();
-           if (activeStudentUid && activeStudentPeriod === classFolder) {
-               const path = payload.path || "";
-               if (path === "/" || path.startsWith("/" + activeStudentUid)) {
-                   renderStudentDetail(activeStudentUid, activeStudentPeriod);
-               }
-           }
-        };
-
-        es.addEventListener('put', handleFirebaseEvent);
-        es.addEventListener('patch', handleFirebaseEvent);
+      const es = new EventSource(`${databaseURL}/teacherGradebook/${classFolder}/${assignmentKey}.json?auth=${FIREBASE_SECRET}`);
+      activeEventSources.push(es);
+      if (!currentLiveData[classFolder]) currentLiveData[classFolder] = {};
+      const handleFirebaseEvent = function (e) {
+        const payload = JSON.parse(e.data);
+        const path = payload.path || "";
+        const data = payload.data;
+        if (e.type === 'put') {
+          if (path === "/") currentLiveData[classFolder] = data || {};
+          else updateNestedData(currentLiveData[classFolder], path, data);
+        } else if (e.type === 'patch') {
+          for (let key in data) updateNestedData(currentLiveData[classFolder], path === '/' ? '/' + key : path + '/' + key, data[key]);
+        }
+        updateGrid();
+        if (activeStudentUid && activeStudentPeriod === classFolder) {
+          if (path === "/" || path.startsWith("/" + activeStudentUid)) renderStudentDetail(activeStudentUid, activeStudentPeriod);
+        }
+      };
+      es.addEventListener('put', handleFirebaseEvent);
+      es.addEventListener('patch', handleFirebaseEvent);
     }
 
-    function toggleStudentLock(uid, period, currentStatus) {
+    function injectCommentButtonsToMirror() {
+      const container = document.getElementById('detail-questions');
+      if (!container) return;
+      const anchors = container.querySelectorAll('[data-comment-anchor]');
+      anchors.forEach(anchor => {
+        const prefix = anchor.getAttribute('data-comment-anchor');
+        if (document.getElementById(`btn-${prefix}`)) return;
+
+        const btn = document.createElement('button');
+        btn.id = `btn-${prefix}`;
+        btn.className = 'comment-bubble-btn p-1.5 rounded-full bg-white shadow-md border border-gray-200 hover:bg-gray-100 transition-all';
+        btn.innerHTML = `
+          <svg class="w-6 h-6 transition-all" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zm-4 0H9v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd" />
+          </svg>`;
+
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          toggleTeacherCommentArea(prefix);
+        };
+
+        // Determine where to attach the button
+        if (anchor.tagName === 'TR') {
+          const lastCell = anchor.cells[anchor.cells.length - 1];
+          lastCell.classList.add('relative');
+          lastCell.appendChild(btn);
+        } else {
+          anchor.classList.add('relative');
+          anchor.appendChild(btn);
+        }
+      });
+    }
+
+    function toggleTeacherCommentArea(prefix) {
+      const anchor = document.querySelector(`[data-comment-anchor="${prefix}"]`);
+      if (!anchor) return;
+
+      // Ensure comment area exists
+      let commentArea = document.getElementById(`comment-area-${prefix}`);
+      if (!commentArea) {
+        const isTable = (anchor.tagName === 'TR');
+        if (isTable) {
+          commentArea = document.createElement('tr');
+          commentArea.className = 'hidden comment-area-tr';
+          const td = document.createElement('td');
+          td.colSpan = anchor.cells.length;
+          td.className = 'p-4 border-b-[2px] border-r-[3px] border-l-[3px] border-black';
+          td.innerHTML = `
+            <div class="flex flex-col gap-1">
+              <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Teacher Feedback for ${prefix.toUpperCase()}</label>
+              <textarea id="feedback-text-${prefix}" oninput="autoResize.call(this)" onblur="saveTeacherComment('${prefix}')" style="resize: none; overflow: hidden;" class="w-full p-2 border border-gray-300 rounded text-sm text-blue-700 font-bold min-h-[60px] outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400 shadow-sm" placeholder="Type feedback here..."></textarea>
+              <div class="mt-1 flex justify-end"><span class="text-[10px] text-gray-400 italic">Saves on blur (clicking out)</span></div>
+            </div>
+          `;
+          commentArea.appendChild(td);
+        } else {
+          commentArea = document.createElement('div');
+          commentArea.className = 'hidden mt-2 p-4 bg-purple-50 border border-purple-100 rounded-lg shadow-inner';
+          commentArea.innerHTML = `
+            <div class="flex flex-col gap-1">
+              <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Teacher Feedback</label>
+              <textarea id="feedback-text-${prefix}" oninput="autoResize.call(this)" onblur="saveTeacherComment('${prefix}')" style="resize: none; overflow: hidden;" class="w-full p-2 border border-gray-300 rounded text-sm text-blue-700 font-bold min-h-[60px] outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400 shadow-sm" placeholder="Type feedback here..."></textarea>
+              <div class="mt-1 flex justify-end"><span class="text-[10px] text-gray-400 italic">Saves on blur (clicking out)</span></div>
+            </div>
+          `;
+        }
+commentArea.id = `comment-area-${prefix}`;
+        
+        // Wedge it correctly based on the container type
+        if (!isTable && (anchor.classList.contains('border-[2px]') || anchor.classList.contains('border-[3px]'))) {
+          // If it is a bordered Data Analysis box, put the comment INSIDE the black border
+          anchor.appendChild(commentArea);
+        } else {
+          // Otherwise, wedge it exactly below the question row/card
+          anchor.parentNode.insertBefore(commentArea, anchor.nextSibling);
+        }
+      }
+
+      const isVisibleNow = !commentArea.classList.toggle('hidden');
+      if (isVisibleNow) {
+        openCommentAreas.add(prefix);
+        const input = document.getElementById(`feedback-text-${prefix}`);
+        if (input) {
+          const studentData = (currentLiveData[activeStudentPeriod] || {})[activeStudentUid] || {};
+          input.value = (studentData[prefix] || {}).teacherComment || "";
+          
+          // Force height recalculation immediately upon opening
+          input.style.height = "5px"; 
+          input.style.height = (input.scrollHeight) + "px";
+          
+          input.focus();
+        }
+      } else {
+        openCommentAreas.delete(prefix);
+        saveTeacherComment(prefix);
+      }
+    }
+
+    function saveTeacherComment(prefix) {
+      const el = document.getElementById(`feedback-text-${prefix}`);
+      if (!el || !activeStudentUid) return;
+      const newText = el.value.trim();
+      const assignmentKey = classAssignmentKeys[activeStudentPeriod];
+      const oldText = (((currentLiveData[activeStudentPeriod] || {})[activeStudentUid] || {})[prefix] || {}).teacherComment || "";
+      if (newText !== oldText.trim()) {
+        fetch(`${databaseURL}/teacherGradebook/${activeStudentPeriod}/${assignmentKey}/${activeStudentUid}/${prefix}.json?auth=${FIREBASE_SECRET}`, {
+          method: 'PATCH', body: JSON.stringify({ teacherComment: newText, commentUnread: true })
+        });
+      }
+    }
+
+    function renderStudentDetail(uid, period, qIdToScroll = null) {
+      const studentData = (currentLiveData[period] || {})[uid] || {};
+
+
+      // Populate all mirrored inputs
+      document.querySelectorAll('#detail-questions [data-save]').forEach(el => {
+        const id = el.getAttribute('data-save');
+        const val = (studentData[id] || {}).selection;
+        el.value = val || (el.type === 'range' ? 0 : "");
+        if (el.tagName === 'TEXTAREA') { el.style.height = 'auto'; el.style.height = (el.scrollHeight) + 'px'; }
+      });
+
+      // Update Visual Widgets
+      document.querySelectorAll('.widget-mass').forEach(w => updateMassFill(w, w.querySelector('input').value));
+      document.querySelectorAll('.widget-cup').forEach(w => updateCupFill(w, w.querySelector('input').value));
+      document.querySelectorAll('.color-widget').forEach(w => updateColor(w, w.querySelector('input').value));
+      document.querySelectorAll('.ranking-group').forEach(g => updateRankingOptions(g));
+
+      // Update Comment Buttons
+      document.querySelectorAll('[data-comment-anchor]').forEach(anchor => {
+        const prefix = anchor.getAttribute('data-comment-anchor');
+        const qData = studentData[prefix] || {};
+        const btn = document.getElementById(`btn-${prefix}`);
+        if (!btn) return;
+
+        const svg = btn.querySelector('svg');
+        const commentText = (qData.teacherComment || "").trim();
+
+        // commentUnread = true means the student has NOT seen it yet
+        const isUnread = qData.commentUnread === true;
+
+        // The base structural classes (preserves the circle, shadow, and template hover animations)
+        const baseClasses = "comment-bubble-btn bg-white shadow-md rounded-full transition-all transform hover:scale-110 active:scale-95 flex items-center justify-center border";
+
+        if (commentText === "") {
+          // Empty: Gray outline, no animation
+          btn.className = `${baseClasses} border-gray-200 text-gray-300 hover:bg-gray-50`;
+          svg.classList.remove('drop-shadow-sm', 'animate-pulse');
+        } else if (isUnread) {
+          // Unread by student: Orange outline, pulsing to grab your attention
+          btn.className = `${baseClasses} border-orange-200 text-orange-500 bg-orange-50`;
+          svg.classList.add('drop-shadow-sm', 'animate-pulse');
+        } else {
+          // Read by student: Green outline, solid
+          btn.className = `${baseClasses} border-green-200 text-green-500 bg-green-50`;
+          svg.classList.add('drop-shadow-sm');
+          svg.classList.remove('animate-pulse');
+        }
+      });
+
+      if (qIdToScroll) {
+        const prefix = qIdToScroll.split('_')[0];
+        setTimeout(() => {
+          const target = document.querySelector(`[data-comment-anchor="${prefix}"]`);
+          if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+      }
+    }
+
+    function updateMassFill(widget, value) {
+      const path = widget.querySelector('.fill-path');
+      const X_LEFT = 1912, X_RIGHT = 2431, Y_BOTTOM = 2611, TOP_Y = 1572;
+      const val = parseFloat(value);
+      if (!val) { path.setAttribute('d', ''); return; }
+      const y = Y_BOTTOM - (val * ((Y_BOTTOM - TOP_Y) / 20));
+      path.setAttribute('d', `M ${X_LEFT} ${Y_BOTTOM} L ${X_RIGHT} ${Y_BOTTOM} L ${X_RIGHT} ${y} L ${X_LEFT} ${y} Z`);
+    }
+
+    function updateCupFill(widget, value) {
+      const path = widget.querySelector('.fill-path');
+      const yMarks = [1591, 1530.5, 1473.5, 1418.5, 1365.5, 1314.5, 1265.5, 1218.5, 1173.5, 1127.5, 1084.5, 1043.5, 1003.5, 962.5, 925.5, 887.5, 849.5, 814.5, 779.5, 744.5, 710.5, 678.5, 645.5, 614.5, 583.5, 552];
+      const X_BOT_LEFT = 2681.29, X_BOT_RIGHT = 3136.71, Y_BOTTOM = 1591, TAPER = 0.093638;
+      const vol = parseFloat(value);
+      if (!vol) { path.setAttribute('d', ''); return; }
+      const lIdx = Math.floor(vol / 10), uIdx = Math.ceil(vol / 10);
+      let y = (lIdx === uIdx) ? yMarks[lIdx] : yMarks[lIdx] + ((vol % 10) / 10) * (yMarks[uIdx] - yMarks[lIdx]);
+      const xL = X_BOT_LEFT + ((y - Y_BOTTOM) * TAPER), xR = X_BOT_RIGHT - ((y - Y_BOTTOM) * TAPER);
+      path.setAttribute('d', `M ${X_BOT_LEFT} ${Y_BOTTOM} L ${X_BOT_RIGHT} ${Y_BOTTOM} L ${xR} ${y} L ${xL} ${y} Z`);
+    }
+
+    function updateColor(widget, value) {
+      const box = widget.querySelector('.color-box');
+      const gb = Math.round(255 - (181 * (parseInt(value || 0) / 100)));
+      box.style.backgroundColor = `rgb(255, ${gb}, ${gb})`;
+    }
+
+    function updateRankingOptions(group) {
+      const selects = Array.from(group.querySelectorAll('.ranking-select'));
+      const used = selects.map(s => s.value).filter(v => v !== "");
+      selects.forEach(s => {
+        const cur = s.value;
+        Array.from(s.options).forEach(opt => { if (opt.value) opt.disabled = (opt.value !== cur && used.includes(opt.value)); });
+      });
+    }
+
+ function toggleStudentLock(uid, period, currentStatus) {
       const newStatus = !currentStatus;
       const assignmentKey = classAssignmentKeys[period];
       
+      // Instantly update local state for a snappy UI
       if (!currentLiveData[period]) currentLiveData[period] = {};
       if (!currentLiveData[period][uid]) currentLiveData[period][uid] = {};
       currentLiveData[period][uid].isLocked = newStatus;
       
       updateGrid(); 
-      if (activeStudentUid === uid && activeStudentPeriod === period) renderStudentDetail(uid, period);
 
       fetch(`${databaseURL}/teacherGradebook/${period}/${assignmentKey}/${uid}.json?auth=${FIREBASE_SECRET}`, {
         method: 'PATCH', body: JSON.stringify({ isLocked: newStatus })
       });
     }
 
-    function saveTeacherComment(el, uid, period, prefix) {
-      if (!el || !el.isConnected) return;
-      const newText = el.value.trim();
-      const assignmentKey = classAssignmentKeys[period];
-      const studentData = (currentLiveData[period] || {})[uid] || {};
-      const qData = studentData[prefix] || {};
-      const oldText = (qData.teacherComment || "").trim();
-      
-      if (newText !== oldText) {
-        const payload = { teacherComment: newText, commentUnread: true };
-        fetch(`${databaseURL}/teacherGradebook/${period}/${assignmentKey}/${uid}/${prefix}.json?auth=${FIREBASE_SECRET}`, {
-          method: 'PATCH', body: JSON.stringify(payload)
-        });
-      }
-    }
-
-    function toggleTeacherCommentArea(prefix) {
-      const area = document.getElementById(`comment-area-${prefix}`);
-      if (!area) return;
-      const isVisibleNow = !area.classList.toggle('hidden');
-      if (isVisibleNow) {
-        openCommentAreas.add(prefix);
-        const input = document.getElementById(`teacher-comment-input-${prefix}`);
-        if (input) { input.focus(); const val = input.value; input.value = ''; input.value = val; }
-      } else {
-        openCommentAreas.delete(prefix);
-        const input = document.getElementById(`teacher-comment-input-${prefix}`);
-        if (activeStudentUid && input) saveTeacherComment(input, activeStudentUid, activeStudentPeriod, prefix);
-      }
-    }
-
     function getSortedStudents() {
-        let filtered = selectedClassFolder === 'ALL' ? classRoster : classRoster.filter(s => s.period === selectedClassFolder);
-        return filtered.sort((a, b) => {
-            if (selectedClassFolder === 'ALL') {
-                const periodCompare = a.period.localeCompare(b.period);
-                if (periodCompare !== 0) return periodCompare;
-            }
-            return a.name.localeCompare(b.name);
-        });
+      let filtered = selectedClassFolder === 'ALL' ? classRoster : classRoster.filter(s => s.period === selectedClassFolder);
+      return filtered.sort((a, b) => {
+        if (selectedClassFolder === 'ALL') {
+          const pComp = a.period.localeCompare(b.period);
+          if (pComp !== 0) return pComp;
+        }
+        return a.name.localeCompare(b.name);
+      });
     }
 
     function renderSidebar() {
-      const listContainer = document.getElementById('student-list');
-      listContainer.innerHTML = '';
-      const sortedStudents = getSortedStudents();
-
-      sortedStudents.forEach(student => {
-        const uid = student.uid;
-        const period = student.period;
-        const displayName = student.name;
-        const isActive = (uid === activeStudentUid && period === activeStudentPeriod);
-        
+      const list = document.getElementById('student-list'); list.innerHTML = '';
+      getSortedStudents().forEach(s => {
+        const active = (s.uid === activeStudentUid && s.period === activeStudentPeriod);
         const btn = document.createElement('button');
-        btn.className = isActive ? "w-full text-left px-4 py-3 text-sm text-blue-800 bg-blue-100 font-bold border-l-4 border-blue-600 transition flex flex-col gap-1" : "w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 border-l-4 border-transparent transition flex flex-col gap-1";
-        btn.innerHTML = `
-            <div class="flex items-center gap-2">
-                <svg class="w-4 h-4 ${isActive ? 'text-blue-600' : 'text-gray-400'} shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                <span class="truncate font-medium">${displayName}</span>
-            </div>
-            ${selectedClassFolder === 'ALL' ? `<span class="text-[10px] text-gray-400 uppercase tracking-tight ml-6">${formatPeriodName(period)}</span>` : ''}
-        `;
-        btn.onclick = () => showStudentDetail(uid, displayName, period);
-        listContainer.appendChild(btn);
+        btn.className = active ? "w-full text-left px-4 py-3 text-sm text-blue-800 bg-blue-100 font-bold border-l-4 border-blue-600 flex flex-col" : "w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 border-l-4 border-transparent flex flex-col";
+        btn.innerHTML = `<span class="truncate font-medium">${s.name}</span>${selectedClassFolder === 'ALL' ? `<span class="text-[10px] text-gray-400 uppercase">${formatPeriodName(s.period)}</span>` : ''}`;
+        btn.onclick = () => showStudentDetail(s.uid, s.name, s.period);
+        list.appendChild(btn);
       });
     }
 
     function updateGrid() {
       let html = '';
-      const sortedStudents = getSortedStudents();
-      const hasAnswerKey = Object.keys(SECURE_ANSWER_KEY).length > 0;
-      
-      sortedStudents.forEach(student => {
-        const uid = student.uid;
-        const period = student.period;
-        const displayName = student.name;
-        
-        const studentProgress = (currentLiveData[period] || {})[uid] || {};
-        
-        let allCleared = true; 
-        let liveScore = 0;
-        let hasAnswers = false;
-        
+      const hasKey = Object.keys(SECURE_ANSWER_KEY).length > 0;
+      getSortedStudents().forEach(s => {
+        const prog = (currentLiveData[s.period] || {})[s.uid] || {};
+        let score = 0, answered = false;
         questions.forEach(q => {
-          const qKey = String(q.id).startsWith('q') ? q.id : `q${q.id}`;
-          const qData = studentProgress[qKey];
-          let isCorrect = false;
-          if (qData && qData.selection !== undefined && qData.selection !== null && qData.selection !== "") {
-             if (hasAnswerKey) {
-                 isCorrect = (qData.selection == SECURE_ANSWER_KEY[q.id]);
-             } else {
-                 isCorrect = true; 
-             }
-             hasAnswers = true;
-          }
-          if (!isCorrect) allCleared = false;
-          if (isCorrect) liveScore++;
-        });
-        
-        let rowClass = 'bg-white';
-        if (allCleared && hasAnswers) rowClass = 'cleared-row';
-
-        let hasUnreadComment = false;
-        questions.forEach(q => {
-          const qKey = String(q.id).startsWith('q') ? q.id : `q${q.id}`;
-          const prefix = qKey.split('_')[0];
-          if ((studentProgress[qKey] && studentProgress[qKey].commentUnread === true) || 
-              (studentProgress[prefix] && studentProgress[prefix].commentUnread === true)) {
-            hasUnreadComment = true;
+          const qData = prog[q.id.startsWith('q') ? q.id : `q${q.id}`];
+          if (qData && qData.selection != null && qData.selection !== "") {
+            answered = true;
+            if (!hasKey || qData.selection == SECURE_ANSWER_KEY[q.id]) score++;
           }
         });
-        
-        const unreadDot = hasUnreadComment ? `<span class="w-2.5 h-2.5 bg-orange-500 rounded-full border-2 border-white shadow-sm shrink-0" title="Unread feedback"></span>` : "";
-        const isLocked = studentProgress.isLocked === true;
-        const lockIcon = `<button onclick="event.stopPropagation(); toggleStudentLock('${uid}', '${period}', ${isLocked})" class="ml-1 p-1 rounded-full transition-colors shrink-0 ${isLocked ? 'text-red-500 hover:bg-red-50' : 'text-gray-300 hover:bg-gray-100'}"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${isLocked ? 'M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z' : 'M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z'}"></path></svg></button>`;
-
-        let nameColumnInner = `<div class="flex items-center w-full h-full hover:bg-blue-50 transition cursor-pointer overflow-hidden" onclick="showStudentDetail('${uid}', '${displayName.replace(/'/g, "\\'")}', '${period}')"><div class="flex-1 min-w-0 text-left px-4 py-3 text-sm text-gray-700 flex items-center gap-1 overflow-hidden"><svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg><div class="flex flex-col min-w-0 flex-1"><span class="truncate font-medium">${displayName}</span>${selectedClassFolder === 'ALL' ? `<span class="text-[10px] text-gray-400 uppercase tracking-tighter">${formatPeriodName(period)}</span>` : ''}</div>${unreadDot}${lockIcon}</div></div>`;
-
-        html += `<tr class="${rowClass} hover:bg-gray-50 transition-colors"><td class="student-name name-column-width h-full border-b-0 border-l-0 border-t-0">${nameColumnInner}</td>`;
-        html += studentProgress.submitted === true ? `<td class="score-col font-bold text-gray-800 bg-inherit">${liveScore}/${questions.length}</td>` : `<td class="score-col empty bg-inherit">-</td>`;
-        
+    const isLocked = prog.isLocked === true;
+        const lockIcon = `<button onclick="event.stopPropagation(); toggleStudentLock('${s.uid}', '${s.period}', ${isLocked})" class="ml-2 p-1 rounded-full transition-colors shrink-0 ${isLocked ? 'text-red-500 hover:bg-red-50' : 'text-gray-300 hover:bg-gray-100'}"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${isLocked ? 'M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z' : 'M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z'}"></path></svg></button>`;
+        const nameCol = `<div class="flex items-center w-full h-full hover:bg-blue-50 transition cursor-pointer px-4 py-3 text-sm text-gray-700" onclick="showStudentDetail('${s.uid}', '${s.name.replace(/'/g, "\\'")}', '${s.period}')"><div class="flex-1 min-w-0 flex flex-col"><span class="truncate font-medium">${s.name}</span>${selectedClassFolder === 'ALL' ? `<span class="text-[10px] text-gray-400 uppercase tracking-tighter">${formatPeriodName(s.period)}</span>` : ''}</div>${lockIcon}</div>`;
+        html += `<tr><td class="student-name name-column-width h-full p-0">${nameCol}</td><td class="score-col font-bold">${prog.submitted ? score + '/' + questions.length : '-'}</td>`;
         questions.forEach(q => {
-          const qKey = String(q.id).startsWith('q') ? q.id : `q${q.id}`;
-          const qData = studentProgress[qKey];
-          let isCorrect = false; let isAnswered = false;
-          
-          if (qData && qData.selection !== undefined && qData.selection !== null && qData.selection !== "") {
-             isAnswered = true; 
-             if (hasAnswerKey) {
-                 isCorrect = (qData.selection == SECURE_ANSWER_KEY[q.id]);
-             } else {
-                 isCorrect = true;
-             }
-          }
-          
-          const cellClass = !isAnswered ? "q-col empty bg-inherit cursor-pointer hover:bg-blue-50" : (isCorrect ? "q-col correct bg-inherit cursor-pointer hover:bg-green-100" : "q-col incorrect bg-inherit cursor-pointer hover:bg-red-100");
-          let cellContent = "-";
-          if (isAnswered) {
-              if (hasAnswerKey) {
-                  cellContent = isCorrect ? "✔" : "✘";
-              } else {
-                  cellContent = `<div class="flex justify-center"><span class="w-3 h-3 bg-blue-600 rounded-full shadow-sm"></span></div>`;
-              }
-          }
-          html += `<td class="${cellClass}" onclick="showStudentDetail('${uid}', '${displayName.replace(/'/g, "\\'")}', '${period}', '${q.id}')">${cellContent}</td>`;
+          const qKey = q.id.startsWith('q') ? q.id : `q${q.id}`;
+          const qData = prog[qKey];
+          const hasVal = qData && qData.selection != null && qData.selection !== "";
+          const correct = hasVal && (!hasKey || qData.selection == SECURE_ANSWER_KEY[q.id]);
+          html += `<td class="q-col ${!hasVal ? 'empty' : (correct ? 'correct' : 'incorrect')}" onclick="showStudentDetail('${s.uid}', '${s.name.replace(/'/g, "\\'")}', '${s.period}', '${q.id}')">${!hasVal ? '-' : (hasKey ? (correct ? '✔' : '✘') : '•')}</td>`;
         });
         html += `</tr>`;
       });
@@ -418,13 +1729,15 @@
       const sortedStudents = getSortedStudents();
       let anyUnlocked = false;
       
+      // 1. Check if any student in the current view is unlocked
       sortedStudents.forEach(student => {
         const prog = (currentLiveData[student.period] || {})[student.uid] || {};
         if (prog.isLocked !== true) anyUnlocked = true;
       });
       
-      const newStatus = anyUnlocked;
+      const newStatus = anyUnlocked; // If any are unlocked, lock them all. Otherwise, unlock all.
       
+      // 2. Instantly update local state and fire off network requests
       sortedStudents.forEach(student => {
           const uid = student.uid;
           const period = student.period;
@@ -432,19 +1745,21 @@
           
           if (!currentLiveData[period]) currentLiveData[period] = {};
           if (!currentLiveData[period][uid]) currentLiveData[period][uid] = {};
+          
           currentLiveData[period][uid].isLocked = newStatus;
           
           fetch(`${databaseURL}/teacherGradebook/${period}/${assignmentKey}/${uid}.json?auth=${FIREBASE_SECRET}`, {
             method: 'PATCH', body: JSON.stringify({ isLocked: newStatus })
           });
       });
+      
+      // 3. Force immediate UI repaint
       updateGrid();
       if (activeStudentUid) renderStudentDetail(activeStudentUid, activeStudentPeriod);
     }
 
     function showGridView() {
-      activeStudentUid = null;
-      activeStudentPeriod = null;
+      activeStudentUid = null; activeStudentPeriod = null;
       document.getElementById('detail-view').classList.add('hidden');
       document.getElementById('sidebar-container').classList.add('hidden');
       document.getElementById('btn-return-grid').classList.add('hidden');
@@ -452,8 +1767,7 @@
     }
 
     function showStudentDetail(uid, name, period, qId = null) {
-      activeStudentUid = uid; 
-      activeStudentPeriod = period;
+      activeStudentUid = uid; activeStudentPeriod = period;
       document.getElementById('detail-name').innerText = name;
       document.getElementById('grid-view').classList.add('hidden');
       document.getElementById('sidebar-container').classList.remove('hidden');
@@ -462,100 +1776,13 @@
       renderSidebar(); renderStudentDetail(uid, period, qId);
     }
 
-    function renderStudentDetail(uid, period, qIdToScroll = null) {
-      const container = document.getElementById('detail-questions');
-      const focusedEl = document.activeElement;
-      const focusedId = focusedEl ? focusedEl.id : null;
-      const selectionStart = focusedEl ? focusedEl.selectionStart : null;
-      const selectionEnd = focusedEl ? focusedEl.selectionEnd : null;
-      
-      let preservedValue = null, preservedPrefix = null;
-      if (focusedId && focusedId.startsWith('teacher-comment-input-')) {
-          preservedValue = focusedEl.value; preservedPrefix = focusedId.replace('teacher-comment-input-', '');
-      }
-
-      container.innerHTML = '';
-      const studentData = (currentLiveData[period] || {})[uid] || {};
-
-      // Group questions by prefix
-      const groups = [];
-      const prefixMap = {};
-      questions.forEach(q => {
-        const prefix = q.id.split('_')[0];
-        if (!prefixMap[prefix]) {
-          prefixMap[prefix] = { prefix, items: [], title: q.text.split(':')[0] };
-          groups.push(prefixMap[prefix]);
-        }
-        prefixMap[prefix].items.push(q);
-      });
-
-      groups.forEach(group => {
-        const prefix = group.prefix;
-        const qData = studentData[prefix] || {}; // Shared data for comments
-        const isCommentUnread = qData.commentUnread === true;
-        let currentComment = qData.teacherComment || "";
-        if (prefix === preservedPrefix) currentComment = preservedValue;
-
-        let answersHtml = '';
-        let hasAnyAnswer = false;
-
-        group.items.forEach(q => {
-          const qKey = q.id;
-          const studentQData = studentData[qKey] || {};
-          const val = studentQData.selection;
-          if (val !== undefined && val !== null && String(val).trim() !== "") hasAnyAnswer = true;
-          
-          answersHtml += `
-            <div class="flex-1 min-w-[140px] p-2 bg-gray-50 border border-gray-200 rounded">
-              <div class="text-[9px] text-gray-400 uppercase font-black mb-1 truncate" title="${q.text}">${q.text}</div>
-              <div class="text-sm font-bold text-blue-700 whitespace-pre-wrap">${val || '<span class="text-gray-300 font-normal italic text-xs">Empty</span>'}</div>
-            </div>
-          `;
-        });
-
-        let cardClass = "bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-4 relative overflow-hidden";
-        if (hasAnyAnswer) cardClass = "bg-blue-50 p-6 rounded-lg shadow-sm border-2 border-blue-200 mb-4 relative overflow-hidden";
-
-        let commentIconColor = (currentComment !== "") ? (isCommentUnread ? "text-orange-500" : "text-green-500") : "text-gray-300";
-        const commentButton = `<button onclick="toggleTeacherCommentArea('${prefix}')" class="p-1 rounded-full hover:scale-110 transition-transform ${commentIconColor}"><svg class="w-7 h-7" fill="currentColor" viewBox="0 0 20 20"><path d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7z"></path></svg></button>`;
-
-        const isAreaOpen = openCommentAreas.has(prefix);
-        const commentAreaHtml = `
-          <div id="comment-area-${prefix}" class="${isAreaOpen ? '' : 'hidden'} mt-4 pt-4 border-t border-gray-100">
-            <textarea id="teacher-comment-input-${prefix}" onblur="saveTeacherComment(this, '${uid}', '${period}', '${prefix}')" rows="2" class="w-full p-2 border border-gray-300 rounded text-sm font-bold text-blue-800 outline-none focus:ring-2 focus:ring-blue-400" placeholder="Feedback...">${currentComment}</textarea>
-          </div>
-        `;
-
-        container.innerHTML += `
-          <div id="q-card-${prefix}" class="${cardClass}">
-            <div class="flex justify-between items-center mb-4">
-              <h3 class="font-bold text-gray-800 uppercase text-[10px] tracking-widest">${group.title}</h3>
-              ${commentButton}
-            </div>
-            <div class="flex flex-wrap gap-2">${answersHtml}</div>
-            ${commentAreaHtml}
-          </div>
-        `;
-      });
-
-      if (focusedId) {
-        const el = document.getElementById(focusedId);
-        if (el) { el.focus(); if (selectionStart !== null) el.setSelectionRange(selectionStart, selectionEnd); }
-      }
-
-      if (qIdToScroll) {
-        const prefix = qIdToScroll.split('_')[0];
-        setTimeout(() => {
-          const target = document.getElementById(`q-card-${prefix}`);
-          if (target) {
-            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            target.classList.add('ring-4', 'ring-blue-400', 'ring-opacity-50');
-            setTimeout(() => target.classList.remove('ring-4', 'ring-blue-400', 'ring-opacity-50'), 2000);
-          }
-        }, 100);
-      }
+    function autoResize() {
+      this.style.height = 'auto';
+      this.style.height = (this.scrollHeight) + 'px';
     }
+
     window.onload = init;
   </script>
 </body>
-</html>
+
+</html>tml>
