@@ -1,0 +1,575 @@
+<!--
+Assignment Title: Lab 18 - Solution Concentration
+Subtitle: ANSWER KEY
+Assignment Code: CH_U08_A06_G
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Answer Key: Lab 18 - Solution Concentration</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f3f4f6;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .container {
+            width: 1050px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            border-top: 10px solid #A33DE1;
+        }
+        h1 {
+            color: #111;
+            font-size: 2.2em;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        h2 {
+            color: #555;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #A33DE1;
+            display: inline-block;
+            padding-bottom: 5px;
+        }
+        .question-block {
+            margin-bottom: 25px;
+            padding: 15px 20px;
+            border-left: 4px solid #e5e7eb;
+            background-color: #f9fafb;
+            border-radius: 0 4px 4px 0;
+        }
+        .question-text {
+            font-weight: 600;
+            color: #111;
+            margin-bottom: 12px;
+            font-size: 1.05em;
+        }
+        .answer-text {
+            color: #A33DE1;
+            font-weight: bold;
+            background-color: rgba(163, 61, 225, 0.08);
+            padding: 10px 15px;
+            border-radius: 4px;
+            display: inline-block;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        /* Table Styles */
+        table.answer-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            background-color: #fff;
+            table-layout: fixed; 
+        }
+        table.answer-table th, table.answer-table td {
+            border: 2px solid #cbd5e1;
+            padding: 15px 10px;
+            text-align: center;
+            vertical-align: middle;
+        }
+        table.answer-table th {
+            background-color: #e2e8f0;
+            font-weight: bold;
+            color: #1e293b;
+            text-transform: uppercase;
+            font-size: 0.85em;
+            letter-spacing: 0.05em;
+        }
+        table.answer-table td.header-col {
+            background-color: #f1f5f9;
+            font-weight: bold;
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #334155;
+        }
+        .highlighted-cell {
+            color: #A33DE1;
+            font-weight: bold;
+            font-size: 1.1em;
+            background-color: rgba(163, 61, 225, 0.05);
+        }
+
+        /* Visual Widget Styles */
+        .widget-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+        }
+        .svg-wrap {
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+        .color-box {
+            width: 60px;
+            height: 60px;
+            border: 2px solid #999;
+            border-radius: 6px;
+            margin: 0 auto 15px auto;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 90%;
+            max-width: 140px;
+            background: #d1d5db;
+            height: 8px;
+            border-radius: 4px;
+            outline: none;
+            margin-top: 5px;
+            pointer-events: none; /* Locks the sliders */
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #4a4a4a;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+        .slider-val-label {
+            font-size: 0.9em;
+            color: #555;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+
+
+
+<svg style="display: none;">
+  <defs>
+    <g id="mass-scale-overlay">
+        <text fill="#000000" font-family="Aptos,sans-serif" font-weight="700" font-size="92" transform="matrix(1 0 0 1 1703.18 2382)">5 g</text>
+        <path d="M0 0 571.654 0.000360892" stroke="#7F7F7F" stroke-width="6.875" transform="matrix(1 0 0 -1 1860.5 1572.5)" />
+        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875" transform="matrix(1 0 0 -1 1912.5 2557.5)" />
+        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875" transform="matrix(1 0 0 -1 1912.5 2506.5)" />
+        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875" transform="matrix(1 0 0 -1 1912.5 2454.5)" />
+        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875" transform="matrix(1 0 0 -1 1912.5 2402.5)" />
+        <path d="M0 0 571.654 0.000360892" stroke="#7F7F7F" stroke-width="6.875" transform="matrix(1 0 0 -1 1860.5 2350.5)" />
+        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875" transform="matrix(1 0 0 -1 1912.5 2298.5)" />
+        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875" transform="matrix(1 0 0 -1 1912.5 2247.5)" />
+        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875" transform="matrix(1 0 0 -1 1912.5 2195.5)" />
+        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875" transform="matrix(1 0 0 -1 1912.5 2039.5)" />
+        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875" transform="matrix(1 0 0 -1 1912.5 1936.5)" />
+        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875" transform="matrix(1 0 0 -1 1912.5 2143.5)" />
+        <path d="M0 0 571.654 0.000360892" stroke="#7F7F7F" stroke-width="6.875" transform="matrix(1 0 0 -1 1860.5 2091.5)" />
+        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875" transform="matrix(1 0 0 -1 1912.5 1988.5)" />
+        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875" transform="matrix(1 0 0 -1 1912.5 1884.5)" />
+        <path d="M0 0 571.654 0.000360892" stroke="#7F7F7F" stroke-width="6.875" transform="matrix(1 0 0 -1 1860.5 1832.5)" />
+        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875" transform="matrix(1 0 0 -1 1912.5 1780.5)" />
+        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875" transform="matrix(1 0 0 -1 1912.5 1729.5)" />
+        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875" transform="matrix(1 0 0 -1 1912.5 1677.5)" />
+        <path d="M0 0 519.685 0.000360892" stroke="#7F7F7F" stroke-width="6.875" transform="matrix(1 0 0 -1 1912.5 1625.5)" />
+        <rect x="1912" y="1572" width="519" height="1039" stroke="#000000" stroke-width="13.75" fill="none" />
+        <text fill="#000000" font-family="Aptos,sans-serif" font-weight="700" font-size="92" transform="matrix(1 0 0 1 1654.48 2119)">10 g</text>
+        <text fill="#000000" font-family="Aptos,sans-serif" font-weight="700" font-size="92" transform="matrix(1 0 0 1 1654.48 1860)">15 g</text>
+        <text fill="#000000" font-family="Aptos,sans-serif" font-weight="700" font-size="92" transform="matrix(1 0 0 1 1654.48 1599)">20 g</text>
+    </g>
+
+    <g id="cup-overlay">
+        <path d="M0 0 90.9449 0.000360892" stroke="#7F7F7F" stroke-width="6.875" transform="matrix(1 0 0 -1 3047.5 1530.5)" />
+        <path d="M0 0 96.1417 0.000360892" stroke="#7F7F7F" stroke-width="6.875" transform="matrix(1 0 0 -1 3047.5 1473.5)" />
+        <path d="M0 0 102.638 0.000360892" stroke="#7F7F7F" stroke-width="6.875" transform="matrix(1 0 0 -1 3047.5 1418.5)" />
+        <path d="M0 0 106.535 0.000360892" stroke="#7F7F7F" stroke-width="6.875" transform="matrix(1 0 0 -1 3047.5 1365.5)" />
+        <path d="M0 0 155.906 0.000360892" stroke="#7F7F7F" stroke-width="6.875" transform="matrix(1 0 0 -1 3005.5 1314.5)" />
+        <path d="M0 0 122.126 0.000360892" stroke="#7F7F7F" stroke-width="6.875" transform="matrix(1 0 0 -1 3047.5 1265.5)" />
+        <path d="M0 0 126.024 0.000360892" stroke="#7F7F7F" stroke-width="6.875" transform="matrix(1 0 0 -1 3047.5 1218.5)" />
+        <path d="M0 0 129.921 0.000360892" stroke="#7F7F7F" stroke-width="6.875" transform="matrix(1 0 0 -1 3047.5 1173.5)" />
+        <path d="M0 0 133.819 0.000360892" stroke="#7F7F7F" stroke-width="6.875" transform="matrix(1 0 0 -1 3047.5 1127.5)" />
+        <path d="M0 0 177.992 0.000360892" stroke="#7F7F7F" stroke-width="6.875" transform="matrix(1 0 0 -1 3005.5 1084.5)" />
+        <path d="M0 0 142.913 0.000360892" stroke="#7F7F7F" stroke-width="6.875" transform="matrix(1 0 0 -1 3047.5 1043.5)" />
+        <path d="M0 0 145.512 0.000360892" stroke="#7F7F7F" stroke-width="6.875" transform="matrix(1 0 0 -1 3047.5 1003.5)" />
+        <path d="M0 0 149.409 0.000360892" stroke="#7F7F7F" stroke-width="6.875" transform="matrix(1 0 0 -1 3047.5 962.5)" />
+        <path d="M0 0 153.307 0.000360892" stroke="#7F7F7F" stroke-width="6.875" transform="matrix(1 0 0 -1 3047.5 925.5)" />
+        <path d="M0 0 196.181 0.000360892" stroke="#7F7F7F" stroke-width="6.875" transform="matrix(1 0 0 -1 3005.5 887.5)" />
+        <path d="M0 0 161.102 0.000360892" stroke="#7F7F7F" stroke-width="6.875" transform="matrix(1 0 0 -1 3047.5 849.5)" />
+        <path d="M0 0 163.701 0.000360892" stroke="#7F7F7F" stroke-width="6.875" transform="matrix(1 0 0 -1 3047.5 814.5)" />
+        <path d="M0 0 167.598 0.000360892" stroke="#7F7F7F" stroke-width="6.875" transform="matrix(1 0 0 -1 3047.5 779.5)" />
+        <path d="M0 0 170.197 0.000360892" stroke="#7F7F7F" stroke-width="6.875" transform="matrix(1 0 0 -1 3047.5 744.5)" />
+        <path d="M0 0 213.071 0.000360892" stroke="#7F7F7F" stroke-width="6.875" transform="matrix(1 0 0 -1 3005.5 710.5)" />
+        <path d="M0 0 176.693 0.000360892" stroke="#7F7F7F" stroke-width="6.875" transform="matrix(1 0 0 -1 3047.5 678.5)" />
+        <path d="M0 0 179.291 0.000360892" stroke="#7F7F7F" stroke-width="6.875" transform="matrix(1 0 0 -1 3047.5 645.5)" />
+        <path d="M0 0 183.189 0.000360892" stroke="#7F7F7F" stroke-width="6.875" transform="matrix(1 0 0 -1 3047.5 614.5)" />
+        <path d="M0 0 185.787 0.000360892" stroke="#7F7F7F" stroke-width="6.875" transform="matrix(1 0 0 -1 3047.5 583.5)" />
+        <text fill="#000000" font-family="Aptos,sans-serif" font-weight="700" font-size="92" transform="matrix(1 0 0 1 2713.51 1344)">50 mL</text>
+        <text fill="#000000" font-family="Aptos,sans-serif" font-weight="700" font-size="92" transform="matrix(1 0 0 1 2665.25 1118)">100 mL</text>
+        <path d="M3234 552 3136.71 1591 2681.29 1591 2584 552Z" stroke="#000000" stroke-width="13.75" fill="none" />
+        <text fill="#000000" font-family="Aptos,sans-serif" font-weight="700" font-size="92" transform="matrix(1 0 0 1 2665.25 917)">150 mL</text>
+        <text fill="#000000" font-family="Aptos,sans-serif" font-weight="700" font-size="92" transform="matrix(1 0 0 1 2665.25 744)">200 mL</text>
+    </g>
+  </defs>
+</svg>
+<div class="container">
+    <h1>Lab 18 - Solution Concentration<br>ANSWER KEY</h1>
+
+    <h2>Part 1: Definitions</h2>
+
+    <div class="question-block">
+        <div class="question-text">1. Define Solute:</div>
+        <div class="answer-text">The substance that is being dissolved in a solution (e.g., the drink mix).</div>
+    </div>
+    <div class="question-block">
+        <div class="question-text">2. Define Solvent:</div>
+        <div class="answer-text">The substance that does the dissolving (e.g., the water).</div>
+    </div>
+    <div class="question-block">
+        <div class="question-text">3. Define Solution:</div>
+        <div class="answer-text">A homogeneous mixture composed of a solute dissolved in a solvent.</div>
+    </div>
+    <div class="question-block">
+        <div class="question-text">4. Define Mole:</div>
+        <div class="answer-text">A standard scientific unit (6.022 x 10^23) for measuring large quantities of very small entities like atoms or molecules.</div>
+    </div>
+    <div class="question-block">
+        <div class="question-text">5. Define Molar mass:</div>
+        <div class="answer-text">The mass in grams of one mole of a substance (g/mol).</div>
+    </div>
+    <div class="question-block">
+        <div class="question-text">6. Define Mass:</div>
+        <div class="answer-text">The amount of matter in an object, measured in grams in this lab.</div>
+    </div>
+    <div class="question-block">
+        <div class="question-text">7. Define Concentration:</div>
+        <div class="answer-text">The ratio of solute to the total volume of the solution; how 'crowded' the particles are.</div>
+    </div>
+    <div class="question-block">
+        <div class="question-text">8. Define Molarity:</div>
+        <div class="answer-text">A specific measure of concentration: moles of solute per liter of solution (mol/L).</div>
+    </div>
+    <div class="question-block">
+        <div class="question-text">9. Define Volume:</div>
+        <div class="answer-text">The amount of space a substance occupies, measured in L or mL.</div>
+    </div>
+
+
+    <h2>Part 2: Calculations</h2>
+
+   <div class="question-block">
+        <div class="question-text">10. & 11. Moles and Mass Calculations (Molar Mass = 37.2 g/mol)</div>
+        <div class="answer-text" style="padding: 0; background: none;">
+            <table class="answer-table">
+                <tr>
+                    <th style="width: 20%;"></th>
+                    <th>Solution #1<br><span style="font-weight:normal; text-transform:none;">(2 M, 0.20 L)</span></th>
+                    <th>Solution #2<br><span style="font-weight:normal; text-transform:none;">(4 M, 0.10 L)</span></th>
+                    <th>Solution #3<br><span style="font-weight:normal; text-transform:none;">(2 M, 0.14 L)</span></th>
+                    <th>Solution #4<br><span style="font-weight:normal; text-transform:none;">(1 M, 0.14 L)</span></th>
+                </tr>
+                <tr>
+                    <td class="header-col">Q10. Moles of Solute<br><span style="font-weight:normal; text-transform:none;">(n = M &times; V)</span></td>
+                    <td class="highlighted-cell">
+                        <span style="display: block; margin-bottom: 8px;">2 M &times; 0.20 L</span>
+                        0.40 mol
+                    </td>
+                    <td class="highlighted-cell">
+                        <span style="display: block; margin-bottom: 8px;">4 M &times; 0.10 L</span>
+                        0.40 mol
+                    </td>
+                    <td class="highlighted-cell">
+                        <span style="display: block; margin-bottom: 8px;">2 M &times; 0.14 L</span>
+                        0.28 mol
+                    </td>
+                    <td class="highlighted-cell">
+                        <span style="display: block; margin-bottom: 8px;">1 M &times; 0.14 L</span>
+                        0.14 mol
+                    </td>
+                </tr>
+                <tr>
+                    <td class="header-col">Q11. Mass of Solute<br><span style="font-weight:normal; text-transform:none;">(Mass = n &times; 37.2)</span></td>
+                    <td class="highlighted-cell">
+                        <span style="display: block; margin-bottom: 8px;">0.40 mol &times; 37.2 g/mol</span>
+                        14.88 g
+                    </td>
+                    <td class="highlighted-cell">
+                        <span style="display: block; margin-bottom: 8px;">0.40 mol &times; 37.2 g/mol</span>
+                        14.88 g
+                    </td>
+                    <td class="highlighted-cell">
+                        <span style="display: block; margin-bottom: 8px;">0.28 mol &times; 37.2 g/mol</span>
+                        10.42 g
+                    </td>
+                    <td class="highlighted-cell">
+                        <span style="display: block; margin-bottom: 8px;">0.14 mol &times; 37.2 g/mol</span>
+                        5.21 g
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+
+    <h2>Part 3: Visual Representations</h2>
+
+    <table class="answer-table" style="margin-bottom: 30px;">
+        <tr>
+            <th style="width: 15%;"></th>
+            <th>Solution #1</th>
+            <th>Solution #2</th>
+            <th>Solution #3</th>
+            <th>Solution #4</th>
+        </tr>
+
+        <tr>
+            <td class="header-col">Q12. Mass of Solute<br><span style="font-weight:normal; text-transform:none;">(Visual Slider)</span></td>
+            
+            <td>
+                <div class="widget-container">
+                    <div class="svg-wrap">
+                        <svg width="160" height="200" viewBox="0 0 903 1136" class="block" style="transform: translateX(-20px);">
+                            <g transform="translate(-1535 -1485)">
+                                <path fill="#ff4a4a" d="M 1912 2611 L 2431 2611 L 2431 1836.9 L 1912 1836.9 Z" />
+                                <use href="#mass-scale-overlay" />
+                            </g>
+                        </svg>
+                    </div>
+                    <input type="range" min="0" max="20" value="14.9" disabled>
+                    <div class="slider-val-label">14.9 g</div>
+                </div>
+            </td>
+
+            <td>
+                <div class="widget-container">
+                    <div class="svg-wrap">
+                        <svg width="160" height="200" viewBox="0 0 903 1136" class="block" style="transform: translateX(-20px);">
+                            <g transform="translate(-1535 -1485)">
+                                <path fill="#ff4a4a" d="M 1912 2611 L 2431 2611 L 2431 1836.9 L 1912 1836.9 Z" />
+                                <use href="#mass-scale-overlay" />
+                            </g>
+                        </svg>
+                    </div>
+                    <input type="range" min="0" max="20" value="14.9" disabled>
+                    <div class="slider-val-label">14.9 g</div>
+                </div>
+            </td>
+
+            <td>
+                <div class="widget-container">
+                    <div class="svg-wrap">
+                        <svg width="160" height="200" viewBox="0 0 903 1136" class="block" style="transform: translateX(-20px);">
+                            <g transform="translate(-1535 -1485)">
+                                <path fill="#ff4a4a" d="M 1912 2611 L 2431 2611 L 2431 2070.7 L 1912 2070.7 Z" />
+                                <use href="#mass-scale-overlay" />
+                            </g>
+                        </svg>
+                    </div>
+                    <input type="range" min="0" max="20" value="10.4" disabled>
+                    <div class="slider-val-label">10.4 g</div>
+                </div>
+            </td>
+
+            <td>
+                <div class="widget-container">
+                    <div class="svg-wrap">
+                        <svg width="160" height="200" viewBox="0 0 903 1136" class="block" style="transform: translateX(-20px);">
+                            <g transform="translate(-1535 -1485)">
+                                <path fill="#ff4a4a" d="M 1912 2611 L 2431 2611 L 2431 2340.9 L 1912 2340.9 Z" />
+                                <use href="#mass-scale-overlay" />
+                            </g>
+                        </svg>
+                    </div>
+                    <input type="range" min="0" max="20" value="5.2" disabled>
+                    <div class="slider-val-label">5.2 g</div>
+                </div>
+            </td>
+        </tr>
+
+        <tr>
+            <td class="header-col">Q13. Volume of Sol.<br><span style="font-weight:normal; text-transform:none;">(Visual Slider)</span></td>
+            
+            <td>
+                <div class="widget-container">
+                    <div class="svg-wrap">
+                        <svg width="140" height="200" viewBox="0 0 702 1059" class="block">
+                            <g transform="translate(-2543 -540)">
+                                <path fill="#48fafa" d="M 2681.29 1591 L 3136.71 1591 L 3219.16 710.5 L 2598.84 710.5 Z" />
+                                <use href="#cup-overlay" />
+                            </g>
+                        </svg>
+                    </div>
+                    <input type="range" min="0" max="250" value="200" disabled>
+                    <div class="slider-val-label">200 mL</div>
+                </div>
+            </td>
+
+            <td>
+                <div class="widget-container">
+                    <div class="svg-wrap">
+                        <svg width="140" height="200" viewBox="0 0 702 1059" class="block">
+                            <g transform="translate(-2543 -540)">
+                                <path fill="#48fafa" d="M 2681.29 1591 L 3136.71 1591 L 3184.14 1084.5 L 2633.86 1084.5 Z" />
+                                <use href="#cup-overlay" />
+                            </g>
+                        </svg>
+                    </div>
+                    <input type="range" min="0" max="250" value="100" disabled>
+                    <div class="slider-val-label">100 mL</div>
+                </div>
+            </td>
+
+            <td>
+                <div class="widget-container">
+                    <div class="svg-wrap">
+                        <svg width="140" height="200" viewBox="0 0 702 1059" class="block">
+                            <g transform="translate(-2543 -540)">
+                                <path fill="#48fafa" d="M 2681.29 1591 L 3136.71 1591 L 3199.03 925.5 L 2618.97 925.5 Z" />
+                                <use href="#cup-overlay" />
+                            </g>
+                        </svg>
+                    </div>
+                    <input type="range" min="0" max="250" value="140" disabled>
+                    <div class="slider-val-label">140 mL</div>
+                </div>
+            </td>
+
+            <td>
+                <div class="widget-container">
+                    <div class="svg-wrap">
+                        <svg width="140" height="200" viewBox="0 0 702 1059" class="block">
+                            <g transform="translate(-2543 -540)">
+                                <path fill="#48fafa" d="M 2681.29 1591 L 3136.71 1591 L 3199.03 925.5 L 2618.97 925.5 Z" />
+                                <use href="#cup-overlay" />
+                            </g>
+                        </svg>
+                    </div>
+                    <input type="range" min="0" max="250" value="140" disabled>
+                    <div class="slider-val-label">140 mL</div>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+
+    <h2>Part 4: Data</h2>
+
+    <table class="answer-table" style="margin-bottom: 30px;">
+        <tr>
+            <th style="width: 15%;"></th>
+            <th>Solution #1</th>
+            <th>Solution #2</th>
+            <th>Solution #3</th>
+            <th>Solution #4</th>
+        </tr>
+        <tr>
+            <td class="header-col">Q14. Color Intensity<br><span style="font-weight:normal; text-transform:none;">(Visual Slider)</span></td>
+            <td>
+                <div class="widget-container">
+                    <div class="color-box" style="background-color: rgb(255, 164, 164);"></div>
+                    <input type="range" min="0" max="100" value="50" disabled>
+                </div>
+            </td>
+            <td>
+                <div class="widget-container">
+                    <div class="color-box" style="background-color: rgb(255, 74, 74);"></div>
+                    <input type="range" min="0" max="100" value="100" disabled>
+                </div>
+            </td>
+            <td>
+                <div class="widget-container">
+                    <div class="color-box" style="background-color: rgb(255, 164, 164);"></div>
+                    <input type="range" min="0" max="100" value="50" disabled>
+                </div>
+            </td>
+            <td>
+                <div class="widget-container">
+                    <div class="color-box" style="background-color: rgb(255, 210, 210);"></div>
+                    <input type="range" min="0" max="100" value="25" disabled>
+                </div>
+            </td>
+        </tr>
+
+        <tr>
+            <td class="header-col">Q15. Taste Strength<br><span style="font-weight:normal; text-transform:none;">(Text Descriptions)</span></td>
+            <td class="highlighted-cell" style="font-size: 0.95em;">Medium<br>(Equal to Sol 3)</td>
+            <td class="highlighted-cell" style="font-size: 0.95em;">Strongest</td>
+            <td class="highlighted-cell" style="font-size: 0.95em;">Medium<br>(Equal to Sol 1)</td>
+            <td class="highlighted-cell" style="font-size: 0.95em;">Weakest</td>
+        </tr>
+    </table>
+
+
+    <h2>Part 5: Data Analysis Rankings</h2>
+    
+    <div class="question-block">
+        <div class="question-text">16. Rank Solute Mass.</div>
+        <div class="answer-text">Solution #4 &nbsp;&lt;&nbsp; Solution #3 &nbsp;&lt;&nbsp; (Solution #1 = Solution #2)</div>
+    </div>
+    <div class="question-block">
+        <div class="question-text">17. Rank Solute Moles.</div>
+        <div class="answer-text">Solution #4 &nbsp;&lt;&nbsp; Solution #3 &nbsp;&lt;&nbsp; (Solution #1 = Solution #2)</div>
+    </div>
+    <div class="question-block">
+        <div class="question-text">18. Rank Solution Volume.</div>
+        <div class="answer-text">Solution #2 &nbsp;&lt;&nbsp; (Solution #3 = Solution #4) &nbsp;&lt;&nbsp; Solution #1</div>
+    </div>
+    <div class="question-block">
+        <div class="question-text">19. Rank Concentration.</div>
+        <div class="answer-text">Solution #4 &nbsp;&lt;&nbsp; (Solution #1 = Solution #3) &nbsp;&lt;&nbsp; Solution #2</div>
+    </div>
+    <div class="question-block">
+        <div class="question-text">20. Rank Taste Strength.</div>
+        <div class="answer-text">Solution #4 &nbsp;&lt;&nbsp; (Solution #1 = Solution #3) &nbsp;&lt;&nbsp; Solution #2</div>
+    </div>
+
+
+    <h2>Part 6: Conclusions</h2>
+
+    <div class="question-block">
+        <div class="question-text">21. Claim: 'Two solutions can contain the same number of moles of solute but have different concentrations'. Support or Refute.</div>
+        <div class="answer-text">Support. Evidence: Solutions 1 and 2 both have 0.40 moles, but Solution 2 is more concentrated (4M) because it has half the volume (0.10L vs 0.20L) of Solution 1.</div>
+    </div>
+    <div class="question-block">
+        <div class="question-text">22. Claim: 'Two solutions can have the same volume but different concentrations'. Support or Refute.</div>
+        <div class="answer-text">Support. Evidence: Solutions 3 and 4 both have 0.14 L, but Solution 3 is more concentrated (2M) because it contains more solute mass (10.42g vs 5.21g).</div>
+    </div>
+    <div class="question-block">
+        <div class="question-text">23. Which two solutions tasted the same? Use numerical evidence.</div>
+        <div class="answer-text">Solutions 1 and 3. Evidence: Both have an identical Molarity of 2 M, and taste is determined by concentration/ratio, not total volume.</div>
+    </div>
+
+
+    <h2>Part 7: Post-Lab Questions</h2>
+
+    <div class="question-block">
+        <div class="question-text">24. What is the Molarity of a 2-liter sample containing 28g of KOH? Show your work.</div>
+        <div class="answer-text">0.25 M. <br><br><i>Work:</i><br>28g / 56.1 g/mol = 0.5 mol<br>0.5 mol / 2 L = 0.25 M</div>
+    </div>
+    <div class="question-block">
+        <div class="question-text">25. Calculate the moles required for 0.50L of 2.0M KNO3? Show your work.</div>
+        <div class="answer-text">1.0 mol. <br><br><i>Work:</i><br>n = M x V = 2.0 M * 0.50 L = 1.0 mol</div>
+    </div>
+    <div class="question-block">
+        <div class="question-text">26. Which is more concentrated: an 8M 200-mL sample or a 4M 500-mL sample? Explain.</div>
+        <div class="answer-text">The 8 M sample. Explanation: Molarity is the direct measure of concentration; total volume is irrelevant to the intensity of the concentration itself.</div>
+    </div>
+    <div class="question-block">
+        <div class="question-text">27. Explain if it is possible for a solution with a smaller volume and greater solute to be less concentrated.</div>
+        <div class="answer-text">No, it is mathematically impossible. Increasing the numerator (solute) and decreasing the denominator (volume) will always result in a higher quotient (concentration).</div>
+    </div>
+
+</div>
+
+</body>
+</html>

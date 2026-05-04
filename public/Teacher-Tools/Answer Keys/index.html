@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard: Science Answer Keys</title>
+    <style>
+        :root {
+            --brand-purple: #A33DE1;
+            --bg-gray: #f3f4f6;
+            --text-dark: #333;
+            --card-bg: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-gray);
+            color: var(--text-dark);
+            line-height: 1.6;
+            margin: 0;
+            padding: 40px 20px;
+        }
+
+        .dashboard-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            color: #111;
+        }
+
+        header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        /* Unit Sections */
+        .unit-section {
+            margin-bottom: 40px;
+        }
+
+        .unit-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 3px solid var(--brand-purple);
+            padding-bottom: 8px;
+        }
+
+        .unit-header h2 {
+            margin: 0;
+            color: var(--brand-purple);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Assignment Grid */
+        .assignment-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .assignment-card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #e5e7eb;
+        }
+
+        .assignment-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 15px rgba(163, 61, 225, 0.15);
+            border-color: var(--brand-purple);
+        }
+
+        .assignment-code {
+            font-family: monospace;
+            font-size: 0.85em;
+            color: #888;
+            margin-bottom: 8px;
+            background: #f9fafb;
+            padding: 2px 6px;
+            border-radius: 4px;
+            align-self: flex-start;
+        }
+
+        .assignment-title {
+            font-weight: 700;
+            font-size: 1.15em;
+            margin-bottom: 5px;
+            color: #111;
+        }
+
+        .assignment-subtitle {
+            font-size: 0.9em;
+            color: #666;
+            font-style: italic;
+        }
+
+        .view-link {
+            margin-top: auto;
+            padding-top: 15px;
+            color: var(--brand-purple);
+            font-weight: bold;
+            font-size: 0.9em;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+
+<div class="dashboard-container">
+    <header>
+        <h1>Chemistry Answer Keys</h1>
+    </header>
+
+    <section class="unit-section">
+        <div class="unit-header">
+            <h2>Unit 08: Solutions</h2>
+        </div>
+        
+        <div class="assignment-grid">
+            <a href="CH_U08_A05_G.html" class="assignment-card">
+                <span class="assignment-code">CH_U08_A05_G</span>
+                <div class="assignment-title">Solubility and Saturation</div>
+                <div class="assignment-subtitle">Answer Key</div>
+                <div class="view-link">Open Key &rarr;</div>
+            </a>
+
+            <a href="CH_U08_A06_G.html" class="assignment-card">
+                <span class="assignment-code">CH_U08_A06_G</span>
+                <div class="assignment-title">Lab 18 - Solution Concentration</div>
+                <div class="assignment-subtitle">Answer Key</div>
+                <div class="view-link">Open Key &rarr;</div>
+            </a>
+            
+            </div>
+    </section>
+
+</div>
+
+</body>
+</html>
