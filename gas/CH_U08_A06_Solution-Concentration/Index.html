@@ -1529,6 +1529,15 @@
     </div>
 
     <!-- Submit Button card removed as requested -->
+<div id="submit-card" class="bg-white rounded-lg shadow-md border-t-8 border-purple-700 p-8 mb-12 text-center">
+      <h2 class="text-xl font-bold text-gray-800 mb-2">Final Submission</h2>
+      <p class="text-gray-600 mb-6 italic text-sm">Review your work carefully. Once submitted, your lab will be locked for grading and you will not be able to make changes until your teacher reviews it.</p>
+      
+      <button id="final-submit-btn" onclick="handleFinalSubmit()" class="bg-purple-700 hover:bg-purple-800 text-white font-extrabold py-4 px-12 rounded-full shadow-lg transform transition-all hover:scale-105 active:scale-95 flex items-center gap-3 mx-auto">
+        <span class="material-icons">send</span> SUBMIT ASSIGNMENT
+      </button>
+    </div>
+
   </div>
 
   <script>
@@ -1618,17 +1627,60 @@
       }
     }
 
-    function handleFinalSubmit() {
-      if (!confirm("Are you sure you want to finalize your submission? This will lock your assignment.")) return;
+  function handleFinalSubmit() {
+      const missing = [];
+      
+      // 1. SCAN ALL FIELDS
+      document.querySelectorAll('[data-save]').forEach(el => {
+        const val = el.value.trim();
+        // Check for empty text, untouched sliders (0), or empty dropdowns
+        if (val === "" || val === "0" || val === "--") {
+          // Extract the number from the ID (e.g., "q10_sol1" becomes "10")
+          const idNum = el.getAttribute('data-save').split('_')[0].replace('q', '');
+          if (!missing.includes(idNum)) missing.push(idNum);
+        }
+      });
 
+      // 2. VALIDATION CHECK
+      if (missing.length > 0) {
+        missing.sort((a, b) => parseInt(a) - parseInt(b));
+        
+        // Format the list: "1, 2, and 3"
+        let msgList = "";
+        if (missing.length === 1) {
+          msgList = missing[0];
+        } else {
+          const last = missing.pop();
+          msgList = missing.join(', ') + (missing.length > 1 ? ',' : '') + ' and ' + last;
+        }
+        
+        alert("All questions must be answered before submitting. Please check questions: " + msgList);
+        return; // Stop here
+      }
+
+      // 3. FINAL WARNING
+      const msg = "⚠️ WARNING: Finalizing will lock this assignment.\n\n" +
+                  "You will NOT be able to change your answers until your teacher reviews your work and unlocks it.\n\n" +
+                  "Click 'OK' to submit or 'Cancel' to go back.";
+      
+      if (!confirm(msg)) return; 
+
+      document.getElementById('gas-loader').classList.remove('hidden');
+      document.getElementById('gas-loader').innerText = "Submitting & Locking...";
+
+      // 4. TRIGGER BACKEND
       google.script.run
         .withSuccessHandler(res => {
-          alert("Submission successful! Your assignment is now locked.");
+          document.getElementById('gas-loader').classList.add('hidden');
+          alert("Success! Your lab is now locked for grading.");
           window.studentLocked = true;
-          checkLockStatus();
+          checkLockStatus(); 
         })
-        .withFailureHandler(err => alert("Error: " + err.message))
-        .gradeSubmission(studentConfig);
+        .withFailureHandler(err => {
+          document.getElementById('gas-loader').classList.add('hidden');
+          alert("Submission Error: " + err.message);
+        })
+        .gradeSubmission(studentConfig); 
     }
 
     function autoResize() {
@@ -1688,15 +1740,53 @@
       });
     }
 
-    function checkLockStatus() {
+function checkLockStatus() {
       const locked = window.studentLocked;
-      document.querySelectorAll('[data-save]').forEach(el => el.disabled = locked);
+      
+      // 1. Lock/Unlock Inputs and Paint Results
+      document.querySelectorAll('[data-save]').forEach(el => {
+        el.disabled = locked;
+
+        const id = el.getAttribute('data-save');
+        const qPrefix = id.split('_')[0];
+        const qData = localState[id] || {};
+        
+        // Find the closest row or card to color
+        const container = el.closest(`[data-comment-anchor="${qPrefix}"]`) || el.closest('tr');
+        
+        if (container && qData.score !== undefined) {
+          if (qData.score >= 1) { 
+             container.style.borderLeft = "8px solid #22c55e"; // Green for points
+             container.style.backgroundColor = "#f0fdf4"; 
+          } else if (qData.score === 0) {
+             container.style.borderLeft = "8px solid #ef4444"; // Red for check this
+             container.style.backgroundColor = "#fef2f2";
+          }
+        }
+      });
+      
+      // 2. Button State Logic
+      const submitBtn = document.getElementById('final-submit-btn');
+      if (submitBtn) {
+        submitBtn.disabled = locked;
+        if (locked) {
+          submitBtn.classList.remove('bg-purple-700', 'hover:bg-purple-800');
+          submitBtn.classList.add('bg-gray-300', 'text-gray-500', 'cursor-not-allowed');
+          submitBtn.innerHTML = '<span class="material-icons">lock</span> LOCKED FOR GRADING';
+        } else {
+          submitBtn.classList.add('bg-purple-700', 'hover:bg-purple-800');
+          submitBtn.classList.remove('bg-gray-300', 'text-gray-500', 'cursor-not-allowed');
+          submitBtn.innerHTML = '<span class="material-icons">send</span> SUBMIT ASSIGNMENT';
+        }
+      }
+
+      // 3. Top Banner Logic
       let lockMsg = document.getElementById('lock-message-container');
       if (locked && !lockMsg) {
         lockMsg = document.createElement('div');
         lockMsg.id = 'lock-message-container';
         lockMsg.className = 'bg-white rounded-lg shadow-sm border-l-8 border-red-500 p-8 mb-4 text-center mt-4';
-        lockMsg.innerHTML = '<h2 class="text-2xl font-bold text-gray-800 mb-2">Assignment Closed</h2><p class="text-gray-600 leading-relaxed"><strong>This assignment is not yet open. You may look it over, but you cannot yet edit it.</strong></p>';
+        lockMsg.innerHTML = '<h2 class="text-2xl font-bold text-gray-800 mb-2">Assignment Locked</h2><p class="text-gray-600 font-bold">This assignment is currently locked. You can review your work, but cannot edit it.</p>';
         document.querySelector('.form-header-bar').insertAdjacentElement('afterend', lockMsg);
       } else if (!locked && lockMsg) {
         lockMsg.remove();
