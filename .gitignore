@@ -79,3 +79,4 @@ node_modules/
 # GAS temporary and cache files
 gas/.npm-cache/
 gas/temp_clasp/
+RosterData.html
