@@ -361,16 +361,22 @@ const RUBRIC_DATA = {
     },
 
     /* --- PART 2: CALCULATIONS TABLE (Flat 4 pts) --- */
-    calculations_table: {
-      text: "Complete the table for Solutions 1-4 (Moles and Mass).",
-      points: 4,
-      logic: "n = M x V; Mass = n x 37.2 g/mol",
-      key: {
-        sol1: { moles: 0.40, mass: 14.88 },
-        sol2: { moles: 0.40, mass: 14.88 },
-        sol3: { moles: 0.28, mass: 10.42 },
-        sol4: { moles: 0.14, mass: 5.21 }
-      }
+   /* --- PART 2: CALCULATIONS (4 pts total) --- */
+    
+    q10: {
+      text: "Moles of Solute calculations for Solutions 1-4.",
+      points: 2,
+      logic: "Formula: n = M x V. Check each solution (1-4). Molarities are [2, 4, 2, 1] and Volumes are [0.20, 0.10, 0.14, 0.14].",
+      key: { sol1: 0.40, sol2: 0.40, sol3: 0.28, sol4: 0.14 },
+      grading_criteria: "Deduct 0.5 pts for each incorrect mole value."
+    },
+
+    q11: {
+      text: "Mass of Solute calculations for Solutions 1-4.",
+      points: 2,
+      logic: "Formula: Mass = n x 37.2 g/mol. IMPORTANT: If the student got q10 wrong, grade q11 based on the student's own mole values from q10 (Error Carried Forward).",
+      key: { sol1: 14.88, sol2: 14.88, sol3: 10.42, sol4: 5.21 },
+      grading_criteria: "Accept answers that correctly multiply student's moles by 37.2. Deduct 0.5 pts for each math error."
     },
 
     /* --- PART 3: VISUALS & DATA (8 pts: 2 per row) --- */
@@ -398,8 +404,16 @@ const RUBRIC_DATA = {
     },
 
     /* --- PART 4: DATA ANALYSIS RANKINGS (5 pts: 1 per row) --- */
-    q16: { text: "Rank Solute Mass", points: 1, expected: "Sol 4 < Sol 3 < (Sol 1 = Sol 2)" },
-    q17: { text: "Rank Solute Moles", points: 1, expected: "Sol 4 < Sol 3 < (Sol 1 = Sol 2)" },
+    q16: { 
+  text: "Rank Solute Mass. Correct Logic: Sol 4 < Sol 3 < (Sol 1 and Sol 2 are equal). NOTE: Sol 1 = Sol 2 is the same as Sol 2 = Sol 1.", 
+  points: 1, 
+  expected: "Sol 4 < Sol 3 < (Sol 1 = Sol 2)" 
+},
+    q17: { 
+  text: "Rank Solute Moles. Correct Logic: Sol 4 < Sol 3 < (Sol 1 and Sol 2 are equal). NOTE: Sol 1 = Sol 2 is the same as Sol 2 = Sol 1.", 
+  points: 1, 
+  expected: "Sol 4 < Sol 3 < (Sol 1 = Sol 2)" 
+},
     q18: { text: "Rank Solution Volume", points: 1, expected: "Sol 2 < (Sol 3 = Sol 4) < Sol 1" },
     q19: { text: "Rank Concentration", points: 1, expected: "Sol 4 < (Sol 1 = Sol 3) < Sol 2" },
     q20: { text: "Rank Taste Strength", points: 1, expected: "Sol 4 < (Sol 1 = Sol 3) < Sol 2" },

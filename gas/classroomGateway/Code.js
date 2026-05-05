@@ -243,17 +243,6 @@ function createClassroomAssignment(payload) {
       let unitCode = codeParts.length > 1 ? codeParts[1] : "U00";
       firebaseUpdates[`teacherGradebook/${classFolder}/_unitMap/${unitCode}`] = topicName;
 
-      assignedStudentIds.forEach(gcId => {
-         let saltedHashedEmail = gcIdToHashedMap[gcId.toString()];
-         if (saltedHashedEmail) {
-             firebaseUpdates[`StudentReportCards/${saltedHashedEmail}/${classFolder}/${assignmentKey}/_exists`] = true;
-             if (workType !== "MATERIAL") {
-                firebaseUpdates[`teacherGradebook/${classFolder}/${assignmentKey}/${saltedHashedEmail}/status`] = "assigned";
-                firebaseUpdates[`teacherGradebook/${classFolder}/${assignmentKey}/${saltedHashedEmail}/lastUpdated`] = currentTimestamp;
-             }
-         }
-      });
-
       postedCount++;
       Utilities.sleep(1000); 
 
@@ -405,6 +394,14 @@ function syncClassroomToDatabase(classId, className) {
   }
 }
 
+
+
+
+
+
+
+
+
 // ==========================================
 // 5. STUDENT REPORT CARD SYNC
 // ==========================================
@@ -502,6 +499,15 @@ function syncGradebook(classId, className) {
     throw new Error(`Sync Gradebook failed: ${error.message}`);
   }
 }
+
+
+
+
+
+
+
+
+
 
 // ==========================================
 // 6. TEACHER GRADEBOOK SYNC
@@ -602,6 +608,14 @@ function syncTeacherGradebook(classId, className) {
     throw new Error(`Sync Teacher Gradebook failed: ${error.message}`);
   }
 }
+
+
+
+
+
+
+
+
 
 // ==========================================
 // 7. BUILD STUDENT ROSTER IN FIREBASE

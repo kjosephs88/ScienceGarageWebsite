@@ -1709,90 +1709,131 @@
     }
 
     function startSSEListener() {
-      if (!studentConfig || !studentConfig.basePaths) return;
-      studentConfig.basePaths.forEach(basePath => {
-        const url = `${databaseURL}/${basePath}.json`;
-        const eventSource = new EventSource(url);
-        const handleUpdate = (e) => {
-          const payload = JSON.parse(e.data);
-          const pathEvent = payload.path || "";
-          const data = payload.data;
-          if (pathEvent === "/") {
-            window.studentLocked = data && data.isLocked === true;
-            if (data) {
-              Object.keys(data).forEach(key => {
-                if (typeof data[key] === 'object' && data[key] !== null) renderCommentUI(key.split('_')[0], data[key]);
-              });
-            }
-          } else if (pathEvent === "/isLocked") {
-            window.studentLocked = data;
-          } else {
-            const parts = pathEvent.split('/').filter(p => p);
-            if (parts.length >= 1) {
-              const qId = parts[0];
-              if (data !== null && typeof data === 'object') renderCommentUI(qId.split('_')[0], data);
-            }
+  if (!studentConfig || !studentConfig.basePaths) return;
+  
+  studentConfig.basePaths.forEach(basePath => {
+    const url = `${databaseURL}/${basePath}.json`;
+    const eventSource = new EventSource(url);
+
+    const handleUpdate = (e) => {
+      const payload = JSON.parse(e.data);
+      const pathEvent = payload.path || "";
+      const data = payload.data;
+
+      if (data === null) return;
+
+      if (pathEvent === "/") {
+        // --- Root Update (Merging all data) ---
+        // Only update lock if it's explicitly in the data
+        if (data.isLocked !== undefined) window.studentLocked = data.isLocked;
+        
+        // Sync the NEW data into our Local Memory
+        Object.assign(localState, data);
+
+        // Update all comment bubbles
+        Object.keys(data).forEach(key => {
+          const prefix = key.split('_')[0];
+          if (typeof data[key] === 'object' && data[key] !== null) {
+             renderCommentUI(prefix, data[key]);
           }
-          checkLockStatus();
-        };
-        eventSource.addEventListener('put', handleUpdate);
-        eventSource.addEventListener('patch', handleUpdate);
-      });
-    }
+        });
+      } else if (pathEvent === "/isLocked") {
+        window.studentLocked = data;
+      } else {
+        // --- Path Update (Specific question or score) ---
+        const parts = pathEvent.split('/').filter(p => p);
+        if (parts.length >= 1) {
+          const qId = parts[0];
+          const prefix = qId.split('_')[0];
+
+          // Save this specific piece of data into Local Memory
+          if (!localState[qId]) localState[qId] = {};
+          
+          if (parts.length === 1) {
+             localState[qId] = data; // Full node update
+          } else {
+             localState[qId][parts[1]] = data; // Sub-key update (like /score)
+          }
+
+          // If this was a comment or score update, re-render that section
+          if (typeof localState[qId] === 'object') {
+             renderCommentUI(prefix, localState[qId]);
+          }
+        }
+      }
+
+      // NOW that the memory is updated, re-paint the screen colors and lock status
+      checkLockStatus();
+    };
+
+    eventSource.addEventListener('put', handleUpdate);
+    eventSource.addEventListener('patch', handleUpdate);
+  });
+}
 
 function checkLockStatus() {
-      const locked = window.studentLocked;
-      
-      // 1. Lock/Unlock Inputs and Paint Results
-      document.querySelectorAll('[data-save]').forEach(el => {
-        el.disabled = locked;
+  const locked = window.studentLocked;
+  
+  // 1. Loop through all inputs: Disable them and Tint based on score
+  document.querySelectorAll('[data-save]').forEach(el => {
+    el.disabled = locked;
 
-        const id = el.getAttribute('data-save');
-        const qPrefix = id.split('_')[0];
-        const qData = localState[id] || {};
-        
-        // Find the closest row or card to color
-        const container = el.closest(`[data-comment-anchor="${qPrefix}"]`) || el.closest('tr');
-        
-        if (container && qData.score !== undefined) {
-          if (qData.score >= 1) { 
-             container.style.borderLeft = "8px solid #22c55e"; // Green for points
-             container.style.backgroundColor = "#f0fdf4"; 
-          } else if (qData.score === 0) {
-             container.style.borderLeft = "8px solid #ef4444"; // Red for check this
-             container.style.backgroundColor = "#fef2f2";
-          }
-        }
-      });
-      
-      // 2. Button State Logic
-      const submitBtn = document.getElementById('final-submit-btn');
-      if (submitBtn) {
-        submitBtn.disabled = locked;
-        if (locked) {
-          submitBtn.classList.remove('bg-purple-700', 'hover:bg-purple-800');
-          submitBtn.classList.add('bg-gray-300', 'text-gray-500', 'cursor-not-allowed');
-          submitBtn.innerHTML = '<span class="material-icons">lock</span> LOCKED FOR GRADING';
-        } else {
-          submitBtn.classList.add('bg-purple-700', 'hover:bg-purple-800');
-          submitBtn.classList.remove('bg-gray-300', 'text-gray-500', 'cursor-not-allowed');
-          submitBtn.innerHTML = '<span class="material-icons">send</span> SUBMIT ASSIGNMENT';
-        }
-      }
+    const id = el.getAttribute('data-save');
+    const qPrefix = id.split('_')[0];
+    
+    const partData = localState[id] || {};
+    const groupData = localState[qPrefix] || {};
+    const score = (partData.score !== undefined) ? partData.score : groupData.score;
+    
+    if (score !== undefined) {
+      let container = el.closest('td') || el.parentElement; 
+      if (el.classList.contains('ranking-select')) container = el;
 
-      // 3. Top Banner Logic
-      let lockMsg = document.getElementById('lock-message-container');
-      if (locked && !lockMsg) {
-        lockMsg = document.createElement('div');
-        lockMsg.id = 'lock-message-container';
-        lockMsg.className = 'bg-white rounded-lg shadow-sm border-l-8 border-red-500 p-8 mb-4 text-center mt-4';
-        lockMsg.innerHTML = '<h2 class="text-2xl font-bold text-gray-800 mb-2">Assignment Locked</h2><p class="text-gray-600 font-bold">This assignment is currently locked. You can review your work, but cannot edit it.</p>';
-        document.querySelector('.form-header-bar').insertAdjacentElement('afterend', lockMsg);
-      } else if (!locked && lockMsg) {
-        lockMsg.remove();
+      if (score >= 1) {
+        container.style.backgroundColor = "#f0fdf4"; // Green tint
+        container.style.color = "#166534";
+      } else {
+        container.style.backgroundColor = "#fef2f2"; // Red tint
+        container.style.color = "#991b1b";
       }
     }
+  });
 
+  // 2. The Bottom Button: Lock it and change icon/text
+  const submitBtn = document.getElementById('final-submit-btn');
+  if (submitBtn) {
+    submitBtn.disabled = locked;
+    if (locked) {
+      submitBtn.classList.remove('bg-purple-700', 'hover:bg-purple-800');
+      submitBtn.classList.add('bg-gray-300', 'text-gray-500', 'cursor-not-allowed');
+      submitBtn.innerHTML = '<span class="material-icons">lock</span> LOCKED FOR GRADING';
+    } else {
+      submitBtn.classList.add('bg-purple-700', 'hover:bg-purple-800');
+      submitBtn.classList.remove('bg-gray-300', 'text-gray-500', 'cursor-not-allowed');
+      submitBtn.innerHTML = '<span class="material-icons">send</span> SUBMIT ASSIGNMENT';
+    }
+  }
+
+  // 3. The Top Banner: Inserted immediately after the main header bar
+  let lockMsg = document.getElementById('lock-message-container');
+  if (locked && !lockMsg) {
+    lockMsg = document.createElement('div');
+    lockMsg.id = 'lock-message-container';
+    lockMsg.className = 'bg-white rounded-lg shadow-sm border-l-8 border-red-500 p-8 mb-6 text-center';
+    lockMsg.innerHTML = `
+      <h2 class="text-2xl font-bold text-gray-800 mb-2">Assignment Locked</h2>
+      <p class="text-gray-600 font-bold">This assignment is currently locked. You can review your work, but cannot edit it.</p>
+    `;
+    
+    // Specifically target the header bar to keep it at the TOP
+    const header = document.querySelector('.form-header-bar');
+    if (header) {
+      header.insertAdjacentElement('afterend', lockMsg);
+    }
+  } else if (!locked && lockMsg) {
+    lockMsg.remove();
+  }
+}
 /* ==============================================================
        3. Teacher Comments UI (Prefix-based Pills & Inline Rows)
        ============================================================== */
