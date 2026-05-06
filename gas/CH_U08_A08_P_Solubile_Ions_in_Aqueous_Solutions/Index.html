@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><?= ASSIGNMENT_TITLE ?></title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/mhchem.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+
+  <style>
+    body { font-family: 'Roboto', ui-sans-serif, system-ui, -apple-system, sans-serif; background-color: #f0ebf8; }
+    .form-header-bar { border-top: 10px solid #673ab7; }
+    textarea, input[type="text"] { color: #0000ff !important; font-weight: 700 !important; }
+    @keyframes glow {
+      0% { box-shadow: 0 0 5px rgba(234, 88, 12, 0.4); border-color: rgba(234, 88, 12, 0.4); }
+      50% { box-shadow: 0 0 15px rgba(234, 88, 12, 1); border-color: rgba(234, 88, 12, 1); }
+      100% { box-shadow: 0 0 5px rgba(234, 88, 12, 0.4); border-color: rgba(234, 88, 12, 0.4); }
+    }
+    .glow-effect { animation: glow 1.5s infinite alternate; }
+  </style>
+</head>
+<body class="text-gray-800 min-h-screen p-4 md:p-6 pb-20">
+
+  <div class="w-[850px] mx-auto">
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 form-header-bar p-6 md:p-8 mb-4 relative overflow-hidden">
+      <div class="mb-5 pb-4 border-b border-gray-100 flex flex-col items-start">
+        <div class="bg-gray-200 text-gray-800 text-xs font-bold tracking-wider uppercase px-2 py-1 mb-1 rounded-sm">Assignment Type: <?= HEADER_TYPE ?></div>
+        <div class="text-xs font-semibold text-gray-500 tracking-widest pl-2"><?= HEADER_SUB ?></div>
+      </div>
+      <h1 class="text-3xl font-normal text-gray-900 mb-4"><?= ASSIGNMENT_TITLE ?></h1>
+      <p class="text-sm text-gray-600 mb-4 font-medium italic">Mastery threshold: 80% to unlock answer key and feedback shades.</p>
+      <div id="loader" class="absolute top-4 right-4 text-xs font-bold text-gray-500 bg-gray-100 px-3 py-1 rounded-full border border-gray-200">Authenticating...</div>
+    </div>
+    
+    <div id="lock-message-container" class="hidden bg-white rounded-lg shadow-sm border-l-8 border-red-500 p-8 mb-4 text-center">
+       <div class="text-red-500 mb-4">
+         <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+       </div>
+       <h2 class="text-2xl font-bold text-gray-800 mb-2">Assignment Closed</h2>
+       <p class="text-gray-600 leading-relaxed">This assignment has been closed. Please come after school 10th Period if you would like to make it up.</p>
+    </div>
+
+    <div id="handout-text" class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 md:p-8 mb-4 text-gray-800 leading-relaxed opacity-0 transition-opacity duration-500">
+      <h2 class="text-2xl font-bold mb-4 border-b pb-2">Selected Ions Forming Aqueous Solutions</h2>
+      <p class="mb-4">As you already know, when you put table salt into water and stir, the salt will dissolve. This happens because of the interaction between the polar water molecules and the ionic charges within the salt. Table salt is made of positive sodium ions ($ \ce{Na+} $) and negative chloride ions ($ \ce{Cl-} $). The negative oxygen end of a water molecule attracts the positive sodium ions, and the positive hydrogen end attracts the negative chloride ions. Millions of water molecules work together to pull individual ions away from the ionic sample.</p>
+      <p class="mb-4">However, not all salts (a term synonymous with ionic compounds) will dissolve in water. Whether a salt will dissolve depends on the ion combination in the compound. The Reference Table <strong>Selected Ions Forming Aqueous Solutions</strong> can help us determine if an ionic compound will be soluble.</p>
+      <p class="mb-4">Let's take a look at what the reference table tells us about sodium chloride ($ \ce{NaCl} $). We must first realize that the compound is made of $ \ce{Na+} $ and $ \ce{Cl-} $ ions. Looking at our table, we notice right away that $ \ce{Na+} $ is a Group 1 ion. The table shows that Group 1 metals always form soluble aqueous solutions. Make sure to consult the periodic table when identifying Group 1 ions so you don't miss those not explicitly listed, such as potassium, $ \ce{K+} $. Because sodium is on this list, sodium chloride is soluble!</p>
+      <p class="mb-4">Let's look at another example: $ \ce{(NH4)3PO4} $. Upon inspection, we can see that ammonium phosphate is made of an ammonium ion, $ \ce{NH4+} $, and a phosphate ion, $ \ce{PO4^3-} $. Looking over the chart, we find that the $ \ce{NH4+} $ ion is listed as an ion that forms aqueous solutions. This means the compound is soluble in water.</p>
+      <p>What about an insoluble compound? If a compound does not contain any of the ions listed on this table, it is likely an exception that forms a precipitate (a solid). For example, lead(II) chloride, $ \ce{PbCl2} $. Neither the lead ion ($ \ce{Pb^{2+}} $) nor the chloride ion ($ \ce{Cl-} $) are on the list of selected ions. Because it lacks any of our 'always soluble' ions, we can identify $ \ce{PbCl2} $ as the insoluble compound when compared to others that contain Group 1 metals or nitrates.</p>
+    </div>
+
+    <div id="questions-container" class="space-y-4"></div>
+    
+    <div id="submit-container" class="hidden mt-8 flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+      <div class="text-xs text-gray-500 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>Live Connection Active</div>
+      <button id="submit-btn" onclick="submitWork()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded transition-all">Submit Work</button>
+    </div>
+  </div>
+
+  <div id="submission-modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 text-center transform transition-all">
+      <h2 id="modal-title" class="text-2xl font-bold mb-4"></h2>
+      <p id="modal-message" class="text-gray-600 mb-8 leading-relaxed text-sm md:text-base"></p>
+      <button onclick="closeModal()" id="modal-btn" class="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 px-4 rounded-lg">Continue</button>
+    </div>
+  </div>
+
+  <script>
+    const databaseURL = "https://scigarage-default-rtdb.firebaseio.com";
+    const ASSIGNMENT_CODE = "<?= ASSIGNMENT_CODE ?>";
+    const questions = <?!= QUESTIONS ?>; 
+
+    const katexConfig = {
+      delimiters: [
+        {left: '$$', right: '$$', display: true},
+        {left: '$', right: '$', display: false},
+        {left: '\\(', right: '\\)', display: false},
+        {left: '\\[', right: '\\]', display: true}
+      ],
+      throwOnError: false
+    };
+
+    let studentConfig = null;
+    let localState = {};
+    let activeDebounces = new Set();
+    window.serverAnswerKey = null;
+    window.alreadyUnlocked = false;
+    window.hasCelebrated = false;
+    let commentVisibility = {};
+
+    function init() {
+      google.script.run
+        .withSuccessHandler(data => {
+            studentConfig = data;
+            const liveData = data.savedState || {};
+            window.studentLocked = (liveData && liveData.isLocked === true);
+            window.studentSubmitted = (liveData && liveData.submitted === true);
+            window.studentUnlocked = (liveData && liveData.unlocked === true);
+            
+            questions.forEach(q => { localState[q.id] = liveData[`q${q.id}`] || { selection: null }; });
+            
+            if (window.studentUnlocked) {
+                window.serverAnswerKey = liveData.answerKey;
+                window.alreadyUnlocked = true;
+            }
+            
+            // Initial full render
+            renderAllQuestions();
+            startSSEListener();
+            
+            if (window.renderMathInElement) {
+                const handoutEl = document.getElementById('handout-text');
+                renderMathInElement(handoutEl, katexConfig);
+                handoutEl.classList.remove('opacity-0');
+            }
+        })
+        .withFailureHandler(err => {
+            document.getElementById('loader').innerText = "Access Denied: " + err.message;
+            document.getElementById('loader').className = "absolute top-4 right-4 text-xs font-bold text-red-600 bg-red-50 px-3 py-1 rounded-full border border-red-200";
+        })
+        .getStudentInitialData();
+    }
+
+    function startSSEListener() {
+      const url = `${databaseURL}/${studentConfig.basePath}.json`;
+      const eventSource = new EventSource(url);
+      
+      const handleUpdate = (e) => {
+        const payload = JSON.parse(e.data);
+        const path = payload.path || "";
+        const data = payload.data || {};
+
+        if (path === "/") {
+            if (data.isLocked !== undefined) window.studentLocked = data.isLocked === true;
+            if (data.submitted !== undefined) window.studentSubmitted = data.submitted === true;
+            if (data.unlocked !== undefined) {
+                window.studentUnlocked = data.unlocked === true;
+                if (data.answerKey) { window.serverAnswerKey = data.answerKey; window.alreadyUnlocked = true; }
+            }
+            
+            Object.keys(data).forEach(key => {
+               if (key.startsWith("q")) {
+                   const qId = parseInt(key.split('/')[0].replace("q", ""));
+                   if (!activeDebounces.has(qId)) {
+                       if (key.includes('/')) {
+                           // Handle deep keys like "q11/isCorrect" -> strip 'q' to match localState IDs
+                           const cleanKey = key.startsWith('q') ? key.substring(1) : key;
+                           updateNestedData(localState, cleanKey, data[key]);
+                       } else {
+                           // Handle object keys like "q11"
+                           localState[qId] = Object.assign({}, localState[qId] || {}, data[key]);
+                       }
+                       renderQuestionCard(qId);
+                   }
+               } else {
+                   localState[key] = data[key];
+               }
+            });
+            checkLockStatus();
+        } else {
+            const parts = path.split('/').filter(p => p !== "");
+            if (parts.length === 0) return;
+
+            if (parts[0] === "isLocked") { window.studentLocked = data === true; checkLockStatus(); }
+            else if (parts[0] === "submitted") { window.studentSubmitted = data === true; renderAllQuestions(); }
+            else if (parts[0] === "unlocked") {
+                window.studentUnlocked = data === true;
+                if (data === true) { 
+                  fetch(url).then(r => r.json()).then(d => { 
+                    if (d.answerKey) { window.serverAnswerKey = d.answerKey; window.alreadyUnlocked = true; }
+                    renderAllQuestions(); 
+                  }); 
+                }
+            } else if (parts[0].startsWith("q")) {
+                const qId = parseInt(parts[0].replace("q", ""));
+                if (!activeDebounces.has(qId)) {
+                    if (!localState[qId]) localState[qId] = {};
+                    if (parts.length === 1) {
+                        localState[qId] = Object.assign({}, localState[qId], data);
+                    } else {
+                        updateNestedData(localState[qId], parts.slice(1).join('/'), data);
+                    }
+                    renderQuestionCard(qId);
+                }
+            } else if (parts.length === 1) {
+                localState[parts[0]] = data;
+            }
+        }
+      };
+      eventSource.addEventListener('put', handleUpdate);
+      eventSource.addEventListener('patch', handleUpdate);
+    }
+
+    function updateNestedData(root, path, value) {
+        const parts = path.split('/').filter(p => p.trim() !== '');
+        let current = root;
+        for (let i = 0; i < parts.length - 1; i++) {
+            if (!current[parts[i]]) current[parts[i]] = {};
+            current = current[parts[i]];
+        }
+        if (parts.length > 0) {
+            const lastPart = parts[parts.length - 1];
+            if (value === null) delete current[lastPart];
+            else current[lastPart] = value;
+        }
+    }
+
+    function saveAnswer(qId, selection, qType) {
+      if (!localState[qId]) localState[qId] = {};
+      localState[qId].selection = selection; 
+      
+      // Debounce this question so SSE updates don't overwrite user input
+      activeDebounces.add(qId);
+
+      let patchPayload = {
+        [`q${qId}/selection`]: selection,
+        lastUpdated: Date.now()
+      };
+
+      if (qType === 'text') {
+          localState[qId].isCorrect = null;
+          patchPayload[`q${qId}/isCorrect`] = null;
+      }
+
+      if (window.studentUnlocked && window.serverAnswerKey) {
+          let liveScore = 0;
+          questions.forEach(q => {
+             const state = localState[q.id];
+             if (q.type === 'mc') {
+                 if (state?.selection == window.serverAnswerKey[q.id]) liveScore++;
+             } else {
+                 if (state?.isCorrect === true) liveScore++;
+             }
+          });
+          patchPayload['score'] = liveScore;
+      }
+
+      fetch(`${databaseURL}/${studentConfig.basePath}.json`, {
+        method: 'PATCH',
+        body: JSON.stringify(patchPayload)
+      }).finally(() => {
+          // Short delay to let Firebase settle, then trigger a final sync render
+          setTimeout(() => { 
+              activeDebounces.delete(qId); 
+              renderQuestionCard(qId);
+          }, 500);
+      });
+
+      // Trigger immediate local render so colors update instantly
+      renderQuestionCard(qId);
+    }
+
+    function toggleStudentCommentArea(qId) {
+      const area = document.getElementById(`student-comment-area-q${qId}`);
+      if (!area) return;
+      const isCurrentlyHidden = area.classList.toggle('hidden');
+      commentVisibility[qId] = !isCurrentlyHidden; 
+      
+      if (!isCurrentlyHidden && localState[qId] && localState[qId].commentUnread === true) {
+         localState[qId].commentUnread = false; 
+         
+         fetch(`${databaseURL}/${studentConfig.basePath}/q${qId}.json`, {
+           method: 'PATCH', 
+           body: JSON.stringify({ commentUnread: false }) 
+         });
+         
+         const btn = document.getElementById(`student-comment-btn-${qId}`);
+         if (btn) {
+             btn.classList.remove('glow-effect', 'bg-orange-50', 'border-orange-500', 'text-orange-700');
+             btn.classList.add('bg-white', 'border-gray-300', 'text-gray-600', 'opacity-75');
+         }
+      }
+    }
+
+    function checkLockStatus() {
+       const isLocked = (window.studentLocked === true);
+       if (isLocked) {
+           document.getElementById('lock-message-container').classList.remove('hidden');
+           document.getElementById('questions-container').classList.add('hidden');
+           document.getElementById('submit-container').classList.add('hidden');
+           return true; 
+       } else {
+           document.getElementById('lock-message-container').classList.add('hidden');
+           document.getElementById('questions-container').classList.remove('hidden');
+           document.getElementById('submit-container').classList.remove('hidden');
+           return false;
+       }
+    }
+
+    function show100PercentModal() {
+      const modal = document.getElementById('submission-modal');
+      const titleEl = document.getElementById('modal-title');
+      const msgEl = document.getElementById('modal-message');
+      titleEl.innerText = "🏆 100% PERFECT! 🏆";
+      titleEl.className = "text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-500 mb-4 animate-bounce";
+      msgEl.innerHTML = "Flawless victory! You have successfully mastered every single question on this assignment, including the teacher-graded section. Incredible work!";
+      modal.classList.remove('hidden');
+    }
+
+    function renderAllQuestions() {
+      if (checkLockStatus()) return;
+      questions.forEach(q => renderQuestionCard(q.id));
+      
+      document.getElementById('loader').classList.add('hidden');
+      document.getElementById('submit-container').classList.remove('hidden');
+      
+      // Check for 100% mastery celebration
+      let overallCorrect = 0;
+      questions.forEach(q => {
+          const qData = localState[q.id];
+          if (q.type === 'mc') {
+              if (window.serverAnswerKey && qData?.selection == window.serverAnswerKey[q.id]) overallCorrect++;
+          } else {
+              if (qData?.isCorrect === true) overallCorrect++;
+          }
+      });
+      const isFullyGraded = questions.every(q => q.type === 'mc' || (localState[q.id] && localState[q.id].isCorrect !== undefined));
+      if (isFullyGraded && overallCorrect === questions.length && !window.hasCelebrated) { 
+          window.hasCelebrated = true; 
+          show100PercentModal(); 
+      }
+    }
+
+    function renderQuestionCard(qId) {
+        if (checkLockStatus()) return;
+        const q = questions.find(item => item.id === qId);
+        if (!q) return;
+
+        const container = document.getElementById('questions-container');
+        const qData = localState[qId];
+        const activeId = document.activeElement ? document.activeElement.id : null;
+        const meetsShadeCondition = (window.studentSubmitted === true && window.studentUnlocked === true);
+
+        const cardId = `card-q${q.id}`;
+        let card = document.getElementById(cardId);
+        if (!card) { 
+            card = document.createElement('div'); card.id = cardId; 
+            card.innerHTML = `<div id="head-q${q.id}" class="flex justify-between mb-4 items-start gap-4"></div><div id="body-q${q.id}"></div>`;
+            container.appendChild(card); 
+        }
+
+        const selection = qData?.selection;
+        const isAnswered = (selection !== null && selection !== undefined && selection !== "");
+
+        let cardClass = "bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 mb-4 transition-colors duration-300";
+        let statusIcon = "";
+        let inputHtml = "";
+
+        if (q.type === 'mc') {
+            if (window.serverAnswerKey && isAnswered) {
+                 const hasKeyForQ = window.serverAnswerKey[q.id] !== undefined;
+                 if (hasKeyForQ) {
+                     const isCorrect = (selection == window.serverAnswerKey[q.id]);
+                     if (meetsShadeCondition) {
+                         cardClass = isCorrect ? "bg-green-50 border-2 border-green-400 mb-4 p-6 rounded-lg shadow-sm" : "bg-red-50 border-2 border-red-400 mb-4 p-6 rounded-lg shadow-sm";
+                         statusIcon = isCorrect ? `<span class="text-green-600 font-bold whitespace-nowrap">✓ Correct</span>` : `<span class="text-red-600 font-bold whitespace-nowrap">✗ Incorrect</span>`;
+                     } else {
+                         statusIcon = `<span class="text-blue-600 font-bold whitespace-nowrap">Answered</span>`;
+                     }
+                 } else {
+                     statusIcon = `<span class="text-blue-600 font-bold whitespace-nowrap">Answered</span>`;
+                 }
+            }
+            inputHtml = q.options.map((opt, i) => `<label class="flex items-start gap-3 py-2 cursor-pointer hover:bg-gray-50 rounded px-2"><input type="radio" name="q${q.id}" ${selection === i ? 'checked' : ''} onchange="saveAnswer(${q.id}, ${i}, 'mc')" class="w-5 h-5 text-purple-600 mt-1"><span class="text-sm md:text-base">${opt}</span></label>`).join('');
+        } else if (q.type === 'text') {
+            if (isAnswered) {
+                if (meetsShadeCondition) {
+                    if (qData.isCorrect === true) {
+                        cardClass = "bg-green-50 border-2 border-green-400 mb-4 p-6 rounded-lg shadow-sm";
+                        statusIcon = `<span class="text-green-600 font-bold whitespace-nowrap">✓ Marked Correct</span>`;
+                    } else if (qData.isCorrect === false) {
+                        cardClass = "bg-red-50 border-2 border-red-400 mb-4 p-6 rounded-lg shadow-sm";
+                        statusIcon = `<span class="text-red-600 font-bold whitespace-nowrap">✗ Marked Incorrect</span>`;
+                    } else {
+                        statusIcon = `<span class="text-blue-600 font-bold whitespace-nowrap">Pending Review</span>`;
+                    }
+                } else {
+                    statusIcon = `<span class="text-blue-600 font-bold whitespace-nowrap">Answered</span>`;
+                }
+            }
+            inputHtml = `<textarea id="input-q${q.id}" rows="3" onblur="saveAnswer(${q.id}, this.value, 'text')" class="w-full p-3 border border-gray-300 rounded mt-2 text-blue-700 font-bold focus:ring-2 focus:ring-purple-500">${selection || ''}</textarea>`;
+        }
+        
+        card.className = cardClass;
+        
+        let commentButtonHtml = ""; let commentPanelHtml = "";
+        const currentComment = qData ? (qData.teacherComment || "") : "";
+        const isCommentUnread = qData ? (qData.commentUnread === true) : false;
+
+        if (currentComment !== "") {
+            const btnClass = isCommentUnread ? "glow-effect bg-orange-50 border-orange-500 text-orange-700" : "bg-white border-gray-300 text-gray-600 opacity-75 hover:opacity-100";
+            commentButtonHtml = `<button id="student-comment-btn-${q.id}" onclick="toggleStudentCommentArea(${q.id})" class="text-xs font-bold px-3 py-1 ml-3 border-2 rounded-full transition-all ${btnClass} flex items-center shadow-sm">💡 Teacher Comment</button>`;
+            const isVisible = commentVisibility[q.id] === true;
+            commentPanelHtml = `<div id="student-comment-area-q${q.id}" class="${isVisible ? '' : 'hidden'} mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg shadow-inner"><div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-500"></span> Note from Teacher:</div><div class="text-blue-900 font-bold whitespace-pre-wrap ml-3 leading-relaxed" style="font-size: 15px;">${String(currentComment).replace(/"/g, '&quot;')}</div></div>`;
+        }
+
+        document.getElementById(`head-q${q.id}`).innerHTML = `<div class="text-gray-900 leading-relaxed w-full"><strong>${q.id}.</strong> ${q.text}</div><div class="shrink-0 flex items-center mt-1"><div class="text-sm">${statusIcon}</div>${commentButtonHtml}</div>`;
+        
+        // Only skip body update if it's a TEXT question being actively typed in.
+        // MC questions and text questions not in debounce should always update.
+        const isActivelyEditingText = (q.type === 'text' && (activeId === `input-q${q.id}` || activeDebounces.has(q.id)));
+        
+        if (!isActivelyEditingText) {
+            document.getElementById(`body-q${q.id}`).innerHTML = inputHtml + commentPanelHtml;
+        }
+
+        if (window.renderMathInElement) {
+            try { renderMathInElement(card, katexConfig); } catch(e) {}
+        }
+    }
+
+    async function submitWork() {
+      const unanswered = questions.filter(q => { const data = localState[q.id]; return !data || data.selection === null || data.selection === undefined || String(data.selection).trim() === ""; });
+      if (unanswered.length > 0) {
+        const modal = document.getElementById('submission-modal'); const titleEl = document.getElementById('modal-title'); const msgEl = document.getElementById('modal-message');
+        titleEl.innerText = "Assignment Incomplete"; titleEl.className = "text-2xl font-bold mb-4 text-orange-600";
+        msgEl.innerHTML = `You have <strong>${unanswered.length}</strong> question(s) left to answer. Please complete the entire assignment before submitting for grading.`;
+        modal.classList.remove('hidden'); return;
+      }
+      const btn = document.getElementById('submit-btn'); btn.innerText = "Grading..."; btn.disabled = true;
+      google.script.run.withSuccessHandler(handleGradeResult).gradeSubmission(studentConfig);
+    }
+
+    function handleGradeResult(res) {
+      document.getElementById('submit-btn').innerText = "Submit Work"; document.getElementById('submit-btn').disabled = false;
+      const modal = document.getElementById('submission-modal'); const titleEl = document.getElementById('modal-title'); const msgEl = document.getElementById('modal-message');
+
+      if (res.answerKey) window.serverAnswerKey = res.answerKey;
+
+      if (res.isFullyGraded && res.totalCorrect === res.totalQuestions) {
+          window.hasCelebrated = true; show100PercentModal(); return; 
+      } else if (!res.isFullyGraded) {
+          titleEl.className = "text-2xl font-bold mb-4 text-orange-600"; titleEl.innerText = "Review Pending";
+          msgEl.innerHTML = `You have <strong>${res.totalCorrect} out of ${res.totalQuestions}</strong> current points (including ${res.mcCorrect} multiple-choice).<br><br>The final <strong>${res.totalText - res.textGradedCount} written questions</strong> are still under review by your teacher. Correct answers will not be revealed until the mastery threshold is met across all graded work.`;
+      } else if (res.status === 'unlocked') {
+          titleEl.className = "text-2xl font-bold mb-4 text-purple-600"; titleEl.innerText = "🎊 Mastery Achieved! 🎊";
+          if (window.alreadyUnlocked) {
+              msgEl.innerHTML = `Excellent momentum! You have <strong>${res.totalCorrect} out of ${res.totalQuestions}</strong> total questions correct. All work has been graded and reviewed!`;
+          } else { 
+              msgEl.innerHTML = `Fantastic work! You have <strong>${res.totalCorrect} out of ${res.totalQuestions}</strong> total correct, officially mastering the content! 🌟 The answer key is now <strong>unlocked</strong>, and your worksheet will now give you live feedback as you finish.`; 
+              window.alreadyUnlocked = true; 
+          }
+      } else {
+          titleEl.className = "text-2xl font-bold mb-4 text-gray-800"; titleEl.innerText = "Keep Working!";
+          msgEl.innerHTML = `You currently have <strong>${res.totalCorrect} total points out of ${res.totalQuestions}</strong>.<br><br>Correct answers will not be revealed until you reach the mastery threshold of <strong>${res.totalThreshold} points</strong>.<br><br><em>Teacher Review: ${res.textGradedCount}/${res.totalText} written questions graded.</em>`;
+      }
+      modal.classList.remove('hidden'); renderAllQuestions();
+    }
+
+    function closeModal() { document.getElementById('submission-modal').classList.add('hidden'); }
+    window.onload = init;
+  </script>
+</body>
+</html>
