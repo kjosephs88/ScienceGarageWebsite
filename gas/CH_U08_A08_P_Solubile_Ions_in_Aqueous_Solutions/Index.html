@@ -203,11 +203,15 @@
     }
 
     function renderAllQuestions() {
-      if (checkLockStatus()) return;
-      questions.forEach(q => renderQuestionCard(q.id));
-
+      // 1. Hide loader immediately so we don't get stuck
       const loader = document.getElementById('loader');
       if (loader) loader.classList.add('hidden');
+
+      // 2. Check lock status
+      if (checkLockStatus()) return;
+
+      // 3. Render questions
+      questions.forEach(q => renderQuestionCard(q.id));
       
       const submitContainer = document.getElementById('submit-container');
       if (submitContainer) submitContainer.classList.remove('hidden');

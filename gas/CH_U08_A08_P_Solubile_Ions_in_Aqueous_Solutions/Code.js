@@ -64,11 +64,8 @@ function doGet(e) {
   template.HEADER_TYPE = ASSIGNMENT_CODE.endsWith("P") ? "Practice" : "Graded";
   template.HEADER_SUB = headerSub;
   template.QUESTIONS = JSON.stringify(QUESTIONS_ARRAY); 
-  try { 
-    template.STUDENT_UUID = getStudentInitialData().saltedHash;
-  } catch (err) { 
-    template.STUDENT_UUID = "ERROR_" + err.message; 
-  }
+  // Student UUID is not needed in the template for the new Proxy architecture
+  template.STUDENT_UUID = "SESSION_PENDING";
   return template.evaluate().setTitle(`Assignment: ${ASSIGNMENT_CODE}`).setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
