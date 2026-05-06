@@ -40,17 +40,114 @@ const { onValueUpdated } = require("firebase-functions/v2/database");
 const admin = require("firebase-admin");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { defineSecret } = require("firebase-functions/params");
+const MASTER_KEYS = require("./keys"); // 🔑 Import our secure vault
 
 admin.initializeApp();
 
 // Access the API Key from Google Cloud Secret Manager
 const GEMINI_API_KEY = defineSecret("GEMINI_API_KEY");
 
+/**
+ * THE SCIENCE GARAGE: UNIVERSAL AI GRADER (v3.0)
+ * Future AI Grading experiments and automated text feedback.
+ */
+/**
+ * THE SCIENCE GARAGE: UNIVERSAL AI GRADER (v3.0)
+ * Future AI Grading experiments and automated text feedback.
+ */
 exports.universalAiGrader = onValueUpdated({
-    // Monitors submissions across all period folders and student UIDs
     ref: "/teacherGradebook/{periodFolder}/{assignmentFolder}/{studentUid}",
     secrets: [GEMINI_API_KEY],
     memory: "512MiB"
+}, async (event) => {
+    // This is your placeholder for future AI grading logic.
+    // It currently monitors the same path but can be customized later.
+    console.log("Universal AI Grader placeholder triggered.");
+    return null;
+});
+
+/**
+ * THE SCIENCE GARAGE: LIVE MIRROR (v1.0)
+ * Automatically mirrors any change from the master gradebook to the 
+ * anonymous student session feed.
+ */
+exports.mirrorGradebookToSession = onValueUpdated({
+    ref: "/teacherGradebook/{periodFolder}/{assignmentFolder}/{studentUid}",
+    memory: "256MiB"
+}, async (event) => {
+
+    const afterData = event.data.after.val();
+    if (afterData && afterData.currentSession) {
+        return admin.database().ref(`liveUpdates/${afterData.currentSession}`).set(afterData);
+    }
+    return null;
+});
+
+/**
+ * THE SCIENCE GARAGE: SECURE PROXY (v1.0)
+ * Acts as a middleman to hide SaltedHashes from student browsers.
+ * Validates SessionTokens and maps them to permanent RTDB nodes.
+ */
+exports.secureProxy = onRequest({ cors: true, maxInstances: 10 }, async (req, res) => {
+    const { token, qId, selection, textValue, action } = req.body;
+
+    if (!token) return res.status(400).send("Missing Session Token");
+
+    try {
+        // 1. Resolve Token to Real Hash
+        const sessionRef = admin.database().ref(`ActiveSessions/${token}`);
+        const sessionSnap = await sessionRef.get();
+
+        if (!sessionSnap.exists()) return res.status(403).send("Session Expired");
+
+        const sessionData = sessionSnap.val();
+        const { realHash, periodFolder, assignmentFolder, expires } = sessionData;
+
+        // 2. Expiration Check (4 Hour Limit)
+        if (Date.now() > expires) {
+            await sessionRef.remove();
+            return res.status(403).send("Session Expired");
+        }
+
+        const studentRef = admin.database().ref(`teacherGradebook/${periodFolder}/${assignmentFolder}/${realHash}`);
+
+        // 3. Handle Actions
+        if (action === "saveAnswer") {
+            const updates = { needsGrading: true, lastUpdated: Date.now() };
+            if (qId) {
+                updates[`q${qId}/selection`] = (selection !== undefined) ? selection : textValue;
+            }
+            await studentRef.update(updates);
+        } else if (action === "submit") {
+            await studentRef.update({ 
+                submitted: true, 
+                needsGrading: true, 
+                lastSubmitted: Date.now() 
+            });
+        } else if (action === "markRead") {
+            if (qId) {
+                await studentRef.child(`q${qId}`).update({ commentUnread: false });
+            }
+        }
+
+
+        return res.status(200).send("Success");
+
+    } catch (error) {
+        console.error("PROXY ERROR:", error);
+        return res.status(500).send("Server Error");
+    }
+});
+
+/**
+ * THE SCIENCE GARAGE: STUDENT ACTIVITY TRIGGER (v3.1)
+ * Handles Secure MC Grading and Mastery Tracking
+ */
+exports.onStudentActivityTrigger = onValueUpdated({
+    ref: "/teacherGradebook/{periodFolder}/{assignmentFolder}/{studentUid}",
+    secrets: [GEMINI_API_KEY],
+    memory: "512MiB",
+    timeoutSeconds: 30
 }, async (event) => {
 
     const afterData = event.data.after.val();
@@ -59,105 +156,71 @@ exports.universalAiGrader = onValueUpdated({
     if (!afterData || afterData.needsGrading !== true) return null;
 
     const { assignmentFolder, studentUid } = event.params;
-    const apiKey = GEMINI_API_KEY.value();
-    const genAI = new GoogleGenerativeAI(apiKey);
+    
+    // Clean assignmentFolder to get the base code
+    const assignmentCode = assignmentFolder.includes('_') 
+        ? assignmentFolder.split('_').slice(0, -1).join('_') 
+        : assignmentFolder;
+
+    console.log(`Processing Activity: ${assignmentCode} for ${studentUid}`);
 
     try {
-        console.log(`Grading Session: ${assignmentFolder} for ${studentUid}`);
-
-        // 2. RUBRIC RETRIEVAL
-        let rubricSnap = await admin.database().ref(`/rubrics/${assignmentFolder}`).once('value');
-        let rubric = rubricSnap.val();
-
-        // Fallback for folders containing Google Classroom ID suffixes
-        if (!rubric && assignmentFolder.includes('_')) {
-            const assignmentCode = assignmentFolder.split('_').slice(0, -1).join('_');
-            rubricSnap = await admin.database().ref(`/rubrics/${assignmentCode}`).once('value');
-            rubric = rubricSnap.val();
-        }
-
-        if (!rubric) throw new Error(`Rubric missing for: ${assignmentFolder}`);
-
-        // 3. MODEL CONFIGURATION
-        const model = genAI.getGenerativeModel({
-            model: "gemini-2.5-flash",
-            generationConfig: {
-                responseMimeType: "application/json",
-                temperature: 0.1
-            }
-        });
-
-        // 4. THE SYSTEM PROMPT
-        const systemPrompt = `
-            You are an expert Science Teacher grading a lab: ${rubric.assignmentTitle}.
-            
-            RUBRIC_DATA: ${JSON.stringify(rubric)}
-            STUDENT_SUBMISSION: ${JSON.stringify(afterData)}
-
-            STRICT GRADING RULES:
-            1. GRANULAR SCORES: You MUST provide a "score" (0 or 1) for EVERY unique key in the STUDENT_SUBMISSION starting with 'q' (e.g., q10_sol1_moles, q13_sol1_vol, q16_sm_pos1). This is required for visual cell tinting.
-            2. RANKING LOGIC: In rankings (Q16-Q20), equalities are interchangeable. "Sol 1 = Sol 2" is identical to "Sol 2 = Sol 1".
-            3. ECF (Error Carried Forward): If an earlier calculation is wrong, but the current math is correct based on that wrong value, give full credit for the math.
-            
-            5. NO SPOILERS (PEDAGOGICAL GUARDRAIL): 
-               - If a student is wrong, identify THAT they are wrong, but DO NOT provide the correct answer or the scientific explanation in the feedback.
-               - Example: Instead of saying "Molarity is the measure of concentration, not volume," say "Your identification is correct, but your reasoning needs to be based on the definition of concentration."
-               - Goal: Point out the 'gap' in their logic without filling it for them. Lead them to look back at their notes.
-
-            6. FEEDBACK ROUTING: 
-               - Sub-parts (e.g., q10_sol1_moles) MUST NOT receive text feedback.
-               - All necessary feedback for a group of questions must be combined and placed in the feedback string for the ROOT prefix only (e.g., "q1", "q10", "q16").
-
-            OUTPUT FORMAT:
-            {
-              "overallScore": number,
-              "overallFeedback": "string",
-              "parts": {
-                "q1": {"score": 1, "feedback": ""},
-                "q10_sol1_moles": {"score": 0, "feedback": ""},
-                "q10": {"score": 0.5, "feedback": "Your calculation for solution 1 is incorrect."}
-              }
-            }
-        `;
-
-        // 5. AI EXECUTION & SANITIZATION
-        const result = await model.generateContent(systemPrompt);
-        const cleanJson = result.response.text().replace(/```json/g, "").replace(/```/g, "").trim();
-        const gradingResults = JSON.parse(cleanJson);
-
-        // 6. DATABASE UPDATES PREPARATION
         const updates = {};
-        updates['aiFeedback'] = gradingResults.overallFeedback;
-        updates['totalScore'] = gradingResults.overallScore;
-        updates['needsGrading'] = false;
-        updates['isLocked'] = true;      // Ensure the student remains locked out
-        updates['lastGraded'] = Date.now();
-        updates['aiError'] = null;
+        const assignmentKey = MASTER_KEYS[assignmentCode];
+        
+        let totalCorrect = 0;
+        let totalQuestions = 0;
 
-        // Loop through results to map scores to cells and feedback to main nodes
-        for (let partId in gradingResults.parts) {
-            const data = gradingResults.parts[partId];
-
-            // Apply the granular score for cell/input tinting
-            updates[`${partId}/score`] = data.score;
-
-            // Only apply feedback if it's attached to a main prefix or provided by AI
-            // This ensures sub-nodes (like q10_sol1_moles) don't get a "teacherComment" node
-            const prefix = partId.split('_')[0];
-            if (data.feedback && data.feedback !== "") {
-                updates[`${prefix}/teacherComment`] = data.feedback;
-                updates[`${prefix}/commentUnread`] = true;
-            }
+        if (assignmentKey) {
+            // 1. Calculate TOTAL questions from the Master Key (Source of Truth)
+            const masterQIds = Object.keys(assignmentKey);
+            totalQuestions = masterQIds.length;
+            
+            // 2. Process all questions defined in the key
+            masterQIds.forEach(qId => {
+                const qKey = `q${qId}`;
+                const qRubric = assignmentKey[qId];
+                const studentData = afterData[qKey] || {};
+                
+                if (typeof qRubric === 'object') {
+                    // Count manual grades for FRQs
+                    if (studentData.isCorrect === true) totalCorrect++;
+                } else {
+                    // Grade MCs against the rubric
+                    const studentAnswer = studentData.selection;
+                    if (studentAnswer !== undefined && studentAnswer !== null && studentAnswer !== "") {
+                        const isCorrect = (studentAnswer == qRubric);
+                        updates[`${qKey}/isCorrect`] = isCorrect;
+                        updates[`${qKey}/score`] = isCorrect ? 1 : 0;
+                        if (isCorrect) totalCorrect++;
+                    }
+                }
+            });
         }
 
-        // 7. ATOMIC COMMIT
-        return event.data.after.ref.update(updates);
+        // Mastery Check: 80% of TOTAL and MUST be SUBMITTED
+        const threshold = Math.ceil(totalQuestions * 0.8);
+        const isUnlocked = (totalCorrect >= threshold && afterData.submitted === true);
+
+        // Final payload updates
+        updates['score'] = totalCorrect;
+        updates['unlocked'] = isUnlocked;
+        updates['needsGrading'] = false; // Clear trigger
+        updates['lastGraded'] = Date.now();
+
+        await event.data.after.ref.update(updates);
+
+        // 🛡️ MIRRORING: Push current state to the student's "blind" live feed
+        if (afterData.currentSession) {
+            const finalState = Object.assign({}, afterData, updates);
+            await admin.database().ref(`liveUpdates/${afterData.currentSession}`).set(finalState);
+        }
+
+        return null;
+
 
     } catch (error) {
-        console.error("CRITICAL GRADING ERROR:", error);
-        return event.data.after.ref.update({
-            needsGrading: false,
-            aiError: `Grader Error: ${error.message}`
-        });
+        console.error("TRIGGER ERROR:", error);
+        return event.data.after.ref.update({ needsGrading: false });
     }
 });

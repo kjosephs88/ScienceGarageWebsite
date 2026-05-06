@@ -12,6 +12,7 @@
 
   <style>
     body { font-family: 'Roboto', ui-sans-serif, system-ui, -apple-system, sans-serif; background-color: #f0ebf8; }
+    textarea { resize: none !important; overflow: hidden; }
     .form-header-bar { border-top: 10px solid #673ab7; }
     textarea, input[type="text"] { color: #0000ff !important; font-weight: 700 !important; }
     @keyframes glow {
@@ -73,6 +74,7 @@
     const ASSIGNMENT_CODE = "<?= ASSIGNMENT_CODE ?>";
     const questions = <?!= QUESTIONS ?>; 
 
+    const PROXY_URL = "https://us-central1-scigarage.cloudfunctions.net/secureProxy"; 
     const katexConfig = {
       delimiters: [
         {left: '$$', right: '$$', display: true},
@@ -86,9 +88,10 @@
     let studentConfig = null;
     let localState = {};
     let activeDebounces = new Set();
-    window.serverAnswerKey = null;
-    window.alreadyUnlocked = false;
-    window.hasCelebrated = false;
+    let eventSource = null;
+    window.studentUnlocked = false;
+    window.studentSubmitted = false;
+    window.studentLocked = false;
     let commentVisibility = {};
 
     function init() {
@@ -102,12 +105,6 @@
             
             questions.forEach(q => { localState[q.id] = liveData[`q${q.id}`] || { selection: null }; });
             
-            if (window.studentUnlocked) {
-                window.serverAnswerKey = liveData.answerKey;
-                window.alreadyUnlocked = true;
-            }
-            
-            // Initial full render
             renderAllQuestions();
             startSSEListener();
             
@@ -118,339 +115,339 @@
             }
         })
         .withFailureHandler(err => {
-            document.getElementById('loader').innerText = "Access Denied: " + err.message;
-            document.getElementById('loader').className = "absolute top-4 right-4 text-xs font-bold text-red-600 bg-red-50 px-3 py-1 rounded-full border border-red-200";
+            const ldr = document.getElementById('loader');
+            if (ldr) {
+                ldr.innerText = "Access Denied: " + err.message;
+                ldr.className = "absolute top-4 right-4 text-xs font-bold text-red-600 bg-red-50 px-3 py-1 rounded-full border border-red-200";
+            }
         })
         .getStudentInitialData();
     }
 
     function startSSEListener() {
-      const url = `${databaseURL}/${studentConfig.basePath}.json`;
-      const eventSource = new EventSource(url);
+      if (eventSource) eventSource.close();
+      if (!studentConfig || !studentConfig.livePath) return;
+      const url = `${databaseURL}/${studentConfig.livePath}.json`;
+      eventSource = new EventSource(url);
       
       const handleUpdate = (e) => {
         const payload = JSON.parse(e.data);
-        const path = payload.path || "";
         const data = payload.data || {};
+        if (!data) return;
 
-        if (path === "/") {
-            if (data.isLocked !== undefined) window.studentLocked = data.isLocked === true;
-            if (data.submitted !== undefined) window.studentSubmitted = data.submitted === true;
-            if (data.unlocked !== undefined) {
-                window.studentUnlocked = data.unlocked === true;
-                if (data.answerKey) { window.serverAnswerKey = data.answerKey; window.alreadyUnlocked = true; }
-            }
-            
-            Object.keys(data).forEach(key => {
-               if (key.startsWith("q")) {
-                   const qId = parseInt(key.split('/')[0].replace("q", ""));
-                   if (!activeDebounces.has(qId)) {
-                       if (key.includes('/')) {
-                           // Handle deep keys like "q11/isCorrect" -> strip 'q' to match localState IDs
-                           const cleanKey = key.startsWith('q') ? key.substring(1) : key;
-                           updateNestedData(localState, cleanKey, data[key]);
-                       } else {
-                           // Handle object keys like "q11"
-                           localState[qId] = Object.assign({}, localState[qId] || {}, data[key]);
-                       }
-                       renderQuestionCard(qId);
-                   }
-               } else {
-                   localState[key] = data[key];
-               }
-            });
-            checkLockStatus();
-        } else {
-            const parts = path.split('/').filter(p => p !== "");
-            if (parts.length === 0) return;
-
-            if (parts[0] === "isLocked") { window.studentLocked = data === true; checkLockStatus(); }
-            else if (parts[0] === "submitted") { window.studentSubmitted = data === true; renderAllQuestions(); }
-            else if (parts[0] === "unlocked") {
-                window.studentUnlocked = data === true;
-                if (data === true) { 
-                  fetch(url).then(r => r.json()).then(d => { 
-                    if (d.answerKey) { window.serverAnswerKey = d.answerKey; window.alreadyUnlocked = true; }
-                    renderAllQuestions(); 
-                  }); 
-                }
-            } else if (parts[0].startsWith("q")) {
-                const qId = parseInt(parts[0].replace("q", ""));
-                if (!activeDebounces.has(qId)) {
-                    if (!localState[qId]) localState[qId] = {};
-                    if (parts.length === 1) {
-                        localState[qId] = Object.assign({}, localState[qId], data);
-                    } else {
-                        updateNestedData(localState[qId], parts.slice(1).join('/'), data);
-                    }
-                    renderQuestionCard(qId);
-                }
-            } else if (parts.length === 1) {
-                localState[parts[0]] = data;
-            }
+        if (data.isLocked !== undefined) window.studentLocked = data.isLocked === true;
+        if (data.submitted !== undefined) window.studentSubmitted = data.submitted === true;
+        if (data.unlocked !== undefined) {
+            const oldUnlocked = window.studentUnlocked;
+            window.studentUnlocked = data.unlocked === true;
+            if (window.studentUnlocked && !oldUnlocked) renderAllQuestions();
         }
+        
+        questions.forEach(q => {
+            const qKey = "q" + q.id;
+            const qData = data[qKey];
+            if (qData) {
+                if (!activeDebounces.has(q.id)) {
+                    localState[q.id] = Object.assign({}, localState[q.id] || {}, qData);
+                    renderQuestionCard(q.id);
+                }
+            }
+        });
+        checkLockStatus();
       };
       eventSource.addEventListener('put', handleUpdate);
       eventSource.addEventListener('patch', handleUpdate);
     }
 
-    function updateNestedData(root, path, value) {
-        const parts = path.split('/').filter(p => p.trim() !== '');
-        let current = root;
-        for (let i = 0; i < parts.length - 1; i++) {
-            if (!current[parts[i]]) current[parts[i]] = {};
-            current = current[parts[i]];
-        }
-        if (parts.length > 0) {
-            const lastPart = parts[parts.length - 1];
-            if (value === null) delete current[lastPart];
-            else current[lastPart] = value;
+    async function sendToProxy(payload, qId) {
+        try {
+            const response = await fetch(PROXY_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.status === 403) {
+                google.script.run.withSuccessHandler(newData => {
+                    studentConfig.sessionToken = newData.sessionToken;
+                    studentConfig.livePath = newData.livePath;
+                    payload.token = newData.sessionToken;
+                    startSSEListener(); 
+                    sendToProxy(payload, qId); 
+                }).refreshSessionToken();
+                return;
+            }
+            
+            if (qId) setTimeout(() => activeDebounces.delete(qId), 800);
+        } catch (e) {
+            console.error("Proxy connection error:", e);
         }
     }
 
     function saveAnswer(qId, selection, qType) {
+      if (window.studentLocked) return;
       if (!localState[qId]) localState[qId] = {};
-      localState[qId].selection = selection; 
-      
-      // Debounce this question so SSE updates don't overwrite user input
+      localState[qId].selection = selection;
       activeDebounces.add(qId);
 
-      let patchPayload = {
-        [`q${qId}/selection`]: selection,
-        lastUpdated: Date.now()
+      const payload = {
+          token: studentConfig.sessionToken,
+          action: "saveAnswer",
+          qId: qId,
+          selection: (qType === 'mc') ? selection : undefined,
+          textValue: (qType === 'text') ? selection : undefined
       };
 
-      if (qType === 'text') {
-          localState[qId].isCorrect = null;
-          patchPayload[`q${qId}/isCorrect`] = null;
-      }
-
-      if (window.studentUnlocked && window.serverAnswerKey) {
-          let liveScore = 0;
-          questions.forEach(q => {
-             const state = localState[q.id];
-             if (q.type === 'mc') {
-                 if (state?.selection == window.serverAnswerKey[q.id]) liveScore++;
-             } else {
-                 if (state?.isCorrect === true) liveScore++;
-             }
-          });
-          patchPayload['score'] = liveScore;
-      }
-
-      fetch(`${databaseURL}/${studentConfig.basePath}.json`, {
-        method: 'PATCH',
-        body: JSON.stringify(patchPayload)
-      }).finally(() => {
-          // Short delay to let Firebase settle, then trigger a final sync render
-          setTimeout(() => { 
-              activeDebounces.delete(qId); 
-              renderQuestionCard(qId);
-          }, 500);
-      });
-
-      // Trigger immediate local render so colors update instantly
+      sendToProxy(payload, qId);
       renderQuestionCard(qId);
-    }
-
-    function toggleStudentCommentArea(qId) {
-      const area = document.getElementById(`student-comment-area-q${qId}`);
-      if (!area) return;
-      const isCurrentlyHidden = area.classList.toggle('hidden');
-      commentVisibility[qId] = !isCurrentlyHidden; 
-      
-      if (!isCurrentlyHidden && localState[qId] && localState[qId].commentUnread === true) {
-         localState[qId].commentUnread = false; 
-         
-         fetch(`${databaseURL}/${studentConfig.basePath}/q${qId}.json`, {
-           method: 'PATCH', 
-           body: JSON.stringify({ commentUnread: false }) 
-         });
-         
-         const btn = document.getElementById(`student-comment-btn-${qId}`);
-         if (btn) {
-             btn.classList.remove('glow-effect', 'bg-orange-50', 'border-orange-500', 'text-orange-700');
-             btn.classList.add('bg-white', 'border-gray-300', 'text-gray-600', 'opacity-75');
-         }
-      }
-    }
-
-    function checkLockStatus() {
-       const isLocked = (window.studentLocked === true);
-       if (isLocked) {
-           document.getElementById('lock-message-container').classList.remove('hidden');
-           document.getElementById('questions-container').classList.add('hidden');
-           document.getElementById('submit-container').classList.add('hidden');
-           return true; 
-       } else {
-           document.getElementById('lock-message-container').classList.add('hidden');
-           document.getElementById('questions-container').classList.remove('hidden');
-           document.getElementById('submit-container').classList.remove('hidden');
-           return false;
-       }
-    }
-
-    function show100PercentModal() {
-      const modal = document.getElementById('submission-modal');
-      const titleEl = document.getElementById('modal-title');
-      const msgEl = document.getElementById('modal-message');
-      titleEl.innerText = "🏆 100% PERFECT! 🏆";
-      titleEl.className = "text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-500 mb-4 animate-bounce";
-      msgEl.innerHTML = "Flawless victory! You have successfully mastered every single question on this assignment, including the teacher-graded section. Incredible work!";
-      modal.classList.remove('hidden');
     }
 
     function renderAllQuestions() {
       if (checkLockStatus()) return;
       questions.forEach(q => renderQuestionCard(q.id));
+
+      const loader = document.getElementById('loader');
+      if (loader) loader.classList.add('hidden');
       
-      document.getElementById('loader').classList.add('hidden');
-      document.getElementById('submit-container').classList.remove('hidden');
-      
-      // Check for 100% mastery celebration
-      let overallCorrect = 0;
-      questions.forEach(q => {
-          const qData = localState[q.id];
-          if (q.type === 'mc') {
-              if (window.serverAnswerKey && qData?.selection == window.serverAnswerKey[q.id]) overallCorrect++;
-          } else {
-              if (qData?.isCorrect === true) overallCorrect++;
-          }
-      });
-      const isFullyGraded = questions.every(q => q.type === 'mc' || (localState[q.id] && localState[q.id].isCorrect !== undefined));
-      if (isFullyGraded && overallCorrect === questions.length && !window.hasCelebrated) { 
-          window.hasCelebrated = true; 
-          show100PercentModal(); 
-      }
+      const submitContainer = document.getElementById('submit-container');
+      if (submitContainer) submitContainer.classList.remove('hidden');
     }
 
     function renderQuestionCard(qId) {
-        if (checkLockStatus()) return;
-        const q = questions.find(item => item.id === qId);
-        if (!q) return;
+      const q = questions.find(item => item.id === qId);
+      if (!q) return;
 
-        const container = document.getElementById('questions-container');
-        const qData = localState[qId];
-        const activeId = document.activeElement ? document.activeElement.id : null;
-        const meetsShadeCondition = (window.studentSubmitted === true && window.studentUnlocked === true);
+      const container = document.getElementById('questions-container');
+      if (!container) return;
 
-        const cardId = `card-q${q.id}`;
-        let card = document.getElementById(cardId);
-        if (!card) { 
-            card = document.createElement('div'); card.id = cardId; 
-            card.innerHTML = `<div id="head-q${q.id}" class="flex justify-between mb-4 items-start gap-4"></div><div id="body-q${q.id}"></div>`;
-            container.appendChild(card); 
-        }
+      const qData = localState[qId] || {};
+      const activeId = document.activeElement ? document.activeElement.id : null;
+      const meetsShadeCondition = (window.studentSubmitted === true && window.studentUnlocked === true);
 
-        const selection = qData?.selection;
-        const isAnswered = (selection !== null && selection !== undefined && selection !== "");
+      const cardId = "card-q" + q.id;
+      let card = document.getElementById(cardId);
+      if (!card) {
+          card = document.createElement('div');
+          card.id = cardId;
+          card.innerHTML = '<div id="head-q' + q.id + '" class="flex justify-between mb-4 items-start gap-4"></div><div id="body-q' + q.id + '"></div><div id="feedback-q' + q.id + '"></div>';
+          container.appendChild(card);
+      }
 
-        let cardClass = "bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 mb-4 transition-colors duration-300";
-        let statusIcon = "";
-        let inputHtml = "";
+      const selection = qData.selection;
+      const isAnswered = (selection !== null && selection !== undefined && selection !== "");
+      const isCorrect = qData.isCorrect;
 
-        if (q.type === 'mc') {
-            if (window.serverAnswerKey && isAnswered) {
-                 const hasKeyForQ = window.serverAnswerKey[q.id] !== undefined;
-                 if (hasKeyForQ) {
-                     const isCorrect = (selection == window.serverAnswerKey[q.id]);
-                     if (meetsShadeCondition) {
-                         cardClass = isCorrect ? "bg-green-50 border-2 border-green-400 mb-4 p-6 rounded-lg shadow-sm" : "bg-red-50 border-2 border-red-400 mb-4 p-6 rounded-lg shadow-sm";
-                         statusIcon = isCorrect ? `<span class="text-green-600 font-bold whitespace-nowrap">✓ Correct</span>` : `<span class="text-red-600 font-bold whitespace-nowrap">✗ Incorrect</span>`;
-                     } else {
-                         statusIcon = `<span class="text-blue-600 font-bold whitespace-nowrap">Answered</span>`;
-                     }
-                 } else {
-                     statusIcon = `<span class="text-blue-600 font-bold whitespace-nowrap">Answered</span>`;
-                 }
-            }
-            inputHtml = q.options.map((opt, i) => `<label class="flex items-start gap-3 py-2 cursor-pointer hover:bg-gray-50 rounded px-2"><input type="radio" name="q${q.id}" ${selection === i ? 'checked' : ''} onchange="saveAnswer(${q.id}, ${i}, 'mc')" class="w-5 h-5 text-purple-600 mt-1"><span class="text-sm md:text-base">${opt}</span></label>`).join('');
-        } else if (q.type === 'text') {
-            if (isAnswered) {
-                if (meetsShadeCondition) {
-                    if (qData.isCorrect === true) {
-                        cardClass = "bg-green-50 border-2 border-green-400 mb-4 p-6 rounded-lg shadow-sm";
-                        statusIcon = `<span class="text-green-600 font-bold whitespace-nowrap">✓ Marked Correct</span>`;
-                    } else if (qData.isCorrect === false) {
-                        cardClass = "bg-red-50 border-2 border-red-400 mb-4 p-6 rounded-lg shadow-sm";
-                        statusIcon = `<span class="text-red-600 font-bold whitespace-nowrap">✗ Marked Incorrect</span>`;
-                    } else {
-                        statusIcon = `<span class="text-blue-600 font-bold whitespace-nowrap">Pending Review</span>`;
-                    }
-                } else {
-                    statusIcon = `<span class="text-blue-600 font-bold whitespace-nowrap">Answered</span>`;
-                }
-            }
-            inputHtml = `<textarea id="input-q${q.id}" rows="3" onblur="saveAnswer(${q.id}, this.value, 'text')" class="w-full p-3 border border-gray-300 rounded mt-2 text-blue-700 font-bold focus:ring-2 focus:ring-purple-500">${selection || ''}</textarea>`;
-        }
-        
-        card.className = cardClass;
-        
-        let commentButtonHtml = ""; let commentPanelHtml = "";
-        const currentComment = qData ? (qData.teacherComment || "") : "";
-        const isCommentUnread = qData ? (qData.commentUnread === true) : false;
+      let cardClass = "bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 mb-4 transition-colors duration-300";
+      let statusIcon = "";
+      let inputHtml = "";
 
-        if (currentComment !== "") {
-            const btnClass = isCommentUnread ? "glow-effect bg-orange-50 border-orange-500 text-orange-700" : "bg-white border-gray-300 text-gray-600 opacity-75 hover:opacity-100";
-            commentButtonHtml = `<button id="student-comment-btn-${q.id}" onclick="toggleStudentCommentArea(${q.id})" class="text-xs font-bold px-3 py-1 ml-3 border-2 rounded-full transition-all ${btnClass} flex items-center shadow-sm">💡 Teacher Comment</button>`;
-            const isVisible = commentVisibility[q.id] === true;
-            commentPanelHtml = `<div id="student-comment-area-q${q.id}" class="${isVisible ? '' : 'hidden'} mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg shadow-inner"><div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-500"></span> Note from Teacher:</div><div class="text-blue-900 font-bold whitespace-pre-wrap ml-3 leading-relaxed" style="font-size: 15px;">${String(currentComment).replace(/"/g, '&quot;')}</div></div>`;
-        }
+      if (q.type === 'mc') {
+          if (isAnswered) {
+              if (isCorrect !== undefined && meetsShadeCondition) {
+                  cardClass = isCorrect ? "bg-green-50 border-2 border-green-400 mb-4 p-6 rounded-lg shadow-sm" : "bg-red-50 border-2 border-red-400 mb-4 p-6 rounded-lg shadow-sm";
+                  statusIcon = isCorrect ? '<span class="text-green-600 font-bold whitespace-nowrap">\u2713 Correct</span>' : '<span class="text-red-600 font-bold whitespace-nowrap">\u2717 Incorrect</span>';
+              }
+          }
+          inputHtml = q.options.map((opt, i) => '<label class="flex items-start gap-3 py-2 cursor-pointer hover:bg-gray-50 rounded px-2"><input type="radio" name="q' + q.id + '" ' + (selection === i ? 'checked' : '') + ' onchange="saveAnswer(' + q.id + ', ' + i + ', \'mc\')" class="w-5 h-5 text-purple-600 mt-1"><span class="text-sm md:text-base">' + opt + '</span></label>').join('');
+      } else if (q.type === 'text') {
+          if (isAnswered) {
+              if (isCorrect !== undefined && meetsShadeCondition) {
+                  cardClass = isCorrect ? "bg-green-50 border-2 border-green-400 mb-4 p-6 rounded-lg shadow-sm" : "bg-red-50 border-2 border-red-400 mb-4 p-6 rounded-lg shadow-sm";
+                  statusIcon = isCorrect ? '<span class="text-green-600 font-bold whitespace-nowrap">\u2713 Marked Correct</span>' : '<span class="text-red-600 font-bold whitespace-nowrap">\u2717 Marked Incorrect</span>';
+              } else {
+                  statusIcon = '<span class="text-blue-600 font-bold whitespace-nowrap">Pending Review</span>';
+              }
+          }
+          inputHtml = '<textarea id="input-q' + q.id + '" onkeydown="handleChemistryKeyDown(event, this)" oninput="applyChemistryLogic(this)" rows="3" onblur="saveAnswer(' + q.id + ', this.value, \'text\')" class="w-full p-3 border border-gray-300 rounded mt-2 text-blue-700 font-bold focus:ring-2 focus:ring-purple-500">' + (selection || '') + '</textarea>';
+      }
 
-        document.getElementById(`head-q${q.id}`).innerHTML = `<div class="text-gray-900 leading-relaxed w-full"><strong>${q.id}.</strong> ${q.text}</div><div class="shrink-0 flex items-center mt-1"><div class="text-sm">${statusIcon}</div>${commentButtonHtml}</div>`;
-        
-        // Only skip body update if it's a TEXT question being actively typed in.
-        // MC questions and text questions not in debounce should always update.
-        const isActivelyEditingText = (q.type === 'text' && (activeId === `input-q${q.id}` || activeDebounces.has(q.id)));
-        
-        if (!isActivelyEditingText) {
-            document.getElementById(`body-q${q.id}`).innerHTML = inputHtml + commentPanelHtml;
-        }
+      card.className = cardClass;
 
-        if (window.renderMathInElement) {
-            try { renderMathInElement(card, katexConfig); } catch(e) {}
-        }
+      const headDiv = document.getElementById("head-q" + q.id);
+      if (headDiv) headDiv.innerHTML = '<div class="text-gray-900 leading-relaxed w-full font-semibold"><strong>' + q.id + '.</strong> ' + q.text + '</div><div class="shrink-0 flex items-center mt-1"><div class="text-sm">' + statusIcon + '</div></div>';
+
+      const isActivelyEditingText = (q.type === 'text' && (activeId === "input-q" + q.id || activeDebounces.has(qId)));
+      const bodyDiv = document.getElementById("body-q" + q.id);
+      if (bodyDiv && !isActivelyEditingText) bodyDiv.innerHTML = inputHtml;
+
+      let commentButtonHtml = ""; let commentPanelHtml = "";
+      const currentComment = qData.teacherComment || "";
+      const isCommentUnread = qData.commentUnread === true;
+      const isAreaOpen = (commentVisibility[q.id] === true);
+
+      if (currentComment !== "") {
+          const btnClass = isCommentUnread ? "glow-effect bg-orange-50 border-orange-500 text-orange-700" : "bg-white border-gray-300 text-gray-600 opacity-75 hover:opacity-100";
+          commentButtonHtml = '<button id="student-comment-btn-' + q.id + '" onclick="toggleTeacherCommentArea(' + q.id + ')" class="text-xs font-bold px-3 py-1 mt-2 border-2 rounded-full transition-all ' + btnClass + ' flex items-center shadow-sm">💡 Teacher Comment</button>';
+          commentPanelHtml = '<div id="student-comment-area-q' + q.id + '" class="' + (isAreaOpen ? '' : 'hidden') + ' mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg shadow-inner"><div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-500"></span> Note from Teacher:</div><div class="text-blue-900 font-bold whitespace-pre-wrap ml-3 leading-relaxed" style="font-size: 15px;">' + String(currentComment).replace(/"/g, '&quot;') + '</div></div>';
+      }
+      const feedbackDiv = document.getElementById("feedback-q" + q.id);
+      if (feedbackDiv) feedbackDiv.innerHTML = commentButtonHtml + commentPanelHtml;
+
+      if (window.renderMathInElement) {
+          try { renderMathInElement(card, katexConfig); } catch (e) { }
+      }
+      if (q.type === 'text') {
+          const ta = document.getElementById("input-q" + q.id);
+          if (ta) autoResize(ta);
+      }
     }
 
     async function submitWork() {
+      if (window.studentLocked) return;
+      const btn = document.getElementById('submit-btn');
+      if (!btn) return;
+
       const unanswered = questions.filter(q => { const data = localState[q.id]; return !data || data.selection === null || data.selection === undefined || String(data.selection).trim() === ""; });
       if (unanswered.length > 0) {
-        const modal = document.getElementById('submission-modal'); const titleEl = document.getElementById('modal-title'); const msgEl = document.getElementById('modal-message');
-        titleEl.innerText = "Assignment Incomplete"; titleEl.className = "text-2xl font-bold mb-4 text-orange-600";
-        msgEl.innerHTML = `You have <strong>${unanswered.length}</strong> question(s) left to answer. Please complete the entire assignment before submitting for grading.`;
-        modal.classList.remove('hidden'); return;
+          const modal = document.getElementById('submission-modal');
+          const titleEl = document.getElementById('modal-title');
+          const msgEl = document.getElementById('modal-message');
+          titleEl.innerText = "Assignment Incomplete";
+          titleEl.className = "text-2xl font-bold mb-4 text-orange-600";
+          msgEl.innerHTML = "You have <strong>" + unanswered.length + "</strong> question(s) left to answer. Please complete the entire assignment before submitting.";
+          modal.classList.remove('hidden');
+          return;
       }
-      const btn = document.getElementById('submit-btn'); btn.innerText = "Grading..."; btn.disabled = true;
-      google.script.run.withSuccessHandler(handleGradeResult).gradeSubmission(studentConfig);
-    }
 
-    function handleGradeResult(res) {
-      document.getElementById('submit-btn').innerText = "Submit Work"; document.getElementById('submit-btn').disabled = false;
-      const modal = document.getElementById('submission-modal'); const titleEl = document.getElementById('modal-title'); const msgEl = document.getElementById('modal-message');
+      btn.disabled = true;
+      btn.innerText = "Submitting...";
 
-      if (res.answerKey) window.serverAnswerKey = res.answerKey;
+      const payload = {
+          token: studentConfig.sessionToken,
+          action: "submit"
+      };
 
-      if (res.isFullyGraded && res.totalCorrect === res.totalQuestions) {
-          window.hasCelebrated = true; show100PercentModal(); return; 
-      } else if (!res.isFullyGraded) {
-          titleEl.className = "text-2xl font-bold mb-4 text-orange-600"; titleEl.innerText = "Review Pending";
-          msgEl.innerHTML = `You have <strong>${res.totalCorrect} out of ${res.totalQuestions}</strong> current points (including ${res.mcCorrect} multiple-choice).<br><br>The final <strong>${res.totalText - res.textGradedCount} written questions</strong> are still under review by your teacher. Correct answers will not be revealed until the mastery threshold is met across all graded work.`;
-      } else if (res.status === 'unlocked') {
-          titleEl.className = "text-2xl font-bold mb-4 text-purple-600"; titleEl.innerText = "🎊 Mastery Achieved! 🎊";
-          if (window.alreadyUnlocked) {
-              msgEl.innerHTML = `Excellent momentum! You have <strong>${res.totalCorrect} out of ${res.totalQuestions}</strong> total questions correct. All work has been graded and reviewed!`;
-          } else { 
-              msgEl.innerHTML = `Fantastic work! You have <strong>${res.totalCorrect} out of ${res.totalQuestions}</strong> total correct, officially mastering the content! 🌟 The answer key is now <strong>unlocked</strong>, and your worksheet will now give you live feedback as you finish.`; 
-              window.alreadyUnlocked = true; 
+      await sendToProxy(payload);
+
+      const modal = document.getElementById('submission-modal');
+      const titleEl = document.getElementById('modal-title');
+      const msgEl = document.getElementById('modal-message');
+
+      let mcCorrect = 0;
+      let totalText = 0;
+      let textGraded = 0;
+      let textCorrect = 0;
+
+      questions.forEach(q => {
+          const data = localState[q.id] || {};
+          if (q.type === 'mc') {
+              if (data.isCorrect === true) mcCorrect++;
+          } else {
+              totalText++;
+              if (data.isCorrect !== undefined) {
+                  textGraded++;
+                  if (data.isCorrect === true) textCorrect++;
+              }
           }
+      });
+
+      const totalScore = mcCorrect + textCorrect;
+      const threshold = Math.ceil(questions.length * 0.8);
+
+      if (totalScore >= threshold) {
+          titleEl.className = "text-2xl font-bold mb-4 text-purple-600";
+          titleEl.innerText = "\uD83C\uDF8A Mastery Achieved! \uD83C\uDF8A";
+          msgEl.innerHTML = "Fantastic work! You have <strong>" + totalScore + " out of " + questions.length + "</strong> total points, officially mastering the content! \uD83C\uDF1F The answer key is now <strong>unlocked</strong>.";
       } else {
-          titleEl.className = "text-2xl font-bold mb-4 text-gray-800"; titleEl.innerText = "Keep Working!";
-          msgEl.innerHTML = `You currently have <strong>${res.totalCorrect} total points out of ${res.totalQuestions}</strong>.<br><br>Correct answers will not be revealed until you reach the mastery threshold of <strong>${res.totalThreshold} points</strong>.<br><br><em>Teacher Review: ${res.textGradedCount}/${res.totalText} written questions graded.</em>`;
+          titleEl.className = "text-2xl font-bold mb-4 text-gray-800";
+          titleEl.innerText = "Work Submitted!";
+          msgEl.innerHTML = "You have <strong>" + totalScore + " out of " + questions.length + "</strong> current points.<br><br>Correct answers will unlock once you reach <strong>" + threshold + " points</strong>.<br><br><em>Teacher Review: " + textGraded + "/" + totalText + " written questions graded.</em>";
       }
-      modal.classList.remove('hidden'); renderAllQuestions();
+
+      if (modal) modal.classList.remove('hidden');
+      btn.innerText = "Submit Work";
+      btn.disabled = false;
+      renderAllQuestions();
     }
 
-    function closeModal() { document.getElementById('submission-modal').classList.add('hidden'); }
+    function autoResize(el) {
+        if (!el) return;
+        el.style.height = 'auto';
+        el.style.height = (el.scrollHeight) + 'px';
+    }
+
+    function applyChemistryLogic(el) {
+        const val = el.value; const start = el.selectionStart;
+        const chemMap = { 's': '(\u1d460)', 'l': '(\u2113)', 'g': '(\u1d454)', 'a': '(\u1d44e\u1d45a)', '+': '\u207A', '-': '\u207B', '0': '\u2070', '1': '\u00B9', '2': '\u00B2', '3': '\u00B3', '4': '\u2074', '5': '\u2075', '6': '\u2076', '7': '\u2077', '8': '\u2078', '9': '\u2079' };
+        let newVal = val.replace(/\/\/([slga+\-0-9])/gi, function(match, char) { return chemMap[char.toLowerCase()] || match; });
+        const subMap = { '0': '\u2080', '1': '\u2081', '2': '\u2082', '3': '\u2083', '4': '\u2084', '5': '\u2085', '6': '\u2086', '7': '\u2087', '8': '\u2088', '9': '\u2089' };
+        let subbedVal = "";
+        for (let i = 0; i < newVal.length; i++) {
+            let char = newVal[i];
+            if (subMap[char]) {
+                let prevChar = subbedVal.length > 0 ? subbedVal[subbedVal.length - 1] : '';
+                if (/[A-Za-z\)\]\u2080-\u2089]/.test(prevChar)) subbedVal += subMap[char];
+                else subbedVal += char;
+            } else subbedVal += char;
+        }
+        newVal = subbedVal;
+        if (val !== newVal) {
+            el.value = newVal;
+            const diff = newVal.length - val.length;
+            el.setSelectionRange(start + diff, start + diff);
+        }
+        autoResize(el);
+    }
+
+    function handleChemistryKeyDown(event, el) {
+        const pos = el.selectionStart; const text = el.value;
+        if (event.key === 'Backspace' && pos === el.selectionEnd) {
+            const prev3 = text.slice(Math.max(0, pos - 3), pos);
+            if (prev3 === ' + ' || prev3 === ' \u2192 ') {
+                event.preventDefault(); el.value = text.slice(0, pos - 3) + text.slice(pos);
+                el.setSelectionRange(pos - 3, pos - 3); return;
+            }
+        }
+        if (event.key === '+' || event.key === '>') {
+            const prev2 = text.slice(Math.max(0, pos - 2), pos);
+            if (event.key === '+' && prev2 === '//') return;
+            event.preventDefault();
+            const symbol = event.key === '>' ? '\u2192' : '+';
+            const insertStr = " " + symbol + " ";
+            let start = el.selectionStart; let end = el.selectionEnd; let currentText = el.value;
+            if (start > 0 && currentText[start - 1] === ' ') start -= 1;
+            if (end < currentText.length && currentText[end] === ' ') end += 1;
+            el.value = currentText.slice(0, start) + insertStr + currentText.slice(end);
+            el.setSelectionRange(start + insertStr.length, start + insertStr.length);
+        }
+    }
+
+    async function toggleTeacherCommentArea(qId) {
+        const area = document.getElementById("student-comment-area-q" + qId);
+        if (!area) return;
+        const isCurrentlyHidden = area.classList.toggle('hidden');
+        commentVisibility[qId] = !isCurrentlyHidden;
+        if (!isCurrentlyHidden && localState[qId]?.commentUnread === true) {
+            localState[qId].commentUnread = false;
+            const payload = { token: studentConfig.sessionToken, action: "markRead", qId: qId };
+            await sendToProxy(payload);
+            const btn = document.getElementById("student-comment-btn-" + qId);
+            if (btn) btn.className = "text-xs font-bold px-3 py-1 mt-2 border-2 rounded-full transition-all bg-white border-gray-300 text-gray-600 opacity-75 hover:opacity-100 flex items-center shadow-sm";
+        }
+    }
+
+    function checkLockStatus() {
+        const isLocked = (window.studentLocked === true);
+        const lockC = document.getElementById('lock-message-container');
+        const qC = document.getElementById('questions-container');
+        const sC = document.getElementById('submit-container');
+        if (isLocked) {
+            if (lockC) lockC.classList.remove('hidden');
+            if (qC) qC.classList.add('hidden');
+            if (sC) sC.classList.add('hidden');
+            return true;
+        } else {
+            if (lockC) lockC.classList.add('hidden');
+            if (qC) qC.classList.remove('hidden');
+            if (sC) sC.classList.remove('hidden');
+            return false;
+        }
+    }
+
+    function closeModal() {
+        const modal = document.getElementById('submission-modal');
+        if (modal) modal.classList.add('hidden');
+    }
     window.onload = init;
   </script>
 </body>
