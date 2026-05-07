@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><?= ASSIGNMENT_TITLE ?></title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/mhchem.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+    <style>
+        body { font-family: 'Roboto', ui-sans-serif, system-ui, -apple-system, sans-serif; background-color: #f0ebf8; }
+        textarea { resize: none !important; overflow: hidden; }
+        .form-header-bar { border-top: 10px solid #673ab7; }
+        textarea, input[type="text"] { color: #0000ff !important; font-weight: 700 !important; }
+        @keyframes glow { 0%, 100% { box-shadow: 0 0 5px rgba(234, 88, 12, 0.4); border-color: rgba(234, 88, 12, 0.4); } 50% { box-shadow: 0 0 15px rgba(234, 88, 12, 1); border-color: rgba(234, 88, 12, 1); } }
+        .glow-effect { animation: glow 1.5s infinite alternate; }
+    </style>
+</head>
+<body class="text-gray-800 min-h-screen p-4 md:p-6 pb-20">
+    <div class="w-[850px] mx-auto">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 form-header-bar p-6 md:p-8 mb-4 relative overflow-hidden">
+            <div class="mb-5 pb-4 border-b border-gray-100 flex flex-col items-start">
+                <div class="bg-gray-200 text-gray-800 text-xs font-bold tracking-wider uppercase px-2 py-1 mb-1 rounded-sm">Assignment Type: <?= HEADER_TYPE ?></div>
+                <div class="text-xs font-semibold text-gray-500 tracking-widest pl-2"><?= HEADER_SUB ?></div>
+            </div>
+            <h1 class="text-3xl font-normal text-gray-900 mb-4"><?= ASSIGNMENT_TITLE ?></h1>
+            <p class="text-sm text-gray-600 mb-4 font-medium italic">Mastery threshold: 80% to unlock answer key and feedback shades.</p>
+            <div id="loader" class="absolute top-4 right-4 text-xs font-bold text-gray-500 bg-gray-100 px-3 py-1 rounded-full border border-gray-200">Authenticating...</div>
+        </div>
+
+        <div id="questions-container" class="space-y-4"></div>
+
+        <div id="submit-container" class="hidden mt-8 flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+            <div class="text-xs text-gray-500 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>Live Connection Active</div>
+            <button id="submit-btn" onclick="submitWork()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded transition-all">Submit Work</button>
+        </div>
+    </div>
+
+    <div id="submission-modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 text-center transform transition-all">
+            <h2 id="modal-title" class="text-2xl font-bold mb-4"></h2>
+            <p id="modal-message" class="text-gray-600 mb-8 leading-relaxed text-sm"></p>
+            <button onclick="document.getElementById('submission-modal').classList.add('hidden')" class="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 px-4 rounded-lg">Continue</button>
+        </div>
+    </div>
+
+    <script>
+        const databaseURL = "https://scigarage-default-rtdb.firebaseio.com";
+        const ASSIGNMENT_CODE = "<?= ASSIGNMENT_CODE ?>";
+        const questions = <?!= QUESTIONS ?>;
+        const PROXY_URL = "https://us-central1-scigarage.cloudfunctions.net/secureProxy";
+        const katexConfig = { delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }], throwOnError: false };
+
+        let studentConfig = null;
+        let localState = {};
+        let activeDebounces = new Set();
+        let eventSource = null;
+        window.studentUnlocked = false;
+        window.studentSubmitted = false;
+        window.studentLocked = false;
+        let commentVisibility = {};
+
+        function init() {
+            google.script.run
+                .withSuccessHandler(data => {
+                    studentConfig = data;
+                    const liveData = data.savedState || {};
+                    window.studentLocked = (liveData.isLocked === true);
+                    window.studentSubmitted = (liveData.submitted === true);
+                    window.studentUnlocked = (liveData.unlocked === true);
+                    questions.forEach(q => { localState[q.id] = liveData[`q${q.id}`] || { selection: null }; });
+                    renderAllQuestions();
+                    startSSEListener();
+                })
+                .getStudentInitialData();
+        }
+
+        async function sendToProxy(payload, qId) {
+            try {
+                const response = await fetch(PROXY_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (response.status === 403) {
+                    google.script.run.withSuccessHandler(newData => {
+                        studentConfig.sessionToken = newData.sessionToken;
+                        studentConfig.livePath = newData.livePath;
+                        payload.token = newData.sessionToken;
+                        startSSEListener();
+                        sendToProxy(payload, qId);
+                    }).refreshSessionToken();
+                    return;
+                }
+                if (qId) setTimeout(() => activeDebounces.delete(qId), 800);
+            } catch (e) { console.error("Proxy connection error:", e); }
+        }
+
+        function saveAnswer(qId, selection, qType) {
+            if (window.studentLocked) return;
+            localState[qId].selection = selection;
+            activeDebounces.add(qId);
+            const payload = { token: studentConfig.sessionToken, action: "saveAnswer", qId: qId, selection: (qType === 'mc' ? selection : undefined), textValue: (qType === 'text' ? selection : undefined) };
+            sendToProxy(payload, qId);
+            renderQuestionCard(qId);
+        }
+
+        function renderAllQuestions() {
+            const container = document.getElementById('questions-container');
+            container.innerHTML = '';
+            document.getElementById('loader').classList.add('hidden');
+            questions.forEach(q => {
+                if (q.id === 5) {
+                    const narrative = document.createElement('div');
+                    narrative.className = "bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 mb-4";
+                    narrative.innerHTML = `
+                        <p class="mb-4"><strong>Base your answers to questions 5-8 on the information below and on your knowledge of chemistry.</strong></p>
+                        <p class="mb-4 text-sm leading-relaxed">In an investigation, aqueous solutions are prepared by completely dissolving a different amount of $\\ce{NaCl(s)}$ in each of four beakers containing 100.00 grams of $\\ce{H2O(\\ell)}$ at room temperature. Each solution is heated and the temperature at which boiling occurred is measured. The data are recorded in the table below.</p>
+                        <h3 class="text-center font-bold text-lg mb-2">Boiling Point Data for Four $\\ce{NaCl(aq)}$ Solutions</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full border border-gray-300 text-center text-sm">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="border p-2">Beaker Number</th>
+                                        <th class="border p-2">Mass of $\\ce{H2O(\\ell)}$ (g)</th>
+                                        <th class="border p-2">Mass of $\\ce{NaCl(s)}$ Dissolved (g)</th>
+                                        <th class="border p-2">Boiling Point of Solution (°C)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td class="border p-2">1</td><td class="border p-2">100.00</td><td class="border p-2">8.76</td><td class="border p-2">101.5</td></tr>
+                                    <tr><td class="border p-2">2</td><td class="border p-2">100.00</td><td class="border p-2">17.52</td><td class="border p-2">103.1</td></tr>
+                                    <tr><td class="border p-2">3</td><td class="border p-2">100.00</td><td class="border p-2">26.28</td><td class="border p-2">104.6</td></tr>
+                                    <tr><td class="border p-2">4</td><td class="border p-2">100.00</td><td class="border p-2">35.04</td><td class="border p-2">106.1</td></tr>
+                                </tbody>
+                            </table>
+                        </div>`;
+                    container.appendChild(narrative);
+                    renderMathInElement(narrative, katexConfig);
+                }
+                renderQuestionCard(q.id);
+            });
+            document.getElementById('submit-container').classList.remove('hidden');
+        }
+
+        function renderQuestionCard(qId) {
+            const q = questions.find(item => item.id === qId);
+            const container = document.getElementById('questions-container');
+            const qData = localState[qId] || {};
+            const meetsShadeCondition = (window.studentSubmitted && window.studentUnlocked);
+            let card = document.getElementById("card-q" + q.id);
+            if (!card) {
+                card = document.createElement('div'); card.id = "card-q" + q.id;
+                card.innerHTML = `<div id="head-q${q.id}" class="flex justify-between mb-4 items-start gap-4"></div><div id="body-q${q.id}"></div><div id="feedback-q${q.id}"></div>`;
+                container.appendChild(card);
+            }
+            const selection = qData.selection;
+            const isCorrect = qData.isCorrect;
+            let cardClass = "bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 mb-4 transition-colors duration-300";
+            let statusIcon = "";
+            if (meetsShadeCondition && selection !== null) {
+                cardClass = isCorrect ? "bg-green-50 border-2 border-green-400 p-6 rounded-lg mb-4" : "bg-red-50 border-2 border-red-400 p-6 rounded-lg mb-4";
+                statusIcon = isCorrect ? '<span class="text-green-600 font-bold whitespace-nowrap">\u2713 Correct</span>' : '<span class="text-red-600 font-bold whitespace-nowrap">\u2717 Incorrect</span>';
+            }
+            card.className = cardClass;
+            document.getElementById(`head-q${q.id}`).innerHTML = `<div class="text-gray-900 font-semibold"><strong>${q.id}.</strong> ${q.text}</div><div class="shrink-0 text-sm">${statusIcon}</div>`;
+            const bodyDiv = document.getElementById(`body-q${q.id}`);
+            if (q.type === 'mc') {
+                bodyDiv.innerHTML = q.options.map((opt, i) => `<label class="flex items-start gap-3 py-2 cursor-pointer hover:bg-gray-50 rounded px-2"><input type="radio" name="q${q.id}" ${selection === i ? 'checked' : ''} onchange="saveAnswer(${q.id}, ${i}, 'mc')" class="w-5 h-5 text-purple-600 mt-1"><span>${opt}</span></label>`).join('');
+            } else {
+                bodyDiv.innerHTML = `<textarea id="input-q${q.id}" onkeydown="handleChemistryKeyDown(event, this)" oninput="applyChemistryLogic(this)" rows="3" onblur="saveAnswer(${q.id}, this.value, 'text')" class="w-full p-3 border border-gray-300 rounded mt-2 text-blue-700 font-bold focus:ring-2 focus:ring-purple-500">${selection || ''}</textarea>`;
+            }
+            const currentComment = qData.teacherComment || "";
+            const feedbackDiv = document.getElementById(`feedback-q${q.id}`);
+            if (currentComment !== "") {
+                const btnClass = qData.commentUnread ? "glow-effect bg-orange-50 border-orange-500 text-orange-700" : "bg-white border-gray-300 text-gray-600 opacity-75";
+                feedbackDiv.innerHTML = `<button onclick="toggleTeacherCommentArea(${q.id})" class="text-xs font-bold px-3 py-1 mt-2 border-2 rounded-full ${btnClass}">💡 Teacher Comment</button><div id="area-q${q.id}" class="${commentVisibility[q.id] ? '' : 'hidden'} mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg"><div class="text-blue-900 font-bold">${currentComment}</div></div>`;
+            }
+            renderMathInElement(card, katexConfig);
+            if (q.type === 'text') autoResize(document.getElementById(`input-q${q.id}`));
+        }
+
+        async function toggleTeacherCommentArea(qId) {
+            const area = document.getElementById(`area-q${qId}`);
+            const isHidden = area.classList.toggle('hidden');
+            commentVisibility[qId] = !isHidden;
+            if (!isHidden && localState[qId].commentUnread) {
+                await sendToProxy({ token: studentConfig.sessionToken, action: "markRead", qId: qId });
+            }
+        }
+
+        function applyChemistryLogic(el) {
+            const val = el.value; const start = el.selectionStart; let newVal = val;
+            const chemMap = { 's': '(𝑠)', 'l': '(ℓ)', 'g': '(𝑔)', 'a': '(𝑎𝑞)', '+': '⁺', '-': '⁻', '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹' };
+            newVal = newVal.replace(/\/\/([slga+\-0-9])/gi, (match, char) => chemMap[char.toLowerCase()] || match);
+            const subMap = { '0': '₀', '1': '₁', '2': '₂', '3': '₃', '4': '₄', '5': '₅', '6': '₆', '7': '₇', '8': '₈', '9': '₉' };
+            let subbedVal = "";
+            for (let i = 0; i < newVal.length; i++) {
+                let char = newVal[i]; if (subMap[char] && /[A-Za-z\)\]₀-₉]/.test(subbedVal[subbedVal.length - 1] || '')) subbedVal += subMap[char];
+                else subbedVal += char;
+            }
+            newVal = subbedVal;
+            if (val !== newVal) { el.value = newVal; el.setSelectionRange(start, start); }
+            autoResize(el);
+        }
+
+        function handleChemistryKeyDown(event, el) {
+            const pos = el.selectionStart;
+            if (event.key === 'Backspace') {
+                const prev3 = el.value.slice(pos - 3, pos);
+                if (prev3 === ' + ' || prev3 === ' → ') { event.preventDefault(); el.value = el.value.slice(0, pos-3) + el.value.slice(pos); el.setSelectionRange(pos-3, pos-3); }
+            }
+            if (event.key === '+' || event.key === '>') {
+                if (event.key === '+' && el.value.slice(pos-2, pos) === '//') return;
+                event.preventDefault();
+                const sym = event.key === '>' ? ' → ' : ' + ';
+                el.value = el.value.slice(0, pos) + sym + el.value.slice(pos);
+                el.setSelectionRange(pos + 3, pos + 3);
+            }
+        }
+
+        function autoResize(el) { if (!el) return; el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
+
+        async function submitWork() {
+            if (window.studentLocked) return;
+            const payload = { token: studentConfig.sessionToken, action: "submit" };
+            await sendToProxy(payload);
+            document.getElementById('modal-title').innerText = "Work Submitted!";
+            document.getElementById('modal-message').innerText = "Your responses for Colligative Properties have been sent to the teacher.";
+            document.getElementById('submission-modal').classList.remove('hidden');
+        }
+
+        function startSSEListener() {
+            if (!studentConfig.livePath) return;
+            eventSource = new EventSource(`${databaseURL}/${studentConfig.livePath}.json`);
+            eventSource.addEventListener('put', e => {
+                const data = JSON.parse(e.data).data || {};
+                if (data.isLocked !== undefined) window.studentLocked = data.isLocked;
+                if (data.unlocked !== undefined) window.studentUnlocked = data.unlocked;
+                if (data.submitted !== undefined) window.studentSubmitted = data.submitted;
+                renderAllQuestions();
+            });
+        }
+        window.onload = init;
+    </script>
+</body>
+</html>

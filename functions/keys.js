@@ -26,7 +26,15 @@ module.exports = {
     13: { type: "frq" },
     14: { type: "frq" }
   },
-  
-  // You can add future assignments here easily:
-  // "CH_U09_A01": { ... }
+
+  "CH_U08_A11_G": {
+    1: 2, // concentration of dissolved particles
+    2: 2, // higher boiling point and a lower freezing point
+    3: 0, // number of solute particles increases, and the boiling point increases
+    4: 3, // more NaNO3(s) is dissolved
+    5: { type: "frq" },
+    6: { type: "frq" },
+    7: { type: "frq" },
+    8: { type: "frq" }
+  }
 };
