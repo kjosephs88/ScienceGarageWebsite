@@ -4,17 +4,19 @@ const approvedEmails = ["kjosephs@ocsdny.org", "sbritton@ocsdny.org", "pianodemo
 firebase.auth().onAuthStateChanged((user) => {
   if (user) {
     if (approvedEmails.includes(user.email)) {
-      // User is allowed, stay on page
       console.log("Access Granted");
       document.body.style.display = "block";
     } else {
-      // Logged in but not approved
+      // If they are logged into Google but NOT on your list
       alert("Access Denied: Your account is not authorized.");
-      firebase.auth().signOut();
-      window.location.href = "login.html";
+      firebase.auth().signOut().then(() => {
+        window.location.replace("login.html");
+      });
     }
   } else {
-    // Not logged in
-    window.location.href = "login.html";
+    // Only redirect if we are NOT already on the login page
+    if (!window.location.pathname.includes("login.html")) {
+      window.location.replace("login.html");
+    }
   }
 });

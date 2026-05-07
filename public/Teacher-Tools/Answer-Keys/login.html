@@ -1,20 +1,50 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <style>body { display: none; }</style>
+
     <script src="/__/firebase/12.12.0/firebase-app-compat.js"></script>
     <script src="/__/firebase/12.12.0/firebase-auth-compat.js"></script>
     <script src="/__/firebase/init.js"></script>
-    <script src="guard.js"></script>
-    
+
     <meta charset="UTF-8">
     <style>
-        body { font-family: sans-serif; background-color: #f3f4f6; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        .login-card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; border-top: 8px solid #A33DE1; }
-        button { background-color: #A33DE1; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        button:hover { background-color: #8a2ebf; }
+        body {
+            font-family: sans-serif;
+            background-color: #f3f4f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .login-card {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            border-top: 8px solid #A33DE1;
+        }
+
+        button {
+            background-color: #A33DE1;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            background-color: #8a2ebf;
+        }
     </style>
 </head>
+
 <body>
     <div class="login-card">
         <h1>Faculty Access</h1>
@@ -31,4 +61,5 @@
         }
     </script>
 </body>
+
 </html>
