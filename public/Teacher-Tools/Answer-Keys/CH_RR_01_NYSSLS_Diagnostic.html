@@ -60,19 +60,20 @@ Assignment Code: CH_RR_01
         .phenomenon-block h2 { margin-top: 0; color: #ecf0f1; }
 
         .stimulus-block {
-            background-color: #e8f5e9;
-            border: 2px solid #c8e6c9;
+            background-color: #e0f7f8;
+            border: 1px solid #b2ebf2;
             padding: 20px;
-            margin-bottom: 30px;
+            margin: 30px 0;
             border-radius: 8px;
         }
         .stimulus-header {
             font-weight: bold;
             text-transform: uppercase;
-            color: #2e7d32;
-            font-size: 0.9em;
+            color: #006064;
             display: block;
             margin-bottom: 10px;
+            border-bottom: 1px solid #b2ebf2;
+            padding-bottom: 5px;
         }
 
         /* Question & MC Styling */
@@ -448,6 +449,7 @@ Assignment Code: CH_RR_01
 
     <div class="stimulus-block">
         <span class="stimulus-header">Stimulus 4 — Scratch Resistance Test</span>
+        <p>In this test, a stylus is dragged across the surface of a material while a constant force is applied. The width of the groove formed shows how easily the material can be scratched.</p>
         <img id="img_stim_scratch" src="" alt="Scratch Test Diagram">
         <p>Experimental Results:</p>
         <table class="data-table">
@@ -581,7 +583,7 @@ Assignment Code: CH_RR_01
     <div class="stimulus-block">
         <span class="stimulus-header">Stimulus 2 — Particle Model of Decomposition</span>
         <img id="img_p3_stim_2" src="" alt="Particle model of sodium bicarbonate reaction">
-        <p>Balanced reaction: \(\ce{2 NaHCO3(s) -> Na2CO3(s) + CO2(g) + H2O(g)}\)</p>
+        <p>Balanced reaction: \(2\ce{NaHCO3\text{(𝑠)} -> Na2CO3\text{(𝑠)} + CO2\text{(𝑔)} + H2O\text{(𝑔)}}\)</p>
     </div>
 
     <div class="question-block">
@@ -631,6 +633,7 @@ Assignment Code: CH_RR_01
 
     <div class="stimulus-block">
         <span class="stimulus-header">Stimulus 1 — Particle Model of Methane Combustion</span>
+        <p>The diagram below shows a particle model of the combustion of methane an an unbalanced chemical equation.</p>
         <img id="img_p4_stim_1" src="" alt="Methane Combustion Diagram">
         
         <table class="data-table" style="max-width: 400px; margin: 10px auto;">
@@ -688,7 +691,7 @@ Assignment Code: CH_RR_01
 
     <div class="stimulus-block">
         <span class="stimulus-header">Stimulus 2 — Methane Mass Data</span>
-        <p>A student burns different amounts of methane and measures the mass of carbon dioxide produced.</p>
+        <p>A student burns different amounts of methane and measures the mass of carbon dioxide produced. The reaction produces \(\ce{CO2}\) gas that expands when temperature increases. The data are shown in the graph below.</p>
         <img id="img_p4_stim_2" src="" alt="Graph of Methane Burned vs CO2 Produced">
     </div>
 
@@ -1051,24 +1054,24 @@ Assignment Code: CH_RR_01
 
 <script>
     const IMAGE_URLS = {
-        stimulus_1_emission_of_light: "",
-        stimulus_4_electron_energy_transitions: "",
-        stimulus_5_nuclear_radiation_diagram: "",
-        phenomenon_2_stimulus_1_material_types: "",
-        phenomenon_2_stimulus_2_molecular_polarity: "",
-        phenomenon_2_stimulus_3_boiling_points: "",
-        phenomenon_2_stimulus_4_scratch_resistance: "",
-        p2_stimulus_5_particle_structure: "",
-        p3_stimulus_1_fire_extinguisher_works: "",
-        p3_stimulus_2_particle_model_decomposition: "",
-        p4_stimulus_1_methane_combustion_model: "",
-        p4_stimulus_2_methane_combustion_graph: "",
-        p5_stim_1_temp_graph: "",
-        p5_stim_2_particle_model: "",
-        p5_stim_3_pe_diagram: "",
-        p5_stim_4_comparison_graph: "",
-        p6_stim_2_ph_scale: "",
-        p6_stim_6_solubility_graph: ""
+        stimulus_1_emission_of_light: "images/CH_RR_01_NYSSLS_Diagnostic/P01S01P01.png",
+        stimulus_4_electron_energy_transitions: "images/CH_RR_01_NYSSLS_Diagnostic/P01S04P01.png",
+        stimulus_5_nuclear_radiation_diagram: "images/CH_RR_01_NYSSLS_Diagnostic/P01S05P01.png",
+        phenomenon_2_stimulus_1_material_types: "images/CH_RR_01_NYSSLS_Diagnostic/P02S01P01.png",
+        phenomenon_2_stimulus_2_molecular_polarity: "images/CH_RR_01_NYSSLS_Diagnostic/P02S02P01.png",
+        phenomenon_2_stimulus_3_boiling_points: "images/CH_RR_01_NYSSLS_Diagnostic/P02S03P01.png",
+        phenomenon_2_stimulus_4_scratch_resistance: "images/CH_RR_01_NYSSLS_Diagnostic/P02S04P01.png",
+        p2_stimulus_5_particle_structure: "images/CH_RR_01_NYSSLS_Diagnostic/P02S05P01.png",
+        p3_stimulus_1_fire_extinguisher_works: "images/CH_RR_01_NYSSLS_Diagnostic/P03S01P01.png",
+        p3_stimulus_2_particle_model_decomposition: "images/CH_RR_01_NYSSLS_Diagnostic/P03S02P01.png",
+        p4_stimulus_1_methane_combustion_model: "images/CH_RR_01_NYSSLS_Diagnostic/P04S01P01.png",
+        p4_stimulus_2_methane_combustion_graph: "images/CH_RR_01_NYSSLS_Diagnostic/P04S02P01.png",
+        p5_stim_1_temp_graph: "images/CH_RR_01_NYSSLS_Diagnostic/P05S01P01.png",
+        p5_stim_2_particle_model: "images/CH_RR_01_NYSSLS_Diagnostic/P05S02P01.png",
+        p5_stim_3_pe_diagram: "images/CH_RR_01_NYSSLS_Diagnostic/P05S03P01.png",
+        p5_stim_4_comparison_graph: "images/CH_RR_01_NYSSLS_Diagnostic/P05S04P01.png",
+        p6_stim_2_ph_scale: "images/CH_RR_01_NYSSLS_Diagnostic/P06S02P01.png",
+        p6_stim_6_solubility_graph: "images/CH_RR_01_NYSSLS_Diagnostic/P06S06P01.png"
     };
 
     // Apply URLs to images
