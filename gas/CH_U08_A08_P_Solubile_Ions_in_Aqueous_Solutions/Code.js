@@ -100,7 +100,7 @@ function getStudentInitialData() {
       realHash: saltedHash,
       periodFolder: targetFolder,
       assignmentFolder: actualAssignmentKey,
-      expires: Date.now() + (4 * 60 * 60 * 1000) // 4 Hours
+      expires: Date.now() + (1 * 60 * 60 * 1000) // 1 Hour
   };
   
   // Save mapping for the Proxy

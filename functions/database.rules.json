@@ -1,0 +1,47 @@
+{
+  "rules": {
+    "ActiveSessions": {
+      ".indexOn": ["expires"]
+    },
+    "teacherGradebook": {
+      ".read": "auth != null && (auth.token.email === 'pianodemon88@gmail.com' || auth.token.email === 'kjosephs@ocsdny.org')",
+      ".write": "auth != null && (auth.token.email === 'pianodemon88@gmail.com' || auth.token.email === 'kjosephs@ocsdny.org')",
+      "$periodFolder": {
+        "$assignmentFolder": {
+          "$studentHash": {
+            // Students can only read their OWN data if they have the right Salted Hash
+            ".read": "true",
+            // Students CANNOT write directly to the Gradebook.
+            // Your Cloud Function and Dashboard will bypass this and still work!
+            "isCorrect": {
+              ".write": "false"
+            },
+            "score": {
+              ".write": "false"
+            },
+            "unlocked": {
+              ".write": "false"
+            },
+            "teacherComment": {
+              ".write": "false"
+            }
+          }
+        }
+      }
+    },
+    "liveUpdates": {
+      "$sessionToken": {
+        ".read": "true",
+        ".write": "false"
+      }
+    },
+    "StudentReportCards": {
+      ".read": "auth != null && (auth.token.email === 'pianodemon88@gmail.com' || auth.token.email === 'kjosephs@ocsdny.org')",
+      ".write": "auth != null && (auth.token.email === 'pianodemon88@gmail.com' || auth.token.email === 'kjosephs@ocsdny.org')",
+      "$saltedHash": {
+        ".read": "auth != null && (auth.token.email === 'pianodemon88@gmail.com' || auth.token.email === 'kjosephs@ocsdny.org')",
+        ".write": "auth != null && (auth.token.email === 'pianodemon88@gmail.com' || auth.token.email === 'kjosephs@ocsdny.org')"
+      }
+    }
+  }
+}

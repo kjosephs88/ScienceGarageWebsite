@@ -37,6 +37,7 @@ setGlobalOptions({ maxInstances: 10 });
  */
 
 const { onValueUpdated } = require("firebase-functions/v2/database");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
 const admin = require("firebase-admin");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { defineSecret } = require("firebase-functions/params");
@@ -75,12 +76,36 @@ exports.mirrorGradebookToSession = onValueUpdated({
     ref: "/teacherGradebook/{periodFolder}/{assignmentFolder}/{studentUid}",
     memory: "256MiB"
 }, async (event) => {
-
     const afterData = event.data.after.val();
-    if (afterData && afterData.currentSession) {
-        return admin.database().ref(`liveUpdates/${afterData.currentSession}`).set(afterData);
+    const beforeData = event.data.before.val();
+    
+    const oldSession = beforeData ? beforeData.currentSession : null;
+    const newSession = afterData ? afterData.currentSession : null;
+
+    if (newSession) {
+        if (oldSession && oldSession !== newSession) {
+            // 1. Signal disconnection to the old window
+            await admin.database().ref(`liveUpdates/${oldSession}`).set({ disconnected: true });
+            // 2. Revoke the old session immediately by setting expiry to 0
+            // This allows the pruner to find it and clean up the liveUpdates node later.
+            await admin.database().ref(`ActiveSessions/${oldSession}`).update({ expires: 0 });
+        }
+        return admin.database().ref(`liveUpdates/${newSession}`).set(afterData);
     }
     return null;
+});
+
+exports.cleanupSessions = onSchedule("every 1 hours", async (event) => {
+    const now = Date.now();
+    const snapshot = await admin.database().ref("ActiveSessions").orderByChild("expires").endAt(now).get();
+    if (!snapshot.exists()) return null;
+    const expiredTokens = Object.keys(snapshot.val());
+    const updates = {};
+    expiredTokens.forEach(token => {
+        updates[`ActiveSessions/${token}`] = null;
+        updates[`liveUpdates/${token}`] = null;
+    });
+    return admin.database().ref().update(updates);
 });
 
 /**
@@ -103,7 +128,7 @@ exports.secureProxy = onRequest({ cors: true, maxInstances: 10 }, async (req, re
         const sessionData = sessionSnap.val();
         const { realHash, periodFolder, assignmentFolder, expires } = sessionData;
 
-        // 2. Expiration Check (4 Hour Limit)
+        // 2. Expiration Check (1 Hour Limit)
         if (Date.now() > expires) {
             await sessionRef.remove();
             return res.status(403).send("Session Expired");
@@ -113,11 +138,18 @@ exports.secureProxy = onRequest({ cors: true, maxInstances: 10 }, async (req, re
 
         // 3. Handle Actions
         if (action === "saveAnswer") {
-            const updates = { needsGrading: true, lastUpdated: Date.now() };
-            if (qId) {
-                updates[`q${qId}/selection`] = (selection !== undefined) ? selection : textValue;
+            const updateData = {
+                needsGrading: true,
+                lastUpdated: Date.now(),
+                [`q${qId}/selection`]: (selection !== undefined) ? selection : textValue
+            };
+
+            // 📝 Grade Reset: If text answer is edited, clear the old isCorrect status
+            if (textValue !== undefined) {
+                updateData[`q${qId}/isCorrect`] = null;
+                updateData[`q${qId}/score`] = null;
             }
-            await studentRef.update(updates);
+            await studentRef.update(updateData);
         } else if (action === "submit") {
             await studentRef.update({ 
                 submitted: true, 
@@ -172,21 +204,17 @@ exports.onStudentActivityTrigger = onValueUpdated({
         let totalQuestions = 0;
 
         if (assignmentKey) {
-            // 1. Calculate TOTAL questions from the Master Key (Source of Truth)
             const masterQIds = Object.keys(assignmentKey);
             totalQuestions = masterQIds.length;
             
-            // 2. Process all questions defined in the key
             masterQIds.forEach(qId => {
                 const qKey = `q${qId}`;
                 const qRubric = assignmentKey[qId];
                 const studentData = afterData[qKey] || {};
                 
                 if (typeof qRubric === 'object') {
-                    // Count manual grades for FRQs
                     if (studentData.isCorrect === true) totalCorrect++;
                 } else {
-                    // Grade MCs against the rubric
                     const studentAnswer = studentData.selection;
                     if (studentAnswer !== undefined && studentAnswer !== null && studentAnswer !== "") {
                         const isCorrect = (studentAnswer == qRubric);
@@ -198,23 +226,19 @@ exports.onStudentActivityTrigger = onValueUpdated({
             });
         }
 
-        // Mastery Check: 80% of TOTAL and MUST be SUBMITTED
-        const threshold = Math.ceil(totalQuestions * 0.8);
-        const isUnlocked = (totalCorrect >= threshold && afterData.submitted === true);
+        const totalThreshold = Math.ceil(totalQuestions * 0.8);
+        const isUnlockedNow = totalCorrect >= totalThreshold;
+        const shouldBeUnlocked = (afterData.unlocked === true) || (afterData.needsGrading === true && isUnlockedNow);
 
-        // Final payload updates
-        updates['score'] = totalCorrect;
-        updates['unlocked'] = isUnlocked;
-        updates['needsGrading'] = false; // Clear trigger
-        updates['lastGraded'] = Date.now();
+        const finalUpdates = {
+            ...updates,
+            score: totalCorrect,
+            unlocked: shouldBeUnlocked,
+            needsGrading: false,
+            lastGraded: Date.now()
+        };
 
-        await event.data.after.ref.update(updates);
-
-        // 🛡️ MIRRORING: Push current state to the student's "blind" live feed
-        if (afterData.currentSession) {
-            const finalState = Object.assign({}, afterData, updates);
-            await admin.database().ref(`liveUpdates/${afterData.currentSession}`).set(finalState);
-        }
+        await event.data.after.ref.update(finalUpdates);
 
         return null;
 

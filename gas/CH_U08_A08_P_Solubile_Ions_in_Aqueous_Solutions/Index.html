@@ -1,458 +1,628 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title><?= ASSIGNMENT_TITLE ?></title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
-  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/mhchem.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
 
-  <style>
-    body { font-family: 'Roboto', ui-sans-serif, system-ui, -apple-system, sans-serif; background-color: #f0ebf8; }
-    textarea { resize: none !important; overflow: hidden; }
-    .form-header-bar { border-top: 10px solid #673ab7; }
-    textarea, input[type="text"] { color: #0000ff !important; font-weight: 700 !important; }
-    @keyframes glow {
-      0% { box-shadow: 0 0 5px rgba(234, 88, 12, 0.4); border-color: rgba(234, 88, 12, 0.4); }
-      50% { box-shadow: 0 0 15px rgba(234, 88, 12, 1); border-color: rgba(234, 88, 12, 1); }
-      100% { box-shadow: 0 0 5px rgba(234, 88, 12, 0.4); border-color: rgba(234, 88, 12, 0.4); }
-    }
-    .glow-effect { animation: glow 1.5s infinite alternate; }
-  </style>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>
+        <?= ASSIGNMENT_TITLE ?>
+    </title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/mhchem.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Roboto', ui-sans-serif, system-ui, -apple-system, sans-serif;
+            background-color: #f0ebf8;
+        }
+
+        textarea {
+            resize: none !important;
+            overflow: hidden;
+        }
+
+        .form-header-bar {
+            border-top: 10px solid #673ab7;
+        }
+
+        textarea,
+        input[type="text"] {
+            color: #0000ff !important;
+            font-weight: 700 !important;
+        }
+
+        @keyframes glow {
+            0% {
+                box-shadow: 0 0 5px rgba(234, 88, 12, 0.4);
+                border-color: rgba(234, 88, 12, 0.4);
+            }
+
+            50% {
+                box-shadow: 0 0 15px rgba(234, 88, 12, 1);
+                border-color: rgba(234, 88, 12, 1);
+            }
+
+            100% {
+                box-shadow: 0 0 5px rgba(234, 88, 12, 0.4);
+                border-color: rgba(234, 88, 12, 0.4);
+            }
+        }
+
+        .glow-effect {
+            animation: glow 1.5s infinite alternate;
+        }
+    </style>
 </head>
+
 <body class="text-gray-800 min-h-screen p-4 md:p-6 pb-20">
 
-  <div class="w-[850px] mx-auto">
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 form-header-bar p-6 md:p-8 mb-4 relative overflow-hidden">
-      <div class="mb-5 pb-4 border-b border-gray-100 flex flex-col items-start">
-        <div class="bg-gray-200 text-gray-800 text-xs font-bold tracking-wider uppercase px-2 py-1 mb-1 rounded-sm">Assignment Type: <?= HEADER_TYPE ?></div>
-        <div class="text-xs font-semibold text-gray-500 tracking-widest pl-2"><?= HEADER_SUB ?></div>
-      </div>
-      <h1 class="text-3xl font-normal text-gray-900 mb-4"><?= ASSIGNMENT_TITLE ?></h1>
-      <p class="text-sm text-gray-600 mb-4 font-medium italic">Mastery threshold: 80% to unlock answer key and feedback shades.</p>
-      <div id="loader" class="absolute top-4 right-4 text-xs font-bold text-gray-500 bg-gray-100 px-3 py-1 rounded-full border border-gray-200">Authenticating...</div>
+    <div class="w-[850px] mx-auto">
+        <div
+            class="bg-white rounded-lg shadow-sm border border-gray-200 form-header-bar p-6 md:p-8 mb-4 relative overflow-hidden">
+            <div class="mb-5 pb-4 border-b border-gray-100 flex flex-col items-start">
+                <div
+                    class="bg-gray-200 text-gray-800 text-xs font-bold tracking-wider uppercase px-2 py-1 mb-1 rounded-sm">
+                    Assignment Type:
+                    <?= HEADER_TYPE ?>
+                </div>
+                <div class="text-xs font-semibold text-gray-500 tracking-widest pl-2">
+                    <?= HEADER_SUB ?>
+                </div>
+            </div>
+            <h1 class="text-3xl font-normal text-gray-900 mb-4">
+                <?= ASSIGNMENT_TITLE ?>
+            </h1>
+            <p class="text-sm text-gray-600 mb-4 font-medium italic">Mastery threshold: 80% to unlock answer key and
+                feedback shades.</p>
+            <div id="loader"
+                class="absolute top-4 right-4 text-xs font-bold text-gray-500 bg-gray-100 px-3 py-1 rounded-full border border-gray-200">
+                Authenticating...</div>
+        </div>
+
+        <div id="lock-message-container"
+            class="hidden bg-white rounded-lg shadow-sm border-l-8 border-red-500 p-8 mb-4 text-center">
+            <div class="text-red-500 mb-4">
+                <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
+                    </path>
+                </svg>
+            </div>
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">Assignment Closed</h2>
+            <p class="text-gray-600 leading-relaxed">This assignment has been closed. Please come after school 10th
+                Period if you would like to make it up.</p>
+        </div>
+
+        <div id="handout-text"
+            class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 md:p-8 mb-4 text-gray-800 leading-relaxed opacity-0 transition-opacity duration-500">
+            <h2 class="text-2xl font-bold mb-4 border-b pb-2">Selected Ions Forming Aqueous Solutions</h2>
+            <p class="mb-4">As you already know, when you put table salt into water and stir, the salt will dissolve.
+                This happens because of the interaction between the polar water molecules and the ionic charges within
+                the salt. Table salt is made of positive sodium ions ($ \ce{Na+} $) and negative chloride ions ($
+                \ce{Cl-} $). The negative oxygen end of a water molecule attracts the positive sodium ions, and the
+                positive hydrogen end attracts the negative chloride ions. Millions of water molecules work together to
+                pull individual ions away from the ionic sample.</p>
+            <p class="mb-4">However, not all salts (a term synonymous with ionic compounds) will dissolve in water.
+                Whether a salt will dissolve depends on the ion combination in the compound. The Reference Table
+                <strong>Selected Ions Forming Aqueous Solutions</strong> can help us determine if an ionic compound will
+                be soluble.</p>
+            <p class="mb-4">Let's take a look at what the reference table tells us about sodium chloride ($ \ce{NaCl}
+                $). We must first realize that the compound is made of $ \ce{Na+} $ and $ \ce{Cl-} $ ions. Looking at
+                our table, we notice right away that $ \ce{Na+} $ is a Group 1 ion. The table shows that Group 1 metals
+                always form soluble aqueous solutions. Make sure to consult the periodic table when identifying Group 1
+                ions so you don't miss those not explicitly listed, such as potassium, $ \ce{K+} $. Because sodium is on
+                this list, sodium chloride is soluble!</p>
+            <p class="mb-4">Let's look at another example: $ \ce{(NH4)3PO4} $. Upon inspection, we can see that ammonium
+                phosphate is made of an ammonium ion, $ \ce{NH4+} $, and a phosphate ion, $ \ce{PO4^3-} $. Looking over
+                the chart, we find that the $ \ce{NH4+} $ ion is listed as an ion that forms aqueous solutions. This
+                means the compound is soluble in water.</p>
+            <p>What about an insoluble compound? If a compound does not contain any of the ions listed on this table, it
+                is likely an exception that forms a precipitate (a solid). For example, lead(II) chloride, $ \ce{PbCl2}
+                $. Neither the lead ion ($ \ce{Pb^{2+}} $) nor the chloride ion ($ \ce{Cl-} $) are on the list of
+                selected ions. Because it lacks any of our 'always soluble' ions, we can identify $ \ce{PbCl2} $ as the
+                insoluble compound when compared to others that contain Group 1 metals or nitrates.</p>
+        </div>
+
+        <div id="questions-container" class="space-y-4"></div>
+
+        <div id="submit-container"
+            class="hidden mt-8 flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+            <div class="text-xs text-gray-500 flex items-center gap-2"><span
+                    class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>Live Connection Active</div>
+            <button id="submit-btn" onclick="submitWork()"
+                class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded transition-all">Submit
+                Work</button>
+        </div>
     </div>
-    
-    <div id="lock-message-container" class="hidden bg-white rounded-lg shadow-sm border-l-8 border-red-500 p-8 mb-4 text-center">
-       <div class="text-red-500 mb-4">
-         <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-       </div>
-       <h2 class="text-2xl font-bold text-gray-800 mb-2">Assignment Closed</h2>
-       <p class="text-gray-600 leading-relaxed">This assignment has been closed. Please come after school 10th Period if you would like to make it up.</p>
+
+    <div id="submission-modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 text-center transform transition-all">
+            <h2 id="modal-title" class="text-2xl font-bold mb-4"></h2>
+            <p id="modal-message" class="text-gray-600 mb-8 leading-relaxed text-sm md:text-base"></p>
+            <button onclick="closeModal()" id="modal-btn"
+                class="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 px-4 rounded-lg">Continue</button>
+        </div>
     </div>
 
-    <div id="handout-text" class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 md:p-8 mb-4 text-gray-800 leading-relaxed opacity-0 transition-opacity duration-500">
-      <h2 class="text-2xl font-bold mb-4 border-b pb-2">Selected Ions Forming Aqueous Solutions</h2>
-      <p class="mb-4">As you already know, when you put table salt into water and stir, the salt will dissolve. This happens because of the interaction between the polar water molecules and the ionic charges within the salt. Table salt is made of positive sodium ions ($ \ce{Na+} $) and negative chloride ions ($ \ce{Cl-} $). The negative oxygen end of a water molecule attracts the positive sodium ions, and the positive hydrogen end attracts the negative chloride ions. Millions of water molecules work together to pull individual ions away from the ionic sample.</p>
-      <p class="mb-4">However, not all salts (a term synonymous with ionic compounds) will dissolve in water. Whether a salt will dissolve depends on the ion combination in the compound. The Reference Table <strong>Selected Ions Forming Aqueous Solutions</strong> can help us determine if an ionic compound will be soluble.</p>
-      <p class="mb-4">Let's take a look at what the reference table tells us about sodium chloride ($ \ce{NaCl} $). We must first realize that the compound is made of $ \ce{Na+} $ and $ \ce{Cl-} $ ions. Looking at our table, we notice right away that $ \ce{Na+} $ is a Group 1 ion. The table shows that Group 1 metals always form soluble aqueous solutions. Make sure to consult the periodic table when identifying Group 1 ions so you don't miss those not explicitly listed, such as potassium, $ \ce{K+} $. Because sodium is on this list, sodium chloride is soluble!</p>
-      <p class="mb-4">Let's look at another example: $ \ce{(NH4)3PO4} $. Upon inspection, we can see that ammonium phosphate is made of an ammonium ion, $ \ce{NH4+} $, and a phosphate ion, $ \ce{PO4^3-} $. Looking over the chart, we find that the $ \ce{NH4+} $ ion is listed as an ion that forms aqueous solutions. This means the compound is soluble in water.</p>
-      <p>What about an insoluble compound? If a compound does not contain any of the ions listed on this table, it is likely an exception that forms a precipitate (a solid). For example, lead(II) chloride, $ \ce{PbCl2} $. Neither the lead ion ($ \ce{Pb^{2+}} $) nor the chloride ion ($ \ce{Cl-} $) are on the list of selected ions. Because it lacks any of our 'always soluble' ions, we can identify $ \ce{PbCl2} $ as the insoluble compound when compared to others that contain Group 1 metals or nitrates.</p>
+    <div id="disconnected-modal"
+        class="fixed inset-0 bg-black/80 hidden flex items-center justify-center z-[100] p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-8 text-center border-t-8 border-red-500">
+            <div class="text-red-500 mb-4 flex justify-center">
+                <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                    </path>
+                </svg>
+            </div>
+            <h2 class="text-2xl font-bold mb-2 text-gray-800">Connection Lost</h2>
+            <p class="text-gray-600 mb-8 leading-relaxed">This assignment was opened in a new window. This tab is no
+                longer receiving live updates from the teacher.</p>
+            <button onclick="window.location.reload()"
+                class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition-colors shadow-lg">Refresh
+                This Tab</button>
+        </div>
     </div>
 
-    <div id="questions-container" class="space-y-4"></div>
-    
-    <div id="submit-container" class="hidden mt-8 flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-      <div class="text-xs text-gray-500 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>Live Connection Active</div>
-      <button id="submit-btn" onclick="submitWork()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded transition-all">Submit Work</button>
-    </div>
-  </div>
+    <script>
+        const databaseURL = "https://scigarage-default-rtdb.firebaseio.com";
+        const ASSIGNMENT_CODE = "<?= ASSIGNMENT_CODE ?>";
+        const questions = <?!= QUESTIONS ?>;
 
-  <div id="submission-modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 text-center transform transition-all">
-      <h2 id="modal-title" class="text-2xl font-bold mb-4"></h2>
-      <p id="modal-message" class="text-gray-600 mb-8 leading-relaxed text-sm md:text-base"></p>
-      <button onclick="closeModal()" id="modal-btn" class="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 px-4 rounded-lg">Continue</button>
-    </div>
-  </div>
+        const PROXY_URL = "https://us-central1-scigarage.cloudfunctions.net/secureProxy";
+        const katexConfig = {
+            delimiters: [
+                { left: '$$', right: '$$', display: true },
+                { left: '$', right: '$', display: false },
+                { left: '\\(', right: '\\)', display: false },
+                { left: '\\[', right: '\\]', display: true }
+            ],
+            throwOnError: false
+        };
 
-  <script>
-    const databaseURL = "https://scigarage-default-rtdb.firebaseio.com";
-    const ASSIGNMENT_CODE = "<?= ASSIGNMENT_CODE ?>";
-    const questions = <?!= QUESTIONS ?>; 
+        let studentConfig = null;
+        let localState = {};
+        let activeDebounces = new Set();
+        let eventSource = null;
+        window.studentUnlocked = false;
+        window.studentSubmitted = false;
+        window.studentLocked = false;
+        let commentVisibility = {};
 
-    const PROXY_URL = "https://us-central1-scigarage.cloudfunctions.net/secureProxy"; 
-    const katexConfig = {
-      delimiters: [
-        {left: '$$', right: '$$', display: true},
-        {left: '$', right: '$', display: false},
-        {left: '\\(', right: '\\)', display: false},
-        {left: '\\[', right: '\\]', display: true}
-      ],
-      throwOnError: false
-    };
+        function init() {
+            google.script.run
+                .withSuccessHandler(data => {
+                    studentConfig = data;
+                    const liveData = data.savedState || {};
+                    window.studentLocked = (liveData && liveData.isLocked === true);
+                    window.studentSubmitted = (liveData && liveData.submitted === true);
+                    window.studentUnlocked = (liveData && liveData.unlocked === true);
 
-    let studentConfig = null;
-    let localState = {};
-    let activeDebounces = new Set();
-    let eventSource = null;
-    window.studentUnlocked = false;
-    window.studentSubmitted = false;
-    window.studentLocked = false;
-    let commentVisibility = {};
+                    questions.forEach(q => { localState[q.id] = liveData[`q${q.id}`] || { selection: null }; });
 
-    function init() {
-      google.script.run
-        .withSuccessHandler(data => {
-            studentConfig = data;
-            const liveData = data.savedState || {};
-            window.studentLocked = (liveData && liveData.isLocked === true);
-            window.studentSubmitted = (liveData && liveData.submitted === true);
-            window.studentUnlocked = (liveData && liveData.unlocked === true);
-            
-            questions.forEach(q => { localState[q.id] = liveData[`q${q.id}`] || { selection: null }; });
-            
-            renderAllQuestions();
-            startSSEListener();
-            
-            if (window.renderMathInElement) {
-                const handoutEl = document.getElementById('handout-text');
-                renderMathInElement(handoutEl, katexConfig);
-                handoutEl.classList.remove('opacity-0');
-            }
-        })
-        .withFailureHandler(err => {
-            const ldr = document.getElementById('loader');
-            if (ldr) {
-                ldr.innerText = "Access Denied: " + err.message;
-                ldr.className = "absolute top-4 right-4 text-xs font-bold text-red-600 bg-red-50 px-3 py-1 rounded-full border border-red-200";
-            }
-        })
-        .getStudentInitialData();
-    }
+                    renderAllQuestions();
+                    startSSEListener();
 
-    function startSSEListener() {
-      if (eventSource) eventSource.close();
-      if (!studentConfig || !studentConfig.livePath) return;
-      const url = `${databaseURL}/${studentConfig.livePath}.json`;
-      eventSource = new EventSource(url);
-      
-      const handleUpdate = (e) => {
-        const payload = JSON.parse(e.data);
-        const data = payload.data || {};
-        if (!data) return;
-
-        if (data.isLocked !== undefined) window.studentLocked = data.isLocked === true;
-        if (data.submitted !== undefined) window.studentSubmitted = data.submitted === true;
-        if (data.unlocked !== undefined) {
-            const oldUnlocked = window.studentUnlocked;
-            window.studentUnlocked = data.unlocked === true;
-            if (window.studentUnlocked && !oldUnlocked) renderAllQuestions();
+                    if (window.renderMathInElement) {
+                        const handoutEl = document.getElementById('handout-text');
+                        renderMathInElement(handoutEl, katexConfig);
+                        handoutEl.classList.remove('opacity-0');
+                    }
+                })
+                .withFailureHandler(err => {
+                    const ldr = document.getElementById('loader');
+                    if (ldr) {
+                        ldr.innerText = "Access Denied: " + err.message;
+                        ldr.className = "absolute top-4 right-4 text-xs font-bold text-red-600 bg-red-50 px-3 py-1 rounded-full border border-red-200";
+                    }
+                })
+                .getStudentInitialData();
         }
-        
-        questions.forEach(q => {
-            const qKey = "q" + q.id;
-            const qData = data[qKey];
-            if (qData) {
-                if (!activeDebounces.has(q.id)) {
-                    localState[q.id] = Object.assign({}, localState[q.id] || {}, qData);
-                    renderQuestionCard(q.id);
+
+        function startSSEListener() {
+            if (eventSource) eventSource.close();
+            if (!studentConfig || !studentConfig.livePath) return;
+            const url = `${databaseURL}/${studentConfig.livePath}.json`;
+            eventSource = new EventSource(url);
+
+            const handleUpdate = (e) => {
+                const payload = JSON.parse(e.data);
+                const data = payload.data || {};
+                if (!data) return;
+
+                // Disconnection Check
+                if (data.disconnected === true) {
+                    if (eventSource) eventSource.close();
+                    document.getElementById('disconnected-modal').classList.remove('hidden');
+                    return;
                 }
+
+                const oldCondition = (window.studentSubmitted === true && window.studentUnlocked === true);
+
+                if (data.isLocked !== undefined) window.studentLocked = data.isLocked === true;
+                if (data.submitted !== undefined) window.studentSubmitted = data.submitted === true;
+                if (data.unlocked !== undefined) window.studentUnlocked = data.unlocked === true;
+
+                const newCondition = (window.studentSubmitted === true && window.studentUnlocked === true);
+
+                // If the grading visibility changed, re-render everything
+                if (newCondition !== oldCondition || data.isLocked !== undefined) {
+                    renderAllQuestions();
+                }
+
+                // Update individual questions
+                questions.forEach(q => {
+                    const qKey = "q" + q.id;
+                    const qData = data[qKey];
+                    if (qData) {
+                        if (activeDebounces.has(q.id)) {
+                            // 🚀 Selective Bypass: Allow grading/comments but lock selection to prevent flickering
+                            const { isCorrect, score, teacherComment, commentUnread } = qData;
+                            localState[q.id] = Object.assign({}, localState[q.id] || {}, {
+                                isCorrect, score, teacherComment, commentUnread
+                            });
+                        } else {
+                            // Normal Update: Full sync
+                            localState[q.id] = Object.assign({}, localState[q.id] || {}, qData);
+                        }
+                        renderQuestionCard(q.id);
+                    }
+                });
+                checkLockStatus();
+            };
+            eventSource.addEventListener('put', handleUpdate);
+            eventSource.addEventListener('patch', handleUpdate);
+        }
+
+        async function sendToProxy(payload, qId) {
+            try {
+                const response = await fetch(PROXY_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.status === 403) {
+                    google.script.run.withSuccessHandler(newData => {
+                        studentConfig.sessionToken = newData.sessionToken;
+                        studentConfig.livePath = newData.livePath;
+                        payload.token = newData.sessionToken;
+                        startSSEListener();
+                        sendToProxy(payload, qId);
+                    }).refreshSessionToken();
+                    return;
+                }
+
+                if (qId) setTimeout(() => activeDebounces.delete(qId), 800);
+            } catch (e) {
+                console.error("Proxy connection error:", e);
             }
-        });
-        checkLockStatus();
-      };
-      eventSource.addEventListener('put', handleUpdate);
-      eventSource.addEventListener('patch', handleUpdate);
-    }
+        }
 
-    async function sendToProxy(payload, qId) {
-        try {
-            const response = await fetch(PROXY_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
+        function saveAnswer(qId, selection, qType) {
+            if (window.studentLocked) return;
+            if (!localState[qId]) localState[qId] = {};
 
-            if (response.status === 403) {
-                google.script.run.withSuccessHandler(newData => {
-                    studentConfig.sessionToken = newData.sessionToken;
-                    studentConfig.livePath = newData.livePath;
-                    payload.token = newData.sessionToken;
-                    startSSEListener(); 
-                    sendToProxy(payload, qId); 
-                }).refreshSessionToken();
+            // Update local selection but DO NOT clear isCorrect
+            localState[qId].selection = selection;
+            activeDebounces.add(qId);
+
+            const payload = {
+                token: studentConfig.sessionToken,
+                action: "saveAnswer",
+                qId: qId,
+                selection: (qType === 'mc') ? selection : undefined,
+                textValue: (qType === 'text') ? selection : undefined
+            };
+
+            sendToProxy(payload, qId);
+            renderQuestionCard(qId);
+        }
+
+        function renderAllQuestions() {
+            // 1. Hide loader immediately so we don't get stuck
+            const loader = document.getElementById('loader');
+            if (loader) loader.classList.add('hidden');
+
+            // 2. Check lock status
+            if (checkLockStatus()) return;
+
+            // 3. Render questions
+            questions.forEach(q => renderQuestionCard(q.id));
+
+            const submitContainer = document.getElementById('submit-container');
+            if (submitContainer) submitContainer.classList.remove('hidden');
+        }
+
+        function renderQuestionCard(qId) {
+            const q = questions.find(item => item.id === qId);
+            if (!q) return;
+
+            const container = document.getElementById('questions-container');
+            if (!container) return;
+
+            const qData = localState[qId] || {};
+            const activeId = document.activeElement ? document.activeElement.id : null;
+            const meetsShadeCondition = (window.studentSubmitted === true && window.studentUnlocked === true);
+
+            const cardId = "card-q" + q.id;
+            let card = document.getElementById(cardId);
+            if (!card) {
+                card = document.createElement('div');
+                card.id = cardId;
+                card.innerHTML = '<div id="head-q' + q.id + '" class="flex justify-between mb-4 items-start gap-4"></div><div id="body-q' + q.id + '"></div><div id="feedback-q' + q.id + '"></div>';
+                container.appendChild(card);
+            }
+
+            const selection = qData.selection;
+            const isAnswered = (selection !== null && selection !== undefined && selection !== "");
+            const isCorrect = qData.isCorrect;
+
+            let cardClass = "bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 mb-4 transition-colors duration-300";
+            let statusIcon = "";
+            let inputHtml = "";
+
+            if (q.type === 'mc') {
+                if (isAnswered) {
+                    if (isCorrect !== undefined && meetsShadeCondition) {
+                        cardClass = isCorrect ? "bg-green-50 border-2 border-green-400 mb-4 p-6 rounded-lg shadow-sm" : "bg-red-50 border-2 border-red-400 mb-4 p-6 rounded-lg shadow-sm";
+                        statusIcon = isCorrect ? '<span class="text-green-600 font-bold whitespace-nowrap">\u2713 Correct</span>' : '<span class="text-red-600 font-bold whitespace-nowrap">\u2717 Incorrect</span>';
+                    }
+                }
+                inputHtml = q.options.map((opt, i) => '<label class="flex items-start gap-3 py-2 cursor-pointer hover:bg-gray-50 rounded px-2"><input type="radio" name="q' + q.id + '" ' + (selection === i ? 'checked' : '') + ' onchange="saveAnswer(' + q.id + ', ' + i + ', \'mc\')" class="w-5 h-5 text-purple-600 mt-1"><span class="text-sm md:text-base">' + opt + '</span></label>').join('');
+            } else if (q.type === 'text') {
+                if (isAnswered) {
+                    if (isCorrect !== undefined && meetsShadeCondition) {
+                        cardClass = isCorrect ? "bg-green-50 border-2 border-green-400 mb-4 p-6 rounded-lg shadow-sm" : "bg-red-50 border-2 border-red-400 mb-4 p-6 rounded-lg shadow-sm";
+                        statusIcon = isCorrect ? '<span class="text-green-600 font-bold whitespace-nowrap">\u2713 Marked Correct</span>' : '<span class="text-red-600 font-bold whitespace-nowrap">\u2717 Marked Incorrect</span>';
+                    } else {
+                        statusIcon = '<span class="text-blue-600 font-bold whitespace-nowrap">Pending Review</span>';
+                    }
+                }
+                inputHtml = '<textarea id="input-q' + q.id + '" onkeydown="handleChemistryKeyDown(event, this)" oninput="applyChemistryLogic(this)" rows="3" onblur="saveAnswer(' + q.id + ', this.value, \'text\')" class="w-full p-3 border border-gray-300 rounded mt-2 text-blue-700 font-bold focus:ring-2 focus:ring-purple-500">' + (selection || '') + '</textarea>';
+            }
+
+            card.className = cardClass;
+
+            const headDiv = document.getElementById("head-q" + q.id);
+            if (headDiv) headDiv.innerHTML = '<div class="text-gray-900 leading-relaxed w-full font-semibold"><strong>' + q.id + '.</strong> ' + q.text + '</div><div class="shrink-0 flex items-center mt-1"><div class="text-sm">' + statusIcon + '</div></div>';
+
+            const isActivelyEditingText = (q.type === 'text' && (activeId === "input-q" + q.id || activeDebounces.has(qId)));
+            const bodyDiv = document.getElementById("body-q" + q.id);
+            if (bodyDiv && !isActivelyEditingText) bodyDiv.innerHTML = inputHtml;
+
+            let commentButtonHtml = ""; let commentPanelHtml = "";
+            const currentComment = qData.teacherComment || "";
+            const isCommentUnread = qData.commentUnread === true;
+            const isAreaOpen = (commentVisibility[q.id] === true);
+
+            if (currentComment !== "") {
+                const btnClass = isCommentUnread ? "glow-effect bg-orange-50 border-orange-500 text-orange-700" : "bg-white border-gray-300 text-gray-600 opacity-75 hover:opacity-100";
+                commentButtonHtml = '<button id="student-comment-btn-' + q.id + '" onclick="toggleTeacherCommentArea(' + q.id + ')" class="text-xs font-bold px-3 py-1 mt-2 border-2 rounded-full transition-all ' + btnClass + ' flex items-center shadow-sm">💡 Teacher Comment</button>';
+                commentPanelHtml = '<div id="student-comment-area-q' + q.id + '" class="' + (isAreaOpen ? '' : 'hidden') + ' mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg shadow-inner"><div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-500"></span> Note from Teacher:</div><div class="text-blue-900 font-bold whitespace-pre-wrap ml-3 leading-relaxed" style="font-size: 15px;">' + String(currentComment).replace(/"/g, '&quot;') + '</div></div>';
+            }
+            const feedbackDiv = document.getElementById("feedback-q" + q.id);
+            if (feedbackDiv) feedbackDiv.innerHTML = commentButtonHtml + commentPanelHtml;
+
+            if (window.renderMathInElement) {
+                try { renderMathInElement(card, katexConfig); } catch (e) { }
+            }
+            if (q.type === 'text') {
+                const ta = document.getElementById("input-q" + q.id);
+                if (ta) autoResize(ta);
+            }
+        }
+
+        async function submitWork() {
+            if (window.studentLocked) return;
+            const btn = document.getElementById('submit-btn');
+            if (!btn) return;
+
+            const unanswered = questions.filter(q => { const data = localState[q.id]; return !data || data.selection === null || data.selection === undefined || String(data.selection).trim() === ""; });
+            if (unanswered.length > 0) {
+                const modal = document.getElementById('submission-modal');
+                const titleEl = document.getElementById('modal-title');
+                const msgEl = document.getElementById('modal-message');
+                titleEl.innerText = "Assignment Incomplete";
+                titleEl.className = "text-2xl font-bold mb-4 text-orange-600";
+                msgEl.innerHTML = "You have <strong>" + unanswered.length + "</strong> question(s) left to answer. Please complete the entire assignment before submitting.";
+                modal.classList.remove('hidden');
                 return;
             }
-            
-            if (qId) setTimeout(() => activeDebounces.delete(qId), 800);
-        } catch (e) {
-            console.error("Proxy connection error:", e);
+
+            btn.disabled = true;
+            btn.innerText = "Submitting...";
+
+            const payload = {
+                token: studentConfig.sessionToken,
+                action: "submit"
+            };
+
+            await sendToProxy(payload);
+
+            const modal = document.getElementById('submission-modal');
+            const titleEl = document.getElementById('modal-title');
+            const msgEl = document.getElementById('modal-message');
+
+            let mcCorrect = 0;
+            let totalText = 0;
+            let textGraded = 0;
+            let textCorrect = 0;
+
+            questions.forEach(q => {
+                const data = localState[q.id] || {};
+                if (q.type === 'mc') {
+                    if (data.isCorrect === true) mcCorrect++;
+                } else {
+                    totalText++;
+                    if (data.isCorrect !== undefined) {
+                        textGraded++;
+                        if (data.isCorrect === true) textCorrect++;
+                    }
+                }
+            });
+
+            const totalScore = mcCorrect + textCorrect;
+            const threshold = Math.ceil(questions.length * 0.8);
+
+            if (totalScore >= threshold) {
+                titleEl.className = "text-2xl font-bold mb-4 text-purple-600";
+                titleEl.innerText = "\uD83C\uDF8A Mastery Achieved! \uD83C\uDF8A";
+                msgEl.innerHTML = "Fantastic work! You have <strong>" + totalScore + " out of " + questions.length + "</strong> total points, officially mastering the content! \uD83C\uDF1F The answer key is now <strong>unlocked</strong>.";
+            } else {
+                titleEl.className = "text-2xl font-bold mb-4 text-gray-800";
+                titleEl.innerText = "Work Submitted!";
+                msgEl.innerHTML = "You have <strong>" + totalScore + " out of " + questions.length + "</strong> current points.<br><br>Correct answers will unlock once you reach <strong>" + threshold + " points</strong>.<br><br><em>Teacher Review: " + textGraded + "/" + totalText + " written questions graded.</em>";
+            }
+
+            if (modal) modal.classList.remove('hidden');
+            btn.innerText = "Submit Work";
+            btn.disabled = false;
+            renderAllQuestions();
         }
-    }
 
-    function saveAnswer(qId, selection, qType) {
-      if (window.studentLocked) return;
-      if (!localState[qId]) localState[qId] = {};
-      localState[qId].selection = selection;
-      activeDebounces.add(qId);
-
-      const payload = {
-          token: studentConfig.sessionToken,
-          action: "saveAnswer",
-          qId: qId,
-          selection: (qType === 'mc') ? selection : undefined,
-          textValue: (qType === 'text') ? selection : undefined
-      };
-
-      sendToProxy(payload, qId);
-      renderQuestionCard(qId);
-    }
-
-    function renderAllQuestions() {
-      // 1. Hide loader immediately so we don't get stuck
-      const loader = document.getElementById('loader');
-      if (loader) loader.classList.add('hidden');
-
-      // 2. Check lock status
-      if (checkLockStatus()) return;
-
-      // 3. Render questions
-      questions.forEach(q => renderQuestionCard(q.id));
-      
-      const submitContainer = document.getElementById('submit-container');
-      if (submitContainer) submitContainer.classList.remove('hidden');
-    }
-
-    function renderQuestionCard(qId) {
-      const q = questions.find(item => item.id === qId);
-      if (!q) return;
-
-      const container = document.getElementById('questions-container');
-      if (!container) return;
-
-      const qData = localState[qId] || {};
-      const activeId = document.activeElement ? document.activeElement.id : null;
-      const meetsShadeCondition = (window.studentSubmitted === true && window.studentUnlocked === true);
-
-      const cardId = "card-q" + q.id;
-      let card = document.getElementById(cardId);
-      if (!card) {
-          card = document.createElement('div');
-          card.id = cardId;
-          card.innerHTML = '<div id="head-q' + q.id + '" class="flex justify-between mb-4 items-start gap-4"></div><div id="body-q' + q.id + '"></div><div id="feedback-q' + q.id + '"></div>';
-          container.appendChild(card);
-      }
-
-      const selection = qData.selection;
-      const isAnswered = (selection !== null && selection !== undefined && selection !== "");
-      const isCorrect = qData.isCorrect;
-
-      let cardClass = "bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 mb-4 transition-colors duration-300";
-      let statusIcon = "";
-      let inputHtml = "";
-
-      if (q.type === 'mc') {
-          if (isAnswered) {
-              if (isCorrect !== undefined && meetsShadeCondition) {
-                  cardClass = isCorrect ? "bg-green-50 border-2 border-green-400 mb-4 p-6 rounded-lg shadow-sm" : "bg-red-50 border-2 border-red-400 mb-4 p-6 rounded-lg shadow-sm";
-                  statusIcon = isCorrect ? '<span class="text-green-600 font-bold whitespace-nowrap">\u2713 Correct</span>' : '<span class="text-red-600 font-bold whitespace-nowrap">\u2717 Incorrect</span>';
-              }
-          }
-          inputHtml = q.options.map((opt, i) => '<label class="flex items-start gap-3 py-2 cursor-pointer hover:bg-gray-50 rounded px-2"><input type="radio" name="q' + q.id + '" ' + (selection === i ? 'checked' : '') + ' onchange="saveAnswer(' + q.id + ', ' + i + ', \'mc\')" class="w-5 h-5 text-purple-600 mt-1"><span class="text-sm md:text-base">' + opt + '</span></label>').join('');
-      } else if (q.type === 'text') {
-          if (isAnswered) {
-              if (isCorrect !== undefined && meetsShadeCondition) {
-                  cardClass = isCorrect ? "bg-green-50 border-2 border-green-400 mb-4 p-6 rounded-lg shadow-sm" : "bg-red-50 border-2 border-red-400 mb-4 p-6 rounded-lg shadow-sm";
-                  statusIcon = isCorrect ? '<span class="text-green-600 font-bold whitespace-nowrap">\u2713 Marked Correct</span>' : '<span class="text-red-600 font-bold whitespace-nowrap">\u2717 Marked Incorrect</span>';
-              } else {
-                  statusIcon = '<span class="text-blue-600 font-bold whitespace-nowrap">Pending Review</span>';
-              }
-          }
-          inputHtml = '<textarea id="input-q' + q.id + '" onkeydown="handleChemistryKeyDown(event, this)" oninput="applyChemistryLogic(this)" rows="3" onblur="saveAnswer(' + q.id + ', this.value, \'text\')" class="w-full p-3 border border-gray-300 rounded mt-2 text-blue-700 font-bold focus:ring-2 focus:ring-purple-500">' + (selection || '') + '</textarea>';
-      }
-
-      card.className = cardClass;
-
-      const headDiv = document.getElementById("head-q" + q.id);
-      if (headDiv) headDiv.innerHTML = '<div class="text-gray-900 leading-relaxed w-full font-semibold"><strong>' + q.id + '.</strong> ' + q.text + '</div><div class="shrink-0 flex items-center mt-1"><div class="text-sm">' + statusIcon + '</div></div>';
-
-      const isActivelyEditingText = (q.type === 'text' && (activeId === "input-q" + q.id || activeDebounces.has(qId)));
-      const bodyDiv = document.getElementById("body-q" + q.id);
-      if (bodyDiv && !isActivelyEditingText) bodyDiv.innerHTML = inputHtml;
-
-      let commentButtonHtml = ""; let commentPanelHtml = "";
-      const currentComment = qData.teacherComment || "";
-      const isCommentUnread = qData.commentUnread === true;
-      const isAreaOpen = (commentVisibility[q.id] === true);
-
-      if (currentComment !== "") {
-          const btnClass = isCommentUnread ? "glow-effect bg-orange-50 border-orange-500 text-orange-700" : "bg-white border-gray-300 text-gray-600 opacity-75 hover:opacity-100";
-          commentButtonHtml = '<button id="student-comment-btn-' + q.id + '" onclick="toggleTeacherCommentArea(' + q.id + ')" class="text-xs font-bold px-3 py-1 mt-2 border-2 rounded-full transition-all ' + btnClass + ' flex items-center shadow-sm">💡 Teacher Comment</button>';
-          commentPanelHtml = '<div id="student-comment-area-q' + q.id + '" class="' + (isAreaOpen ? '' : 'hidden') + ' mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg shadow-inner"><div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-500"></span> Note from Teacher:</div><div class="text-blue-900 font-bold whitespace-pre-wrap ml-3 leading-relaxed" style="font-size: 15px;">' + String(currentComment).replace(/"/g, '&quot;') + '</div></div>';
-      }
-      const feedbackDiv = document.getElementById("feedback-q" + q.id);
-      if (feedbackDiv) feedbackDiv.innerHTML = commentButtonHtml + commentPanelHtml;
-
-      if (window.renderMathInElement) {
-          try { renderMathInElement(card, katexConfig); } catch (e) { }
-      }
-      if (q.type === 'text') {
-          const ta = document.getElementById("input-q" + q.id);
-          if (ta) autoResize(ta);
-      }
-    }
-
-    async function submitWork() {
-      if (window.studentLocked) return;
-      const btn = document.getElementById('submit-btn');
-      if (!btn) return;
-
-      const unanswered = questions.filter(q => { const data = localState[q.id]; return !data || data.selection === null || data.selection === undefined || String(data.selection).trim() === ""; });
-      if (unanswered.length > 0) {
-          const modal = document.getElementById('submission-modal');
-          const titleEl = document.getElementById('modal-title');
-          const msgEl = document.getElementById('modal-message');
-          titleEl.innerText = "Assignment Incomplete";
-          titleEl.className = "text-2xl font-bold mb-4 text-orange-600";
-          msgEl.innerHTML = "You have <strong>" + unanswered.length + "</strong> question(s) left to answer. Please complete the entire assignment before submitting.";
-          modal.classList.remove('hidden');
-          return;
-      }
-
-      btn.disabled = true;
-      btn.innerText = "Submitting...";
-
-      const payload = {
-          token: studentConfig.sessionToken,
-          action: "submit"
-      };
-
-      await sendToProxy(payload);
-
-      const modal = document.getElementById('submission-modal');
-      const titleEl = document.getElementById('modal-title');
-      const msgEl = document.getElementById('modal-message');
-
-      let mcCorrect = 0;
-      let totalText = 0;
-      let textGraded = 0;
-      let textCorrect = 0;
-
-      questions.forEach(q => {
-          const data = localState[q.id] || {};
-          if (q.type === 'mc') {
-              if (data.isCorrect === true) mcCorrect++;
-          } else {
-              totalText++;
-              if (data.isCorrect !== undefined) {
-                  textGraded++;
-                  if (data.isCorrect === true) textCorrect++;
-              }
-          }
-      });
-
-      const totalScore = mcCorrect + textCorrect;
-      const threshold = Math.ceil(questions.length * 0.8);
-
-      if (totalScore >= threshold) {
-          titleEl.className = "text-2xl font-bold mb-4 text-purple-600";
-          titleEl.innerText = "\uD83C\uDF8A Mastery Achieved! \uD83C\uDF8A";
-          msgEl.innerHTML = "Fantastic work! You have <strong>" + totalScore + " out of " + questions.length + "</strong> total points, officially mastering the content! \uD83C\uDF1F The answer key is now <strong>unlocked</strong>.";
-      } else {
-          titleEl.className = "text-2xl font-bold mb-4 text-gray-800";
-          titleEl.innerText = "Work Submitted!";
-          msgEl.innerHTML = "You have <strong>" + totalScore + " out of " + questions.length + "</strong> current points.<br><br>Correct answers will unlock once you reach <strong>" + threshold + " points</strong>.<br><br><em>Teacher Review: " + textGraded + "/" + totalText + " written questions graded.</em>";
-      }
-
-      if (modal) modal.classList.remove('hidden');
-      btn.innerText = "Submit Work";
-      btn.disabled = false;
-      renderAllQuestions();
-    }
-
-    function autoResize(el) {
-        if (!el) return;
-        el.style.height = 'auto';
-        el.style.height = (el.scrollHeight) + 'px';
-    }
-
-    function applyChemistryLogic(el) {
-        const val = el.value; const start = el.selectionStart;
-        const chemMap = { 's': '(\u1d460)', 'l': '(\u2113)', 'g': '(\u1d454)', 'a': '(\u1d44e\u1d45a)', '+': '\u207A', '-': '\u207B', '0': '\u2070', '1': '\u00B9', '2': '\u00B2', '3': '\u00B3', '4': '\u2074', '5': '\u2075', '6': '\u2076', '7': '\u2077', '8': '\u2078', '9': '\u2079' };
-        let newVal = val.replace(/\/\/([slga+\-0-9])/gi, function(match, char) { return chemMap[char.toLowerCase()] || match; });
-        const subMap = { '0': '\u2080', '1': '\u2081', '2': '\u2082', '3': '\u2083', '4': '\u2084', '5': '\u2085', '6': '\u2086', '7': '\u2087', '8': '\u2088', '9': '\u2089' };
-        let subbedVal = "";
-        for (let i = 0; i < newVal.length; i++) {
-            let char = newVal[i];
-            if (subMap[char]) {
-                let prevChar = subbedVal.length > 0 ? subbedVal[subbedVal.length - 1] : '';
-                if (/[A-Za-z\)\]\u2080-\u2089]/.test(prevChar)) subbedVal += subMap[char];
-                else subbedVal += char;
-            } else subbedVal += char;
+        function autoResize(el) {
+            if (!el) return;
+            el.style.height = 'auto';
+            el.style.height = (el.scrollHeight) + 'px';
         }
-        newVal = subbedVal;
-        if (val !== newVal) {
-            el.value = newVal;
-            const diff = newVal.length - val.length;
-            el.setSelectionRange(start + diff, start + diff);
-        }
-        autoResize(el);
-    }
 
-    function handleChemistryKeyDown(event, el) {
-        const pos = el.selectionStart; const text = el.value;
-        if (event.key === 'Backspace' && pos === el.selectionEnd) {
-            const prev3 = text.slice(Math.max(0, pos - 3), pos);
-            if (prev3 === ' + ' || prev3 === ' \u2192 ') {
-                event.preventDefault(); el.value = text.slice(0, pos - 3) + text.slice(pos);
-                el.setSelectionRange(pos - 3, pos - 3); return;
+        /**
+      * 🧪 CHEMISTRY LOGIC ENGINE
+      * Handles: Combined Shortcuts (//) and Auto-Subscripts
+      */
+        function applyChemistryLogic(el) {
+            const val = el.value;
+            const start = el.selectionStart;
+
+            let newVal = val;
+
+            // 1. Combined Shortcuts (//) for States and Superscripts
+            const chemMap = {
+                's': '(𝑠)', 'l': '(ℓ)', 'g': '(𝑔)', 'a': '(𝑎𝑞)',
+                '+': '⁺', '-': '⁻', '0': '⁰', '1': '¹', '2': '²', '3': '³',
+                '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹'
+            };
+
+            // This looks for // followed by any character in our map
+            newVal = newVal.replace(/\/\/([slga+\-0-9])/gi, (match, char) => {
+                return chemMap[char.toLowerCase()] || match;
+            });
+
+            // 2. Auto-Subscripts (Same as before)
+            const subMap = { '0': '₀', '1': '₁', '2': '₂', '3': '₃', '4': '₄', '5': '₅', '6': '₆', '7': '₇', '8': '₈', '9': '₉' };
+            let subbedVal = "";
+            for (let i = 0; i < newVal.length; i++) {
+                let char = newVal[i];
+                if (subMap[char]) {
+                    let prevChar = subbedVal.length > 0 ? subbedVal[subbedVal.length - 1] : '';
+                    if (/[A-Za-z\)\]₀-₉]/.test(prevChar)) {
+                        subbedVal += subMap[char];
+                    } else {
+                        subbedVal += char;
+                    }
+                } else {
+                    subbedVal += char;
+                }
+            }
+            newVal = subbedVal;
+
+            if (val !== newVal) {
+                el.value = newVal;
+                const diff = newVal.length - val.length;
+                el.setSelectionRange(start + diff, start + diff);
+            }
+
+            autoResize(el);
+        }
+
+        /**
+      * Handles instant symbol expansion (+ and >) and smart backspacing
+      * UPDATED: Ignores "+" if preceded by "//" to allow superscripts
+      */
+        function handleChemistryKeyDown(event, el) {
+            const pos = el.selectionStart;
+            const text = el.value;
+
+            // 1. Smart Backspacing (Same as before)
+            if (event.key === 'Backspace' && pos === el.selectionEnd) {
+                const prev3 = text.slice(Math.max(0, pos - 3), pos);
+                if (prev3 === ' + ' || prev3 === ' → ') {
+                    event.preventDefault();
+                    el.value = text.slice(0, pos - 3) + text.slice(pos);
+                    el.setSelectionRange(pos - 3, pos - 3);
+                    return;
+                }
+            }
+
+            // 2. Smart Spacing for + and >
+            if (event.key === '+' || event.key === '>') {
+                // CHECK: Is there a "//" right before the cursor?
+                const prev2 = text.slice(Math.max(0, pos - 2), pos);
+
+                if (event.key === '+' && prev2 === '//') {
+                    // Do nothing! Let the "+" type normally so applyChemistryLogic can handle it.
+                    return;
+                }
+
+                // Otherwise, proceed with the auto-spacing logic
+                event.preventDefault();
+                const symbol = event.key === '>' ? '→' : '+';
+                const insertStr = ` ${symbol} `;
+
+                let start = el.selectionStart;
+                let end = el.selectionEnd;
+                let currentText = el.value;
+
+                if (start > 0 && currentText[start - 1] === ' ') start -= 1;
+                if (end < currentText.length && currentText[end] === ' ') end += 1;
+
+                el.value = currentText.slice(0, start) + insertStr + currentText.slice(end);
+                el.setSelectionRange(start + insertStr.length, start + insertStr.length);
             }
         }
-        if (event.key === '+' || event.key === '>') {
-            const prev2 = text.slice(Math.max(0, pos - 2), pos);
-            if (event.key === '+' && prev2 === '//') return;
-            event.preventDefault();
-            const symbol = event.key === '>' ? '\u2192' : '+';
-            const insertStr = " " + symbol + " ";
-            let start = el.selectionStart; let end = el.selectionEnd; let currentText = el.value;
-            if (start > 0 && currentText[start - 1] === ' ') start -= 1;
-            if (end < currentText.length && currentText[end] === ' ') end += 1;
-            el.value = currentText.slice(0, start) + insertStr + currentText.slice(end);
-            el.setSelectionRange(start + insertStr.length, start + insertStr.length);
-        }
-    }
 
-    async function toggleTeacherCommentArea(qId) {
-        const area = document.getElementById("student-comment-area-q" + qId);
-        if (!area) return;
-        const isCurrentlyHidden = area.classList.toggle('hidden');
-        commentVisibility[qId] = !isCurrentlyHidden;
-        if (!isCurrentlyHidden && localState[qId]?.commentUnread === true) {
-            localState[qId].commentUnread = false;
-            const payload = { token: studentConfig.sessionToken, action: "markRead", qId: qId };
-            await sendToProxy(payload);
-            const btn = document.getElementById("student-comment-btn-" + qId);
-            if (btn) btn.className = "text-xs font-bold px-3 py-1 mt-2 border-2 rounded-full transition-all bg-white border-gray-300 text-gray-600 opacity-75 hover:opacity-100 flex items-center shadow-sm";
-        }
-    }
 
-    function checkLockStatus() {
-        const isLocked = (window.studentLocked === true);
-        const lockC = document.getElementById('lock-message-container');
-        const qC = document.getElementById('questions-container');
-        const sC = document.getElementById('submit-container');
-        if (isLocked) {
-            if (lockC) lockC.classList.remove('hidden');
-            if (qC) qC.classList.add('hidden');
-            if (sC) sC.classList.add('hidden');
-            return true;
-        } else {
-            if (lockC) lockC.classList.add('hidden');
-            if (qC) qC.classList.remove('hidden');
-            if (sC) sC.classList.remove('hidden');
-            return false;
+        async function toggleTeacherCommentArea(qId) {
+            const area = document.getElementById("student-comment-area-q" + qId);
+            if (!area) return;
+            const isCurrentlyHidden = area.classList.toggle('hidden');
+            commentVisibility[qId] = !isCurrentlyHidden;
+            if (!isCurrentlyHidden && localState[qId]?.commentUnread === true) {
+                localState[qId].commentUnread = false;
+                const payload = { token: studentConfig.sessionToken, action: "markRead", qId: qId };
+                await sendToProxy(payload);
+                const btn = document.getElementById("student-comment-btn-" + qId);
+                if (btn) btn.className = "text-xs font-bold px-3 py-1 mt-2 border-2 rounded-full transition-all bg-white border-gray-300 text-gray-600 opacity-75 hover:opacity-100 flex items-center shadow-sm";
+            }
         }
-    }
 
-    function closeModal() {
-        const modal = document.getElementById('submission-modal');
-        if (modal) modal.classList.add('hidden');
-    }
-    window.onload = init;
-  </script>
+        function checkLockStatus() {
+            const isLocked = (window.studentLocked === true);
+            const lockC = document.getElementById('lock-message-container');
+            const qC = document.getElementById('questions-container');
+            const sC = document.getElementById('submit-container');
+            if (isLocked) {
+                if (lockC) lockC.classList.remove('hidden');
+                if (qC) qC.classList.add('hidden');
+                if (sC) sC.classList.add('hidden');
+                return true;
+            } else {
+                if (lockC) lockC.classList.add('hidden');
+                if (qC) qC.classList.remove('hidden');
+                if (sC) sC.classList.remove('hidden');
+                return false;
+            }
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('submission-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+        window.onload = init;
+    </script>
 </body>
+
 </html>
