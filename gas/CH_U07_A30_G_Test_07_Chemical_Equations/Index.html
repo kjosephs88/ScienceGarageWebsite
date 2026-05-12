@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <base target="_top">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/mhchem.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; color: #333; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; background: #fff; padding: 40px; border-radius: 12px; border-top: 12px solid #A33DE1; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .narrative-block { background-color: #e0f7f8; border: 1px solid #b2ebf2; padding: 20px; margin: 25px 0; border-radius: 8px; }
+        .narrative-title { font-weight: bold; text-transform: uppercase; color: #006064; display: block; margin-bottom: 5px; border-bottom: 1px solid #b2ebf2; }
+        .question-block { margin-bottom: 30px; padding: 15px; border-left: 4px solid #eee; background: #fafafa; border-radius: 0 8px 8px 0; }
+        .student-box { background: white; border: 1px solid #ddd; padding: 12px; margin: 8px 0; border-radius: 6px; }
+        .pill { display: inline-block; padding: 3px 12px; border-radius: 15px; font-weight: bold; font-size: 0.85em; }
+        .correct { background: #e8f5e9; color: #2e7d32; border: 1px solid #2e7d32; }
+        .incorrect { background: #ffebee; color: #c62828; border: 1px solid #c62828; }
+        .correction-target { color: #A33DE1; font-weight: bold; margin-top: 8px; font-size: 0.9em; padding-top: 5px; border-top: 1px dashed #A33DE1; }
+        #loading-screen { position: fixed; top:0; left:0; width:100%; height:100%; background:white; display:flex; flex-direction:column; justify-content:center; align-items:center; z-index:100; }
+    </style>
+</head>
+<body>
+    <div id="loading-screen">
+        <div style="font-size: 1.5em; color: #A33DE1;">Loading Test Review...</div>
+        <div id="error-msg" style="color:red; margin-top:10px; font-weight:bold;"></div>
+    </div>
+
+    <div class="container" id="main-view" style="display:none;">
+        <h1 style="text-align:center;">Test 7 Review: Chemical Reactions</h1>
+        <p><strong>Student Name:</strong> <span id="student-name-display"></span></p>
+        <hr>
+        <div id="test-body">
+            <?!= TEST_LAYOUT_HTML ?>
+        </div>
+    </div>
+
+    <script>
+        window.onload = () => {
+            google.script.run
+                .withSuccessHandler(data => data.error ? showError(data.error) : renderTest(data))
+                .withFailureHandler(err => showError("Execution Failed: " + err.message))
+                .getStudentPayload();
+        };
+
+        function showError(msg) {
+            document.getElementById('error-msg').innerText = msg;
+        }
+
+        function renderTest(payload) {
+            document.getElementById('loading-screen').style.display = 'none';
+            document.getElementById('main-view').style.display = 'block';
+            document.getElementById('student-name-display').innerText = payload.studentName;
+
+            const container = document.getElementById('test-body');
+            const responses = payload.results;
+
+            const katexConfig = {
+                delimiters: [
+                    {left: '$$', right: '$$', display: true},
+                    {left: '$', right: '$', display: false},
+                    {left: '\\(', right: '\\)', display: false},
+                    {left: '\\[', right: '\\]', display: true}
+                ],
+                throwOnError: false
+            };
+
+            responses.forEach(res => {
+                const qText = document.getElementById(`q${res.id}`);
+                if (qText) {
+                    const qBlock = qText.closest('.question-block');
+                    const isCorrect = res.pointsReceived > 0;
+                    
+                    const ansDiv = document.createElement('div');
+                    ansDiv.className = 'student-box';
+                    ansDiv.style.backgroundColor = isCorrect ? '#e8f5e9' : '#ffebee';
+                    ansDiv.style.borderColor = isCorrect ? '#2e7d32' : '#c62828';
+                    
+                    let displayAnswer = res.studentAnswer;
+                    let displayCorrect = res.correctAnswer;
+
+                    let html = `<div style="margin-bottom: 8px;">Your Answer: <span style="color:#0000ff; font-weight:bold;">${displayAnswer}</span></div>`;
+                    html += `<div style="font-size: 0.9em;">Points: <span style="font-weight:bold; color: ${isCorrect ? '#2e7d32' : '#c62828'}">${res.pointsReceived} / ${res.maxPoints}</span></div>`;
+                    
+                    if (!isCorrect) {
+                        html += `<div class="correction-target">Correct Answer: ${displayCorrect}</div>`;
+                    }
+                    
+                    ansDiv.innerHTML = html;
+                    qBlock.appendChild(ansDiv);
+                }
+            });
+
+            renderMathInElement(document.body, katexConfig);
+        }
+    </script>
+</body>
+</html>

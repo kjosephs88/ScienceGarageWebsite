@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <style>
+      body { font-family: sans-serif; padding: 10px; }
+      textarea { width: 100%; height: 200px; margin-bottom: 10px; }
+      button { background-color: #A33DE1; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 4px; }
+      #status { margin-top: 10px; font-weight: bold; }
+    </style>
+  </head>
+  <body>
+    <p>Paste the student JSON results below:</p>
+    <textarea id="jsonInput" placeholder='{"StudentID": "...", "results": [...]}'></textarea>
+    <button onclick="uploadData()">Upload to RTDB</button>
+    <div id="status"></div>
+
+    <script>
+      function uploadData() {
+        const json = document.getElementById('jsonInput').value;
+        const status = document.getElementById('status');
+        status.innerText = "Uploading...";
+        
+        google.script.run
+          .withSuccessHandler((msg) => {
+            status.style.color = "green";
+            status.innerText = msg;
+            document.getElementById('jsonInput').value = "";
+          })
+          .withFailureHandler((err) => {
+            status.style.color = "red";
+            status.innerText = "Error: " + err.message;
+          })
+          .processJsonUpload(json);
+      }
+    </script>
+  </body>
+</html>
