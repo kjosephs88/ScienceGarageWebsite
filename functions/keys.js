@@ -111,6 +111,20 @@ module.exports = {
     16: 0, // Yes (Al is above H)
     17: { type: "frq" }, // H2SO4 + 2KOH -> K2SO4 + 2H2O
     18: 1  // No (Cu is below H)
-  }
+  },
+
+"CH_U08_A22_P": {
+    1: 0, // hydroxide ion (LiOH is a base)
+    2: 2, // 100 (pH 2 to 4 is a difference of 2 factors of 10)
+    3: 1, // 100 times more hydronium (pH 5 is 2 units lower than 7)
+    4: 0, // increases by 1 (Inverse relationship)
+    5: 3, // D (Lowest concentration = highest pH)
+    6: 3, // 4 (1000x concentration = 3 pH units lower; 7 - 3 = 4)
+    7: { type: "frq" }, // 10 times (5.6 to 4.6)
+    8: { type: "frq" }, // Yellow (pH 5.6 is above the 3.1-4.4 range)
+    9: { type: "frq" }, // It dissociates/ionizes into mobile ions
+    10: { type: "frq" }, // Yellow (pH 2.4 is below the 6.0-7.6 range)
+    11: { type: "frq" }  // 3.4 (10x fewer ions increases pH by 1.0)
+}
 
 };
