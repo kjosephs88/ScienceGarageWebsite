@@ -113,7 +113,7 @@ module.exports = {
     18: 1  // No (Cu is below H)
   },
 
-"CH_U08_A22_P": {
+  "CH_U08_A22_P": {
     1: 0, // hydroxide ion (LiOH is a base)
     2: 2, // 100 (pH 2 to 4 is a difference of 2 factors of 10)
     3: 1, // 100 times more hydronium (pH 5 is 2 units lower than 7)
@@ -125,6 +125,19 @@ module.exports = {
     9: { type: "frq" }, // It dissociates/ionizes into mobile ions
     10: { type: "frq" }, // Yellow (pH 2.4 is below the 6.0-7.6 range)
     11: { type: "frq" }  // 3.4 (10x fewer ions increases pH by 1.0)
-}
+  },
+
+  "CH_U08_A23_G": {
+    1: 0, // Choice (1): H2CO3 and HC2H3O2
+    2: 2, // Choice (3): H3O+(aq)
+    3: 1, // Choice (2): 4.5
+    4: 1, // Choice (2): 2
+    5: 2, // Choice (3): 1 x 10^-7 M
+    6: 3, // Choice (4): pH 3 to pH 1
+    7: 1, // Choice (2): bromcresol green
+    8: 1, // Choice (2): hydronium
+    9: 3, // Choice (4): Acids are donors, bases are acceptors
+    10: 2 // Choice (3): equal
+  }
 
 };
