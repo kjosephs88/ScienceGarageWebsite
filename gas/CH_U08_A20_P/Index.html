@@ -8,8 +8,8 @@
         <?= ASSIGNMENT_TITLE ?>
     </title>
     <script src="https://cdn.tailwindcss.com"></script>
- 
- <link rel="stylesheet" href="https://thesciencegarage.com/katexfiles/katex.min.css">
+    
+<link rel="stylesheet" href="https://thesciencegarage.com/katexfiles/katex.min.css">
 <script defer src="https://thesciencegarage.com/katexfiles/katex.min.js"></script>
 <script defer src="https://thesciencegarage.com/katexfiles/mhchem.js"></script>
 <script defer src="https://thesciencegarage.com/katexfiles/auto-render.min.js"></script>
@@ -55,6 +55,15 @@
         .glow-effect {
             animation: glow 1.5s infinite alternate;
         }
+
+        #handout-text a {
+    color: #2563eb; /* A nice standard blue */
+    text-decoration: underline;
+}
+
+#handout-text a:hover {
+    color: #1e40af; /* Darker blue on hover */
+}
     </style>
 </head>
 
@@ -97,35 +106,139 @@
                 Period if you would like to make it up.</p>
         </div>
 
-        <div id="handout-text"
-            class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 md:p-8 mb-4 text-gray-800 leading-relaxed opacity-0 transition-opacity duration-500">
-            <h2 class="text-2xl font-bold mb-4 border-b pb-2">Selected Ions Forming Aqueous Solutions</h2>
-            <p class="mb-4">As you already know, when you put table salt into water and stir, the salt will dissolve.
-                This happens because of the interaction between the polar water molecules and the ionic charges within
-                the salt. Table salt is made of positive sodium ions ($ \ce{Na+} $) and negative chloride ions ($
-                \ce{Cl-} $). The negative oxygen end of a water molecule attracts the positive sodium ions, and the
-                positive hydrogen end attracts the negative chloride ions. Millions of water molecules work together to
-                pull individual ions away from the ionic sample.</p>
-            <p class="mb-4">However, not all salts (a term synonymous with ionic compounds) will dissolve in water.
-                Whether a salt will dissolve depends on the ion combination in the compound. The Reference Table
-                <strong>Selected Ions Forming Aqueous Solutions</strong> can help us determine if an ionic compound will
-                be soluble.</p>
-            <p class="mb-4">Let's take a look at what the reference table tells us about sodium chloride ($ \ce{NaCl}
-                $). We must first realize that the compound is made of $ \ce{Na+} $ and $ \ce{Cl-} $ ions. Looking at
-                our table, we notice right away that $ \ce{Na+} $ is a Group 1 ion. The table shows that Group 1 metals
-                always form soluble aqueous solutions. Make sure to consult the periodic table when identifying Group 1
-                ions so you don't miss those not explicitly listed, such as potassium, $ \ce{K+} $. Because sodium is on
-                this list, sodium chloride is soluble!</p>
-            <p class="mb-4">Let's look at another example: $ \ce{(NH4)3PO4} $. Upon inspection, we can see that ammonium
-                phosphate is made of an ammonium ion, $ \ce{NH4+} $, and a phosphate ion, $ \ce{PO4^3-} $. Looking over
-                the chart, we find that the $ \ce{NH4+} $ ion is listed as an ion that forms aqueous solutions. This
-                means the compound is soluble in water.</p>
-            <p>What about an insoluble compound? If a compound does not contain any of the ions listed on this table, it
-                is likely an exception that forms a precipitate (a solid). For example, lead(II) chloride, $ \ce{PbCl2}
-                $. Neither the lead ion ($ \ce{Pb^{2+}} $) nor the chloride ion ($ \ce{Cl-} $) are on the list of
-                selected ions. Because it lacks any of our 'always soluble' ions, we can identify $ \ce{PbCl2} $ as the
-                insoluble compound when compared to others that contain Group 1 metals or nitrates.</p>
+
+
+ <div id="handout-text" class="bg-white rounded-lg p-2 mb-6 text-gray-800 leading-relaxed text-sm md:text-base clearfix">
+        <h2 class="text-2xl font-bold mb-4 text-purple-700">Reading Material: Reactions Involving Acids and Bases</h2>
+
+        <p class="mb-4">Chemical reactions involving acids and bases are common in industrial and consumer applications, natural processes, and in classroom experiments. Acids and bases undergo many reactions because they are able to react with each other as well as with other compounds and elements.</p>
+
+        <h3 class="text-xl font-bold mb-2 mt-8 text-purple-600">Reactions of Acids with Metals</h3>
+        
+        <div class="float-right ml-6 mb-4 p-4 bg-purple-50 border-l-4 border-purple-500 rounded-r shadow-sm w-64 md:w-72">
+          <h3 class="text-sm font-extrabold text-purple-700 uppercase tracking-wider mb-2">Memory Jogger</h3>
+          <p class="text-xs text-gray-700 leading-relaxed">Single-replacement reactions have the general formula: $\ce{A + BC -> AC + B}$.</p>
         </div>
+
+        <p class="mb-4">Any element in the Activity Series of the <em>Reference Tables for Physical Setting/Chemistry</em> will react with the ion of any element below it. Hydrogen ($\ce{H2}$) is found near the bottom of the table. Thus, any metal above hydrogen in the table will react with the hydrogen ions in acids to produce $\ce{H2}$ and a salt.</p>
+
+        <div class="bg-blue-50 text-blue-900 p-3 rounded font-mono text-center mb-6 border border-blue-200">
+          $\ce{Zn(s) + 2HCl(aq) -> H2(g) + ZnCl2(aq)}$
+        </div>
+
+        <p class="mb-4">Copper, which is below hydrogen in the table, will not react with hydrogen ions in acids.</p>
+
+        <h3 class="text-xl font-bold mb-2 mt-8 text-purple-600 clear-both">Neutralization Reactions</h3>
+
+        <div class="float-right ml-6 mb-4 p-4 bg-purple-50 border-l-4 border-purple-500 rounded-r shadow-sm w-64 md:w-72">
+          <h3 class="text-sm font-extrabold text-purple-700 uppercase tracking-wider mb-2">Memory Jogger</h3>
+          <p class="text-xs text-gray-700 leading-relaxed">When writing equations, first write correct formulas using charges and subscripts. Then, balance the equation using coefficients.</p>
+        </div>
+
+        <p class="mb-4">In a neutralization reaction, an Arrhenius acid reacts with an Arrhenius base to produce water and a salt. For example, consider the reaction between hydrochloric acid ($\ce{HCl}$) and sodium hydroxide ($\ce{NaOH}$).</p>
+        
+        <p class="mb-2"><strong>Word Equation:</strong></p>
+        <p class="italic mb-4 ml-4">Hydrochloric acid + Sodium hydroxide $\rightarrow$ Water + Sodium chloride</p>
+
+        <p class="mb-2"><strong>Formula Equation:</strong></p>
+        <div class="bg-gray-50 p-2 rounded text-center mb-4">$\ce{HCl(aq) + NaOH(aq) -> H2O(\ell) + NaCl(aq)}$</div>
+
+        <p class="mb-2"><strong>Ionic Equation:</strong></p>
+        <div class="bg-gray-50 p-2 rounded text-center mb-4">$\ce{H+(aq) + Cl^-(aq) + Na+(aq) + OH^-(aq) -> H2O(\ell) + Na+(aq) + Cl^-(aq)}$</div>
+
+        <p class="mb-4">Spectator ions (sodium and chloride) are present on both sides and can be omitted to yield the <strong>net ionic equation</strong>:</p>
+        <div class="bg-blue-50 p-2 rounded text-center mb-6 border border-blue-200">$\ce{H+(aq) + OH^-(aq) -> H2O(\ell)}$</div>
+
+        <p class="mb-4">Because hydrogen ions exist in solution as hydronium ions ($\ce{H3O+}$), this equation can also be written as:</p>
+        <div class="bg-gray-50 p-2 rounded text-center mb-6">$\ce{H3O+(aq) + OH^-(aq) -> 2H2O(\ell)}$</div>
+
+        <h3 class="text-xl font-bold mb-4 mt-8 text-purple-600">Sample Problem: Writing Neutralization Reactions</h3>
+        
+        <div class="border-2 border-black p-1 mb-8">
+          <table class="w-full text-sm border-collapse">
+  <thead>
+    <tr class="border-b-2 border-black">
+      <th colspan="2" class="p-2 text-left bg-gray-100 uppercase tracking-tight">Sample Problem</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td colspan="2" class="p-3 border-b border-gray-300">
+        Write the equation for the neutralization reaction between dilute nitric acid and potassium hydroxide.
+      </td>
+    </tr>
+    <tr>
+      <td class="p-3 border-r border-gray-300 align-top w-1/2">
+        <div class="mb-6">
+          <p class="font-bold underline mb-1">Known</p>
+          <p>reactant 1 = nitric acid ($\ce{HNO3}$)</p>
+          <p>reactant 2 = potassium hydroxide ($\ce{KOH}$)</p>
+          <br>
+          <p class="font-bold underline mb-1">Unknown</p>
+          <p>neutralization equation = ?</p>
+        </div>
+
+        <div class="mb-6">
+          <p class="mb-2"><strong>1.</strong> Write a simple word equation:</p>
+          <p class="mb-4">acid + base $\rightarrow$ water + salt</p>
+        </div>
+
+        <div>
+          <p class="mb-2"><strong>2.</strong> Substitute known compounds:</p>
+          <p>$\ce{HNO3 + KOH -> water + salt}$</p>
+        </div>
+      </td>
+
+      <td class="p-3 align-top w-1/2 text-sm leading-tight">
+        <div class="mb-6">
+          <p class="mb-2"><strong>3.</strong> The $\ce{OH-}$ of the base and the $\ce{H+}$ of the acid combine to form water ($\ce{H2O}$):</p>
+          <p class="mb-6 font-bold">$\ce{HNO3 + KOH -> H2O + salt}$</p>
+          
+          <p class="mb-2">The remaining $\ce{K+}$ and $\ce{NO3-}$ ions combine to form the salt $\ce{KNO3}$.</p>
+          <p class="font-bold">$\ce{HNO3 + KOH -> H2O + KNO3}$</p>
+        </div>
+
+        <div>
+          <p class="mb-2"><strong>4. Now check to see that the equation is balanced.</strong> Because the hydroxide and hydrogen ions combine in a 1:1 ratio to form water molecules, they must be present in equal numbers. In this example, there is one hydroxide ion and one hydrogen ion, so the coefficients are both 1.</p>
+        </div>
+      </td>
+    </tr>
+  </tbody>
+</table>
+        </div>
+
+        <h3 class="text-xl font-bold mb-2 mt-8 text-purple-600">Complex Neutralizations</h3>
+        <p class="mb-4">When a diprotic acid reacts with a dihydroxy base, two hydrogen ions and two hydroxide ions combine to form two molecules of water:</p>
+        <div class="bg-gray-50 p-3 rounded text-center mb-6">$\ce{Ca(OH)2 + H2SO4 -> 2H2O + CaSO4}$</div>
+
+        <p class="mb-4">If the ions are not equal, use coefficients to balance the equation:</p>
+        <div class="bg-gray-50 p-3 rounded text-center mb-6">
+          <p class="text-xs text-gray-500 mb-1">Unbalanced:</p>
+          <p class="mb-2">$\ce{Mg(OH)2 + HCl -> H2O + MgCl2}$</p>
+          <p class="text-xs text-gray-500 mb-1">Balanced:</p>
+          <p class="font-bold">$\ce{Mg(OH)2 + 2HCl -> 2H2O + MgCl2}$</p>
+        </div>
+
+        <h3 class="text-xl font-bold mb-2 mt-8 text-purple-600">Salts</h3>
+        <p class="mb-4">Salts are ionic substances composed of positively charged metallic or polyatomic ions, and negative ions other than hydroxide ions. Sodium chloride ($\ce{NaCl}$) and ammonium phosphate ($\ce{(NH4)3PO4}$) are examples. Salts are named using the positive ion of the base and the negative ion of the acid.</p>
+      </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         <div id="questions-container" class="space-y-4"></div>
 
@@ -277,13 +390,14 @@
             eventSource.addEventListener('patch', handleUpdate);
         }
 
-        async function sendToProxy(payload, qId) {
-            try {
-                const response = await fetch(PROXY_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
+async function sendToProxy(payload, qId) {
+    try {
+        const response = await fetch(PROXY_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+            keepalive: true // CRITICAL for saves on window close
+        });
 
                 if (response.status === 403) {
                     google.script.run.withSuccessHandler(newData => {
@@ -302,25 +416,42 @@
             }
         }
 
-        function saveAnswer(qId, selection, qType) {
-            if (window.studentLocked) return;
-            if (!localState[qId]) localState[qId] = {};
+let debounceTimers = {}; // Track timers for each question
 
-            // Update local selection but DO NOT clear isCorrect
-            localState[qId].selection = selection;
-            activeDebounces.add(qId);
+function saveAnswer(qId, selection, qType, isImmediate = false) {
+    if (window.studentLocked) return;
+    if (!localState[qId]) localState[qId] = {};
 
-            const payload = {
-                token: studentConfig.sessionToken,
-                action: "saveAnswer",
-                qId: qId,
-                selection: (qType === 'mc') ? selection : undefined,
-                textValue: (qType === 'text') ? selection : undefined
-            };
+    // Update local state immediately so the UI feels responsive
+    localState[qId].selection = selection;
+    activeDebounces.add(qId);
 
-            sendToProxy(payload, qId);
-            renderQuestionCard(qId);
-        }
+    // Clear any existing timer for this specific question
+    if (debounceTimers[qId]) {
+        clearTimeout(debounceTimers[qId]);
+    }
+
+    const performSave = () => {
+        const payload = {
+            token: studentConfig.sessionToken,
+            action: "saveAnswer",
+            qId: qId,
+            selection: (qType === 'mc') ? selection : undefined,
+            textValue: (qType === 'text') ? selection : undefined
+        };
+        
+        // Use keepalive: true to ensure the request finishes if the tab closes
+        sendToProxy(payload, qId);
+        delete debounceTimers[qId];
+    };
+
+    // MC saves immediately; Text waits 1.5 seconds
+    if (qType === 'mc' || isImmediate) {
+        performSave();
+    } else {
+        debounceTimers[qId] = setTimeout(performSave, 1500);
+    }
+}
 
         function renderAllQuestions() {
             // 1. Hide loader immediately so we don't get stuck
@@ -382,7 +513,7 @@
                         statusIcon = '<span class="text-blue-600 font-bold whitespace-nowrap">Pending Review</span>';
                     }
                 }
-                inputHtml = '<textarea id="input-q' + q.id + '" onkeydown="handleChemistryKeyDown(event, this)" oninput="applyChemistryLogic(this)" rows="3" onblur="saveAnswer(' + q.id + ', this.value, \'text\')" class="w-full p-3 border border-gray-300 rounded mt-2 text-blue-700 font-bold focus:ring-2 focus:ring-purple-500">' + (selection || '') + '</textarea>';
+                inputHtml = '<textarea id="input-q' + q.id + '" onkeydown="handleChemistryKeyDown(event, this)" oninput="applyChemistryLogic(this); saveAnswer(' + q.id + ', this.value, \'text\')" rows="3" class="w-full p-3 border border-gray-300 rounded mt-2 text-blue-700 font-bold focus:ring-2 focus:ring-purple-500">' + (selection || '') + '</textarea>';
             }
 
             card.className = cardClass;
@@ -622,6 +753,33 @@
             const modal = document.getElementById('submission-modal');
             if (modal) modal.classList.add('hidden');
         }
+
+
+window.addEventListener('beforeunload', (event) => {
+    const pendingIds = Object.keys(debounceTimers);
+    if (pendingIds.length > 0) {
+        pendingIds.forEach(qId => {
+            // 1. Clear the timer so it doesn't try to fire again later
+            clearTimeout(debounceTimers[qId]);
+            delete debounceTimers[qId];
+
+            const q = questions.find(item => item.id == qId);
+            const val = document.getElementById("input-q" + qId)?.value;
+            if (val !== undefined) {
+                // 2. Force the immediate save
+                saveAnswer(qId, val, q.type, true);
+            }
+        });
+        
+        event.preventDefault();
+        event.returnValue = 'Saving your latest changes...';
+    }
+});
+
+
+
+
+
         window.onload = init;
     </script>
 </body>

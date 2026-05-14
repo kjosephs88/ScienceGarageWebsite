@@ -228,7 +228,8 @@ exports.onStudentActivityTrigger = onValueUpdated({
 
         const totalThreshold = Math.ceil(totalQuestions * 0.8);
         const isUnlockedNow = totalCorrect >= totalThreshold;
-        const shouldBeUnlocked = (afterData.unlocked === true) || (afterData.needsGrading === true && isUnlockedNow);
+        // THE GATE: Only unlock if already unlocked OR (Submit was pressed AND current grade >= 80%)
+        const shouldBeUnlocked = (afterData.unlocked === true) || (afterData.submitted === true && isUnlockedNow);
 
         const finalUpdates = {
             ...updates,
