@@ -153,6 +153,17 @@ module.exports = {
     10: { type: "frq" }, // 2.7 M
     11: { type: "frq" }, // hydrogen ion + hydroxide ion -> water
     12: { type: "frq" }  // sodium phosphate
+  },
+
+  "CH_U08_A25_G": {
+    1: 0, // 0.0250 M
+    2: 3, // titration
+    3: 0, // 1.0 M
+    4: 0, // 0.125 M
+    5: 3, // titration
+    6: 2, // concentration of a solution
+    7: 1, // 0.20 M
+    8: 2  // 0.24 M (Using nAMAVA = nBMBVB where nA=2 and nB=1)
   }
 
 };
