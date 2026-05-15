@@ -138,6 +138,21 @@ module.exports = {
     8: 1, // Choice (2): hydronium
     9: 3, // Choice (4): Acids are donors, bases are acceptors
     10: 2 // Choice (3): equal
+  },
+
+  "CH_U08_A24_P": {
+    1: 3, // LiOH (a base)
+    2: 1, // 2 L (1 L * 1 M H2SO4 = 1 mol acid = 2 mol H+. Needs 2 mol NaOH)
+    3: 1, // 2 mol (1:1 ratio for NaOH and HNO3)
+    4: 0, // 1.0 mol (1:1 ratio H+ to OH-)
+    5: 3, // 0.50 mol (0.5 L * 1.0 M = 0.5 mol)
+    6: 1, // 0.5 M H2SO4 (1 L of 0.5 M H2SO4 yields 1 mole of H+)
+    7: { type: "frq" }, // 25 mL
+    8: { type: "frq" }, // 20 mL
+    9: { type: "frq" }, // 0.60 M
+    10: { type: "frq" }, // 2.7 M
+    11: { type: "frq" }, // hydrogen ion + hydroxide ion -> water
+    12: { type: "frq" }  // sodium phosphate
   }
 
 };
