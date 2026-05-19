@@ -99,34 +99,35 @@ async function fetchStudentData() {
         });
 
         // 3. LIVE PIPELINE: Assignments (Reading from the NEW architecture)
-        const assignmentsRef = ref(db, 'schedulerAssignments');
-        onValue(assignmentsRef, (assigSnap) => {
-            currentClassData = {};
-            if (assigSnap.exists()) {
-                const allFolders = assigSnap.val();
+const assignmentsRef = ref(db, 'schedulerAssignments');
+onValue(assignmentsRef, (assigSnap) => {
+    currentClassData = {};
+    if (assigSnap.exists()) {
+        const allFolders = assigSnap.val();
 
-                let subj = "ZZ";
-                let lowerSubj = CONFIG.subject.toLowerCase();
-                if (lowerSubj.includes("chemistry")) subj = "CH";
-                else if (lowerSubj.includes("physics")) subj = "PH";
-                else if (lowerSubj.includes("forensic")) subj = "FS";
+        let subj = "ZZ";
+        let lowerSubj = CONFIG.subject.toLowerCase();
+        if (lowerSubj.includes("chemistry")) subj = "CH";
+        else if (lowerSubj.includes("physics")) subj = "PH";
+        else if (lowerSubj.includes("forensic")) subj = "FS";
 
-                const targetPrefix = `${subj}_${CONFIG.period}_`;
+        const targetPrefix = `${subj}_${CONFIG.period}_`;
 
-                Object.keys(allFolders).forEach(folderName => {
-                    if (folderName.startsWith(targetPrefix)) {
-                        const classAssignments = allFolders[folderName];
+        Object.keys(allFolders).forEach(folderName => {
+            if (folderName.startsWith(targetPrefix)) {
+                const classAssignments = allFolders[folderName];
 
-                        // Map the data by assignmentId EXACTLY like the Teacher App
-                        Object.keys(classAssignments).forEach(fbKey => {
-                            let assig = classAssignments[fbKey];
-                            currentClassData[assig.assignmentId] = assig;
-                        });
-                    }
+                // Map the data uniquely, using the Firebase key as a fallback for notes
+                Object.keys(classAssignments).forEach(fbKey => {
+                    let assig = classAssignments[fbKey];
+                    const uniqueKey = assig.assignmentId || fbKey; // Use push ID if assignmentId is missing
+                    currentClassData[uniqueKey] = assig;
                 });
             }
-            window.renderCalendar();
         });
+    }
+    window.renderCalendar();
+});
 
     } catch (error) {
         console.error("Error fetching data:", error);
