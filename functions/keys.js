@@ -164,6 +164,19 @@ module.exports = {
     6: 2, // concentration of a solution
     7: 1, // 0.20 M
     8: 2  // 0.24 M (Using nAMAVA = nBMBVB where nA=2 and nB=1)
-  }
+  },
+
+"CH_U09_A05_G": {
+    1: 3, // to provide an alternate reaction pathway
+    2: 2, // increases the frequency of particle collisions
+    3: 0, // solid
+    4: 1, // collision theory
+    5: 0, // increasing the surface area of Fe(s) and increasing the concentration of HCl(aq)
+    6: 1, // 1 and 3
+    7: 1, // crushing it into a powder
+    8: 0, // diluting a solution of reactant
+    9: 1, // 3H2(g) + N2(g) -> 2NH3(g)
+    10: { type: "frq" } // Explain, in terms of collision theory, why an increase in temperature increases the rate of the reaction.
+}
 
 };
