@@ -177,6 +177,19 @@ module.exports = {
     8: 0, // diluting a solution of reactant
     9: 1, // 3H2(g) + N2(g) -> 2NH3(g)
     10: { type: "frq" } // Explain, in terms of collision theory, why an increase in temperature increases the rate of the reaction.
-}
+},
+
+"CH_U09_A08_G": {
+    "q1": 1, // At equilibrium, the rates of the forward and reverse reactions are equal.
+    "q2": 1, // Undissolved solute in equilibrium with dissolved solute indicates a saturated solution.
+    "q3": 3, // In a closed liquid-vapor system, both evaporation and condensation occur simultaneously.
+    "q4": 1, // Solution equilibrium occurs when the solution is saturated.
+    "q5": 3, // While rates are equal, concentrations of reactants and products remain constant (not necessarily equal).
+    "q6": 3, // Dynamic equilibrium is defined by equal rates of opposing processes.
+    "q7": 0, // Collision theory states effective collisions are required for a reaction to proceed.
+    "q8": 0, // Decreasing concentration reduces collisions; decreasing temperature reduces collision energy and frequency.
+    "q9": 3, // A closed system (stoppered bottle) is required for gases to reach phase/solution equilibrium.
+    "q10": 2 // Constant (unchanging) macroscopic concentrations indicate equilibrium. 
+  }
 
 };
