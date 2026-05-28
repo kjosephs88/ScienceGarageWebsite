@@ -190,6 +190,34 @@ module.exports = {
     "q8": 0, // Decreasing concentration reduces collisions; decreasing temperature reduces collision energy and frequency.
     "q9": 3, // A closed system (stoppered bottle) is required for gases to reach phase/solution equilibrium.
     "q10": 2 // Constant (unchanging) macroscopic concentrations indicate equilibrium. 
-  }
+  },
+
+"CH_U09_A15_G": {
+    1: 2, // difference between PE of products and reactants
+    2: 3, // potential energy diagram
+    3: { type: "frq" }, // striking together / friction / mechanical energy
+    4: { type: "frq" }, // potential energy of the reactants
+    5: 2, // difference between PE of products and reactants
+    6: { type: "frq" }, // C2H2(g) / products
+    7: { type: "frq" }, // 3 / 3 moles
+    8: 2, // +30. kJ/mol
+    9: 0, // Bonds are broken, and the reaction is endothermic.
+    10: 2, // heat of reaction
+    11: 0, // It is exothermic and delta H equals -91.8 kJ.
+    12: 1, // B
+    13: { type: "frq" }, // C
+    14: { type: "frq" }, // Ammonium nitrate / NH4NO3 / any endothermic salt from Table I
+    15: { type: "frq" }, // D
+    16: 3, // 4
+    17: 1, // The activation energy is 10. kJ and the reaction is exothermic.
+    18: 3, // N2(g) + O2(g) -> 2NO(g)
+    19: 3, // exothermic with delta H = -1640 kJ
+    20: 0, // endothermic, because heat is absorbed
+    21: 3, // the energy released or absorbed during the reaction
+    22: 0, // The reaction is exothermic because it releases heat.
+    23: 1, // The products have higher potential energy than the reactants, and the delta H is positive.
+    24: 3, // 4
+    25: 0  // HI(g)
+}
 
 };
