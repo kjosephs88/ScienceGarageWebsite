@@ -180,16 +180,16 @@ module.exports = {
 },
 
 "CH_U09_A08_G": {
-    "q1": 1, // At equilibrium, the rates of the forward and reverse reactions are equal.
-    "q2": 1, // Undissolved solute in equilibrium with dissolved solute indicates a saturated solution.
-    "q3": 3, // In a closed liquid-vapor system, both evaporation and condensation occur simultaneously.
-    "q4": 1, // Solution equilibrium occurs when the solution is saturated.
-    "q5": 3, // While rates are equal, concentrations of reactants and products remain constant (not necessarily equal).
-    "q6": 3, // Dynamic equilibrium is defined by equal rates of opposing processes.
-    "q7": 0, // Collision theory states effective collisions are required for a reaction to proceed.
-    "q8": 0, // Decreasing concentration reduces collisions; decreasing temperature reduces collision energy and frequency.
-    "q9": 3, // A closed system (stoppered bottle) is required for gases to reach phase/solution equilibrium.
-    "q10": 2 // Constant (unchanging) macroscopic concentrations indicate equilibrium. 
+    1: 1, // At equilibrium, the rates of the forward and reverse reactions are equal.
+    2: 1, // Undissolved solute in equilibrium with dissolved solute indicates a saturated solution.
+    3: 3, // In a closed liquid-vapor system, both evaporation and condensation occur simultaneously.
+    4: 1, // Solution equilibrium occurs when the solution is saturated.
+    5: 3, // While rates are equal, concentrations of reactants and products remain constant (not necessarily equal).
+    6: 3, // Dynamic equilibrium is defined by equal rates of opposing processes.
+    7: 0, // Collision theory states effective collisions are required for a reaction to proceed.
+    8: 0, // Decreasing concentration reduces collisions; decreasing temperature reduces collision energy and frequency.
+    9: 3, // A closed system (stoppered bottle) is required for gases to reach phase/solution equilibrium.
+    10: 2 // Constant (unchanging) macroscopic concentrations indicate equilibrium. 
   },
 
 "CH_U09_A15_G": {

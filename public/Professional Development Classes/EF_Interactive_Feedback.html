@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Executive Functioning Diagnostic</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background-color: #f4f6f9;
+            color: #222;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .app-container {
+            width: 100%;
+            max-width: 750px;
+            background: #ffffff;
+            border: 4px solid #111111;
+            box-shadow: 8px 8px 0px #111111;
+            border-radius: 12px;
+            padding: 40px;
+            position: relative;
+            min-height: 400px;
+        }
+        /* Shared Screen Styles */
+        .screen {
+            display: none;
+            animation: fadeIn 0.4s ease-in-out;
+        }
+        .screen.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Typography */
+        h1 {
+            font-size: 24pt;
+            font-weight: 900;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+            border-bottom: 4px solid #111;
+            padding-bottom: 10px;
+            letter-spacing: -0.5px;
+        }
+        h2 {
+            font-size: 18pt;
+            margin-bottom: 25px;
+            color: #444;
+            line-height: 1.4;
+        }
+        p {
+            font-size: 14pt;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        /* Buttons */
+        .btn {
+            background: #111;
+            color: #fff;
+            border: 3px solid #111;
+            padding: 15px 25px;
+            font-size: 14pt;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+            width: 100%;
+            text-align: left;
+            margin-bottom: 15px;
+        }
+        .btn:hover {
+            background: #3498db;
+            border-color: #3498db;
+            color: #fff;
+            transform: translateX(5px);
+        }
+        .btn-start {
+            background: #2ecc71;
+            border-color: #2ecc71;
+            text-align: center;
+            width: auto;
+            display: inline-block;
+            box-shadow: 4px 4px 0px #111;
+        }
+        .btn-start:hover {
+            background: #27ae60;
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px #111;
+        }
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            height: 12px;
+            background: #eee;
+            border: 2px solid #111;
+            border-radius: 6px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            background: #3498db;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        /* Results Styles - Updated to be positive and supportive */
+        .feedback-card {
+            background: #fdfdfd;
+            border: 3px solid #111;
+            border-left: 8px solid #3498db; /* Friendly Blue */
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 6px;
+        }
+        .feedback-card h3 {
+            font-size: 16pt;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            color: #111;
+        }
+        .feedback-card p {
+            font-size: 12pt;
+            margin-bottom: 0;
+            color: #333;
+        }
+        .success-card {
+            border-left-color: #2ecc71;
+            background: #f4fff8;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    
+    <!-- SCREEN 1: Introduction -->
+    <div id="intro-screen" class="screen active">
+        <h1>Cognitive Check-In</h1>
+        <p>Success in the classroom isn't just about knowing the material—it's about learning how to manage your brain! This quick 5-question check-in will help you discover your personal learning style.</p>
+        <p>Answer honestly to unlock a customized, easy-to-use action plan full of tips to boost your focus, memory, and momentum.</p>
+        <button class="btn btn-start" onclick="startQuiz()">Start Diagnostic</button>
+    </div>
+
+    <!-- SCREEN 2: Question Container -->
+    <div id="question-screen" class="screen">
+        <div class="progress-container">
+            <div id="progress-fill" class="progress-bar"></div>
+        </div>
+        <h1 id="question-counter">Question 1 of 5</h1>
+        <h2 id="question-text">Question text goes here?</h2>
+        
+        <div id="options-container">
+            <!-- Buttons injected via JavaScript -->
+        </div>
+    </div>
+
+    <!-- SCREEN 3: Results & Feedback -->
+    <div id="results-screen" class="screen">
+        <h1>Your Level-Up Plan</h1>
+        <p>Based on your answers, here are some supportive strategies you can try out right away to make learning feel easier:</p>
+        
+        <div id="feedback-container">
+            <!-- Feedback injected via JavaScript -->
+        </div>
+
+        <button class="btn btn-start" style="margin-top: 20px;" onclick="location.reload()">Restart Diagnostic</button>
+    </div>
+
+</div>
+
+<script>
+    // Define the 5 targeted questions mapping to EF skills
+    const questions = [
+        {
+            trait: "Task Initiation",
+            text: "When a 10-minute mini-lesson ends and it is time to start independent work or a lab, what do you usually do first?",
+            options: [
+                { text: "I immediately gather my materials and start the very first step.", score: 1 },
+                { text: "I usually wait a few minutes, talk to a friend, or try to figure out where to begin.", score: 0 }
+            ]
+        },
+        {
+            trait: "Working Memory",
+            text: "During a multi-step procedure (like balancing an equation or measuring chemicals), how do you keep track of your progress?",
+            options: [
+                { text: "I use a digital checklist or physically cross off steps as I complete them.", score: 1 },
+                { text: "I try to keep all the steps in my head, but I sometimes lose my place.", score: 0 }
+            ]
+        },
+        {
+            trait: "Self-Monitoring",
+            text: "If the teacher pauses the class for a random 'spot-check' question, how prepared do you feel to answer?",
+            options: [
+                { text: "I usually know exactly what is going on and feel ready to answer.", score: 1 },
+                { text: "I often get caught off guard and have to ask, 'What was the question?'", score: 0 }
+            ]
+        },
+        {
+            trait: "Organization",
+            text: "Look at your physical workspace or computer screen right now. Which description fits best?",
+            options: [
+                { text: "Only the tabs and materials I need for this specific assignment are open.", score: 1 },
+                { text: "I have a few extra browser tabs open, phone notifications, or unrelated papers around.", score: 0 }
+            ]
+        },
+        {
+            trait: "Time Blindness",
+            text: "How accurate are you at estimating how long a specific assignment will take you to finish?",
+            options: [
+                { text: "Pretty accurate. I often use timers or the classroom clock to pace myself.", score: 1 },
+                { text: "Not very accurate. I usually think tasks will take '5 minutes' and they end up taking a lot longer.", score: 0 }
+            ]
+        }
+    ];
+
+    // Feedback logic based on EF trait - Rewritten for a positive, supportive tone
+    const feedbackData = {
+        "Task Initiation": {
+            title: "Getting Started / Task Initiation",
+            issue: "It's totally normal to feel a little stuck when transitioning from listening to working. That initial friction can slow down your momentum.",
+            action: "Your Pro Move: Try the '60-Second Rule.' Make it a fun challenge to complete just the very first, smallest step (like opening the document or typing your name) before a 60-second timer runs out!"
+        },
+        "Working Memory": {
+            title: "Protecting Your Working Memory",
+            issue: "Science labs have a lot of moving parts! Trying to hold all those steps in your head at once takes up way too much of your valuable mental energy.",
+            action: "Your Pro Move: Be kind to your brain and outsource the memory work! Use a checklist or a 3-column tracking sheet. Focus only on the step right in front of you, and check it off so you can confidently move to the next."
+        },
+        "Self-Monitoring": {
+            title: "Attention Control",
+            issue: "Sometimes our brains like to take a little break during instruction, which can lead to that tricky 'What was the question?' moment.",
+            action: "Your Pro Move: Treat listening like an active sport. Anticipate the 'Spot-Check' by listening with the specific goal of being ready to answer a sudden question. Keep your pencil moving to trap ideas and stay fully locked in!"
+        },
+        "Organization": {
+            title: "Clearing the Deck",
+            issue: "Having extra browser tabs and physical clutter around acts like background noise for your brain, making it much harder to concentrate.",
+            action: "Your Pro Move: Clear the deck! Before you start working, close every tab except the one you need and tuck your phone out of sight. You'll be amazed at how much easier it is to focus with a clean slate."
+        },
+        "Time Blindness": {
+            title: "Pacing & Time Management",
+            issue: "Our internal clocks can be tricky, making a 30-minute task feel like it's only going to take a few minutes.",
+            action: "Your Pro Move: Borrow an external clock! Set a physical timer or your phone for a 10- or 15-minute 'focus sprint.' Breaking a big assignment down into smaller, timed chunks will make it feel so much more doable."
+        }
+    };
+
+    let currentIndex = 0;
+    let scores = {}; // Store results mapped by trait
+
+    function startQuiz() {
+        // Initialize scores
+        questions.forEach(q => scores[q.trait] = 0);
+        document.getElementById('intro-screen').classList.remove('active');
+        document.getElementById('question-screen').classList.add('active');
+        renderQuestion();
+    }
+
+    function renderQuestion() {
+        const q = questions[currentIndex];
+        document.getElementById('question-counter').innerText = `Question ${currentIndex + 1} of ${questions.length}`;
+        document.getElementById('question-text').innerText = q.text;
+        
+        // Update Progress Bar
+        const progress = ((currentIndex) / questions.length) * 100;
+        document.getElementById('progress-fill').style.width = `${progress}%`;
+
+        // Render Option Buttons
+        const optionsContainer = document.getElementById('options-container');
+        optionsContainer.innerHTML = ''; // Clear previous
+        
+        q.options.forEach(option => {
+            const btn = document.createElement('button');
+            btn.className = 'btn';
+            btn.innerText = option.text;
+            btn.onclick = () => handleAnswer(q.trait, option.score);
+            optionsContainer.appendChild(btn);
+        });
+    }
+
+    function handleAnswer(trait, scoreValue) {
+        scores[trait] += scoreValue;
+        currentIndex++;
+
+        if (currentIndex < questions.length) {
+            renderQuestion();
+        } else {
+            showResults();
+        }
+    }
+
+    function showResults() {
+        document.getElementById('question-screen').classList.remove('active');
+        document.getElementById('results-screen').classList.add('active');
+        
+        const feedbackContainer = document.getElementById('feedback-container');
+        feedbackContainer.innerHTML = '';
+
+        let perfectScore = true;
+
+        for (const [trait, score] of Object.entries(scores)) {
+            if (score === 0) {
+                perfectScore = false;
+                const fb = feedbackData[trait];
+                const card = document.createElement('div');
+                card.className = 'feedback-card';
+                card.innerHTML = `
+                    <h3>💡 Level-Up Strategy: ${fb.title}</h3>
+                    <p><strong>What's Happening:</strong> ${fb.issue}</p>
+                    <p style="margin-top: 10px; color: #2980b9;"><strong>${fb.action}</strong></p>
+                `;
+                feedbackContainer.appendChild(card);
+            }
+        }
+
+        if (perfectScore) {
+            const successCard = document.createElement('div');
+            successCard.className = 'feedback-card success-card';
+            successCard.innerHTML = `
+                <h3 style="color: #27ae60;">🌟 Excellent Cognitive Habits!</h3>
+                <p>You have built some truly fantastic learning habits! You initiate tasks well, monitor your attention, and utilize tools to protect your working memory. Keep trusting these strategies as you tackle even more advanced material!</p>
+            `;
+            feedbackContainer.appendChild(successCard);
+        }
+    }
+</script>
+
+</body>
+</html>
