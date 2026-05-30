@@ -64,6 +64,7 @@
             line-height: 1.6;
             margin-bottom: 20px;
         }
+        
         /* Buttons */
         .btn {
             background: #111;
@@ -78,13 +79,33 @@
             width: 100%;
             text-align: left;
             margin-bottom: 15px;
+            outline: none;
+            -webkit-tap-highlight-color: transparent; /* Removes default mobile tap flash */
+            animation: preventInstantHover 0.25s forwards; /* Prevents "sticky hover" on next screen */
         }
-        .btn:hover {
-            background: #3498db;
-            border-color: #3498db;
-            color: #fff;
-            transform: translateX(5px);
+        
+        /* This prevents the new button from instantly turning blue if the mouse is still resting there */
+        @keyframes preventInstantHover {
+            0% { pointer-events: none; }
+            100% { pointer-events: auto; }
         }
+
+        /* Hover states only apply to devices with an actual mouse to prevent mobile stickiness */
+        @media (hover: hover) {
+            .btn:hover {
+                background: #3498db;
+                border-color: #3498db;
+                color: #fff;
+                transform: translateX(5px);
+            }
+        }
+
+        .btn:active {
+            background: #2980b9;
+            border-color: #2980b9;
+            transform: translateX(2px);
+        }
+
         .btn-start {
             background: #2ecc71;
             border-color: #2ecc71;
@@ -92,12 +113,17 @@
             width: auto;
             display: inline-block;
             box-shadow: 4px 4px 0px #111;
+            animation: none; /* No delay on the start button */
         }
-        .btn-start:hover {
-            background: #27ae60;
-            transform: translate(2px, 2px);
-            box-shadow: 2px 2px 0px #111;
+        
+        @media (hover: hover) {
+            .btn-start:hover {
+                background: #27ae60;
+                transform: translate(2px, 2px);
+                box-shadow: 2px 2px 0px #111;
+            }
         }
+
         /* Progress Bar */
         .progress-container {
             width: 100%;
@@ -114,11 +140,11 @@
             width: 0%;
             transition: width 0.3s ease;
         }
-        /* Results Styles - Updated to be positive and supportive */
+        /* Results Styles */
         .feedback-card {
             background: #fdfdfd;
             border: 3px solid #111;
-            border-left: 8px solid #3498db; /* Friendly Blue */
+            border-left: 8px solid #3498db;
             padding: 20px;
             margin-bottom: 20px;
             border-radius: 6px;
@@ -168,7 +194,7 @@
     <!-- SCREEN 3: Results & Feedback -->
     <div id="results-screen" class="screen">
         <h1>Your Level-Up Plan</h1>
-        <p>Based on your answers, here are some supportive strategies you can try out right away to make learning feel easier:</p>
+        <p>Awesome job! Based on your answers, here are some supportive strategies you can try out right away to make learning feel easier:</p>
         
         <div id="feedback-container">
             <!-- Feedback injected via JavaScript -->
@@ -224,7 +250,6 @@
         }
     ];
 
-    // Feedback logic based on EF trait - Rewritten for a positive, supportive tone
     const feedbackData = {
         "Task Initiation": {
             title: "Getting Started / Task Initiation",
@@ -234,7 +259,7 @@
         "Working Memory": {
             title: "Protecting Your Working Memory",
             issue: "Science labs have a lot of moving parts! Trying to hold all those steps in your head at once takes up way too much of your valuable mental energy.",
-            action: "Your Pro Move: Be kind to your brain and outsource the memory work! Use a checklist or a 3-column tracking sheet. Focus only on the step right in front of you, and check it off so you can confidently move to the next."
+            action: "Your Pro Move: Be kind to your brain and outsource the memory work! Use a checklist or a tracking sheet. Focus only on the step right in front of you, and check it off so you can confidently move to the next."
         },
         "Self-Monitoring": {
             title: "Attention Control",
@@ -254,10 +279,9 @@
     };
 
     let currentIndex = 0;
-    let scores = {}; // Store results mapped by trait
+    let scores = {}; 
 
     function startQuiz() {
-        // Initialize scores
         questions.forEach(q => scores[q.trait] = 0);
         document.getElementById('intro-screen').classList.remove('active');
         document.getElementById('question-screen').classList.add('active');
@@ -269,13 +293,11 @@
         document.getElementById('question-counter').innerText = `Question ${currentIndex + 1} of ${questions.length}`;
         document.getElementById('question-text').innerText = q.text;
         
-        // Update Progress Bar
         const progress = ((currentIndex) / questions.length) * 100;
         document.getElementById('progress-fill').style.width = `${progress}%`;
 
-        // Render Option Buttons
         const optionsContainer = document.getElementById('options-container');
-        optionsContainer.innerHTML = ''; // Clear previous
+        optionsContainer.innerHTML = ''; 
         
         q.options.forEach(option => {
             const btn = document.createElement('button');
