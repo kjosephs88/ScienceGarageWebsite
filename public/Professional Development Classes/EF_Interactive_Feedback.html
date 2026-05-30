@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Executive Functioning Diagnostic</title>
     <style>
         * {
@@ -10,6 +10,7 @@
             margin: 0;
             padding: 0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent; /* Removes default grey box on mobile */
         }
         body {
             background-color: #f4f6f9;
@@ -75,22 +76,22 @@
             font-weight: bold;
             cursor: pointer;
             border-radius: 6px;
-            transition: all 0.2s;
+            transition: background 0.1s, border-color 0.1s, transform 0.1s;
             width: 100%;
             text-align: left;
             margin-bottom: 15px;
             outline: none;
-            -webkit-tap-highlight-color: transparent; /* Removes default mobile tap flash */
-            animation: preventInstantHover 0.25s forwards; /* Prevents "sticky hover" on next screen */
         }
         
-        /* This prevents the new button from instantly turning blue if the mouse is still resting there */
-        @keyframes preventInstantHover {
-            0% { pointer-events: none; }
-            100% { pointer-events: auto; }
+        /* The "Flash" state for mobile/desktop feedback */
+        .btn-selected {
+            background: #3498db !important;
+            border-color: #3498db !important;
+            color: #fff !important;
+            transform: translateX(5px);
         }
 
-        /* Hover states only apply to devices with an actual mouse to prevent mobile stickiness */
+        /* Hover states only for desktop mouse users */
         @media (hover: hover) {
             .btn:hover {
                 background: #3498db;
@@ -100,12 +101,6 @@
             }
         }
 
-        .btn:active {
-            background: #2980b9;
-            border-color: #2980b9;
-            transform: translateX(2px);
-        }
-
         .btn-start {
             background: #2ecc71;
             border-color: #2ecc71;
@@ -113,7 +108,6 @@
             width: auto;
             display: inline-block;
             box-shadow: 4px 4px 0px #111;
-            animation: none; /* No delay on the start button */
         }
         
         @media (hover: hover) {
@@ -170,7 +164,6 @@
 
 <div class="app-container">
     
-    <!-- SCREEN 1: Introduction -->
     <div id="intro-screen" class="screen active">
         <h1>Cognitive Check-In</h1>
         <p>Success in the classroom isn't just about knowing the material—it's about learning how to manage your brain! This quick 5-question check-in will help you discover your personal learning style.</p>
@@ -178,7 +171,6 @@
         <button class="btn btn-start" onclick="startQuiz()">Start Diagnostic</button>
     </div>
 
-    <!-- SCREEN 2: Question Container -->
     <div id="question-screen" class="screen">
         <div class="progress-container">
             <div id="progress-fill" class="progress-bar"></div>
@@ -187,18 +179,15 @@
         <h2 id="question-text">Question text goes here?</h2>
         
         <div id="options-container">
-            <!-- Buttons injected via JavaScript -->
-        </div>
+            </div>
     </div>
 
-    <!-- SCREEN 3: Results & Feedback -->
     <div id="results-screen" class="screen">
         <h1>Your Level-Up Plan</h1>
         <p>Awesome job! Based on your answers, here are some supportive strategies you can try out right away to make learning feel easier:</p>
         
         <div id="feedback-container">
-            <!-- Feedback injected via JavaScript -->
-        </div>
+            </div>
 
         <button class="btn btn-start" style="margin-top: 20px;" onclick="location.reload()">Restart Diagnostic</button>
     </div>
@@ -206,7 +195,6 @@
 </div>
 
 <script>
-    // Define the 5 targeted questions mapping to EF skills
     const questions = [
         {
             trait: "Task Initiation",
@@ -303,20 +291,27 @@
             const btn = document.createElement('button');
             btn.className = 'btn';
             btn.innerText = option.text;
-            btn.onclick = () => handleAnswer(q.trait, option.score);
+            // Passes the button itself to the handler for visual feedback
+            btn.onclick = (e) => handleAnswer(e.target, q.trait, option.score);
             optionsContainer.appendChild(btn);
         });
     }
 
-    function handleAnswer(trait, scoreValue) {
-        scores[trait] += scoreValue;
-        currentIndex++;
+    function handleAnswer(btnElement, trait, scoreValue) {
+        // Immediate visual feedback for mobile and desktop
+        btnElement.classList.add('btn-selected');
 
-        if (currentIndex < questions.length) {
-            renderQuestion();
-        } else {
-            showResults();
-        }
+        // Short 200ms delay so the student sees the "flash" before the screen changes
+        setTimeout(() => {
+            scores[trait] += scoreValue;
+            currentIndex++;
+
+            if (currentIndex < questions.length) {
+                renderQuestion();
+            } else {
+                showResults();
+            }
+        }, 200);
     }
 
     function showResults() {
