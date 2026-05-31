@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Chicken Riggies - Step-by-Step Cooking Guide</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f6f9;
+            color: #333;
+            line-height: 1.4;
+            padding: 10px;
+            display: block;
+        }
+
+        .app-container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            min-height: 92vh;
+            position: relative;
+            display: table;
+            width: 100%;
+        }
+
+        /* Header / Progress Bar */
+        .header {
+            background-color: #2c3e50;
+            color: #ffffff;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 1.4rem;
+            margin-bottom: 5px;
+        }
+
+        .progress-container {
+            width: 100%;
+            background-color: #455a64;
+            height: 6px;
+            border-radius: 3px;
+            margin-top: 8px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: #2ecc71;
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 3px;
+        }
+
+        .step-counter {
+            font-size: 0.9rem;
+            color: #bdc3c7;
+            font-weight: bold;
+        }
+
+        /* Card System Container */
+        .card-container {
+            padding: 20px;
+            min-height: 350px;
+        }
+
+        .recipe-card {
+            display: none;
+        }
+
+        .recipe-card.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Card Content Typography */
+        .card-type {
+            display: inline-block;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            font-weight: bold;
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin-bottom: 12px;
+        }
+
+        .type-prep {
+            background-color: #ffeaa7;
+            color: #d63031;
+        }
+
+        .type-cook {
+            background-color: #dff9fb;
+            color: #0984e3;
+        }
+
+        .card-title {
+            font-size: 1.6rem;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+
+        .card-instruction {
+            font-size: 1.35rem;
+            color: #4f5d75;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        /* Detail lists inside cards */
+        .card-details {
+            list-style: none;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 5px solid #bdc3c7;
+        }
+
+        .card-details li {
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            position: relative;
+            padding-left: 20px;
+        }
+
+        .card-details li::before {
+            content: "•";
+            color: #2ecc71;
+            font-size: 1.5rem;
+            position: absolute;
+            left: 0;
+            top: -4px;
+        }
+
+        .card-details li:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Highlight Alerts */
+        .alert-text {
+            color: #d63031;
+            font-weight: bold;
+            background: #ffeaea;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+            display: inline-block;
+            font-size: 1.1rem;
+        }
+
+        /* Bottom Navigation Button Layout */
+        .nav-controls {
+            display: table-row;
+            width: 100%;
+            background: #ffffff;
+        }
+
+        .button-group {
+            display: flex;
+            padding: 15px;
+            gap: 12px;
+            border-top: 1px solid #e1e8ed;
+        }
+
+        .btn {
+            flex: 1;
+            border: none;
+            padding: 18px 10px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            border-radius: 12px;
+            cursor: pointer;
+            text-align: center;
+            transition: background 0.2s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .btn-back {
+            background-color: #eaedd0;
+            color: #7f8c8d;
+        }
+
+        .btn-back:active {
+            background-color: #bdc3c7;
+        }
+
+        .btn-next {
+            background-color: #2ecc71;
+            color: white;
+        }
+
+        .btn-next:active {
+            background-color: #27ae60;
+        }
+
+        .btn-disabled {
+            background-color: #e0e0e0 !important;
+            color: #95a5a6 !important;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        /* Utilities */
+        .shopping-list-toggle {
+            display: block;
+            width: calc(100% - 40px);
+            margin: 10px auto 20px auto;
+            text-align: center;
+            background: #34495e;
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        /* Overlay Shopping List drawer */
+        .drawer {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+
+        .drawer-content {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: white;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            padding: 25px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .drawer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        .close-drawer {
+            font-size: 2rem;
+            cursor: pointer;
+            color: #7f8c8d;
+        }
+
+        .drawer-list {
+            list-style: none;
+        }
+
+        .drawer-list li {
+            font-size: 1.2rem;
+            padding: 10px 0;
+            border-bottom: 1px solid #f1f2f6;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <div class="header">
+            <span class="step-counter" id="stepIndicator">Step 1 of 14</span>
+            <h1 id="headerTitle">Chicken Riggies Prep</h1>
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+        </div>
+
+        <a href="#" class="shopping-list-toggle" onclick="toggleDrawer(true)">📋 View Shopping List</a>
+
+        <div class="card-container" id="cardContainer">
+            
+            <div class="recipe-card active" data-step="1" data-phase="Prep Phase">
+                <span class="card-type type-prep">Mise En Place</span>
+                <div class="card-title">Gather Basic Cooking Tools</div>
+                <div class="card-instruction">Get out your primary measurement tools and base fat options:</div>
+                <ul class="card-details">
+                    <li>Get out a tablespoon measuring spoon.</li>
+                    <li>Get out standard measuring cups (1 cup, 1/2 cup).</li>
+                    <li>Get out the EVOO (Extra Virgin Olive Oil).</li>
+                    <li>Get out the butter container.</li>
+                </ul>
+            </div>
+
+            <div class="recipe-card" data-step="2" data-phase="Prep Phase">
+                <span class="card-type type-prep">Mise En Place</span>
+                <div class="card-title">Setup Rigatoni Water</div>
+                <div class="card-instruction">Get out the rigatoni box and a large pot.</div>
+                <ul class="card-details">
+                    <li>Fill the pot with water.</li>
+                    <li>Place it on the stove.</li>
+                    <li>Turn on the high heat to <strong>start boiling the water</strong> for it. We will drop the pasta in later in the sequence.</li>
+                </ul>
+            </div>
+
+            <div class="recipe-card" data-step="3" data-phase="Prep Phase">
+                <span class="card-type type-prep">Mise En Place</span>
+                <div class="card-title">Chop Aromatics & Sweet Peppers</div>
+                <div class="card-instruction">Get your cutting board and chef's knife ready. Chop the following before continuing:</div>
+                <ul class="card-details">
+                    <li>Get 1 onion and <strong>chop it up</strong> completely (diced).</li>
+                    <li>Get 2 cubanelle peppers, seed them, and <strong>thinly slice</strong> them.</li>
+                </ul>
+            </div>
+
+            <div class="recipe-card" data-step="4" data-phase="Prep Phase">
+                <span class="card-type type-prep">Mise En Place</span>
+                <div class="card-title">Chop Spicy Peppers & Mushrooms</div>
+                <div class="card-instruction">Finish your vegetable chopping cycle so you don't feel rushed later:</div>
+                <ul class="card-details">
+                    <li>Get 8 oz of mushrooms and <strong>slice them up</strong>.</li>
+                    <li>Get 3 Sorrento peppers, seed them, and <strong>dice them</strong>.</li>
+                </ul>
+                <div class="alert-text">⚠️ WEAR GLOVES while cutting the Sorrento peppers!</div>
+            </div>
+
+            <div class="recipe-card" data-step="5" data-phase="Prep Phase">
+                <span class="card-type type-prep">Mise En Place</span>
+                <div class="card-title">Prep & Cut the Chicken</div>
+                <div class="card-instruction">Now handle the protein raw prep safely:</div>
+                <ul class="card-details">
+                    <li>Get out 24 oz of chicken breast.</li>
+                    <li><strong>Cut it up into bite-sized pieces</strong>.</li>
+                    <li>Place pieces into a clean prep bowl and set aside. Wash hands thoroughly.</li>
+                </ul>
+            </div>
+
+            <div class="recipe-card" data-step="6" data-phase="Prep Phase">
+                <span class="card-type type-prep">Mise En Place</span>
+                <div class="card-title">Final Measured Alignment</div>
+                <div class="card-instruction">Measure out remaining assets so cooking is smooth:</div>
+                <ul class="card-details">
+                    <li>Have the 28 oz can of crushed tomatoes opened and completely ready.</li>
+                    <li><strong>Measure out 1 cup of heavy cream</strong>.</li>
+                    <li>Measure out 1/2 cup of parmesan cheese.</li>
+                    <li>Measure out 1 tablespoon of minced garlic in EVOO.</li>
+                    <li>Have 1 tablespoon of Italian seasoning ready.</li>
+                </ul>
+            </div>
+
+            <div class="recipe-card" data-step="7" data-phase="Cooking Phase">
+                <span class="card-type type-cook">Cooking</span>
+                <div class="card-title">Heat Cast Iron Skillet</div>
+                <div class="card-instruction">Get ready to brown the chicken. Everything is now fully prepped.</div>
+                <ul class="card-details">
+                    <li>Get out your 12-inch cast iron skillet and place on medium-high heat.</li>
+                    <li>Add <strong>3 tablespoons of EVOO</strong> to the pan and let it get hot.</li>
+                </ul>
+            </div>
+
+            <div class="recipe-card" data-step="8" data-phase="Cooking Phase">
+                <span class="card-type type-cook">Cooking</span>
+                <div class="card-title">Brown the Chicken Pieces</div>
+                <div class="card-instruction">Carefully cook your prepped meat block:</div>
+                <ul class="card-details">
+                    <li>Add the bite-sized chicken pieces into the hot oil.</li>
+                    <li>Cook until all sides are lightly browned and no longer pink in the center.</li>
+                    <li>Season generously with <strong>Salt and Pepper to taste</strong> while searing.</li>
+                </ul>
+            </div>
+
+            <div class="recipe-card" data-step="9" data-phase="Cooking Phase">
+                <span class="card-type type-cook">Cooking / Timing Focus</span>
+                <div class="card-title">Transfer Chicken & Drop Pasta</div>
+                <div class="card-instruction">Perfect workflow timing sequence checkpoint:</div>
+                <ul class="card-details">
+                    <li><strong>Remove chicken</strong> from the cast iron skillet and place into a bowl to keep warm.</li>
+                    <li>Check your pasta pot on the other burner. It should be boiling intensely.</li>
+                    <li><strong>Drop the 1 lb package of rigatoni pasta</strong> into the boiling water now. Set a timer based on package instructions (usually 10-12 mins) to sync perfectly with the sauce completion!</li>
+                </ul>
+            </div>
+
+            <div class="recipe-card" data-step="10" data-phase="Cooking Phase">
+                <span class="card-type type-cook">Cooking</span>
+                <div class="card-title">Sauté Onions & Cubanelles</div>
+                <div class="card-instruction">Build deep flavor profiles inside the remaining skillet juices:</div>
+                <ul class="card-details">
+                    <li>Add your prepped diced onions and sliced cubanelle peppers into the skillet.</li>
+                    <li>Cook for approximately <strong>5 minutes</strong>.</li>
+                    <li>They should become soft but still hold a minor structural "slight bite".</li>
+                </ul>
+            </div>
+
+            <div class="recipe-card" data-step="11" data-phase="Cooking Phase">
+                <span class="card-type type-cook">Cooking</span>
+                <div class="card-title">Sauté Mushrooms & Sorrentos</div>
+                <div class="card-instruction">Incorporate remaining dynamic visual components:</div>
+                <ul class="card-details">
+                    <li>Add the sliced mushrooms and diced Sorrento peppers to the skillet.</li>
+                    <li>Add a generous pat of <strong>butter</strong> to enrich the pan.</li>
+                    <li>Cook until elements are somewhat softer but remain structurally intact (not mushy).</li>
+                </ul>
+            </div>
+
+            <div class="recipe-card" data-step="12" data-phase="Cooking Phase">
+                <span class="card-type type-cook">Cooking</span>
+                <div class="card-title">Aromatic Core Addition</div>
+                <div class="card-instruction">Do not burn the garlic; manage space:</div>
+                <ul class="card-details">
+                    <li>Clear a distinct empty circular space directly in the center of your pan.</li>
+                    <li>Add your 1 tablespoon of minced garlic in EVOO into that center circle.</li>
+                    <li>Cook for approximately <strong>one minute</strong> until deeply fragrant, then stir everything together.</li>
+                </ul>
+            </div>
+
+            <div class="recipe-card" data-step="13" data-phase="Cooking Phase">
+                <span class="card-type type-cook">Cooking</span>
+                <div class="card-title">Combine Sauce Elements</div>
+                <div class="card-instruction">Bring the structural sauce core to life:</div>
+                <ul class="card-details">
+                    <li>Stir in the 28 oz can of crushed tomatoes.</li>
+                    <li>Return the cooked chicken pieces (and any collected juices) back to the skillet.</li>
+                    <li>Pour in the 1 cup of pre-measured heavy cream.</li>
+                    <li>Add 1 tablespoon of Italian seasoning.</li>
+                    <li>Taste the matrix and add more Italian seasoning if your palate desires.</li>
+                    <li><strong>Simmer gently for 2 to 3 minutes</strong>.</li>
+                </ul>
+            </div>
+
+            <div class="recipe-card" data-step="14" data-phase="Cooking Phase">
+                <span class="card-type type-cook">Ready to Eat</span>
+                <div class="card-title">Final Integration</div>
+                <div class="card-instruction">Unite the components for serving:</div>
+                <ul class="card-details">
+                    <li>Drain your cooked rigatoni pasta.</li>
+                    <li>Stir the rich hot sauce evenly into the rigatoni pasta.</li>
+                    <li>Add the 1/2 cup of parmesan cheese and fold thoroughly. Serve hot!</li>
+                </ul>
+            </div>
+
+        </div>
+
+        <div class="nav-controls">
+            <div class="button-group">
+                <button class="btn btn-back btn-disabled" id="backBtn" onclick="navigateStep(-1)" disabled>◀ BACK</button>
+                <button class="btn btn-next" id="nextBtn" onclick="navigateStep(1)">NEXT ▶</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="shoppingDrawer" class="drawer" onclick="toggleDrawer(false)">
+        <div class="drawer-content" onclick="event.stopPropagation()">
+            <div class="drawer-header">
+                <h2>Shopping Checklist</h2>
+                <span class="close-drawer" onclick="toggleDrawer(false)">&times;</span>
+            </div>
+            <p style="margin-bottom: 15px; color:#7f8c8d; font-size:1rem;">Manual check-off list before grocery acquisition:</p>
+            <ul class="drawer-list">
+                <li><input type="checkbox"> 1 lb package of Rigatoni pasta</li>
+                <li><input type="checkbox"> Extra Virgin Olive Oil (EVOO)</li>
+                <li><input type="checkbox"> 24 oz Chicken Breast</li>
+                <li><input type="checkbox"> Salt & Black Pepper</li>
+                <li><input type="checkbox"> 1 Onion</li>
+                <li><input type="checkbox"> 2 Cubanelle peppers</li>
+                <li><input type="checkbox"> Minced garlic in EVOO</li>
+                <li><input type="checkbox"> 8 oz Fresh Mushrooms</li>
+                <li><input type="checkbox"> Italian Seasoning</li>
+                <li><input type="checkbox"> 28 oz Can Crushed Tomatoes</li>
+                <li><input type="checkbox"> 3 Sorrento peppers</li>
+                <li><input type="checkbox"> 1 cup Heavy Cream</li>
+                <li><input type="checkbox"> 1/2 cup Parmesan Cheese</li>
+                <li><input type="checkbox"> Butter</li>
+                <li><input type="checkbox"> Prep gloves (for cutting hot peppers!)</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        const totalSteps = document.querySelectorAll('.recipe-card').length;
+
+        function updateUI() {
+            // Manage Active Card Visibility Toggle
+            document.querySelectorAll('.recipe-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            
+            const activeCard = document.querySelector(`.recipe-card[data-step="${currentStep}"]`);
+            activeCard.classList.add('active');
+
+            // Manage Meta text headers
+            const stepInd = document.getElementById('stepIndicator');
+            const headTitle = document.getElementById('headerTitle');
+            stepInd.innerText = `Step ${currentStep} of ${totalSteps}`;
+            headTitle.innerText = activeCard.getAttribute('data-phase');
+
+            // Manage Progress Bar Metrics
+            const percentage = ((currentStep - 1) / (totalSteps - 1)) * 100;
+            document.getElementById('progressBar').style.width = `${percentage}%`;
+
+            // Manage Active Button States & Visual Affordances
+            const backBtn = document.getElementById('backBtn');
+            const nextBtn = document.getElementById('nextBtn');
+
+            if (currentStep === 1) {
+                backBtn.classList.add('btn-disabled');
+                backBtn.disabled = true;
+            } else {
+                backBtn.classList.remove('btn-disabled');
+                backBtn.disabled = false;
+            }
+
+            if (currentStep === totalSteps) {
+                nextBtn.innerText = "FINISH 🎉";
+                nextBtn.style.backgroundColor = "#9b59b6";
+            } else {
+                nextBtn.innerText = "NEXT ▶";
+                nextBtn.style.backgroundColor = "#2ecc71";
+            }
+        }
+
+        function navigateStep(direction) {
+            if (direction === 1 && currentStep < totalSteps) {
+                currentStep++;
+                updateUI();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else if (direction === -1 && currentStep > 1) {
+                currentStep--;
+                updateUI();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else if (direction === 1 && currentStep === totalSteps) {
+                alert("Enjoy your delicious homemade Chicken Riggies!");
+            }
+        }
+
+        function toggleDrawer(open) {
+            const drawer = document.getElementById('shoppingDrawer');
+            drawer.style.display = open ? 'block' : 'none';
+        }
+
+        // Run instantiation configuration on initial render
+        updateUI();
+    </script>
+</body>
+</html>
