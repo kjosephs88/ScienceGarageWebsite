@@ -95,6 +95,15 @@ exports.mirrorGradebookToSession = onValueUpdated({
     return null;
 });
 
+
+
+
+
+
+
+
+
+
 exports.cleanupSessions = onSchedule("every 1 hours", async (event) => {
     const now = Date.now();
     const snapshot = await admin.database().ref("ActiveSessions").orderByChild("expires").endAt(now).get();
@@ -107,6 +116,16 @@ exports.cleanupSessions = onSchedule("every 1 hours", async (event) => {
     });
     return admin.database().ref().update(updates);
 });
+
+
+
+
+
+
+
+
+
+
 
 /**
  * THE SCIENCE GARAGE: SECURE PROXY (v1.0)
@@ -134,9 +153,56 @@ exports.secureProxy = onRequest({ cors: true, maxInstances: 10 }, async (req, re
             return res.status(403).send("Session Expired");
         }
 
+      // =====================================================================
+        // FLASHCARD ACTIONS (NO APPS SCRIPT BANDWIDTH)
+        // =====================================================================
+        if (action === "initFlashcards") {
+            // Fetch the massive master question bank via admin privileges
+            const bankSnap = await admin.database().ref("mcQuestionBank").get();
+            const bankData = bankSnap.exists() ? Object.values(bankSnap.val()) : [];
+
+            // Securely fetch the student's private history node using the mapped realHash
+            const historySnap = await admin.database().ref(`chemReview2026/${realHash}`).get();
+            const historyData = historySnap.exists() ? historySnap.val() : {};
+
+            // Stream the unified payload directly back to the client viewport
+            return res.status(200).json({
+                bank: bankData,
+                history: historyData
+            });
+
+        } else if (action === "saveFlashcardProgress") {
+            const { deckId, unseenIds, masteredIds, learningIds, deckMetadata, isFinished } = req.body;
+            
+            // Build the update payload targeting the chemReview2026 node directly
+            const basePath = `chemReview2026/${realHash}/${deckId}`;
+            const updates = {
+                [`${basePath}/state`]: { 
+                    unseen: unseenIds || [], 
+                    mastered: masteredIds || [], 
+                    learning: learningIds || [] 
+                },
+                [`${basePath}/score`]: (masteredIds || []).length,
+                [`${basePath}/lastUpdated`]: Date.now()
+            };
+            
+            if (deckMetadata) updates[`${basePath}/metadata`] = deckMetadata;
+            if (isFinished) updates[`${basePath}/completed`] = true;
+            
+            await admin.database().ref().update(updates);
+            return res.status(200).send("Progress Saved");
+
+        } else if (action === "deleteFlashcardDeck") {
+            const { deckId } = req.body;
+            // Instantly wipe the deck from the database
+            await admin.database().ref(`chemReview2026/${realHash}/${deckId}`).remove();
+            return res.status(200).send("Deck Deleted");
+        }
+
+        // Permanent reference path for Graded Assignments
         const studentRef = admin.database().ref(`teacherGradebook/${periodFolder}/${assignmentFolder}/${realHash}`);
 
-        // 3. Handle Actions
+        // 3. Handle Graded Assignment Actions
         if (action === "saveAnswer") {
             const updateData = {
                 needsGrading: true,
@@ -162,7 +228,6 @@ exports.secureProxy = onRequest({ cors: true, maxInstances: 10 }, async (req, re
             }
         }
 
-
         return res.status(200).send("Success");
 
     } catch (error) {
@@ -170,6 +235,25 @@ exports.secureProxy = onRequest({ cors: true, maxInstances: 10 }, async (req, re
         return res.status(500).send("Server Error");
     }
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /**
  * THE SCIENCE GARAGE: STUDENT ACTIVITY TRIGGER (v3.1)
