@@ -192,7 +192,7 @@ module.exports = {
     10: 2 // Constant (unchanging) macroscopic concentrations indicate equilibrium. 
   },
 
-"CH_U09_A15_G": {
+"CH_U09_A10_G": {
     1: 2, // difference between PE of products and reactants
     2: 3, // potential energy diagram
     3: { type: "frq" }, // striking together / friction / mechanical energy
