@@ -1,13 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Interactive Lecture Player</title>
+    <title>Interactive Lesson Player</title>
     <style>
         .video-box { position: relative; width: 640px; margin: auto; }
         .overlay { 
             position: absolute; top: 25%; left: 10%; right: 10%; 
             background: rgba(0,0,0,0.9); color: white; padding: 20px; 
             display: none; text-align: center; font-family: Arial, sans-serif;
+            z-index: 10;
         }
     </style>
 </head>
@@ -24,50 +25,69 @@
 </div>
 
 <script>
-// 1. Load the YouTube IFrame Player API code asynchronously
 var tag = document.createElement('script');
 tag.src = "https://www.youtube.com/iframe_api";
 var firstScriptTag = document.getElementsByTagName('script')[0];
 firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
 var player;
-const stopPoints = [45, 120, 300]; // Target stop times in seconds
+const stopPoints = [10, 120, 300]; 
 let lastStopTriggered = -1;
 let checkInterval;
 
-// 2. This function automatically runs once the API is ready
+// Variable to monitor the furthest point the student has reached
+let maxTimeWatched = 0; 
+
 function onYouTubeIframeAPIReady() {
     player = new YT.Player('yt-player', {
         height: '390',
         width: '640',
-        videoId: 'qp8niUZQ5Ik', // Swap with your actual video ID
+        videoId: 'zdSs2BQr3_a92DvY', 
+        playerVars: {
+            'rel': 0,             // Restrict post-video suggestions to your channel
+            'iv_load_policy': 3   // Turn off video annotations
+        },
         events: {
             'onStateChange': onPlayerStateChange
         }
     });
 }
 
-// 3. Monitor the player state (Playing, Paused, etc.)
 function onPlayerStateChange(event) {
     if (event.data == YT.PlayerState.PLAYING) {
-        // Start checking the time every half-second while playing
+        // Scan playback every 500 milliseconds
         checkInterval = setInterval(() => {
-            let currentTime = Math.floor(player.getCurrentTime());
-            let matchIndex = stopPoints.indexOf(currentTime);
+            let currentTime = player.getCurrentTime();
+            
+            // --- 1. ANTI-SKIP GUARD SYSTEM ---
+            // If the student jumps more than 2 seconds ahead of their max watched point:
+            if (currentTime > maxTimeWatched + 2) {
+                player.seekTo(maxTimeWatched, true); // Snap them back instantly
+                return; 
+            } else {
+                // If they are watching normally, advance the checkpoint milestone.
+                // If they rewound, currentTime is smaller than maxTimeWatched, so max progress stands still.
+                if (currentTime > maxTimeWatched) {
+                    maxTimeWatched = currentTime;
+                }
+            }
+
+            // --- 2. LESSON CHECKPOINTS ---
+            let currentSecond = Math.floor(currentTime);
+            let matchIndex = stopPoints.indexOf(currentSecond);
             
             if (matchIndex !== -1 && matchIndex !== lastStopTriggered) {
                 player.pauseVideo();
                 lastStopTriggered = matchIndex;
                 clearInterval(checkInterval);
                 
-                // Tailor the message
                 document.getElementById('overlay-text').textContent = 
                     `Please pause and answer questions for section ${matchIndex + 1}.`;
                 document.getElementById('stop-overlay').style.display = 'block';
             }
         }, 500);
     } else {
-        // Clear interval if user pauses or video ends to save browser performance
+        // Clear background intervals when paused or stopped
         clearInterval(checkInterval);
     }
 }
