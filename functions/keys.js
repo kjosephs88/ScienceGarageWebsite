@@ -218,6 +218,21 @@ module.exports = {
     23: 1, // The products have higher potential energy than the reactants, and the delta H is positive.
     24: 3, // 4
     25: 0  // HI(g)
+}, 
+
+"CH_U09_A12_G": {
+    1: 2, // increase the rate of the forward and reverse reactions equally
+    2: 3, // heat of reaction
+    3: 2, // increasing the concentration of Y
+    4: 0, // increasing the temperature
+    5: 2, // The amount of CaSO4 will increase, and the concentration of Ca^2+(aq) will decrease.
+    6: 0, // decreases
+    7: 0, // changing the pressure
+    8: 2, // remains the same
+    9: 3, // increasing the concentration of HCl
+    10: 0, // decrease
+    11: 2, // increasing the concentration of O2
+    12: 2  // both the forward and the reverse reaction
 }
 
 };

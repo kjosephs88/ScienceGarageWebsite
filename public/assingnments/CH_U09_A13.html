@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Interactive Lecture Player</title>
+    <style>
+        .video-box { position: relative; width: 640px; margin: auto; }
+        .overlay { 
+            position: absolute; top: 25%; left: 10%; right: 10%; 
+            background: rgba(0,0,0,0.9); color: white; padding: 20px; 
+            display: none; text-align: center; font-family: Arial, sans-serif;
+        }
+    </style>
+</head>
+<body>
+
+<div class="video-box">
+    <div id="yt-player"></div>
+
+    <div id="stop-overlay" class="overlay">
+        <h3>Checkpoint Reached</h3>
+        <p id="overlay-text">Please answer questions #7 through #10.</p>
+        <button onclick="resumeVideo()">I'm Ready to Continue</button>
+    </div>
+</div>
+
+<script>
+// 1. Load the YouTube IFrame Player API code asynchronously
+var tag = document.createElement('script');
+tag.src = "https://www.youtube.com/iframe_api";
+var firstScriptTag = document.getElementsByTagName('script')[0];
+firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+var player;
+const stopPoints = [45, 120, 300]; // Target stop times in seconds
+let lastStopTriggered = -1;
+let checkInterval;
+
+// 2. This function automatically runs once the API is ready
+function onYouTubeIframeAPIReady() {
+    player = new YT.Player('yt-player', {
+        height: '390',
+        width: '640',
+        videoId: 'qp8niUZQ5Ik', // Swap with your actual video ID
+        events: {
+            'onStateChange': onPlayerStateChange
+        }
+    });
+}
+
+// 3. Monitor the player state (Playing, Paused, etc.)
+function onPlayerStateChange(event) {
+    if (event.data == YT.PlayerState.PLAYING) {
+        // Start checking the time every half-second while playing
+        checkInterval = setInterval(() => {
+            let currentTime = Math.floor(player.getCurrentTime());
+            let matchIndex = stopPoints.indexOf(currentTime);
+            
+            if (matchIndex !== -1 && matchIndex !== lastStopTriggered) {
+                player.pauseVideo();
+                lastStopTriggered = matchIndex;
+                clearInterval(checkInterval);
+                
+                // Tailor the message
+                document.getElementById('overlay-text').textContent = 
+                    `Please pause and answer questions for section ${matchIndex + 1}.`;
+                document.getElementById('stop-overlay').style.display = 'block';
+            }
+        }, 500);
+    } else {
+        // Clear interval if user pauses or video ends to save browser performance
+        clearInterval(checkInterval);
+    }
+}
+
+function resumeVideo() {
+    document.getElementById('stop-overlay').style.display = 'none';
+    player.playVideo();
+}
+</script>
+
+</body>
+</html>
