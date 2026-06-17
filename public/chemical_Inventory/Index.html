@@ -20,10 +20,26 @@
       overflow: hidden;
       box-shadow: 0 4px 6px rgba(0,0,0,0.1);
       background: white;
+      /* FIX 1: Prevent iOS from collapsing the box to 0px before the camera loads */
+      min-height: 300px; 
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    /* FIX 2: Force the library's internal permission buttons to be large and visible on mobile */
+    #reader button {
+      padding: 12px 24px !important;
+      font-size: 1.1em !important;
+      background-color: #0056b3 !important;
+      color: white !important;
+      border: none !important;
+      border-radius: 8px !important;
+      cursor: pointer !important;
+      margin: 10px auto !important;
     }
     /* The Confirmation Overlay */
     #confirm-modal {
-      display: none; /* Hidden by default */
+      display: none; 
       position: fixed;
       top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(0,0,0,0.8);
@@ -52,6 +68,7 @@
     .btn-confirm { background-color: #28a745; color: white; }
     .btn-cancel { background-color: #dc3545; color: white; }
     #status-msg { margin-top: 15px; font-weight: bold; }
+    .error-text { color: #dc3545; }
   </style>
 </head>
 <body>
@@ -71,28 +88,25 @@
   </div>
 
   <script>
-    // --- INSERT YOUR APPS SCRIPT URL HERE ---
     const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwdMydJuQh4-8G7CCuqZ_8U2mfa3vyELK0opPpS6Wctlk7p1HFjxYFXRxOXz3IbFIzw/exec"; 
     
     let scanner;
     let currentScannedId = "";
 
     function onScanSuccess(decodedText, decodedResult) {
-      // 1. Pause the scanner so it doesn't keep reading
       scanner.pause();
       
-      // 2. Save the ID and show the confirmation modal
       currentScannedId = decodedText;
       document.getElementById('scanned-id-display').innerText = currentScannedId;
       document.getElementById('confirm-modal').style.display = "flex";
     }
 
     function resumeScanner() {
-      // Hide modal and unpause camera
       document.getElementById('confirm-modal').style.display = "none";
       currentScannedId = "";
       scanner.resume();
       document.getElementById('status-msg').innerText = "Camera active. Ready to scan.";
+      document.getElementById('status-msg').className = "";
     }
 
     function sendToGoogleSheets() {
@@ -100,14 +114,12 @@
       btn.innerText = "Sending...";
       btn.disabled = true;
 
-      // Send the data packet to Apps Script
       fetch(APPS_SCRIPT_URL, {
         method: 'POST',
         body: JSON.stringify({ id: currentScannedId })
       })
       .then(response => response.json())
       .then(data => {
-        // Success! Reset UI and resume scanning
         btn.innerText = "Confirm & Log";
         btn.disabled = false;
         document.getElementById('status-msg').innerText = "Successfully logged: " + currentScannedId;
@@ -120,14 +132,26 @@
       });
     }
 
-    // Initialize the live camera feed
     window.onload = function() {
       scanner = new Html5QrcodeScanner(
         "reader",
-        { fps: 10, qrbox: {width: 250, height: 250} },
+        { 
+          fps: 10, 
+          qrbox: {width: 250, height: 250},
+          // FIX 3: Tells the UI to prioritize rendering the camera button
+          supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
+        },
         false
       );
-      scanner.render(onScanSuccess);
+      
+      // FIX 4: Adding the error callback. If iOS blocks the camera, it will now print why.
+      scanner.render(onScanSuccess, function(errorMessage) {
+        // Only log hard permission errors, ignore the constant "no qr code found" frame errors
+        if (errorMessage.includes("NotAllowedError") || errorMessage.includes("Permission")) {
+          document.getElementById('status-msg').innerText = "Camera blocked. Please tap 'Allow' or check Safari settings.";
+          document.getElementById('status-msg').className = "error-text";
+        }
+      });
     };
   </script>
 
