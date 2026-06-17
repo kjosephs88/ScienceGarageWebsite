@@ -8,65 +8,23 @@
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   
   <style>
-    body {
-      font-family: -apple-system, sans-serif;
-      text-align: center;
-      background-color: #f4f4f9;
-      margin: 0;
-      padding: 15px;
-    }
+    body { font-family: -apple-system, sans-serif; text-align: center; background-color: #f4f4f9; margin: 0; padding: 15px; }
     
     #scanner-container { max-width: 500px; margin: 0 auto; }
     #reader { width: 100%; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); background: white; display: none; }
     #ios-video { width: 100%; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); background: #000; display: none; }
     #ios-start-btn { display: none; padding: 15px 30px; font-size: 1.2em; background-color: #007aff; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.2); margin: 40px auto; }
     
-    #inventory-form {
-      display: none; 
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-      max-width: 600px;
-      margin: 0 auto;
-      text-align: left;
-    }
+    #inventory-form { display: none; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 600px; margin: 0 auto; text-align: left; }
     .form-group { margin-bottom: 15px; position: relative; } 
     .form-group label { display: block; font-weight: bold; margin-bottom: 5px; color: #333; font-size: 0.9em; }
-    .form-group input, .form-group select, .form-group textarea {
-      width: 100%;
-      padding: 10px;
-      font-size: 1em;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      box-sizing: border-box;
-      background-color: #fff;
-      transition: background-color 0.3s ease;
-    }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; font-size: 1em; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; background-color: #fff; transition: background-color 0.3s ease; }
     .form-group input[readonly] { background-color: #e9ecef; color: #495057; font-weight: bold; }
     .grid-2-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     
     /* Smart Autocomplete Dropdown */
-    .autocomplete-items {
-      position: absolute;
-      border: 1px solid #ccc;
-      border-top: none;
-      z-index: 99;
-      top: 100%;
-      left: 0;
-      right: 0;
-      background-color: white;
-      max-height: 200px;
-      overflow-y: auto;
-      border-radius: 0 0 8px 8px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.15);
-    }
-    .autocomplete-items div {
-      padding: 12px;
-      cursor: pointer;
-      border-bottom: 1px solid #eee;
-      font-size: 0.95em;
-    }
+    .autocomplete-items { position: absolute; border: 1px solid #ccc; border-top: none; z-index: 99; top: 100%; left: 0; right: 0; background-color: white; max-height: 200px; overflow-y: auto; border-radius: 0 0 8px 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.15); }
+    .autocomplete-items div { padding: 12px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 0.95em; }
     .autocomplete-items div:hover { background-color: #e9ecef; }
     .autocomplete-active { background-color: #007aff !important; color: white; }
     .autocomplete-active span { color: #e0e0e0 !important; }
@@ -76,9 +34,12 @@
     .btn-submit { background-color: #28a745; color: white; }
     .btn-cancel { background-color: #dc3545; color: white; }
     
-    #status-msg { margin-top: 15px; font-weight: bold; }
+    #status-msg { margin-top: 15px; font-weight: bold; font-size: 1.1em;}
     #error-log { margin-top: 10px; color: #dc3545; font-size: 0.9em; font-family: monospace; }
     .autofill-flash { background-color: #d4edda !important; }
+    
+    /* Warning banner for editing existing records */
+    #edit-warning { display: none; background-color: #fff3cd; color: #856404; padding: 10px; border-radius: 6px; margin-bottom: 15px; font-weight: bold; text-align: center; border: 1px solid #ffeeba; }
   </style>
 </head>
 <body>
@@ -96,10 +57,12 @@
   <div id="error-log"></div>
 
   <div id="inventory-form">
-    <h3 style="margin-top:0; border-bottom: 2px solid #eee; padding-bottom: 10px;">Log New Item</h3>
+    <h3 style="margin-top:0; border-bottom: 2px solid #eee; padding-bottom: 10px;">Item Record</h3>
+    
+    <div id="edit-warning">⚠️ This ID exists. Submitting will update the record.</div>
     
     <div class="form-group">
-      <label>Inventory Number (Auto-Scanned)</label>
+      <label>OHS Inventory No.</label>
       <input type="text" id="f-invNum" readonly>
     </div>
 
@@ -145,13 +108,13 @@
         <label>Form</label>
         <input type="text" id="f-form" list="form-options" placeholder="Select or type custom...">
         <datalist id="form-options">
-          <option value="Powder">
-          <option value="Solid">
-          <option value="Liquid">
-          <option value="Granular">
-          <option value="Shot">
-          <option value="Strips">
-          <option value="Solution">
+          <option value="powder">
+          <option value="solid">
+          <option value="liquid">
+          <option value="granular">
+          <option value="shot">
+          <option value="strips">
+          <option value="solution">
         </datalist>
       </div>
     </div>
@@ -201,7 +164,7 @@
 
     <div class="btn-group">
       <button class="btn btn-cancel" onclick="resetScanner()">Cancel</button>
-      <button class="btn btn-submit" id="submit-btn" onclick="submitToGoogleSheets()">Submit to Inventory</button>
+      <button class="btn btn-submit" id="submit-btn" onclick="submitToGoogleSheets()">Save Item</button>
     </div>
   </div>
 
@@ -213,7 +176,7 @@
     let isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     let isPaused = false;
     let catalogData = {}; 
-    let currentFocus = -1; // Tracks keyboard selection
+    let currentFocus = -1; 
 
     const video = document.getElementById("ios-video");
     const canvasElement = document.getElementById("ios-canvas");
@@ -226,7 +189,7 @@
         .catch(error => console.error("Error loading chemical database:", error));
     }
 
-    // --- SMART AUTOCOMPLETE LOGIC WITH KEYBOARD NAVIGATION ---
+    // --- SMART AUTOCOMPLETE LOGIC ---
     const nameInput = document.getElementById('f-chemName');
     const autoList = document.getElementById('autocomplete-list');
 
@@ -239,7 +202,6 @@
       let count = 0;
       for (const [key, chem] of Object.entries(catalogData)) {
         if (chem.name.toLowerCase().includes(val.toLowerCase()) || (chem.cas && chem.cas.includes(val))) {
-          
           let item = document.createElement("div");
           item.innerHTML = `<strong>${chem.name}</strong> <span style="color:#666; font-size:0.85em;">(${chem.cas || 'No CAS'})</span>`;
           
@@ -248,7 +210,6 @@
             document.getElementById('f-casNo').value = chem.cas || "";
             document.getElementById('f-flinn').value = chem.flinn_family || "";
             document.getElementById('f-ghs').value = (chem.hazards && chem.hazards.length > 0) ? chem.hazards.join(", ") : "";
-            
             autoList.innerHTML = ''; 
             
             ['f-chemName', 'f-casNo', 'f-flinn', 'f-ghs'].forEach(id => {
@@ -265,21 +226,11 @@
       }
     });
 
-    // Keyboard Arrow Tracking
     nameInput.addEventListener("keydown", function(e) {
       let items = autoList.getElementsByTagName("div");
-      if (e.keyCode === 40) { // DOWN ARROW
-        currentFocus++;
-        addActive(items);
-      } else if (e.keyCode === 38) { // UP ARROW
-        currentFocus--;
-        addActive(items);
-      } else if (e.keyCode === 13) { // ENTER
-        e.preventDefault();
-        if (currentFocus > -1) {
-          if (items) items[currentFocus].click();
-        }
-      }
+      if (e.keyCode === 40) { currentFocus++; addActive(items); } 
+      else if (e.keyCode === 38) { currentFocus--; addActive(items); } 
+      else if (e.keyCode === 13) { e.preventDefault(); if (currentFocus > -1) { if (items) items[currentFocus].click(); } }
     });
 
     function addActive(x) {
@@ -288,42 +239,91 @@
       if (currentFocus >= x.length) currentFocus = 0;
       if (currentFocus < 0) currentFocus = (x.length - 1);
       x[currentFocus].classList.add("autocomplete-active");
-      
-      // Keep the highlighted item visible in the scroll box
       x[currentFocus].scrollIntoView({ block: "nearest" });
     }
 
-    function removeActive(x) {
-      for (let i = 0; i < x.length; i++) {
-        x[i].classList.remove("autocomplete-active");
-      }
+    function removeActive(x) { for (let i = 0; i < x.length; i++) x[i].classList.remove("autocomplete-active"); }
+    document.addEventListener("click", function (e) { if (e.target !== nameInput) autoList.innerHTML = ''; });
+
+    // --- LOOKUP & SCANNER LOGIC ---
+    function checkGoogleSheets(scannedId) {
+      // Show loading state while querying Google Sheets
+      document.getElementById('status-msg').style.color = "#007aff";
+      document.getElementById('status-msg').innerText = "Searching Google Sheets database...";
+      
+      const paddedId = String(scannedId).padStart(5, '0');
+      document.getElementById('f-invNum').value = paddedId;
+      
+      // Perform a GET request to lookup the ID
+      fetch(APPS_SCRIPT_URL + "?id=" + paddedId)
+        .then(response => response.json())
+        .then(data => {
+          document.getElementById('scanner-container').style.display = "none";
+          document.getElementById('status-msg').style.display = "none";
+          document.getElementById('inventory-form').style.display = "block";
+          
+          if (data.exists) {
+            // Existing record found! Populate the form with Google Sheets data
+            document.getElementById('edit-warning').style.display = "block";
+            
+            document.getElementById('f-chemName').value = data.chemName;
+            document.getElementById('f-casNo').value = data.casNo;
+            document.getElementById('f-mfg').value = data.manufacturer;
+            document.getElementById('f-receipt').value = data.receiptDate;
+            document.getElementById('f-exp').value = data.expDate;
+            document.getElementById('f-container').value = data.containerType.toLowerCase();
+            document.getElementById('f-form').value = data.form;
+            document.getElementById('f-amount').value = data.amount;
+            document.getElementById('f-mass').value = data.mass;
+            document.getElementById('f-size').value = data.containerSize;
+            document.getElementById('f-shelf').value = data.shelf;
+            document.getElementById('f-flinn').value = data.flinnCat;
+            document.getElementById('f-ghs').value = data.ghs;
+            document.getElementById('f-notes').value = data.notes;
+            
+            // Highlight the form to show data was pulled from the cloud
+            document.querySelectorAll('#inventory-form input, #inventory-form select').forEach(el => {
+              if (el.value !== "") {
+                el.classList.add('autofill-flash');
+                setTimeout(() => el.classList.remove('autofill-flash'), 800);
+              }
+            });
+            
+          } else {
+            // Brand new record
+            document.getElementById('edit-warning').style.display = "none";
+            document.getElementById('f-chemName').focus();
+          }
+        })
+        .catch(error => {
+          // If the lookup fails (e.g. bad connection), still open the form but empty
+          document.getElementById('scanner-container').style.display = "none";
+          document.getElementById('status-msg').style.display = "none";
+          document.getElementById('inventory-form').style.display = "block";
+          document.getElementById('edit-warning').style.display = "none";
+          document.getElementById('error-log').innerText = "Warning: Could not check for duplicates (Network issue).";
+          document.getElementById('f-chemName').focus();
+        });
     }
 
-    document.addEventListener("click", function (e) {
-      if (e.target !== nameInput) autoList.innerHTML = '';
-    });
-
-    // --- SCANNER & FORM LOGIC ---
     function onScanSuccess(decodedText) {
       isPaused = true;
       if (!isMobile && scanner) scanner.pause();
       
-      document.getElementById('scanner-container').style.display = "none";
-      document.getElementById('status-msg').style.display = "none";
-      document.getElementById('inventory-form').style.display = "block";
-      document.getElementById('f-invNum').value = decodedText;
-      
-      document.getElementById('f-chemName').focus();
+      // Trigger the Google Sheets query instead of jumping straight to the form
+      checkGoogleSheets(decodedText);
     }
 
     function resetScanner() {
       document.querySelectorAll('#inventory-form input:not([readonly]), #inventory-form textarea').forEach(input => input.value = '');
       document.querySelectorAll('#inventory-form select').forEach(select => select.selectedIndex = 0);
       autoList.innerHTML = ''; 
+      document.getElementById('error-log').innerText = '';
       
       document.getElementById('inventory-form').style.display = "none";
       document.getElementById('scanner-container').style.display = "block";
       document.getElementById('status-msg').style.display = "block";
+      document.getElementById('status-msg').style.color = "#333";
       document.getElementById('status-msg').innerText = "Camera active. Ready for next scan.";
 
       isPaused = false;
@@ -365,20 +365,20 @@
       .then(response => response.json())
       .then(data => {
         if (data.status === "error") {
-          // WE NOW CHECK FOR THE ERROR AND STOP THE PROCESS
           document.getElementById('error-log').innerText = "Script Error: " + data.message;
-          btn.innerText = "Submit to Inventory";
+          btn.innerText = "Save Item";
           btn.disabled = false;
         } else {
-          btn.innerText = "Submit to Inventory";
+          btn.innerText = "Save Item";
           btn.disabled = false;
           resetScanner(); 
-          document.getElementById('status-msg').innerText = "✅ Successfully saved Item #" + payload.invNum;
+          let actionText = data.status === "updated" ? "Updated" : "Created";
+          document.getElementById('status-msg').innerText = `✅ Successfully ${actionText} Item #${payload.invNum}`;
         }
       })
       .catch(error => {
         document.getElementById('error-log').innerText = "Network Error: Could not reach Google Servers.";
-        btn.innerText = "Submit to Inventory";
+        btn.innerText = "Save Item";
         btn.disabled = false;
       });
     }
