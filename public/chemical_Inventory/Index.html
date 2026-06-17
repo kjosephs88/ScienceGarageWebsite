@@ -20,24 +20,25 @@
       overflow: hidden;
       box-shadow: 0 4px 6px rgba(0,0,0,0.1);
       background: white;
-      /* FIX 1: Prevent iOS from collapsing the box to 0px before the camera loads */
-      min-height: 300px; 
+      /* Ensures the box has height even before the camera loads */
+      min-height: 250px; 
       display: flex;
-      flex-direction: column;
+      align-items: center;
       justify-content: center;
     }
-    /* FIX 2: Force the library's internal permission buttons to be large and visible on mobile */
-    #reader button {
-      padding: 12px 24px !important;
-      font-size: 1.1em !important;
-      background-color: #0056b3 !important;
-      color: white !important;
-      border: none !important;
-      border-radius: 8px !important;
-      cursor: pointer !important;
-      margin: 10px auto !important;
+    /* The Native iOS Override Button */
+    #ios-start-btn {
+      display: none; /* Hidden by default */
+      padding: 15px 30px;
+      font-size: 1.2em;
+      background-color: #007aff;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.2);
     }
-    /* The Confirmation Overlay */
     #confirm-modal {
       display: none; 
       position: fixed;
@@ -68,14 +69,17 @@
     .btn-confirm { background-color: #28a745; color: white; }
     .btn-cancel { background-color: #dc3545; color: white; }
     #status-msg { margin-top: 15px; font-weight: bold; }
-    .error-text { color: #dc3545; }
   </style>
 </head>
 <body>
 
   <h2>Live Scanner</h2>
-  <div id="reader"></div>
-  <div id="status-msg">Camera active. Ready to scan.</div>
+  
+  <div id="reader">
+    <button id="ios-start-btn">📷 Tap to Start Camera</button>
+  </div>
+  
+  <div id="status-msg">Loading scanner...</div>
 
   <div id="confirm-modal">
     <div class="modal-content">
@@ -106,7 +110,6 @@
       currentScannedId = "";
       scanner.resume();
       document.getElementById('status-msg').innerText = "Camera active. Ready to scan.";
-      document.getElementById('status-msg').className = "";
     }
 
     function sendToGoogleSheets() {
@@ -133,25 +136,46 @@
     }
 
     window.onload = function() {
-      scanner = new Html5QrcodeScanner(
-        "reader",
-        { 
-          fps: 10, 
-          qrbox: {width: 250, height: 250},
-          // FIX 3: Tells the UI to prioritize rendering the camera button
-          supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
-        },
-        false
-      );
-      
-      // FIX 4: Adding the error callback. If iOS blocks the camera, it will now print why.
-      scanner.render(onScanSuccess, function(errorMessage) {
-        // Only log hard permission errors, ignore the constant "no qr code found" frame errors
-        if (errorMessage.includes("NotAllowedError") || errorMessage.includes("Permission")) {
-          document.getElementById('status-msg').innerText = "Camera blocked. Please tap 'Allow' or check Safari settings.";
-          document.getElementById('status-msg').className = "error-text";
-        }
-      });
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const iosBtn = document.getElementById('ios-start-btn');
+
+      if (isMobile) {
+        // --- MOBILE WORKFLOW ---
+        // Display the native button we built to bypass the iOS Catch-22
+        iosBtn.style.display = "block";
+        document.getElementById('status-msg').innerText = "Waiting for camera start...";
+
+        iosBtn.onclick = function() {
+          iosBtn.style.display = "none"; // Hide button once tapped
+          document.getElementById('status-msg').innerText = "Requesting permissions...";
+
+          // Initialize the raw engine directly to avoid the UI bug
+          const html5QrCode = new Html5Qrcode("reader");
+          html5QrCode.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: {width: 250, height: 250} },
+            onScanSuccess,
+            (err) => {} // Suppress constant frame scanning errors
+          ).then(() => {
+            scanner = html5QrCode; // Map the engine to your existing scanner variable
+            document.getElementById('status-msg').innerText = "Camera active. Ready to scan.";
+          }).catch(err => {
+            document.getElementById('status-msg').innerText = "Camera Error. Please refresh.";
+            iosBtn.style.display = "block"; 
+          });
+        };
+
+      } else {
+        // --- DESKTOP WORKFLOW ---
+        // Uses your exact preferred code to preserve Continuity Camera menus
+        document.getElementById('status-msg').innerText = "Camera active. Ready to scan.";
+        scanner = new Html5QrcodeScanner(
+          "reader",
+          { fps: 10, qrbox: {width: 250, height: 250} },
+          false
+        );
+        scanner.render(onScanSuccess);
+      }
     };
   </script>
 
