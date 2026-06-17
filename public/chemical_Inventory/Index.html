@@ -3,7 +3,10 @@
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Chemical Scanner</title>
+  
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+  
   <style>
     body {
       font-family: -apple-system, sans-serif;
@@ -12,6 +15,8 @@
       margin: 0;
       padding: 20px;
     }
+    
+    /* Desktop Scanner Box */
     #reader {
       width: 100%;
       max-width: 500px;
@@ -20,12 +25,21 @@
       overflow: hidden;
       box-shadow: 0 4px 6px rgba(0,0,0,0.1);
       background: white;
-      min-height: 300px; 
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
+      display: none; /* Hidden on mobile */
     }
+    
+    /* Native iOS Video Element */
+    #ios-video {
+      width: 100%;
+      max-width: 500px;
+      margin: 0 auto;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      background: #000;
+      display: none; /* Hidden until button is clicked */
+    }
+
     #ios-start-btn {
       display: none; 
       padding: 15px 30px;
@@ -37,7 +51,9 @@
       font-weight: bold;
       cursor: pointer;
       box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+      margin: 40px auto;
     }
+    
     #confirm-modal {
       display: none; 
       position: fixed;
@@ -75,9 +91,11 @@
 
   <h2>Live Scanner</h2>
   
-  <div id="reader">
-    <button id="ios-start-btn">📷 Initialize Camera</button>
-  </div>
+  <button id="ios-start-btn">📷 Tap to Start Camera</button>
+  <video id="ios-video" playsinline></video>
+  <canvas id="ios-canvas" style="display:none;"></canvas>
+
+  <div id="reader"></div>
   
   <div id="status-msg">Loading scanner...</div>
   <div id="error-log"></div>
@@ -95,11 +113,25 @@
   <script>
     const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwdMydJuQh4-8G7CCuqZ_8U2mfa3vyELK0opPpS6Wctlk7p1HFjxYFXRxOXz3IbFIzw/exec"; 
     
-    let scanner;
+    // Globals
+    let scanner; // For desktop
+    let isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     let currentScannedId = "";
+    let isPaused = false;
 
-    function onScanSuccess(decodedText, decodedResult) {
-      scanner.pause();
+    // Mobile specific globals
+    const video = document.getElementById("ios-video");
+    const canvasElement = document.getElementById("ios-canvas");
+    const canvasContext = canvasElement.getContext("2d", { willReadFrequently: true });
+
+    function onScanSuccess(decodedText) {
+      isPaused = true;
+      
+      // If desktop, pause the library engine
+      if (!isMobile && scanner) {
+        scanner.pause();
+      }
+      
       currentScannedId = decodedText;
       document.getElementById('scanned-id-display').innerText = currentScannedId;
       document.getElementById('confirm-modal').style.display = "flex";
@@ -108,8 +140,16 @@
     function resumeScanner() {
       document.getElementById('confirm-modal').style.display = "none";
       currentScannedId = "";
-      scanner.resume();
+      isPaused = false;
       document.getElementById('status-msg').innerText = "Camera active. Ready to scan.";
+
+      if (isMobile) {
+        // Kickstart the iOS video loop again
+        requestAnimationFrame(scanVideoFrame);
+      } else {
+        // Resume desktop library
+        if(scanner) scanner.resume();
+      }
     }
 
     function sendToGoogleSheets() {
@@ -135,62 +175,73 @@
       });
     }
 
+    // --- MOBILE NATIVE SCANNING ENGINE ---
+    function scanVideoFrame() {
+      // Stop looping if the modal is open
+      if (isPaused) return;
+
+      if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        canvasElement.height = video.videoHeight;
+        canvasElement.width = video.videoWidth;
+        
+        // Draw the current video frame to the hidden canvas
+        canvasContext.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
+        
+        // Extract the pixels and send to jsQR
+        let imageData = canvasContext.getImageData(0, 0, canvasElement.width, canvasElement.height);
+        let code = jsQR(imageData.data, imageData.width, imageData.height, {
+          inversionAttempts: "dontInvert",
+        });
+
+        // If it finds a chemical ID!
+        if (code && code.data) {
+          onScanSuccess(code.data);
+          return; // Exit the loop
+        }
+      }
+      // Keep checking the next frame
+      requestAnimationFrame(scanVideoFrame);
+    }
+
     window.onload = function() {
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       const iosBtn = document.getElementById('ios-start-btn');
       const errorLog = document.getElementById('error-log');
 
       if (isMobile) {
         // --- MOBILE WORKFLOW ---
         iosBtn.style.display = "block";
-        document.getElementById('status-msg').innerText = "Tap to find camera lenses...";
+        document.getElementById('status-msg').innerText = "Ready to initialize.";
 
         iosBtn.onclick = function() {
           iosBtn.style.display = "none"; 
-          document.getElementById('status-msg').innerText = "Querying Apple Hardware...";
+          document.getElementById('status-msg').innerText = "Starting pure video feed...";
 
-          // STEP 1: Ask the phone for a list of specific hardware lenses
-          Html5Qrcode.getCameras().then(devices => {
-            if (devices && devices.length) {
+          // Pure HTML5 video request. No library middlemen.
+          navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+            .then(function(stream) {
+              video.srcObject = stream;
+              video.setAttribute("playsinline", true); // CRITICAL for iOS
+              video.play();
               
-              // STEP 2: Find the main back camera, ignoring the front selfie camera
-              let backCamera = devices.find(device => device.label.toLowerCase().includes('back'));
-              // If it can't find the word 'back', default to the last camera on the list (usually the rear one)
-              let cameraIdToUse = backCamera ? backCamera.id : devices[devices.length - 1].id;
+              video.style.display = "block";
+              document.getElementById('status-msg').innerText = "Camera active. Ready to scan.";
               
-              document.getElementById('status-msg').innerText = "Starting back camera...";
-
-              // STEP 3: Start the specific lens ID
-              const html5QrCode = new Html5Qrcode("reader");
-              html5QrCode.start(
-                cameraIdToUse, 
-                { fps: 10, qrbox: {width: 250, height: 250} },
-                onScanSuccess,
-                (err) => {} // Ignore scan frame errors
-              ).then(() => {
-                scanner = html5QrCode; 
-                document.getElementById('status-msg').innerText = "Camera active. Ready to scan.";
-                errorLog.innerText = ""; 
-              }).catch(err => {
-                document.getElementById('status-msg').innerText = "Engine start failed.";
-                errorLog.innerText = "START ERROR: " + err;
-                iosBtn.style.display = "block";
-              });
-
-            } else {
-              document.getElementById('status-msg').innerText = "No cameras detected.";
-              errorLog.innerText = "DEVICES ERROR: Hardware array returned empty.";
-            }
-          }).catch(err => {
-            document.getElementById('status-msg').innerText = "Hardware lookup failed.";
-            errorLog.innerText = "GET_CAMERAS ERROR: " + err;
-            iosBtn.style.display = "block";
-          });
+              // Start checking the video feed for QR codes
+              requestAnimationFrame(scanVideoFrame);
+            })
+            .catch(function(err) {
+              document.getElementById('status-msg').innerText = "Native Camera Error.";
+              errorLog.innerText = err;
+              iosBtn.style.display = "block";
+            });
         };
 
       } else {
         // --- DESKTOP WORKFLOW ---
+        document.getElementById('reader').style.display = "block";
         document.getElementById('status-msg').innerText = "Camera active. Ready to scan.";
+        
+        // Let the library handle everything (including Continuity Camera)
         scanner = new Html5QrcodeScanner(
           "reader",
           { fps: 10, qrbox: {width: 250, height: 250} },
