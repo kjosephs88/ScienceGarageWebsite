@@ -20,15 +20,14 @@
       overflow: hidden;
       box-shadow: 0 4px 6px rgba(0,0,0,0.1);
       background: white;
-      /* Ensures the box has height even before the camera loads */
-      min-height: 250px; 
+      min-height: 300px; 
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
     }
-    /* The Native iOS Override Button */
     #ios-start-btn {
-      display: none; /* Hidden by default */
+      display: none; 
       padding: 15px 30px;
       font-size: 1.2em;
       background-color: #007aff;
@@ -69,6 +68,7 @@
     .btn-confirm { background-color: #28a745; color: white; }
     .btn-cancel { background-color: #dc3545; color: white; }
     #status-msg { margin-top: 15px; font-weight: bold; }
+    #error-log { margin-top: 10px; color: #dc3545; font-size: 0.9em; font-family: monospace; }
   </style>
 </head>
 <body>
@@ -76,10 +76,11 @@
   <h2>Live Scanner</h2>
   
   <div id="reader">
-    <button id="ios-start-btn">📷 Tap to Start Camera</button>
+    <button id="ios-start-btn">📷 Initialize Camera</button>
   </div>
   
   <div id="status-msg">Loading scanner...</div>
+  <div id="error-log"></div>
 
   <div id="confirm-modal">
     <div class="modal-content">
@@ -99,7 +100,6 @@
 
     function onScanSuccess(decodedText, decodedResult) {
       scanner.pause();
-      
       currentScannedId = decodedText;
       document.getElementById('scanned-id-display').innerText = currentScannedId;
       document.getElementById('confirm-modal').style.display = "flex";
@@ -138,36 +138,58 @@
     window.onload = function() {
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       const iosBtn = document.getElementById('ios-start-btn');
+      const errorLog = document.getElementById('error-log');
 
       if (isMobile) {
         // --- MOBILE WORKFLOW ---
-        // Display the native button we built to bypass the iOS Catch-22
         iosBtn.style.display = "block";
-        document.getElementById('status-msg').innerText = "Waiting for camera start...";
+        document.getElementById('status-msg').innerText = "Tap to find camera lenses...";
 
         iosBtn.onclick = function() {
-          iosBtn.style.display = "none"; // Hide button once tapped
-          document.getElementById('status-msg').innerText = "Requesting permissions...";
+          iosBtn.style.display = "none"; 
+          document.getElementById('status-msg').innerText = "Querying Apple Hardware...";
 
-          // Initialize the raw engine directly to avoid the UI bug
-          const html5QrCode = new Html5Qrcode("reader");
-          html5QrCode.start(
-            { facingMode: "environment" },
-            { fps: 10, qrbox: {width: 250, height: 250} },
-            onScanSuccess,
-            (err) => {} // Suppress constant frame scanning errors
-          ).then(() => {
-            scanner = html5QrCode; // Map the engine to your existing scanner variable
-            document.getElementById('status-msg').innerText = "Camera active. Ready to scan.";
+          // STEP 1: Ask the phone for a list of specific hardware lenses
+          Html5Qrcode.getCameras().then(devices => {
+            if (devices && devices.length) {
+              
+              // STEP 2: Find the main back camera, ignoring the front selfie camera
+              let backCamera = devices.find(device => device.label.toLowerCase().includes('back'));
+              // If it can't find the word 'back', default to the last camera on the list (usually the rear one)
+              let cameraIdToUse = backCamera ? backCamera.id : devices[devices.length - 1].id;
+              
+              document.getElementById('status-msg').innerText = "Starting back camera...";
+
+              // STEP 3: Start the specific lens ID
+              const html5QrCode = new Html5Qrcode("reader");
+              html5QrCode.start(
+                cameraIdToUse, 
+                { fps: 10, qrbox: {width: 250, height: 250} },
+                onScanSuccess,
+                (err) => {} // Ignore scan frame errors
+              ).then(() => {
+                scanner = html5QrCode; 
+                document.getElementById('status-msg').innerText = "Camera active. Ready to scan.";
+                errorLog.innerText = ""; 
+              }).catch(err => {
+                document.getElementById('status-msg').innerText = "Engine start failed.";
+                errorLog.innerText = "START ERROR: " + err;
+                iosBtn.style.display = "block";
+              });
+
+            } else {
+              document.getElementById('status-msg').innerText = "No cameras detected.";
+              errorLog.innerText = "DEVICES ERROR: Hardware array returned empty.";
+            }
           }).catch(err => {
-            document.getElementById('status-msg').innerText = "Camera Error. Please refresh.";
-            iosBtn.style.display = "block"; 
+            document.getElementById('status-msg').innerText = "Hardware lookup failed.";
+            errorLog.innerText = "GET_CAMERAS ERROR: " + err;
+            iosBtn.style.display = "block";
           });
         };
 
       } else {
         // --- DESKTOP WORKFLOW ---
-        // Uses your exact preferred code to preserve Continuity Camera menus
         document.getElementById('status-msg').innerText = "Camera active. Ready to scan.";
         scanner = new Html5QrcodeScanner(
           "reader",
