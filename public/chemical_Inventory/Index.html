@@ -16,13 +16,11 @@
       padding: 15px;
     }
     
-    /* Scanner UI */
     #scanner-container { max-width: 500px; margin: 0 auto; }
     #reader { width: 100%; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); background: white; display: none; }
     #ios-video { width: 100%; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); background: #000; display: none; }
     #ios-start-btn { display: none; padding: 15px 30px; font-size: 1.2em; background-color: #007aff; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.2); margin: 40px auto; }
     
-    /* Data Entry Form */
     #inventory-form {
       display: none; 
       background: white;
@@ -33,7 +31,7 @@
       margin: 0 auto;
       text-align: left;
     }
-    .form-group { margin-bottom: 15px; position: relative; } /* Added relative positioning for dropdown */
+    .form-group { margin-bottom: 15px; position: relative; } 
     .form-group label { display: block; font-weight: bold; margin-bottom: 5px; color: #333; font-size: 0.9em; }
     .form-group input, .form-group select, .form-group textarea {
       width: 100%;
@@ -69,14 +67,10 @@
       border-bottom: 1px solid #eee;
       font-size: 0.95em;
     }
-    .autocomplete-items div:hover {
-      background-color: #e9ecef;
-    }
-    .autocomplete-items div:last-child {
-      border-bottom: none;
-    }
+    .autocomplete-items div:hover { background-color: #e9ecef; }
+    .autocomplete-active { background-color: #007aff !important; color: white; }
+    .autocomplete-active span { color: #e0e0e0 !important; }
 
-    /* Buttons */
     .btn-group { display: flex; justify-content: space-between; margin-top: 20px; }
     .btn { padding: 15px; border: none; border-radius: 8px; font-size: 1.1em; font-weight: bold; cursor: pointer; width: 48%; }
     .btn-submit { background-color: #28a745; color: white; }
@@ -84,11 +78,7 @@
     
     #status-msg { margin-top: 15px; font-weight: bold; }
     #error-log { margin-top: 10px; color: #dc3545; font-size: 0.9em; font-family: monospace; }
-
-    /* Auto-fill highlight animation */
-    .autofill-flash {
-      background-color: #d4edda !important;
-    }
+    .autofill-flash { background-color: #d4edda !important; }
   </style>
 </head>
 <body>
@@ -153,15 +143,16 @@
       </div>
       <div class="form-group">
         <label>Form</label>
-        <select id="f-form">
-          <option value="powder">Powder</option>
-          <option value="solid">Solid</option>
-          <option value="liquid">Liquid</option>
-          <option value="granular">Granular</option>
-          <option value="shot">Shot</option>
-          <option value="strips">Strips</option>
-          <option value="solution">Solution</option>
-        </select>
+        <input type="text" id="f-form" list="form-options" placeholder="Select or type custom...">
+        <datalist id="form-options">
+          <option value="Powder">
+          <option value="Solid">
+          <option value="Liquid">
+          <option value="Granular">
+          <option value="Shot">
+          <option value="Strips">
+          <option value="Solution">
+        </datalist>
       </div>
     </div>
 
@@ -215,55 +206,51 @@
   </div>
 
   <script>
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwdMydJuQh4-8G7CCuqZ_8U2mfa3vyELK0opPpS6Wctlk7p1HFjxYFXRxOXz3IbFIzw/exec"; 
+    // --- PASTE YOUR NEW APPS SCRIPT URL HERE ---
+    const APPS_SCRIPT_URL = "YOUR_WEB_APP_URL_HERE"; 
     
     let scanner; 
     let isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     let isPaused = false;
     let catalogData = {}; 
+    let currentFocus = -1; // Tracks keyboard selection
 
     const video = document.getElementById("ios-video");
     const canvasElement = document.getElementById("ios-canvas");
     const canvasContext = canvasElement.getContext("2d", { willReadFrequently: true });
 
-    // --- LOAD LOCAL JSON DATABASE ---
     function loadDatabase() {
       fetch('chemical_database.json')
         .then(response => response.json())
-        .then(data => {
-          catalogData = data.master_catalog || {};
-          console.log("Database loaded automatically.");
-        })
+        .then(data => { catalogData = data.master_catalog || {}; })
         .catch(error => console.error("Error loading chemical database:", error));
     }
 
-    // --- SMART AUTOCOMPLETE LOGIC ---
+    // --- SMART AUTOCOMPLETE LOGIC WITH KEYBOARD NAVIGATION ---
     const nameInput = document.getElementById('f-chemName');
     const autoList = document.getElementById('autocomplete-list');
 
     nameInput.addEventListener('input', function() {
       let val = this.value;
       autoList.innerHTML = '';
+      currentFocus = -1; 
       if (!val) return;
 
       let count = 0;
       for (const [key, chem] of Object.entries(catalogData)) {
-        // Search by both Name OR CAS number
         if (chem.name.toLowerCase().includes(val.toLowerCase()) || (chem.cas && chem.cas.includes(val))) {
           
           let item = document.createElement("div");
           item.innerHTML = `<strong>${chem.name}</strong> <span style="color:#666; font-size:0.85em;">(${chem.cas || 'No CAS'})</span>`;
           
-          // Action when a user clicks a dropdown item
           item.addEventListener("click", function() {
             document.getElementById('f-chemName').value = chem.name;
             document.getElementById('f-casNo').value = chem.cas || "";
             document.getElementById('f-flinn').value = chem.flinn_family || "";
             document.getElementById('f-ghs').value = (chem.hazards && chem.hazards.length > 0) ? chem.hazards.join(", ") : "";
             
-            autoList.innerHTML = ''; // Hide the dropdown list
+            autoList.innerHTML = ''; 
             
-            // Trigger the green confirmation flash
             ['f-chemName', 'f-casNo', 'f-flinn', 'f-ghs'].forEach(id => {
               const el = document.getElementById(id);
               el.classList.add('autofill-flash');
@@ -273,16 +260,47 @@
           
           autoList.appendChild(item);
           count++;
-          if (count >= 8) break; // Limit dropdown to top 8 matches to keep it clean on mobile
+          if (count >= 8) break; 
         }
       }
     });
 
-    // Close the dropdown if the user taps anywhere else on the screen
-    document.addEventListener("click", function (e) {
-      if (e.target !== nameInput) {
-        autoList.innerHTML = '';
+    // Keyboard Arrow Tracking
+    nameInput.addEventListener("keydown", function(e) {
+      let items = autoList.getElementsByTagName("div");
+      if (e.keyCode === 40) { // DOWN ARROW
+        currentFocus++;
+        addActive(items);
+      } else if (e.keyCode === 38) { // UP ARROW
+        currentFocus--;
+        addActive(items);
+      } else if (e.keyCode === 13) { // ENTER
+        e.preventDefault();
+        if (currentFocus > -1) {
+          if (items) items[currentFocus].click();
+        }
       }
+    });
+
+    function addActive(x) {
+      if (!x) return false;
+      removeActive(x);
+      if (currentFocus >= x.length) currentFocus = 0;
+      if (currentFocus < 0) currentFocus = (x.length - 1);
+      x[currentFocus].classList.add("autocomplete-active");
+      
+      // Keep the highlighted item visible in the scroll box
+      x[currentFocus].scrollIntoView({ block: "nearest" });
+    }
+
+    function removeActive(x) {
+      for (let i = 0; i < x.length; i++) {
+        x[i].classList.remove("autocomplete-active");
+      }
+    }
+
+    document.addEventListener("click", function (e) {
+      if (e.target !== nameInput) autoList.innerHTML = '';
     });
 
     // --- SCANNER & FORM LOGIC ---
@@ -295,14 +313,13 @@
       document.getElementById('inventory-form').style.display = "block";
       document.getElementById('f-invNum').value = decodedText;
       
-      // Auto-focus the new smart Chemical Name field
       document.getElementById('f-chemName').focus();
     }
 
     function resetScanner() {
       document.querySelectorAll('#inventory-form input:not([readonly]), #inventory-form textarea').forEach(input => input.value = '');
       document.querySelectorAll('#inventory-form select').forEach(select => select.selectedIndex = 0);
-      autoList.innerHTML = ''; // Ensure dropdown is cleared
+      autoList.innerHTML = ''; 
       
       document.getElementById('inventory-form').style.display = "none";
       document.getElementById('scanner-container').style.display = "block";
@@ -321,6 +338,7 @@
       const btn = document.getElementById('submit-btn');
       btn.innerText = "Saving...";
       btn.disabled = true;
+      document.getElementById('error-log').innerText = "";
 
       const payload = {
         invNum: document.getElementById('f-invNum').value,
@@ -346,13 +364,20 @@
       })
       .then(response => response.json())
       .then(data => {
-        btn.innerText = "Submit to Inventory";
-        btn.disabled = false;
-        resetScanner(); 
-        document.getElementById('status-msg').innerText = "✅ Successfully saved Item #" + payload.invNum;
+        if (data.status === "error") {
+          // WE NOW CHECK FOR THE ERROR AND STOP THE PROCESS
+          document.getElementById('error-log').innerText = "Script Error: " + data.message;
+          btn.innerText = "Submit to Inventory";
+          btn.disabled = false;
+        } else {
+          btn.innerText = "Submit to Inventory";
+          btn.disabled = false;
+          resetScanner(); 
+          document.getElementById('status-msg').innerText = "✅ Successfully saved Item #" + payload.invNum;
+        }
       })
       .catch(error => {
-        alert("Error sending data. Check your network connection.");
+        document.getElementById('error-log').innerText = "Network Error: Could not reach Google Servers.";
         btn.innerText = "Submit to Inventory";
         btn.disabled = false;
       });
