@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chemical Scanner</title>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <style>
+    body {
+      font-family: -apple-system, sans-serif;
+      text-align: center;
+      background-color: #f4f4f9;
+      margin: 0;
+      padding: 20px;
+    }
+    #reader {
+      width: 100%;
+      max-width: 500px;
+      margin: 0 auto;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      background: white;
+    }
+    /* The Confirmation Overlay */
+    #confirm-modal {
+      display: none; /* Hidden by default */
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.8);
+      z-index: 1000;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      width: 80%;
+      max-width: 300px;
+    }
+    .btn {
+      padding: 15px 25px;
+      margin: 10px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1.1em;
+      font-weight: bold;
+      cursor: pointer;
+      width: 100%;
+    }
+    .btn-confirm { background-color: #28a745; color: white; }
+    .btn-cancel { background-color: #dc3545; color: white; }
+    #status-msg { margin-top: 15px; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+  <h2>Live Scanner</h2>
+  <div id="reader"></div>
+  <div id="status-msg">Camera active. Ready to scan.</div>
+
+  <div id="confirm-modal">
+    <div class="modal-content">
+      <h3>Code Detected</h3>
+      <h1 id="scanned-id-display">---</h1>
+      <p>Log this item?</p>
+      <button class="btn btn-confirm" onclick="sendToGoogleSheets()">Confirm & Log</button>
+      <button class="btn btn-cancel" onclick="resumeScanner()">Cancel</button>
+    </div>
+  </div>
+
+  <script>
+    // --- INSERT YOUR APPS SCRIPT URL HERE ---
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwdMydJuQh4-8G7CCuqZ_8U2mfa3vyELK0opPpS6Wctlk7p1HFjxYFXRxOXz3IbFIzw/exec"; 
+    
+    let scanner;
+    let currentScannedId = "";
+
+    function onScanSuccess(decodedText, decodedResult) {
+      // 1. Pause the scanner so it doesn't keep reading
+      scanner.pause();
+      
+      // 2. Save the ID and show the confirmation modal
+      currentScannedId = decodedText;
+      document.getElementById('scanned-id-display').innerText = currentScannedId;
+      document.getElementById('confirm-modal').style.display = "flex";
+    }
+
+    function resumeScanner() {
+      // Hide modal and unpause camera
+      document.getElementById('confirm-modal').style.display = "none";
+      currentScannedId = "";
+      scanner.resume();
+      document.getElementById('status-msg').innerText = "Camera active. Ready to scan.";
+    }
+
+    function sendToGoogleSheets() {
+      const btn = document.querySelector('.btn-confirm');
+      btn.innerText = "Sending...";
+      btn.disabled = true;
+
+      // Send the data packet to Apps Script
+      fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({ id: currentScannedId })
+      })
+      .then(response => response.json())
+      .then(data => {
+        // Success! Reset UI and resume scanning
+        btn.innerText = "Confirm & Log";
+        btn.disabled = false;
+        document.getElementById('status-msg').innerText = "Successfully logged: " + currentScannedId;
+        resumeScanner();
+      })
+      .catch(error => {
+        alert("Error sending data. Check connection.");
+        btn.innerText = "Confirm & Log";
+        btn.disabled = false;
+      });
+    }
+
+    // Initialize the live camera feed
+    window.onload = function() {
+      scanner = new Html5QrcodeScanner(
+        "reader",
+        { fps: 10, qrbox: {width: 250, height: 250} },
+        false
+      );
+      scanner.render(onScanSuccess);
+    };
+  </script>
+
+</body>
+</html>
