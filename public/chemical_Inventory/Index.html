@@ -20,11 +20,11 @@
       overflow: hidden;
       box-shadow: 0 4px 6px rgba(0,0,0,0.1);
       background: #000;
-      aspect-ratio: 4/3;
+      /* Removed fixed aspect-ratio to prevent rendering lockups in Safari */
     }
     #camera-select-container {
       margin: 15px auto;
-      display: none; /* Hidden by default, shown only on desktop */
+      display: none; 
     }
     select {
       padding: 10px;
@@ -63,6 +63,20 @@
     .btn-confirm { background-color: #28a745; color: white; }
     .btn-cancel { background-color: #dc3545; color: white; }
     #status-msg { margin-top: 15px; font-weight: bold; color: #333; }
+    
+    /* Dedicated mobile initiation button styling */
+    .btn-action {
+      background-color: #007aff;
+      color: white;
+      padding: 14px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1.1em;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 15px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
   </style>
 </head>
 <body>
@@ -136,7 +150,6 @@
       });
     }
 
-    // Desktop camera switching logic
     function switchDesktopCamera(cameraId) {
       html5QrCode.stop().then(() => {
         startScanning({ deviceId: { exact: cameraId } });
@@ -144,9 +157,29 @@
     }
 
     function startScanning(cameraConfig) {
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      
+      // Responsive dynamic qrbox callback to prevent sizing mismatch errors
+      const scanConfig = { 
+        fps: 15, 
+        qrbox: function(width, height) {
+          const minElem = Math.min(width, height);
+          return { width: Math.floor(minElem * 0.65), height: Math.floor(minElem * 0.65) };
+        }
+      };
+
+      // Force explicit tracking constraints on mobile to safely resolve multi-lens hardware arrays
+      if (isMobile) {
+        scanConfig.videoConstraints = {
+          facingMode: "environment",
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        };
+      }
+
       html5QrCode.start(
         cameraConfig, 
-        { fps: 15, qrbox: { width: 250, height: 250 } },
+        scanConfig,
         onScanSuccess,
         (err) => {}
       )
@@ -154,21 +187,27 @@
         document.getElementById('status-msg').innerText = "Camera active. Ready to scan.";
       })
       .catch(err => {
-        document.getElementById('status-msg').innerText = "Camera failed to start.";
+        console.error(err);
+        document.getElementById('status-msg').innerText = "Camera failed to start. Verify system permissions.";
       });
+    }
+
+    // Triggered directly by the explicit user click handler on mobile
+    function initMobileScanner() {
+      document.getElementById('status-msg').innerText = "Accessing hardware lenses...";
+      startScanning({ facingMode: "environment" });
     }
 
     window.onload = function() {
       html5QrCode = new Html5Qrcode("reader");
-      
-      // Detect if user is on an iPhone/iPad/Android mobile device
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
       if (isMobile) {
-        // MOBILE WORKFLOW: Force rear camera immediately, bypass menus completely
-        startScanning({ facingMode: "environment" });
+        // Render explicit activation action to guarantee standard WebRTC validation clearance
+        document.getElementById('status-msg').innerHTML = 
+          `<button class="btn-action" onclick="initMobileScanner()">Tap to Activate Camera</button>`;
       } else {
-        // DESKTOP WORKFLOW: Show the dropdown and list all cameras (including Continuity)
+        // Desktop retains full background enumeration and auto-start properties
         document.getElementById('camera-select-container').style.display = "block";
         
         Html5Qrcode.getCameras().then(cameras => {
@@ -180,7 +219,6 @@
               option.text = camera.label || `Camera ${cameras.indexOf(camera) + 1}`;
               select.appendChild(option);
             });
-            // Start with whichever camera is first on the list
             startScanning({ deviceId: { exact: cameras[0].id } });
           } else {
             document.getElementById('status-msg').innerText = "No desktop cameras found.";
@@ -191,6 +229,5 @@
       }
     };
   </script>
-
 </body>
 </html>
