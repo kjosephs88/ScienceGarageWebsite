@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Chemical Scanner Pro</title>
+  <title>Chemical Scanner</title>
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
     body {
@@ -19,22 +19,11 @@
       border-radius: 8px;
       overflow: hidden;
       box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-      background: #000;
-      /* Removed fixed aspect-ratio to prevent rendering lockups in Safari */
+      background: white;
     }
-    #camera-select-container {
-      margin: 15px auto;
-      display: none; 
-    }
-    select {
-      padding: 10px;
-      font-size: 1em;
-      border-radius: 6px;
-      width: 80%;
-      max-width: 400px;
-    }
+    /* The Confirmation Overlay */
     #confirm-modal {
-      display: none; 
+      display: none; /* Hidden by default */
       position: fixed;
       top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(0,0,0,0.8);
@@ -62,34 +51,14 @@
     }
     .btn-confirm { background-color: #28a745; color: white; }
     .btn-cancel { background-color: #dc3545; color: white; }
-    #status-msg { margin-top: 15px; font-weight: bold; color: #333; }
-    
-    /* Dedicated mobile initiation button styling */
-    .btn-action {
-      background-color: #007aff;
-      color: white;
-      padding: 14px 24px;
-      border: none;
-      border-radius: 8px;
-      font-size: 1.1em;
-      font-weight: 600;
-      cursor: pointer;
-      margin-top: 15px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
+    #status-msg { margin-top: 15px; font-weight: bold; }
   </style>
 </head>
 <body>
 
-  <h2>Chemical Inventory Scanner</h2>
-  
-  <div id="camera-select-container">
-    <label for="camera-select">Choose Camera: </label>
-    <select id="camera-select" onchange="switchDesktopCamera(this.value)"></select>
-  </div>
-
+  <h2>Live Scanner</h2>
   <div id="reader"></div>
-  <div id="status-msg">Initializing scanner...</div>
+  <div id="status-msg">Camera active. Ready to scan.</div>
 
   <div id="confirm-modal">
     <div class="modal-content">
@@ -102,28 +71,27 @@
   </div>
 
   <script>
-    // --- REPLACE WITH YOUR LIVE APPS SCRIPT URL ---
+    // --- INSERT YOUR APPS SCRIPT URL HERE ---
     const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwdMydJuQh4-8G7CCuqZ_8U2mfa3vyELK0opPpS6Wctlk7p1HFjxYFXRxOXz3IbFIzw/exec"; 
     
-    let html5QrCode;
+    let scanner;
     let currentScannedId = "";
-    let isPaused = false;
 
     function onScanSuccess(decodedText, decodedResult) {
-      if (isPaused) return;
-      isPaused = true;
-      html5QrCode.pause();
+      // 1. Pause the scanner so it doesn't keep reading
+      scanner.pause();
       
+      // 2. Save the ID and show the confirmation modal
       currentScannedId = decodedText;
       document.getElementById('scanned-id-display').innerText = currentScannedId;
       document.getElementById('confirm-modal').style.display = "flex";
     }
 
     function resumeScanner() {
+      // Hide modal and unpause camera
       document.getElementById('confirm-modal').style.display = "none";
       currentScannedId = "";
-      isPaused = false;
-      html5QrCode.resume();
+      scanner.resume();
       document.getElementById('status-msg').innerText = "Camera active. Ready to scan.";
     }
 
@@ -132,102 +100,36 @@
       btn.innerText = "Sending...";
       btn.disabled = true;
 
+      // Send the data packet to Apps Script
       fetch(APPS_SCRIPT_URL, {
         method: 'POST',
         body: JSON.stringify({ id: currentScannedId })
       })
       .then(response => response.json())
       .then(data => {
+        // Success! Reset UI and resume scanning
         btn.innerText = "Confirm & Log";
         btn.disabled = false;
         document.getElementById('status-msg').innerText = "Successfully logged: " + currentScannedId;
         resumeScanner();
       })
       .catch(error => {
-        alert("Error sending data.");
+        alert("Error sending data. Check connection.");
         btn.innerText = "Confirm & Log";
         btn.disabled = false;
       });
     }
 
-    function switchDesktopCamera(cameraId) {
-      html5QrCode.stop().then(() => {
-        startScanning({ deviceId: { exact: cameraId } });
-      });
-    }
-
-    function startScanning(cameraConfig) {
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-      
-      // Responsive dynamic qrbox callback to prevent sizing mismatch errors
-      const scanConfig = { 
-        fps: 15, 
-        qrbox: function(width, height) {
-          const minElem = Math.min(width, height);
-          return { width: Math.floor(minElem * 0.65), height: Math.floor(minElem * 0.65) };
-        }
-      };
-
-      // Force explicit tracking constraints on mobile to safely resolve multi-lens hardware arrays
-      if (isMobile) {
-        scanConfig.videoConstraints = {
-          facingMode: "environment",
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        };
-      }
-
-      html5QrCode.start(
-        cameraConfig, 
-        scanConfig,
-        onScanSuccess,
-        (err) => {}
-      )
-      .then(() => {
-        document.getElementById('status-msg').innerText = "Camera active. Ready to scan.";
-      })
-      .catch(err => {
-        console.error(err);
-        document.getElementById('status-msg').innerText = "Camera failed to start. Verify system permissions.";
-      });
-    }
-
-    // Triggered directly by the explicit user click handler on mobile
-    function initMobileScanner() {
-      document.getElementById('status-msg').innerText = "Accessing hardware lenses...";
-      startScanning({ facingMode: "environment" });
-    }
-
+    // Initialize the live camera feed
     window.onload = function() {
-      html5QrCode = new Html5Qrcode("reader");
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
-      if (isMobile) {
-        // Render explicit activation action to guarantee standard WebRTC validation clearance
-        document.getElementById('status-msg').innerHTML = 
-          `<button class="btn-action" onclick="initMobileScanner()">Tap to Activate Camera</button>`;
-      } else {
-        // Desktop retains full background enumeration and auto-start properties
-        document.getElementById('camera-select-container').style.display = "block";
-        
-        Html5Qrcode.getCameras().then(cameras => {
-          if (cameras && cameras.length) {
-            const select = document.getElementById('camera-select');
-            cameras.forEach(camera => {
-              const option = document.createElement('option');
-              option.value = camera.id;
-              option.text = camera.label || `Camera ${cameras.indexOf(camera) + 1}`;
-              select.appendChild(option);
-            });
-            startScanning({ deviceId: { exact: cameras[0].id } });
-          } else {
-            document.getElementById('status-msg').innerText = "No desktop cameras found.";
-          }
-        }).catch(err => {
-          document.getElementById('status-msg').innerText = "Error enumerating desktop cameras.";
-        });
-      }
+      scanner = new Html5QrcodeScanner(
+        "reader",
+        { fps: 10, qrbox: {width: 250, height: 250} },
+        false
+      );
+      scanner.render(onScanSuccess);
     };
   </script>
+
 </body>
 </html>
