@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Chemical Scanner</title>
+  <title>Inventory Scanner Pro</title>
   
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
@@ -13,240 +13,400 @@
       text-align: center;
       background-color: #f4f4f9;
       margin: 0;
-      padding: 20px;
+      padding: 15px;
     }
     
-    /* Desktop Scanner Box */
-    #reader {
-      width: 100%;
-      max-width: 500px;
-      margin: 0 auto;
-      border-radius: 8px;
-      overflow: hidden;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    /* Scanner UI */
+    #scanner-container { max-width: 500px; margin: 0 auto; }
+    #reader { width: 100%; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); background: white; display: none; }
+    #ios-video { width: 100%; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); background: #000; display: none; }
+    #ios-start-btn { display: none; padding: 15px 30px; font-size: 1.2em; background-color: #007aff; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.2); margin: 40px auto; }
+    
+    /* Data Entry Form */
+    #inventory-form {
+      display: none; 
       background: white;
-      display: none; /* Hidden on mobile */
-    }
-    
-    /* Native iOS Video Element */
-    #ios-video {
-      width: 100%;
-      max-width: 500px;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      max-width: 600px;
       margin: 0 auto;
-      border-radius: 8px;
-      overflow: hidden;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-      background: #000;
-      display: none; /* Hidden until button is clicked */
+      text-align: left;
+    }
+    .form-group { margin-bottom: 15px; position: relative; } /* Added relative positioning for dropdown */
+    .form-group label { display: block; font-weight: bold; margin-bottom: 5px; color: #333; font-size: 0.9em; }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%;
+      padding: 10px;
+      font-size: 1em;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      box-sizing: border-box;
+      background-color: #fff;
+      transition: background-color 0.3s ease;
+    }
+    .form-group input[readonly] { background-color: #e9ecef; color: #495057; font-weight: bold; }
+    .grid-2-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    
+    /* Smart Autocomplete Dropdown */
+    .autocomplete-items {
+      position: absolute;
+      border: 1px solid #ccc;
+      border-top: none;
+      z-index: 99;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background-color: white;
+      max-height: 200px;
+      overflow-y: auto;
+      border-radius: 0 0 8px 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+    }
+    .autocomplete-items div {
+      padding: 12px;
+      cursor: pointer;
+      border-bottom: 1px solid #eee;
+      font-size: 0.95em;
+    }
+    .autocomplete-items div:hover {
+      background-color: #e9ecef;
+    }
+    .autocomplete-items div:last-child {
+      border-bottom: none;
     }
 
-    #ios-start-btn {
-      display: none; 
-      padding: 15px 30px;
-      font-size: 1.2em;
-      background-color: #007aff;
-      color: white;
-      border: none;
-      border-radius: 10px;
-      font-weight: bold;
-      cursor: pointer;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-      margin: 40px auto;
-    }
-    
-    #confirm-modal {
-      display: none; 
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.8);
-      z-index: 1000;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-    }
-    .modal-content {
-      background: white;
-      padding: 30px;
-      border-radius: 12px;
-      width: 80%;
-      max-width: 300px;
-    }
-    .btn {
-      padding: 15px 25px;
-      margin: 10px;
-      border: none;
-      border-radius: 8px;
-      font-size: 1.1em;
-      font-weight: bold;
-      cursor: pointer;
-      width: 100%;
-    }
-    .btn-confirm { background-color: #28a745; color: white; }
+    /* Buttons */
+    .btn-group { display: flex; justify-content: space-between; margin-top: 20px; }
+    .btn { padding: 15px; border: none; border-radius: 8px; font-size: 1.1em; font-weight: bold; cursor: pointer; width: 48%; }
+    .btn-submit { background-color: #28a745; color: white; }
     .btn-cancel { background-color: #dc3545; color: white; }
+    
     #status-msg { margin-top: 15px; font-weight: bold; }
     #error-log { margin-top: 10px; color: #dc3545; font-size: 0.9em; font-family: monospace; }
+
+    /* Auto-fill highlight animation */
+    .autofill-flash {
+      background-color: #d4edda !important;
+    }
   </style>
 </head>
 <body>
 
-  <h2>Live Scanner</h2>
+  <h2>Inventory Scanner</h2>
   
-  <button id="ios-start-btn">📷 Tap to Start Camera</button>
-  <video id="ios-video" playsinline></video>
-  <canvas id="ios-canvas" style="display:none;"></canvas>
-
-  <div id="reader"></div>
+  <div id="scanner-container">
+    <button id="ios-start-btn">📷 Tap to Start Camera</button>
+    <video id="ios-video" playsinline></video>
+    <canvas id="ios-canvas" style="display:none;"></canvas>
+    <div id="reader"></div>
+  </div>
   
   <div id="status-msg">Loading scanner...</div>
   <div id="error-log"></div>
 
-  <div id="confirm-modal">
-    <div class="modal-content">
-      <h3>Code Detected</h3>
-      <h1 id="scanned-id-display">---</h1>
-      <p>Log this item?</p>
-      <button class="btn btn-confirm" onclick="sendToGoogleSheets()">Confirm & Log</button>
-      <button class="btn btn-cancel" onclick="resumeScanner()">Cancel</button>
+  <div id="inventory-form">
+    <h3 style="margin-top:0; border-bottom: 2px solid #eee; padding-bottom: 10px;">Log New Item</h3>
+    
+    <div class="form-group">
+      <label>Inventory Number (Auto-Scanned)</label>
+      <input type="text" id="f-invNum" readonly>
+    </div>
+
+    <div class="form-group">
+      <label>Chemical Name (Type to search)</label>
+      <input type="text" id="f-chemName" placeholder="e.g. Aluminum or 7429-90-5" autocomplete="off">
+      <div id="autocomplete-list" class="autocomplete-items"></div>
+    </div>
+
+    <div class="grid-2-col">
+      <div class="form-group">
+        <label>CAS No.</label>
+        <input type="text" id="f-casNo" placeholder="7429-90-5">
+      </div>
+      <div class="form-group">
+        <label>Manufacturer</label>
+        <input type="text" id="f-mfg" placeholder="Flinn Scientific">
+      </div>
+    </div>
+
+    <div class="grid-2-col">
+      <div class="form-group">
+        <label>Receipt Date</label>
+        <input type="date" id="f-receipt">
+      </div>
+      <div class="form-group">
+        <label>Expiration Date</label>
+        <input type="date" id="f-exp">
+      </div>
+    </div>
+
+    <div class="grid-2-col">
+      <div class="form-group">
+        <label>Container Type</label>
+        <select id="f-container">
+          <option value="plastic">Plastic</option>
+          <option value="glass">Glass</option>
+          <option value="can">Can</option>
+          <option value="bag">Bag</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Form</label>
+        <select id="f-form">
+          <option value="powder">Powder</option>
+          <option value="solid">Solid</option>
+          <option value="liquid">Liquid</option>
+          <option value="granular">Granular</option>
+          <option value="shot">Shot</option>
+          <option value="strips">Strips</option>
+          <option value="solution">Solution</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid-2-col">
+      <div class="form-group">
+        <label>Amount Remaining</label>
+        <select id="f-amount">
+          <option value="full">Full</option>
+          <option value="3/4 full">3/4 Full</option>
+          <option value="1/2 full">1/2 Full</option>
+          <option value="1/4 full">1/4 Full</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Mass (g)</label>
+        <input type="number" step="0.1" id="f-mass" placeholder="e.g. 150.5">
+      </div>
+    </div>
+
+    <div class="grid-2-col">
+      <div class="form-group">
+        <label>Container Size</label>
+        <input type="text" id="f-size" placeholder="e.g. 500 g">
+      </div>
+      <div class="form-group">
+        <label>Shelf #</label>
+        <input type="text" id="f-shelf" placeholder="e.g. 2B">
+      </div>
+    </div>
+
+    <div class="grid-2-col">
+      <div class="form-group">
+        <label>Flinn Category</label>
+        <input type="text" id="f-flinn" placeholder="Inorganic 1">
+      </div>
+      <div class="form-group">
+        <label>GHS Hazards</label>
+        <input type="text" id="f-ghs" placeholder="Flammable Solid">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Notes</label>
+      <textarea id="f-notes" rows="2" placeholder="Any specific warnings or condition notes..."></textarea>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-cancel" onclick="resetScanner()">Cancel</button>
+      <button class="btn btn-submit" id="submit-btn" onclick="submitToGoogleSheets()">Submit to Inventory</button>
     </div>
   </div>
 
   <script>
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwdMydJuQh4-8G7CCuqZ_8U2mfa3vyELK0opPpS6Wctlk7p1HFjxYFXRxOXz3IbFIzw/exec"; 
+    const APPS_SCRIPT_URL = "YOUR_WEB_APP_URL_HERE"; 
     
-    // Globals
-    let scanner; // For desktop
+    let scanner; 
     let isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    let currentScannedId = "";
     let isPaused = false;
+    let catalogData = {}; 
 
-    // Mobile specific globals
     const video = document.getElementById("ios-video");
     const canvasElement = document.getElementById("ios-canvas");
     const canvasContext = canvasElement.getContext("2d", { willReadFrequently: true });
 
-    function onScanSuccess(decodedText) {
-      isPaused = true;
-      
-      // If desktop, pause the library engine
-      if (!isMobile && scanner) {
-        scanner.pause();
-      }
-      
-      currentScannedId = decodedText;
-      document.getElementById('scanned-id-display').innerText = currentScannedId;
-      document.getElementById('confirm-modal').style.display = "flex";
+    // --- LOAD LOCAL JSON DATABASE ---
+    function loadDatabase() {
+      fetch('chemical_database.json')
+        .then(response => response.json())
+        .then(data => {
+          catalogData = data.master_catalog || {};
+          console.log("Database loaded automatically.");
+        })
+        .catch(error => console.error("Error loading chemical database:", error));
     }
 
-    function resumeScanner() {
-      document.getElementById('confirm-modal').style.display = "none";
-      currentScannedId = "";
-      isPaused = false;
-      document.getElementById('status-msg').innerText = "Camera active. Ready to scan.";
+    // --- SMART AUTOCOMPLETE LOGIC ---
+    const nameInput = document.getElementById('f-chemName');
+    const autoList = document.getElementById('autocomplete-list');
 
+    nameInput.addEventListener('input', function() {
+      let val = this.value;
+      autoList.innerHTML = '';
+      if (!val) return;
+
+      let count = 0;
+      for (const [key, chem] of Object.entries(catalogData)) {
+        // Search by both Name OR CAS number
+        if (chem.name.toLowerCase().includes(val.toLowerCase()) || (chem.cas && chem.cas.includes(val))) {
+          
+          let item = document.createElement("div");
+          item.innerHTML = `<strong>${chem.name}</strong> <span style="color:#666; font-size:0.85em;">(${chem.cas || 'No CAS'})</span>`;
+          
+          // Action when a user clicks a dropdown item
+          item.addEventListener("click", function() {
+            document.getElementById('f-chemName').value = chem.name;
+            document.getElementById('f-casNo').value = chem.cas || "";
+            document.getElementById('f-flinn').value = chem.flinn_family || "";
+            document.getElementById('f-ghs').value = (chem.hazards && chem.hazards.length > 0) ? chem.hazards.join(", ") : "";
+            
+            autoList.innerHTML = ''; // Hide the dropdown list
+            
+            // Trigger the green confirmation flash
+            ['f-chemName', 'f-casNo', 'f-flinn', 'f-ghs'].forEach(id => {
+              const el = document.getElementById(id);
+              el.classList.add('autofill-flash');
+              setTimeout(() => el.classList.remove('autofill-flash'), 600);
+            });
+          });
+          
+          autoList.appendChild(item);
+          count++;
+          if (count >= 8) break; // Limit dropdown to top 8 matches to keep it clean on mobile
+        }
+      }
+    });
+
+    // Close the dropdown if the user taps anywhere else on the screen
+    document.addEventListener("click", function (e) {
+      if (e.target !== nameInput) {
+        autoList.innerHTML = '';
+      }
+    });
+
+    // --- SCANNER & FORM LOGIC ---
+    function onScanSuccess(decodedText) {
+      isPaused = true;
+      if (!isMobile && scanner) scanner.pause();
+      
+      document.getElementById('scanner-container').style.display = "none";
+      document.getElementById('status-msg').style.display = "none";
+      document.getElementById('inventory-form').style.display = "block";
+      document.getElementById('f-invNum').value = decodedText;
+      
+      // Auto-focus the new smart Chemical Name field
+      document.getElementById('f-chemName').focus();
+    }
+
+    function resetScanner() {
+      document.querySelectorAll('#inventory-form input:not([readonly]), #inventory-form textarea').forEach(input => input.value = '');
+      document.querySelectorAll('#inventory-form select').forEach(select => select.selectedIndex = 0);
+      autoList.innerHTML = ''; // Ensure dropdown is cleared
+      
+      document.getElementById('inventory-form').style.display = "none";
+      document.getElementById('scanner-container').style.display = "block";
+      document.getElementById('status-msg').style.display = "block";
+      document.getElementById('status-msg').innerText = "Camera active. Ready for next scan.";
+
+      isPaused = false;
       if (isMobile) {
-        // Kickstart the iOS video loop again
         requestAnimationFrame(scanVideoFrame);
       } else {
-        // Resume desktop library
         if(scanner) scanner.resume();
       }
     }
 
-    function sendToGoogleSheets() {
-      const btn = document.querySelector('.btn-confirm');
-      btn.innerText = "Sending...";
+    function submitToGoogleSheets() {
+      const btn = document.getElementById('submit-btn');
+      btn.innerText = "Saving...";
       btn.disabled = true;
+
+      const payload = {
+        invNum: document.getElementById('f-invNum').value,
+        chemName: document.getElementById('f-chemName').value,
+        casNo: document.getElementById('f-casNo').value,
+        manufacturer: document.getElementById('f-mfg').value,
+        receiptDate: document.getElementById('f-receipt').value,
+        expDate: document.getElementById('f-exp').value,
+        containerType: document.getElementById('f-container').value,
+        form: document.getElementById('f-form').value,
+        amount: document.getElementById('f-amount').value,
+        mass: document.getElementById('f-mass').value,
+        containerSize: document.getElementById('f-size').value,
+        shelf: document.getElementById('f-shelf').value,
+        flinnCat: document.getElementById('f-flinn').value,
+        ghs: document.getElementById('f-ghs').value,
+        notes: document.getElementById('f-notes').value
+      };
 
       fetch(APPS_SCRIPT_URL, {
         method: 'POST',
-        body: JSON.stringify({ id: currentScannedId })
+        body: JSON.stringify(payload)
       })
       .then(response => response.json())
       .then(data => {
-        btn.innerText = "Confirm & Log";
+        btn.innerText = "Submit to Inventory";
         btn.disabled = false;
-        document.getElementById('status-msg').innerText = "Successfully logged: " + currentScannedId;
-        resumeScanner();
+        resetScanner(); 
+        document.getElementById('status-msg').innerText = "✅ Successfully saved Item #" + payload.invNum;
       })
       .catch(error => {
-        alert("Error sending data. Check connection.");
-        btn.innerText = "Confirm & Log";
+        alert("Error sending data. Check your network connection.");
+        btn.innerText = "Submit to Inventory";
         btn.disabled = false;
       });
     }
 
-    // --- MOBILE NATIVE SCANNING ENGINE ---
     function scanVideoFrame() {
-      // Stop looping if the modal is open
       if (isPaused) return;
 
       if (video.readyState === video.HAVE_ENOUGH_DATA) {
         canvasElement.height = video.videoHeight;
         canvasElement.width = video.videoWidth;
-        
-        // Draw the current video frame to the hidden canvas
         canvasContext.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
         
-        // Extract the pixels and send to jsQR
         let imageData = canvasContext.getImageData(0, 0, canvasElement.width, canvasElement.height);
-        let code = jsQR(imageData.data, imageData.width, imageData.height, {
-          inversionAttempts: "dontInvert",
-        });
+        let code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
 
-        // If it finds a chemical ID!
         if (code && code.data) {
           onScanSuccess(code.data);
-          return; // Exit the loop
+          return; 
         }
       }
-      // Keep checking the next frame
       requestAnimationFrame(scanVideoFrame);
     }
 
     window.onload = function() {
-      const iosBtn = document.getElementById('ios-start-btn');
-      const errorLog = document.getElementById('error-log');
+      loadDatabase();
 
+      const iosBtn = document.getElementById('ios-start-btn');
       if (isMobile) {
-        // --- MOBILE WORKFLOW ---
         iosBtn.style.display = "block";
         document.getElementById('status-msg').innerText = "Ready to initialize.";
-
         iosBtn.onclick = function() {
           iosBtn.style.display = "none"; 
-          document.getElementById('status-msg').innerText = "Starting pure video feed...";
+          document.getElementById('status-msg').innerText = "Starting video feed...";
 
-          // Pure HTML5 video request. No library middlemen.
           navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
             .then(function(stream) {
               video.srcObject = stream;
-              video.setAttribute("playsinline", true); // CRITICAL for iOS
+              video.setAttribute("playsinline", true);
               video.play();
-              
               video.style.display = "block";
               document.getElementById('status-msg').innerText = "Camera active. Ready to scan.";
-              
-              // Start checking the video feed for QR codes
               requestAnimationFrame(scanVideoFrame);
             })
             .catch(function(err) {
               document.getElementById('status-msg').innerText = "Native Camera Error.";
-              errorLog.innerText = err;
+              document.getElementById('error-log').innerText = err;
               iosBtn.style.display = "block";
             });
         };
-
       } else {
-        // --- DESKTOP WORKFLOW ---
         document.getElementById('reader').style.display = "block";
         document.getElementById('status-msg').innerText = "Camera active. Ready to scan.";
-        
-        // Let the library handle everything (including Continuity Camera)
-        scanner = new Html5QrcodeScanner(
-          "reader",
-          { fps: 10, qrbox: {width: 250, height: 250} },
-          false
-        );
+        scanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: {width: 250, height: 250} }, false);
         scanner.render(onScanSuccess);
       }
     };

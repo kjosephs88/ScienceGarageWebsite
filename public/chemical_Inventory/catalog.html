@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Local Chemical Editor</title>
+  <style>
+    body { font-family: -apple-system, sans-serif; background-color: #f4f4f9; padding: 20px; max-width: 700px; margin: 0 auto; }
+    
+    /* Upload Section */
+    #upload-section { background: white; padding: 30px; border-radius: 10px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    input[type="file"] { margin-top: 15px; font-size: 1.1em; }
+    
+    /* Main App Interface */
+    #app-interface { display: none; }
+    .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    input[type="text"] { width: 100%; padding: 15px; font-size: 1.2em; border: 2px solid #ccc; border-radius: 8px; box-sizing: border-box; margin-bottom: 20px; }
+    
+    .btn { padding: 10px 15px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; }
+    .btn-add { background-color: #28a745; font-size: 1.1em; padding: 12px 20px; }
+    .btn-export { background-color: #007aff; }
+    .btn-edit { background-color: #6c757d; font-size: 0.9em; float: right; }
+    
+    /* Result Cards */
+    .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 15px; text-align: left; position: relative;}
+    .card h3 { margin: 0 0 10px 0; color: #333; }
+    .badge { display: inline-block; padding: 5px 10px; border-radius: 5px; font-weight: bold; font-size: 0.9em; margin-right: 5px; margin-top: 5px; }
+    .flinn-badge { background: #0056b3; color: white; }
+    .loc-badge { background: #17a2b8; color: white; }
+    .hazard-text { color: #dc3545; font-size: 0.9em; font-weight: bold; margin-top: 10px;}
+    
+    /* Editor Modal */
+    #editor-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; }
+    .modal-content { background: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 400px; text-align: left; }
+    .modal-content label { font-weight: bold; display: block; margin-top: 15px; }
+    .modal-content input { width: 100%; padding: 10px; font-size: 1em; border: 1px solid #ccc; border-radius: 6px; margin-top: 5px; box-sizing: border-box;}
+    .modal-actions { margin-top: 25px; display: flex; justify-content: space-between; }
+    .btn-save { background-color: #28a745; width: 48%; }
+    .btn-cancel { background-color: #dc3545; width: 48%; }
+  </style>
+</head>
+<body>
+
+  <div id="upload-section">
+    <h2>🧪 Science Garage Editor</h2>
+    <p>Select your <b>chemical_database.json</b> file to begin.</p>
+    <input type="file" id="json-upload" accept=".json">
+  </div>
+
+  <div id="app-interface">
+    <div class="header-bar">
+      <button class="btn btn-add" onclick="openEditor()">+ Add Chemical</button>
+      <button class="btn btn-export" onclick="exportJSON()">💾 Export JSON</button>
+    </div>
+    
+    <input type="text" id="searchInput" placeholder="Search CAS # or Chemical Name..." onkeyup="searchCatalog()">
+    <div id="results"></div>
+  </div>
+
+  <div id="editor-modal">
+    <div class="modal-content">
+      <h3 id="modal-title">Edit Chemical</h3>
+      
+      <label>Chemical Name</label>
+      <input type="text" id="edit-name" placeholder="e.g. Acetic Acid">
+      
+      <label>CAS Number (Acts as ID)</label>
+      <input type="text" id="edit-cas" placeholder="e.g. 64-19-7">
+      
+      <label>Flinn Category</label>
+      <input type="text" id="edit-flinn" placeholder="e.g. Organic 1">
+      
+      <label>Storage Location</label>
+      <input type="text" id="edit-location" placeholder="e.g. Acid Cabinet">
+      
+      <label>Hazards (Comma separated)</label>
+      <input type="text" id="edit-hazards" placeholder="Corrosive, Flammable">
+      
+      <input type="hidden" id="edit-original-id">
+      
+      <div class="modal-actions">
+        <button class="btn btn-cancel" onclick="closeEditor()">Cancel</button>
+        <button class="btn btn-save" onclick="saveEntry()">Save Entry</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let catalogData = {};
+
+    // --- FILE UPLOADER LOGIC ---
+    document.getElementById('json-upload').addEventListener('change', function(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          catalogData = parsed.master_catalog || {};
+          
+          // Switch UI views
+          document.getElementById('upload-section').style.display = 'none';
+          document.getElementById('app-interface').style.display = 'block';
+          
+          searchCatalog(); // Populate list initially
+        } catch (error) {
+          alert("Error reading JSON file. Make sure it's the correct format.");
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    // --- SEARCH & DISPLAY LOGIC ---
+    function searchCatalog() {
+      const query = document.getElementById('searchInput').value.toLowerCase();
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.innerHTML = "";
+      let htmlOutput = "";
+      let count = 0;
+
+      for (const [key, chem] of Object.entries(catalogData)) {
+        // Show all if query is empty, else filter
+        if (query === "" || key.toLowerCase().includes(query) || chem.name.toLowerCase().includes(query)) {
+          
+          let hazardString = (chem.hazards && chem.hazards.length > 0 && chem.hazards[0] !== "") 
+                             ? `Hazards: ${chem.hazards.join(', ')}` 
+                             : "No hazards listed";
+
+          htmlOutput += `
+            <div class="card">
+              <button class="btn btn-edit" onclick="openEditor('${key}')">Edit</button>
+              <h3>${chem.name} <span style="font-size:0.6em; color:#666;">(${chem.cas || "No CAS"})</span></h3>
+              <div>
+                <span class="badge flinn-badge">${chem.flinn_family}</span>
+                <span class="badge loc-badge">${chem.storage_requirements}</span>
+              </div>
+              <div class="hazard-text">${hazardString}</div>
+            </div>
+          `;
+          count++;
+          if (count >= 20 && query !== "") break; // Limit active search results to keep it snappy
+        }
+      }
+      
+      resultsDiv.innerHTML = htmlOutput || "<p>No matches found.</p>";
+    }
+
+    // --- EDITOR LOGIC ---
+    function openEditor(id = null) {
+      if (id && catalogData[id]) {
+        // Edit Mode
+        document.getElementById('modal-title').innerText = "Edit Chemical";
+        let chem = catalogData[id];
+        document.getElementById('edit-name').value = chem.name || "";
+        document.getElementById('edit-cas').value = chem.cas || "";
+        document.getElementById('edit-flinn').value = chem.flinn_family || "";
+        document.getElementById('edit-location').value = chem.storage_requirements || "";
+        document.getElementById('edit-hazards').value = chem.hazards ? chem.hazards.join(", ") : "";
+        document.getElementById('edit-original-id').value = id;
+      } else {
+        // Add Mode
+        document.getElementById('modal-title').innerText = "Add New Chemical";
+        document.getElementById('edit-name').value = "";
+        document.getElementById('edit-cas').value = "";
+        document.getElementById('edit-flinn').value = "";
+        document.getElementById('edit-location').value = "";
+        document.getElementById('edit-hazards').value = "";
+        document.getElementById('edit-original-id').value = "";
+      }
+      document.getElementById('editor-modal').style.display = "flex";
+    }
+
+    function closeEditor() {
+      document.getElementById('editor-modal').style.display = "none";
+    }
+
+    function saveEntry() {
+      const originalId = document.getElementById('edit-original-id').value;
+      const cas = document.getElementById('edit-cas').value.trim();
+      const name = document.getElementById('edit-name').value.trim();
+      
+      if (!name) {
+        alert("Chemical Name is required.");
+        return;
+      }
+
+      // The new ID is the CAS if available, otherwise the Name
+      const newId = cas !== "" ? cas : name;
+
+      // If the ID changed (e.g. added a missing CAS), delete the old entry
+      if (originalId !== "" && originalId !== newId) {
+        delete catalogData[originalId];
+      }
+
+      // Build the JSON object
+      catalogData[newId] = {
+        name: name,
+        cas: cas,
+        flinn_family: document.getElementById('edit-flinn').value.trim(),
+        storage_requirements: document.getElementById('edit-location').value.trim(),
+        hazards: document.getElementById('edit-hazards').value.split(',').map(h => h.trim()).filter(h => h !== "")
+      };
+
+      closeEditor();
+      
+      // Clear the search bar and refresh the list to show the new/updated item at the top
+      document.getElementById('searchInput').value = "";
+      searchCatalog(); 
+    }
+
+    // --- EXPORT LOGIC ---
+    function exportJSON() {
+      // Re-wrap the data in the master_catalog format
+      const finalObject = { master_catalog: catalogData };
+      const jsonString = JSON.stringify(finalObject, null, 2);
+      
+      // Create a virtual file (Blob) and force the browser to download it
+      const blob = new Blob([jsonString], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "chemical_database.json";
+      document.body.appendChild(a);
+      a.click();
+      
+      // Cleanup
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+  </script>
+
+</body>
+</html>
