@@ -13,7 +13,7 @@
     /* Login Screen */
     #login-screen { margin-top: 100px; }
     .btn-google { background-color: #4285F4; color: white; padding: 15px 30px; font-size: 1.2em; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
-    #app-container { display: none; } /* Hidden until logged in */
+    #app-container { display: none; }
 
     /* Scanner UI */
     #scanner-container { max-width: 500px; margin: 0 auto; }
@@ -29,7 +29,6 @@
     .form-group input[readonly] { background-color: #e9ecef; font-weight: bold; }
     .grid-2-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     
-    /* Batch & Photo Highlights */
     .batch-toggle { background: #e3f2fd; padding: 10px; border-radius: 6px; margin-bottom: 15px; display: flex; align-items: center; border: 1px solid #b6d4fe; }
     .batch-toggle input { width: 20px; height: 20px; margin-right: 10px; }
     #end-id-group { display: none; }
@@ -39,7 +38,6 @@
     .photo-upload label { background: #6c757d; color: white; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; display: inline-block; }
     #photo-preview { max-width: 100%; height: auto; border-radius: 6px; margin-top: 10px; display: none; max-height: 200px; }
 
-    /* Autocomplete */
     .autocomplete-items { position: absolute; border: 1px solid #ccc; border-top: none; z-index: 99; top: 100%; left: 0; right: 0; background-color: white; max-height: 200px; overflow-y: auto; border-radius: 0 0 8px 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.15); }
     .autocomplete-items div { padding: 12px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 0.95em; }
     .autocomplete-items div:hover, .autocomplete-active { background-color: #007aff !important; color: white; }
@@ -107,6 +105,14 @@
       </div>
 
       <div class="form-group">
+        <label>Container Origin</label>
+        <select id="f-origin">
+          <option value="Manufacturer">Manufacturer Original</option>
+          <option value="Teacher-Prepared">Teacher-Prepared / Mixed</option>
+        </select>
+      </div>
+
+      <div class="form-group">
         <label>Chemical Name (Type to search)</label>
         <input type="text" id="f-chemName" placeholder="e.g. Acetone or 67-64-1" autocomplete="off">
         <div id="autocomplete-list" class="autocomplete-items"></div>
@@ -122,7 +128,7 @@
       </div>
       <div class="grid-2-col">
         <div class="form-group">
-          <label>Container Type</label>
+          <label>Container Material</label>
           <select id="f-container">
             <option value="plastic">Plastic</option><option value="glass">Glass</option><option value="can">Can</option><option value="bag">Bag</option>
           </select>
@@ -142,7 +148,7 @@
             <option value="full">Full</option><option value="3/4 full">3/4 Full</option><option value="1/2 full">1/2 Full</option><option value="1/4 full">1/4 Full</option>
           </select>
         </div>
-        <div class="form-group"><label>Mass (g)</label><input type="number" step="0.1" id="f-mass"></div>
+        <div class="form-group"><label>Current Mass (g)</label><input type="number" step="0.1" id="f-mass"></div>
       </div>
       <div class="grid-2-col">
         <div class="form-group"><label>Container Size</label><input type="text" id="f-size"></div>
@@ -167,7 +173,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-    import { getDatabase, ref as dbRef, get, set } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+    import { getDatabase, ref as dbRef, get, set, update } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
     import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
 
     // 🔴 INSERT YOUR FIREBASE CONFIG HERE 🔴
@@ -186,8 +192,10 @@
     const db = getDatabase(app);
     const storage = getStorage(app);
 
-    // --- 1. AUTHENTICATION LOGIC ---
     const allowedEmails = ['pianodemon88@gmail.com', 'kjosephs@ocsdny.org'];
+
+    // Global state to preserve existing data during an update
+    let existingRecordData = null;
 
     document.getElementById('btn-login').addEventListener('click', () => {
       signInWithPopup(auth, new GoogleAuthProvider()).catch(err => {
@@ -201,9 +209,9 @@
           document.getElementById('login-screen').style.display = "none";
           document.getElementById('app-container').style.display = "block";
           document.getElementById('user-display').innerText = `Logged in as: ${user.email}`;
-          initApp(); // Start the scanners
+          initApp(); 
         } else {
-          document.getElementById('auth-error').innerText = `Access Denied for ${user.email}. You are not authorized.`;
+          document.getElementById('auth-error').innerText = `Access Denied.`;
           auth.signOut();
         }
       } else {
@@ -212,29 +220,22 @@
       }
     });
 
-    // --- EXPOSE FUNCTIONS TO GLOBAL SCOPE FOR HTML ONCLICK ---
     window.toggleBatchMode = function() {
       const isBatch = document.getElementById('batch-mode').checked;
       document.getElementById('end-id-group').style.display = isBatch ? "block" : "none";
       document.getElementById('lbl-invNum').innerText = isBatch ? "Start Inventory No." : "OHS Inventory No.";
-      
-      // If batch is checked, we can let them manually type the start ID if they want to bypass scanning
       document.getElementById('f-invNum').readOnly = !isBatch;
     }
 
-    // --- COMPRESSION LOGIC (CANVAS) ---
     let compressedPhotoBlob = null;
-
     document.getElementById('f-photo').addEventListener('change', function(event) {
       const file = event.target.files[0];
       if (!file) return;
 
-      // Show preview
       const preview = document.getElementById('photo-preview');
       preview.src = URL.createObjectURL(file);
       preview.style.display = "block";
 
-      // Compress via Canvas
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onload = e => {
@@ -243,22 +244,16 @@
         img.onload = () => {
           const canvas = document.createElement('canvas');
           const ctx = canvas.getContext('2d');
-          const MAX_WIDTH = 800; // Shrink to 800px max width
+          const MAX_WIDTH = 800; 
           const scaleSize = MAX_WIDTH / img.width;
-          
           canvas.width = MAX_WIDTH;
           canvas.height = img.height * scaleSize;
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          
-          // Output as 70% quality JPEG
-          canvas.toBlob((blob) => {
-            compressedPhotoBlob = blob;
-          }, 'image/jpeg', 0.7);
+          canvas.toBlob((blob) => { compressedPhotoBlob = blob; }, 'image/jpeg', 0.7);
         }
       }
     });
 
-    // --- FIREBASE SUBMISSION LOGIC ---
     window.submitToFirebase = async function() {
       const btn = document.getElementById('submit-btn');
       const errorLog = document.getElementById('error-log');
@@ -269,6 +264,7 @@
       const startStr = document.getElementById('f-invNum').value;
       const isBatch = document.getElementById('batch-mode').checked;
       const endStr = document.getElementById('f-invEndNum').value;
+      const currentMass = parseFloat(document.getElementById('f-mass').value);
 
       let startNum = parseInt(startStr, 10);
       let endNum = isBatch ? parseInt(endStr, 10) : startNum;
@@ -281,7 +277,6 @@
       }
 
       try {
-        // STEP 1: If batch, check if ANY IDs exist to prevent overwriting
         if (isBatch) {
           btn.innerText = "Checking range...";
           let conflicts = [];
@@ -290,25 +285,37 @@
             let snapshot = await get(dbRef(db, `chemInventory/${checkId}`));
             if (snapshot.exists()) conflicts.push(checkId);
           }
-          if (conflicts.length > 0) {
-            throw new Error(`Batch abort! These IDs already exist: ${conflicts.join(', ')}`);
-          }
+          if (conflicts.length > 0) throw new Error(`Batch abort! IDs already exist: ${conflicts.join(', ')}`);
         }
 
-        // STEP 2: Upload Photo if exists
-        let uploadedImageUrl = null;
+        let finalImageUrl = existingRecordData ? existingRecordData.imageUrl : null;
+        
         if (compressedPhotoBlob) {
           btn.innerText = "Uploading Photo...";
-          // If batch, we just name the photo after the Start ID and link it to all of them
           const mainId = String(startNum).padStart(5, '0'); 
           const imgRef = storageRef(storage, `images/${mainId}.jpg`);
           await uploadBytes(imgRef, compressedPhotoBlob);
-          uploadedImageUrl = await getDownloadURL(imgRef);
+          finalImageUrl = await getDownloadURL(imgRef);
         }
 
-        // STEP 3: Build the Payload
+        // MASS HISTORY LOGIC: Rebuild the array, add new entry if changed
+        let updatedMassHistory = existingRecordData && existingRecordData.massHistory ? existingRecordData.massHistory : [];
+        
+        if (!isNaN(currentMass)) {
+          // Check if this is the first entry, OR if the mass has actually changed since last time
+          let lastRecordedMass = updatedMassHistory.length > 0 ? updatedMassHistory[updatedMassHistory.length - 1].mass : null;
+          
+          if (lastRecordedMass !== currentMass) {
+            updatedMassHistory.push({
+              mass: currentMass,
+              date: new Date().toISOString()
+            });
+          }
+        }
+
         const payload = {
-          sdsPrinted: false,
+          sdsPrinted: existingRecordData ? existingRecordData.sdsPrinted : false,
+          containerOrigin: document.getElementById('f-origin').value,
           chemName: document.getElementById('f-chemName').value,
           casNo: document.getElementById('f-casNo').value,
           manufacturer: document.getElementById('f-mfg').value,
@@ -317,7 +324,8 @@
           containerType: document.getElementById('f-container').value,
           form: document.getElementById('f-form').value,
           amount: document.getElementById('f-amount').value,
-          mass: document.getElementById('f-mass').value,
+          mass: currentMass || "",
+          massHistory: updatedMassHistory,
           containerSize: document.getElementById('f-size').value,
           shelf: document.getElementById('f-shelf').value,
           flinnCat: document.getElementById('f-flinn').value,
@@ -326,22 +334,21 @@
           lastVerified: new Date().toISOString()
         };
 
-        if (uploadedImageUrl) payload.imageUrl = uploadedImageUrl;
+        // Preserve existing URL if we didn't take a new picture
+        if (finalImageUrl) payload.imageUrl = finalImageUrl;
 
-        // STEP 4: Write to RTDB
         btn.innerText = "Saving to Database...";
         for (let i = startNum; i <= endNum; i++) {
           let targetId = String(i).padStart(5, '0');
-          // Write directly to chemInventory/00051 etc.
           await set(dbRef(db, `chemInventory/${targetId}`), payload);
         }
 
-        // Success Cleanup
         btn.innerText = "Save Item";
         btn.disabled = false;
         compressedPhotoBlob = null;
         document.getElementById('photo-preview').style.display = "none";
-        document.getElementById('f-photo').value = ""; // Clear file input
+        document.getElementById('f-photo').value = ""; 
+        existingRecordData = null; // Clear global state
         
         window.resetScanner();
         document.getElementById('status-msg').innerText = isBatch ? `✅ Batch Saved: ${startNum} to ${endNum}` : `✅ Saved Item #${String(startNum).padStart(5, '0')}`;
@@ -353,7 +360,6 @@
       }
     };
 
-    // --- LOOKUP, AUTOCOMPLETE & SCANNER GLOBALS ---
     let scanner, isPaused = false, catalogData = {}, currentFocus = -1;
     let isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     const video = document.getElementById("ios-video");
@@ -363,7 +369,6 @@
     function initApp() {
       fetch('chemical_database.json').then(r => r.json()).then(d => catalogData = d.master_catalog || {}).catch(e => console.error(e));
 
-      // Autocomplete Logic
       const nameInput = document.getElementById('f-chemName');
       const autoList = document.getElementById('autocomplete-list');
       nameInput.addEventListener('input', function() {
@@ -386,15 +391,12 @@
 
       nameInput.addEventListener("keydown", function(e) {
         let items = autoList.getElementsByTagName("div");
-        if (e.keyCode === 40) { currentFocus++; addActive(items); } 
-        else if (e.keyCode === 38) { currentFocus--; addActive(items); } 
-        else if (e.keyCode === 13) { e.preventDefault(); if (currentFocus > -1) { if (items) items[currentFocus].click(); } }
+        if (e.keyCode === 40) { currentFocus++; addActive(items); } else if (e.keyCode === 38) { currentFocus--; addActive(items); } else if (e.keyCode === 13) { e.preventDefault(); if (currentFocus > -1) { if (items) items[currentFocus].click(); } }
       });
       function addActive(x) { if (!x) return false; removeActive(x); if (currentFocus >= x.length) currentFocus = 0; if (currentFocus < 0) currentFocus = (x.length - 1); x[currentFocus].classList.add("autocomplete-active"); x[currentFocus].scrollIntoView({ block: "nearest" }); }
       function removeActive(x) { for (let i = 0; i < x.length; i++) x[i].classList.remove("autocomplete-active"); }
       document.addEventListener("click", function (e) { if (e.target !== nameInput) autoList.innerHTML = ''; });
 
-      // Camera Initialization
       const iosBtn = document.getElementById('ios-start-btn');
       if (isMobile) {
         iosBtn.style.display = "block"; document.getElementById('status-msg').innerText = "Ready to initialize.";
@@ -426,8 +428,10 @@
 
         if (snapshot.exists()) {
           const data = snapshot.val();
+          existingRecordData = data; // SAVE TO GLOBAL STATE
           document.getElementById('edit-warning').style.display = "block";
-          // Populate form (handling potential undefined values gracefully)
+          
+          document.getElementById('f-origin').value = data.containerOrigin || "Manufacturer";
           document.getElementById('f-chemName').value = data.chemName || "";
           document.getElementById('f-casNo').value = data.casNo || "";
           document.getElementById('f-mfg').value = data.manufacturer || "";
@@ -450,6 +454,7 @@
           }
         } else {
           document.getElementById('edit-warning').style.display = "none";
+          existingRecordData = null;
           document.getElementById('f-chemName').focus();
         }
       } catch(e) {
@@ -469,6 +474,7 @@
       document.getElementById('photo-preview').style.display = "none";
       document.getElementById('photo-preview').src = "";
       compressedPhotoBlob = null;
+      existingRecordData = null; // CLEAR GLOBAL STATE
       document.getElementById('error-log').innerText = '';
       
       document.getElementById('inventory-form').style.display = "none";
