@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Planner</title>
+
+    <script src="/__/firebase/12.12.0/firebase-app-compat.js"></script>
+    <script src="/__/firebase/12.12.0/firebase-auth-compat.js"></script>
+    <script src="/__/firebase/12.12.0/firebase-database-compat.js"></script>
+    <script src="/__/firebase/init.js"></script>
+    <script src="guard.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+
+    <style>
+        :root {
+            --primary-line: #e8c99b;
+            --bg-color: #fdfaf6;
+            --text-main: #333;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: none;
+        }
+
+        /* Top Navigation Improvements */
+        .header-controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            align-items: center;
+            background: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .header-controls button {
+            padding: 8px 16px;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            background: white;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .header-controls button:hover { background: #eee; }
+        
+        .date-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #f9f9f9;
+            padding: 5px 10px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+        }
+
+        .date-group label {
+            font-weight: bold;
+            color: #555;
+            font-size: 14px;
+        }
+
+        .view-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: bold;
+            padding: 0 15px;
+            border-left: 2px solid #eee;
+            border-right: 2px solid #eee;
+        }
+
+        /* Planner Layout */
+        #planners-wrapper {
+            display: flex;
+            gap: 30px;
+            overflow-x: auto;
+            align-items: flex-start;
+            padding-bottom: 20px;
+        }
+
+        .planner-day {
+            background: white;
+            min-width: 750px;
+            flex: 1;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 40px;
+        }
+
+        .date-header {
+            grid-column: 1 / -1;
+            font-size: 24px;
+            font-weight: bold;
+            border-bottom: 2px solid var(--primary-line);
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .left-col { display: flex; flex-direction: column; gap: 30px; }
+        
+        .section-title {
+            font-weight: bold;
+            font-size: 14px;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        /* Min Heights applied here to keep zones open */
+        .priorities-box {
+            border: 1px solid var(--primary-line);
+            min-height: 120px;
+            padding: 10px;
+        }
+
+        .task-dump-box {
+            border: 2px dotted var(--primary-line);
+            min-height: 400px;
+            padding: 10px;
+            flex-grow: 1;
+        }
+
+        .time-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .time-table th {
+            text-align: left;
+            padding: 10px;
+            border-bottom: 1px solid var(--primary-line);
+        }
+
+        .time-table td {
+            border: 1px solid var(--primary-line);
+            padding: 5px;
+            vertical-align: top;
+        }
+
+        .time-slot {
+            height: 38px; /* Forces empty cells to be one line tall */
+        }
+
+        .time-label {
+            font-weight: bold;
+            text-align: center;
+            width: 40px;
+            background: #fdfaf6;
+        }
+
+        .sortable-list {
+            min-height: 35px; /* Drop target minimum height */
+            height: 100%;
+        }
+
+        /* Task Items & Dragging Improvements */
+        .task-item {
+            display: flex;
+            align-items: flex-start;
+            background: #fff;
+            padding: 6px;
+            margin-bottom: 6px;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            gap: 8px;
+            transition: box-shadow 0.2s;
+        }
+
+        .task-item:hover {
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        /* The specific handle you drag */
+        .drag-handle {
+            cursor: grab;
+            color: #bbb;
+            font-weight: bold;
+            user-select: none;
+            padding: 2px 4px;
+            margin-top: 2px;
+        }
+
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+
+        .task-item.sortable-ghost { 
+            opacity: 0.4; 
+            background: #f0f8ff; 
+        }
+        
+        .task-checkbox {
+            margin-top: 6px;
+            cursor: pointer;
+        }
+
+        .task-text {
+            flex-grow: 1;
+            outline: none;
+            line-height: 1.4;
+            cursor: text;
+            padding: 4px;
+            border-radius: 4px;
+        }
+        
+        .task-text[contenteditable="true"]:focus {
+            background: #fdfdfd;
+            border: 1px dashed #ccc;
+        }
+
+        .task-text.completed {
+            text-decoration: line-through;
+            color: #999;
+        }
+
+        .delete-btn {
+            color: #ff6b6b;
+            cursor: pointer;
+            font-weight: bold;
+            padding: 4px;
+            visibility: hidden;
+            user-select: none;
+        }
+
+        .task-item:hover .delete-btn { visibility: visible; }
+
+        .add-task-btn {
+            width: 100%;
+            padding: 8px;
+            background: #f9f9f9;
+            border: 1px dashed #ccc;
+            cursor: pointer;
+            color: #666;
+            margin-top: 10px;
+        }
+
+        .add-task-btn:hover { background: #eee; }
+
+    </style>
+</head>
+<body>
+
+    <div class="header-controls">
+        <button id="prevBtn" onclick="shiftDates(-1)">&#8592; Previous</button>
+        
+        <div class="date-group">
+            <label for="dateSelector1">Day 1:</label>
+            <input type="date" id="dateSelector1" onchange="syncDatesFromPickers()">
+        </div>
+
+        <div class="view-toggle">
+            <input type="checkbox" id="twoDayToggle" onchange="handleToggleChange()">
+            <label for="twoDayToggle">Two-Day View</label>
+        </div>
+
+        <div class="date-group" id="date2-container" style="display: none;">
+            <label for="dateSelector2">Day 2:</label>
+            <input type="date" id="dateSelector2" onchange="syncDatesFromPickers()">
+        </div>
+
+        <button id="nextBtn" onclick="shiftDates(1)">Next &#8594;</button>
+    </div>
+
+    <div id="planners-wrapper">
+        </div>
+
+    <script>
+        const db = firebase.database();
+        
+        // Track the dates independently
+        let date1 = new Date('2026-06-18T12:00:00');
+        let date2 = new Date('2026-06-19T12:00:00');
+
+        function initApp() {
+            updatePickersUI();
+            renderPlanners();
+        }
+
+        function handleToggleChange() {
+            const isTwoDay = document.getElementById('twoDayToggle').checked;
+            document.getElementById('date2-container').style.display = isTwoDay ? 'flex' : 'none';
+            
+            if (isTwoDay) {
+                // If turning on, set day 2 to exactly one day after day 1 automatically
+                date2 = new Date(date1);
+                date2.setDate(date2.getDate() + 1);
+                updatePickersUI();
+            }
+            renderPlanners();
+        }
+
+        // Logic for the Prev/Next buttons
+        function shiftDates(days) {
+            date1.setDate(date1.getDate() + days);
+            date2.setDate(date2.getDate() + days);
+            updatePickersUI();
+            renderPlanners();
+        }
+
+        // Logic for when the user manually uses the calendar picker
+        function syncDatesFromPickers() {
+            const val1 = document.getElementById('dateSelector1').value;
+            const val2 = document.getElementById('dateSelector2').value;
+            if (val1) date1 = new Date(val1 + "T12:00:00");
+            if (val2) date2 = new Date(val2 + "T12:00:00");
+            renderPlanners();
+        }
+
+        function updatePickersUI() {
+            document.getElementById('dateSelector1').value = formatDateStr(date1);
+            document.getElementById('dateSelector2').value = formatDateStr(date2);
+        }
+
+        function createPlannerHTML(dateStr) {
+            const displayDate = new Date(dateStr + "T12:00:00").toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+            
+            let timeRows = '';
+            for (let i = 6; i <= 20; i++) {
+                const displayHour = i > 12 ? i - 12 : i;
+                const paddedHour = i.toString().padStart(2, '0');
+                
+                timeRows += `
+                    <tr>
+                        <td class="time-label" rowspan="2">${displayHour}</td>
+                        <td class="sortable-list time-slot" data-date="${dateStr}" data-key="schedule.${paddedHour}:00"></td>
+                    </tr>
+                    <tr>
+                        <td class="sortable-list time-slot" data-date="${dateStr}" data-key="schedule.${paddedHour}:30"></td>
+                    </tr>
+                `;
+            }
+
+            return `
+                <div class="planner-day" id="planner-${dateStr}">
+                    <div class="date-header">DATE: ${displayDate}</div>
+                    
+                    <div class="left-col">
+                        <div>
+                            <div class="section-title">TODAY'S PRIORITIES</div>
+                            <div class="priorities-box sortable-list" data-date="${dateStr}" data-key="priorities"></div>
+                            <button class="add-task-btn" onclick="addNewTask('${dateStr}', 'priorities')">+ Add Priority</button>
+                        </div>
+
+                        <div style="display:flex; flex-direction:column; flex-grow:1;">
+                            <div class="section-title">TASK DUMP</div>
+                            <div class="task-dump-box sortable-list" data-date="${dateStr}" data-key="taskDump"></div>
+                            <button class="add-task-btn" onclick="addNewTask('${dateStr}', 'taskDump')">+ Add Task</button>
+                        </div>
+                    </div>
+
+                    <div class="right-col">
+                        <table class="time-table">
+                            <thead>
+                                <tr>
+                                    <th style="width:40px;">Hour</th>
+                                    <th>Schedule (:00 / :30)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${timeRows}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderPlanners() {
+            const wrapper = document.getElementById('planners-wrapper');
+            const isTwoDay = document.getElementById('twoDayToggle').checked;
+            
+            const dateStr1 = formatDateStr(date1);
+            let html = createPlannerHTML(dateStr1);
+            let datesToLoad = [dateStr1];
+
+            if (isTwoDay) {
+                const dateStr2 = formatDateStr(date2);
+                // Prevent duplicate loading if user accidentally sets both pickers to the exact same day
+                if (dateStr1 !== dateStr2) {
+                    html += createPlannerHTML(dateStr2);
+                    datesToLoad.push(dateStr2);
+                }
+            }
+
+            wrapper.innerHTML = html;
+            datesToLoad.forEach(date => fetchAndPopulate(date));
+        }
+
+        function fetchAndPopulate(dateStr) {
+            db.ref(`dailyPlanner/${dateStr}`).once('value', snapshot => {
+                let data = snapshot.val();
+                if (!data) data = { priorities: [], taskDump: [], schedule: {} };
+                populateUI(dateStr, data);
+                initSortableJS();
+            });
+        }
+
+        function populateUI(dateStr, data) {
+            const planner = document.getElementById(`planner-${dateStr}`);
+            if (!planner) return;
+
+            planner.querySelectorAll('.sortable-list').forEach(el => el.innerHTML = '');
+
+            const pContainer = planner.querySelector('[data-key="priorities"]');
+            if (data.priorities) data.priorities.forEach(task => pContainer.appendChild(createTaskElement(task, dateStr)));
+
+            const tdContainer = planner.querySelector('[data-key="taskDump"]');
+            if (data.taskDump) data.taskDump.forEach(task => tdContainer.appendChild(createTaskElement(task, dateStr)));
+
+            if (data.schedule) {
+                for (const [time, tasks] of Object.entries(data.schedule)) {
+                    const timeContainer = planner.querySelector(`[data-key="schedule.${time}"]`);
+                    if (timeContainer) {
+                        tasks.forEach(task => timeContainer.appendChild(createTaskElement(task, dateStr)));
+                    }
+                }
+            }
+        }
+
+        function createTaskElement(task, dateStr) {
+            const div = document.createElement('div');
+            div.className = 'task-item';
+            div.setAttribute('data-id', task.id);
+            
+            const isChecked = task.completed ? 'checked' : '';
+            const textClass = task.completed ? 'task-text completed' : 'task-text';
+
+            div.innerHTML = `
+                <div class="drag-handle" title="Drag to move item">⋮⋮</div>
+                <input type="checkbox" class="task-checkbox" ${isChecked} onchange="toggleTaskComplete(this, '${dateStr}')">
+                <div class="${textClass}" contenteditable="true" onblur="saveCurrentDay('${dateStr}')">${task.text}</div>
+                <div class="delete-btn" onclick="deleteTask(this, '${dateStr}')" title="Delete Task">×</div>
+            `;
+            return div;
+        }
+
+        function generateId() { return Math.random().toString(36).substr(2, 9); }
+
+        function addNewTask(dateStr, key) {
+            const container = document.querySelector(`#planner-${dateStr} [data-key="${key}"]`);
+            const newTask = { id: generateId(), text: "New Task", completed: false };
+            container.appendChild(createTaskElement(newTask, dateStr));
+            saveCurrentDay(dateStr);
+            
+            // Automatically highlight text to start typing
+            const newElement = container.lastElementChild.querySelector('.task-text');
+            newElement.focus();
+            document.execCommand('selectAll', false, null);
+        }
+
+        function toggleTaskComplete(checkbox, dateStr) {
+            const textSpan = checkbox.nextElementSibling;
+            if (checkbox.checked) textSpan.classList.add('completed');
+            else textSpan.classList.remove('completed');
+            saveCurrentDay(dateStr);
+        }
+
+        function deleteTask(btn, dateStr) {
+            btn.parentElement.remove();
+            saveCurrentDay(dateStr);
+        }
+
+        function saveCurrentDay(dateStr) {
+            const planner = document.getElementById(`planner-${dateStr}`);
+            if (!planner) return;
+
+            const payload = { priorities: [], taskDump: [], schedule: {} };
+
+            planner.querySelectorAll('.sortable-list').forEach(list => {
+                const keyPath = list.getAttribute('data-key');
+                const tasks = Array.from(list.children).map(item => ({
+                    id: item.getAttribute('data-id'),
+                    text: item.querySelector('.task-text').innerText,
+                    completed: item.querySelector('.task-checkbox').checked
+                }));
+
+                if (keyPath === 'priorities' || keyPath === 'taskDump') {
+                    payload[keyPath] = tasks;
+                } else if (keyPath.startsWith('schedule.')) {
+                    const time = keyPath.split('.')[1];
+                    if (tasks.length > 0) payload.schedule[time] = tasks;
+                }
+            });
+
+            db.ref(`dailyPlanner/${dateStr}`).set(payload);
+        }
+
+        function initSortableJS() {
+            document.querySelectorAll('.sortable-list').forEach(list => {
+                if(list._sortable) list._sortable.destroy();
+                
+                list._sortable = Sortable.create(list, {
+                    group: 'shared-planner',
+                    animation: 150,
+                    handle: '.drag-handle', // <--- Locks dragging specifically to the grip handle
+                    ghostClass: 'sortable-ghost',
+                    onEnd: function (evt) {
+                        const fromDate = evt.from.getAttribute('data-date');
+                        const toDate = evt.to.getAttribute('data-date');
+                        
+                        saveCurrentDay(fromDate);
+                        if (fromDate !== toDate) saveCurrentDay(toDate);
+                    }
+                });
+            });
+        }
+
+        function formatDateStr(dateObj) {
+            const yyyy = dateObj.getFullYear();
+            const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const dd = String(dateObj.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
+        window.onload = () => {
+            setTimeout(initApp, 500); 
+        };
+
+    </script>
+</body>
+</html>

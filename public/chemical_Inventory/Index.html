@@ -10,23 +10,39 @@
   <style>
     body { font-family: -apple-system, sans-serif; text-align: center; background-color: #f4f4f9; margin: 0; padding: 15px; }
     
+    /* Login Screen */
+    #login-screen { margin-top: 100px; }
+    .btn-google { background-color: #4285F4; color: white; padding: 15px 30px; font-size: 1.2em; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
+    #app-container { display: none; } /* Hidden until logged in */
+
+    /* Scanner UI */
     #scanner-container { max-width: 500px; margin: 0 auto; }
     #reader { width: 100%; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); background: white; display: none; }
     #ios-video { width: 100%; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); background: #000; display: none; }
-    #ios-start-btn { display: none; padding: 15px 30px; font-size: 1.2em; background-color: #007aff; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.2); margin: 40px auto; }
+    #ios-start-btn { display: none; padding: 15px 30px; font-size: 1.2em; background-color: #007aff; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; margin: 40px auto; }
     
+    /* Form UI */
     #inventory-form { display: none; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 600px; margin: 0 auto; text-align: left; }
     .form-group { margin-bottom: 15px; position: relative; } 
     .form-group label { display: block; font-weight: bold; margin-bottom: 5px; color: #333; font-size: 0.9em; }
-    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; font-size: 1em; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; background-color: #fff; transition: background-color 0.3s ease; }
-    .form-group input[readonly] { background-color: #e9ecef; color: #495057; font-weight: bold; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; font-size: 1em; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; transition: background-color 0.3s ease; }
+    .form-group input[readonly] { background-color: #e9ecef; font-weight: bold; }
     .grid-2-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     
-    /* Smart Autocomplete Dropdown */
+    /* Batch & Photo Highlights */
+    .batch-toggle { background: #e3f2fd; padding: 10px; border-radius: 6px; margin-bottom: 15px; display: flex; align-items: center; border: 1px solid #b6d4fe; }
+    .batch-toggle input { width: 20px; height: 20px; margin-right: 10px; }
+    #end-id-group { display: none; }
+    
+    .photo-upload { background: #f8f9fa; border: 2px dashed #ccc; padding: 15px; text-align: center; border-radius: 8px; margin-bottom: 15px; }
+    .photo-upload input { display: none; }
+    .photo-upload label { background: #6c757d; color: white; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; display: inline-block; }
+    #photo-preview { max-width: 100%; height: auto; border-radius: 6px; margin-top: 10px; display: none; max-height: 200px; }
+
+    /* Autocomplete */
     .autocomplete-items { position: absolute; border: 1px solid #ccc; border-top: none; z-index: 99; top: 100%; left: 0; right: 0; background-color: white; max-height: 200px; overflow-y: auto; border-radius: 0 0 8px 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.15); }
     .autocomplete-items div { padding: 12px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 0.95em; }
-    .autocomplete-items div:hover { background-color: #e9ecef; }
-    .autocomplete-active { background-color: #007aff !important; color: white; }
+    .autocomplete-items div:hover, .autocomplete-active { background-color: #007aff !important; color: white; }
     .autocomplete-active span { color: #e0e0e0 !important; }
 
     .btn-group { display: flex; justify-content: space-between; margin-top: 20px; }
@@ -37,287 +53,422 @@
     #status-msg { margin-top: 15px; font-weight: bold; font-size: 1.1em;}
     #error-log { margin-top: 10px; color: #dc3545; font-size: 0.9em; font-family: monospace; }
     .autofill-flash { background-color: #d4edda !important; }
-    
-    /* Warning banner for editing existing records */
     #edit-warning { display: none; background-color: #fff3cd; color: #856404; padding: 10px; border-radius: 6px; margin-bottom: 15px; font-weight: bold; text-align: center; border: 1px solid #ffeeba; }
   </style>
 </head>
 <body>
 
-  <h2>Inventory Scanner</h2>
-  
-  <div id="scanner-container">
-    <button id="ios-start-btn">📷 Tap to Start Camera</button>
-    <video id="ios-video" playsinline></video>
-    <canvas id="ios-canvas" style="display:none;"></canvas>
-    <div id="reader"></div>
+  <div id="login-screen">
+    <h2>🧪 Science Garage Inventory</h2>
+    <p>Restricted Access. Please authenticate.</p>
+    <button class="btn-google" id="btn-login">Sign in with Google</button>
+    <div id="auth-error" style="color:red; margin-top:15px; font-weight:bold;"></div>
   </div>
-  
-  <div id="status-msg">Loading scanner...</div>
-  <div id="error-log"></div>
 
-  <div id="inventory-form">
-    <h3 style="margin-top:0; border-bottom: 2px solid #eee; padding-bottom: 10px;">Item Record</h3>
+  <div id="app-container">
+    <h2>Inventory Scanner</h2>
+    <p id="user-display" style="font-size: 0.8em; color: #666; margin-top: -10px; margin-bottom: 20px;"></p>
     
-    <div id="edit-warning">⚠️ This ID exists. Submitting will update the record.</div>
+    <div id="scanner-container">
+      <button id="ios-start-btn">📷 Tap to Start Camera</button>
+      <video id="ios-video" playsinline></video>
+      <canvas id="ios-canvas" style="display:none;"></canvas>
+      <div id="reader"></div>
+    </div>
     
-    <div class="form-group">
-      <label>OHS Inventory No.</label>
-      <input type="text" id="f-invNum" readonly>
-    </div>
+    <div id="status-msg">Loading scanner...</div>
+    <div id="error-log"></div>
 
-    <div class="form-group">
-      <label>Chemical Name (Type to search)</label>
-      <input type="text" id="f-chemName" placeholder="e.g. Aluminum or 7429-90-5" autocomplete="off">
-      <div id="autocomplete-list" class="autocomplete-items"></div>
-    </div>
+    <div id="inventory-form">
+      <h3 style="margin-top:0; border-bottom: 2px solid #eee; padding-bottom: 10px;">Item Record</h3>
+      
+      <div id="edit-warning">⚠️ This ID exists. Submitting will update the record.</div>
+      
+      <div class="batch-toggle">
+        <input type="checkbox" id="batch-mode" onchange="toggleBatchMode()">
+        <label for="batch-mode"><b>Batch Entry?</b> (Log multiple consecutive IDs)</label>
+      </div>
 
-    <div class="grid-2-col">
-      <div class="form-group">
-        <label>CAS No.</label>
-        <input type="text" id="f-casNo" placeholder="7429-90-5">
+      <div class="grid-2-col">
+        <div class="form-group">
+          <label id="lbl-invNum">OHS Inventory No.</label>
+          <input type="text" id="f-invNum" readonly>
+        </div>
+        <div class="form-group" id="end-id-group">
+          <label>End Inventory No.</label>
+          <input type="text" id="f-invEndNum" placeholder="e.g. 00062">
+        </div>
       </div>
-      <div class="form-group">
-        <label>Manufacturer</label>
-        <input type="text" id="f-mfg" placeholder="Flinn Scientific">
-      </div>
-    </div>
 
-    <div class="grid-2-col">
-      <div class="form-group">
-        <label>Receipt Date</label>
-        <input type="date" id="f-receipt">
+      <div class="photo-upload">
+        <label for="f-photo">📸 Take/Upload Photo</label>
+        <input type="file" id="f-photo" accept="image/*" capture="environment">
+        <img id="photo-preview" src="">
       </div>
-      <div class="form-group">
-        <label>Expiration Date</label>
-        <input type="date" id="f-exp">
-      </div>
-    </div>
 
-    <div class="grid-2-col">
       <div class="form-group">
-        <label>Container Type</label>
-        <select id="f-container">
-          <option value="plastic">Plastic</option>
-          <option value="glass">Glass</option>
-          <option value="can">Can</option>
-          <option value="bag">Bag</option>
-        </select>
+        <label>Chemical Name (Type to search)</label>
+        <input type="text" id="f-chemName" placeholder="e.g. Acetone or 67-64-1" autocomplete="off">
+        <div id="autocomplete-list" class="autocomplete-items"></div>
       </div>
-      <div class="form-group">
-        <label>Form</label>
-        <input type="text" id="f-form" list="form-options" placeholder="Select or type custom...">
-        <datalist id="form-options">
-          <option value="powder">
-          <option value="solid">
-          <option value="liquid">
-          <option value="granular">
-          <option value="shot">
-          <option value="strips">
-          <option value="solution">
-        </datalist>
-      </div>
-    </div>
 
-    <div class="grid-2-col">
-      <div class="form-group">
-        <label>Amount Remaining</label>
-        <select id="f-amount">
-          <option value="full">Full</option>
-          <option value="3/4 full">3/4 Full</option>
-          <option value="1/2 full">1/2 Full</option>
-          <option value="1/4 full">1/4 Full</option>
-        </select>
+      <div class="grid-2-col">
+        <div class="form-group"><label>CAS No.</label><input type="text" id="f-casNo"></div>
+        <div class="form-group"><label>Manufacturer</label><input type="text" id="f-mfg"></div>
+      </div>
+      <div class="grid-2-col">
+        <div class="form-group"><label>Receipt Date</label><input type="date" id="f-receipt"></div>
+        <div class="form-group"><label>Expiration Date</label><input type="date" id="f-exp"></div>
+      </div>
+      <div class="grid-2-col">
+        <div class="form-group">
+          <label>Container Type</label>
+          <select id="f-container">
+            <option value="plastic">Plastic</option><option value="glass">Glass</option><option value="can">Can</option><option value="bag">Bag</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Form</label>
+          <input type="text" id="f-form" list="form-options">
+          <datalist id="form-options">
+            <option value="powder"><option value="solid"><option value="liquid"><option value="granular"><option value="shot"><option value="strips"><option value="solution">
+          </datalist>
+        </div>
+      </div>
+      <div class="grid-2-col">
+        <div class="form-group">
+          <label>Amount Remaining</label>
+          <select id="f-amount">
+            <option value="full">Full</option><option value="3/4 full">3/4 Full</option><option value="1/2 full">1/2 Full</option><option value="1/4 full">1/4 Full</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Mass (g)</label><input type="number" step="0.1" id="f-mass"></div>
+      </div>
+      <div class="grid-2-col">
+        <div class="form-group"><label>Container Size</label><input type="text" id="f-size"></div>
+        <div class="form-group"><label>Shelf #</label><input type="text" id="f-shelf"></div>
+      </div>
+      <div class="grid-2-col">
+        <div class="form-group"><label>Flinn Category</label><input type="text" id="f-flinn"></div>
+        <div class="form-group"><label>GHS Hazards</label><input type="text" id="f-ghs"></div>
       </div>
       <div class="form-group">
-        <label>Mass (g)</label>
-        <input type="number" step="0.1" id="f-mass" placeholder="e.g. 150.5">
+        <label>Notes</label>
+        <textarea id="f-notes" rows="2"></textarea>
       </div>
-    </div>
 
-    <div class="grid-2-col">
-      <div class="form-group">
-        <label>Container Size</label>
-        <input type="text" id="f-size" placeholder="e.g. 500 g">
+      <div class="btn-group">
+        <button class="btn btn-cancel" onclick="resetScanner()">Cancel</button>
+        <button class="btn btn-submit" id="submit-btn" onclick="submitToFirebase()">Save Item</button>
       </div>
-      <div class="form-group">
-        <label>Shelf #</label>
-        <input type="text" id="f-shelf" placeholder="e.g. 2B">
-      </div>
-    </div>
-
-    <div class="grid-2-col">
-      <div class="form-group">
-        <label>Flinn Category</label>
-        <input type="text" id="f-flinn" placeholder="Inorganic 1">
-      </div>
-      <div class="form-group">
-        <label>GHS Hazards</label>
-        <input type="text" id="f-ghs" placeholder="Flammable Solid">
-      </div>
-    </div>
-
-    <div class="form-group">
-      <label>Notes</label>
-      <textarea id="f-notes" rows="2" placeholder="Any specific warnings or condition notes..."></textarea>
-    </div>
-
-    <div class="btn-group">
-      <button class="btn btn-cancel" onclick="resetScanner()">Cancel</button>
-      <button class="btn btn-submit" id="submit-btn" onclick="submitToGoogleSheets()">Save Item</button>
     </div>
   </div>
 
-  <script>
-    // --- PASTE YOUR NEW APPS SCRIPT URL HERE ---
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwdMydJuQh4-8G7CCuqZ_8U2mfa3vyELK0opPpS6Wctlk7p1HFjxYFXRxOXz3IbFIzw/exec"; 
-    
-    let scanner; 
-    let isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    let isPaused = false;
-    let catalogData = {}; 
-    let currentFocus = -1; 
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+    import { getDatabase, ref as dbRef, get, set } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+    import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
 
-    const video = document.getElementById("ios-video");
-    const canvasElement = document.getElementById("ios-canvas");
-    const canvasContext = canvasElement.getContext("2d", { willReadFrequently: true });
+    // 🔴 INSERT YOUR FIREBASE CONFIG HERE 🔴
+    const firebaseConfig = {
+      apiKey: "AIzaSyCcpjuH1qv9IUDJJQR_5ms18TBRS8UFaV8",
+  authDomain: "scigarage.firebaseapp.com",
+  databaseURL: "https://scigarage-default-rtdb.firebaseio.com",
+  projectId: "scigarage",
+  storageBucket: "scigarage.firebasestorage.app",
+  messagingSenderId: "768658065204",
+  appId: "1:768658065204:web:31e0386ee9c9edfe3ac761"
+    };
 
-    function loadDatabase() {
-      fetch('chemical_database.json')
-        .then(response => response.json())
-        .then(data => { catalogData = data.master_catalog || {}; })
-        .catch(error => console.error("Error loading chemical database:", error));
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+    const storage = getStorage(app);
+
+    // --- 1. AUTHENTICATION LOGIC ---
+    const allowedEmails = ['pianodemon88@gmail.com', 'kjosephs@ocsdny.org'];
+
+    document.getElementById('btn-login').addEventListener('click', () => {
+      signInWithPopup(auth, new GoogleAuthProvider()).catch(err => {
+        document.getElementById('auth-error').innerText = err.message;
+      });
+    });
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        if (allowedEmails.includes(user.email)) {
+          document.getElementById('login-screen').style.display = "none";
+          document.getElementById('app-container').style.display = "block";
+          document.getElementById('user-display').innerText = `Logged in as: ${user.email}`;
+          initApp(); // Start the scanners
+        } else {
+          document.getElementById('auth-error').innerText = `Access Denied for ${user.email}. You are not authorized.`;
+          auth.signOut();
+        }
+      } else {
+        document.getElementById('login-screen').style.display = "block";
+        document.getElementById('app-container').style.display = "none";
+      }
+    });
+
+    // --- EXPOSE FUNCTIONS TO GLOBAL SCOPE FOR HTML ONCLICK ---
+    window.toggleBatchMode = function() {
+      const isBatch = document.getElementById('batch-mode').checked;
+      document.getElementById('end-id-group').style.display = isBatch ? "block" : "none";
+      document.getElementById('lbl-invNum').innerText = isBatch ? "Start Inventory No." : "OHS Inventory No.";
+      
+      // If batch is checked, we can let them manually type the start ID if they want to bypass scanning
+      document.getElementById('f-invNum').readOnly = !isBatch;
     }
 
-    // --- SMART AUTOCOMPLETE LOGIC ---
-    const nameInput = document.getElementById('f-chemName');
-    const autoList = document.getElementById('autocomplete-list');
+    // --- COMPRESSION LOGIC (CANVAS) ---
+    let compressedPhotoBlob = null;
 
-    nameInput.addEventListener('input', function() {
-      let val = this.value;
-      autoList.innerHTML = '';
-      currentFocus = -1; 
-      if (!val) return;
+    document.getElementById('f-photo').addEventListener('change', function(event) {
+      const file = event.target.files[0];
+      if (!file) return;
 
-      let count = 0;
-      for (const [key, chem] of Object.entries(catalogData)) {
-        if (chem.name.toLowerCase().includes(val.toLowerCase()) || (chem.cas && chem.cas.includes(val))) {
-          let item = document.createElement("div");
-          item.innerHTML = `<strong>${chem.name}</strong> <span style="color:#666; font-size:0.85em;">(${chem.cas || 'No CAS'})</span>`;
+      // Show preview
+      const preview = document.getElementById('photo-preview');
+      preview.src = URL.createObjectURL(file);
+      preview.style.display = "block";
+
+      // Compress via Canvas
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = e => {
+        const img = new Image();
+        img.src = e.target.result;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          const MAX_WIDTH = 800; // Shrink to 800px max width
+          const scaleSize = MAX_WIDTH / img.width;
           
-          item.addEventListener("click", function() {
-            document.getElementById('f-chemName').value = chem.name;
-            document.getElementById('f-casNo').value = chem.cas || "";
-            document.getElementById('f-flinn').value = chem.flinn_family || "";
-            document.getElementById('f-ghs').value = (chem.hazards && chem.hazards.length > 0) ? chem.hazards.join(", ") : "";
-            autoList.innerHTML = ''; 
-            
-            ['f-chemName', 'f-casNo', 'f-flinn', 'f-ghs'].forEach(id => {
-              const el = document.getElementById(id);
-              el.classList.add('autofill-flash');
-              setTimeout(() => el.classList.remove('autofill-flash'), 600);
-            });
-          });
+          canvas.width = MAX_WIDTH;
+          canvas.height = img.height * scaleSize;
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
           
-          autoList.appendChild(item);
-          count++;
-          if (count >= 8) break; 
+          // Output as 70% quality JPEG
+          canvas.toBlob((blob) => {
+            compressedPhotoBlob = blob;
+          }, 'image/jpeg', 0.7);
         }
       }
     });
 
-    nameInput.addEventListener("keydown", function(e) {
-      let items = autoList.getElementsByTagName("div");
-      if (e.keyCode === 40) { currentFocus++; addActive(items); } 
-      else if (e.keyCode === 38) { currentFocus--; addActive(items); } 
-      else if (e.keyCode === 13) { e.preventDefault(); if (currentFocus > -1) { if (items) items[currentFocus].click(); } }
-    });
+    // --- FIREBASE SUBMISSION LOGIC ---
+    window.submitToFirebase = async function() {
+      const btn = document.getElementById('submit-btn');
+      const errorLog = document.getElementById('error-log');
+      btn.innerText = "Processing...";
+      btn.disabled = true;
+      errorLog.innerText = "";
 
-    function addActive(x) {
-      if (!x) return false;
-      removeActive(x);
-      if (currentFocus >= x.length) currentFocus = 0;
-      if (currentFocus < 0) currentFocus = (x.length - 1);
-      x[currentFocus].classList.add("autocomplete-active");
-      x[currentFocus].scrollIntoView({ block: "nearest" });
+      const startStr = document.getElementById('f-invNum').value;
+      const isBatch = document.getElementById('batch-mode').checked;
+      const endStr = document.getElementById('f-invEndNum').value;
+
+      let startNum = parseInt(startStr, 10);
+      let endNum = isBatch ? parseInt(endStr, 10) : startNum;
+
+      if (isNaN(startNum) || (isBatch && isNaN(endNum)) || startNum > endNum) {
+        errorLog.innerText = "Invalid Inventory Number range.";
+        btn.innerText = "Save Item";
+        btn.disabled = false;
+        return;
+      }
+
+      try {
+        // STEP 1: If batch, check if ANY IDs exist to prevent overwriting
+        if (isBatch) {
+          btn.innerText = "Checking range...";
+          let conflicts = [];
+          for (let i = startNum; i <= endNum; i++) {
+            let checkId = String(i).padStart(5, '0');
+            let snapshot = await get(dbRef(db, `chemInventory/${checkId}`));
+            if (snapshot.exists()) conflicts.push(checkId);
+          }
+          if (conflicts.length > 0) {
+            throw new Error(`Batch abort! These IDs already exist: ${conflicts.join(', ')}`);
+          }
+        }
+
+        // STEP 2: Upload Photo if exists
+        let uploadedImageUrl = null;
+        if (compressedPhotoBlob) {
+          btn.innerText = "Uploading Photo...";
+          // If batch, we just name the photo after the Start ID and link it to all of them
+          const mainId = String(startNum).padStart(5, '0'); 
+          const imgRef = storageRef(storage, `images/${mainId}.jpg`);
+          await uploadBytes(imgRef, compressedPhotoBlob);
+          uploadedImageUrl = await getDownloadURL(imgRef);
+        }
+
+        // STEP 3: Build the Payload
+        const payload = {
+          sdsPrinted: false,
+          chemName: document.getElementById('f-chemName').value,
+          casNo: document.getElementById('f-casNo').value,
+          manufacturer: document.getElementById('f-mfg').value,
+          receiptDate: document.getElementById('f-receipt').value,
+          expDate: document.getElementById('f-exp').value,
+          containerType: document.getElementById('f-container').value,
+          form: document.getElementById('f-form').value,
+          amount: document.getElementById('f-amount').value,
+          mass: document.getElementById('f-mass').value,
+          containerSize: document.getElementById('f-size').value,
+          shelf: document.getElementById('f-shelf').value,
+          flinnCat: document.getElementById('f-flinn').value,
+          ghs: document.getElementById('f-ghs').value,
+          notes: document.getElementById('f-notes').value,
+          lastVerified: new Date().toISOString()
+        };
+
+        if (uploadedImageUrl) payload.imageUrl = uploadedImageUrl;
+
+        // STEP 4: Write to RTDB
+        btn.innerText = "Saving to Database...";
+        for (let i = startNum; i <= endNum; i++) {
+          let targetId = String(i).padStart(5, '0');
+          // Write directly to chemInventory/00051 etc.
+          await set(dbRef(db, `chemInventory/${targetId}`), payload);
+        }
+
+        // Success Cleanup
+        btn.innerText = "Save Item";
+        btn.disabled = false;
+        compressedPhotoBlob = null;
+        document.getElementById('photo-preview').style.display = "none";
+        document.getElementById('f-photo').value = ""; // Clear file input
+        
+        window.resetScanner();
+        document.getElementById('status-msg').innerText = isBatch ? `✅ Batch Saved: ${startNum} to ${endNum}` : `✅ Saved Item #${String(startNum).padStart(5, '0')}`;
+        
+      } catch (error) {
+        errorLog.innerText = error.message;
+        btn.innerText = "Save Item";
+        btn.disabled = false;
+      }
+    };
+
+    // --- LOOKUP, AUTOCOMPLETE & SCANNER GLOBALS ---
+    let scanner, isPaused = false, catalogData = {}, currentFocus = -1;
+    let isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const video = document.getElementById("ios-video");
+    const canvasElement = document.getElementById("ios-canvas");
+    const canvasContext = canvasElement.getContext("2d", { willReadFrequently: true });
+
+    function initApp() {
+      fetch('chemical_database.json').then(r => r.json()).then(d => catalogData = d.master_catalog || {}).catch(e => console.error(e));
+
+      // Autocomplete Logic
+      const nameInput = document.getElementById('f-chemName');
+      const autoList = document.getElementById('autocomplete-list');
+      nameInput.addEventListener('input', function() {
+        let val = this.value; autoList.innerHTML = ''; currentFocus = -1; if (!val) return;
+        let count = 0;
+        for (const [key, chem] of Object.entries(catalogData)) {
+          if (chem.name.toLowerCase().includes(val.toLowerCase()) || (chem.cas && chem.cas.includes(val))) {
+            let item = document.createElement("div");
+            item.innerHTML = `<strong>${chem.name}</strong> <span style="color:#666; font-size:0.85em;">(${chem.cas || 'No CAS'})</span>`;
+            item.addEventListener("click", function() {
+              document.getElementById('f-chemName').value = chem.name; document.getElementById('f-casNo').value = chem.cas || "";
+              document.getElementById('f-flinn').value = chem.flinn_family || ""; document.getElementById('f-ghs').value = (chem.hazards && chem.hazards.length>0) ? chem.hazards.join(", ") : "";
+              autoList.innerHTML = '';
+              ['f-chemName', 'f-casNo', 'f-flinn', 'f-ghs'].forEach(id => { const el = document.getElementById(id); el.classList.add('autofill-flash'); setTimeout(() => el.classList.remove('autofill-flash'), 600); });
+            });
+            autoList.appendChild(item); count++; if (count >= 8) break; 
+          }
+        }
+      });
+
+      nameInput.addEventListener("keydown", function(e) {
+        let items = autoList.getElementsByTagName("div");
+        if (e.keyCode === 40) { currentFocus++; addActive(items); } 
+        else if (e.keyCode === 38) { currentFocus--; addActive(items); } 
+        else if (e.keyCode === 13) { e.preventDefault(); if (currentFocus > -1) { if (items) items[currentFocus].click(); } }
+      });
+      function addActive(x) { if (!x) return false; removeActive(x); if (currentFocus >= x.length) currentFocus = 0; if (currentFocus < 0) currentFocus = (x.length - 1); x[currentFocus].classList.add("autocomplete-active"); x[currentFocus].scrollIntoView({ block: "nearest" }); }
+      function removeActive(x) { for (let i = 0; i < x.length; i++) x[i].classList.remove("autocomplete-active"); }
+      document.addEventListener("click", function (e) { if (e.target !== nameInput) autoList.innerHTML = ''; });
+
+      // Camera Initialization
+      const iosBtn = document.getElementById('ios-start-btn');
+      if (isMobile) {
+        iosBtn.style.display = "block"; document.getElementById('status-msg').innerText = "Ready to initialize.";
+        iosBtn.onclick = function() {
+          iosBtn.style.display = "none"; document.getElementById('status-msg').innerText = "Starting video feed...";
+          navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(function(stream) {
+              video.srcObject = stream; video.setAttribute("playsinline", true); video.play(); video.style.display = "block";
+              document.getElementById('status-msg').innerText = "Camera active. Ready to scan."; requestAnimationFrame(scanVideoFrame);
+          }).catch(err => { document.getElementById('status-msg').innerText = "Native Camera Error."; document.getElementById('error-log').innerText = err; iosBtn.style.display = "block"; });
+        };
+      } else {
+        document.getElementById('reader').style.display = "block"; document.getElementById('status-msg').innerText = "Camera active. Ready to scan.";
+        scanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: {width: 250, height: 250} }, false); scanner.render(onScanSuccess);
+      }
     }
 
-    function removeActive(x) { for (let i = 0; i < x.length; i++) x[i].classList.remove("autocomplete-active"); }
-    document.addEventListener("click", function (e) { if (e.target !== nameInput) autoList.innerHTML = ''; });
-
-    // --- LOOKUP & SCANNER LOGIC ---
-    function checkGoogleSheets(scannedId) {
-      // Show loading state while querying Google Sheets
+    async function checkRTDB(scannedId) {
       document.getElementById('status-msg').style.color = "#007aff";
-      document.getElementById('status-msg').innerText = "Searching Google Sheets database...";
+      document.getElementById('status-msg').innerText = "Searching Realtime Database...";
       
       const paddedId = String(scannedId).padStart(5, '0');
       document.getElementById('f-invNum').value = paddedId;
       
-      // Perform a GET request to lookup the ID
-      fetch(APPS_SCRIPT_URL + "?id=" + paddedId)
-        .then(response => response.json())
-        .then(data => {
-          document.getElementById('scanner-container').style.display = "none";
-          document.getElementById('status-msg').style.display = "none";
-          document.getElementById('inventory-form').style.display = "block";
+      try {
+        const snapshot = await get(dbRef(db, `chemInventory/${paddedId}`));
+        document.getElementById('scanner-container').style.display = "none";
+        document.getElementById('status-msg').style.display = "none";
+        document.getElementById('inventory-form').style.display = "block";
+
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          document.getElementById('edit-warning').style.display = "block";
+          // Populate form (handling potential undefined values gracefully)
+          document.getElementById('f-chemName').value = data.chemName || "";
+          document.getElementById('f-casNo').value = data.casNo || "";
+          document.getElementById('f-mfg').value = data.manufacturer || "";
+          document.getElementById('f-receipt').value = data.receiptDate || "";
+          document.getElementById('f-exp').value = data.expDate || "";
+          document.getElementById('f-container').value = data.containerType || "plastic";
+          document.getElementById('f-form').value = data.form || "";
+          document.getElementById('f-amount').value = data.amount || "full";
+          document.getElementById('f-mass').value = data.mass || "";
+          document.getElementById('f-size').value = data.containerSize || "";
+          document.getElementById('f-shelf').value = data.shelf || "";
+          document.getElementById('f-flinn').value = data.flinnCat || "";
+          document.getElementById('f-ghs').value = data.ghs || "";
+          document.getElementById('f-notes').value = data.notes || "";
           
-          if (data.exists) {
-            // Existing record found! Populate the form with Google Sheets data
-            document.getElementById('edit-warning').style.display = "block";
-            
-            document.getElementById('f-chemName').value = data.chemName;
-            document.getElementById('f-casNo').value = data.casNo;
-            document.getElementById('f-mfg').value = data.manufacturer;
-            document.getElementById('f-receipt').value = data.receiptDate;
-            document.getElementById('f-exp').value = data.expDate;
-            document.getElementById('f-container').value = data.containerType.toLowerCase();
-            document.getElementById('f-form').value = data.form;
-            document.getElementById('f-amount').value = data.amount;
-            document.getElementById('f-mass').value = data.mass;
-            document.getElementById('f-size').value = data.containerSize;
-            document.getElementById('f-shelf').value = data.shelf;
-            document.getElementById('f-flinn').value = data.flinnCat;
-            document.getElementById('f-ghs').value = data.ghs;
-            document.getElementById('f-notes').value = data.notes;
-            
-            // Highlight the form to show data was pulled from the cloud
-            document.querySelectorAll('#inventory-form input, #inventory-form select').forEach(el => {
-              if (el.value !== "") {
-                el.classList.add('autofill-flash');
-                setTimeout(() => el.classList.remove('autofill-flash'), 800);
-              }
-            });
-            
-          } else {
-            // Brand new record
-            document.getElementById('edit-warning').style.display = "none";
-            document.getElementById('f-chemName').focus();
+          if(data.imageUrl) {
+             const preview = document.getElementById('photo-preview');
+             preview.src = data.imageUrl;
+             preview.style.display = "block";
           }
-        })
-        .catch(error => {
-          // If the lookup fails (e.g. bad connection), still open the form but empty
-          document.getElementById('scanner-container').style.display = "none";
-          document.getElementById('status-msg').style.display = "none";
-          document.getElementById('inventory-form').style.display = "block";
+        } else {
           document.getElementById('edit-warning').style.display = "none";
-          document.getElementById('error-log').innerText = "Warning: Could not check for duplicates (Network issue).";
           document.getElementById('f-chemName').focus();
-        });
+        }
+      } catch(e) {
+        console.error(e);
+        document.getElementById('error-log').innerText = "Warning: Could not connect to RTDB.";
+      }
     }
 
     function onScanSuccess(decodedText) {
-      isPaused = true;
-      if (!isMobile && scanner) scanner.pause();
-      
-      // Trigger the Google Sheets query instead of jumping straight to the form
-      checkGoogleSheets(decodedText);
+      isPaused = true; if (!isMobile && scanner) scanner.pause();
+      checkRTDB(decodedText);
     }
 
-    function resetScanner() {
-      document.querySelectorAll('#inventory-form input:not([readonly]), #inventory-form textarea').forEach(input => input.value = '');
+    window.resetScanner = function() {
+      document.querySelectorAll('#inventory-form input:not([readonly]):not([type="checkbox"]), #inventory-form textarea').forEach(input => input.value = '');
       document.querySelectorAll('#inventory-form select').forEach(select => select.selectedIndex = 0);
-      autoList.innerHTML = ''; 
+      document.getElementById('photo-preview').style.display = "none";
+      document.getElementById('photo-preview').src = "";
+      compressedPhotoBlob = null;
       document.getElementById('error-log').innerText = '';
       
       document.getElementById('inventory-form').style.display = "none";
@@ -327,115 +478,21 @@
       document.getElementById('status-msg').innerText = "Camera active. Ready for next scan.";
 
       isPaused = false;
-      if (isMobile) {
-        requestAnimationFrame(scanVideoFrame);
-      } else {
-        if(scanner) scanner.resume();
-      }
-    }
-
-    function submitToGoogleSheets() {
-      const btn = document.getElementById('submit-btn');
-      btn.innerText = "Saving...";
-      btn.disabled = true;
-      document.getElementById('error-log').innerText = "";
-
-      const payload = {
-        invNum: document.getElementById('f-invNum').value,
-        chemName: document.getElementById('f-chemName').value,
-        casNo: document.getElementById('f-casNo').value,
-        manufacturer: document.getElementById('f-mfg').value,
-        receiptDate: document.getElementById('f-receipt').value,
-        expDate: document.getElementById('f-exp').value,
-        containerType: document.getElementById('f-container').value,
-        form: document.getElementById('f-form').value,
-        amount: document.getElementById('f-amount').value,
-        mass: document.getElementById('f-mass').value,
-        containerSize: document.getElementById('f-size').value,
-        shelf: document.getElementById('f-shelf').value,
-        flinnCat: document.getElementById('f-flinn').value,
-        ghs: document.getElementById('f-ghs').value,
-        notes: document.getElementById('f-notes').value
-      };
-
-      fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        body: JSON.stringify(payload)
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.status === "error") {
-          document.getElementById('error-log').innerText = "Script Error: " + data.message;
-          btn.innerText = "Save Item";
-          btn.disabled = false;
-        } else {
-          btn.innerText = "Save Item";
-          btn.disabled = false;
-          resetScanner(); 
-          let actionText = data.status === "updated" ? "Updated" : "Created";
-          document.getElementById('status-msg').innerText = `✅ Successfully ${actionText} Item #${payload.invNum}`;
-        }
-      })
-      .catch(error => {
-        document.getElementById('error-log').innerText = "Network Error: Could not reach Google Servers.";
-        btn.innerText = "Save Item";
-        btn.disabled = false;
-      });
+      if (isMobile) requestAnimationFrame(scanVideoFrame);
+      else if(scanner) scanner.resume();
     }
 
     function scanVideoFrame() {
       if (isPaused) return;
-
       if (video.readyState === video.HAVE_ENOUGH_DATA) {
-        canvasElement.height = video.videoHeight;
-        canvasElement.width = video.videoWidth;
+        canvasElement.height = video.videoHeight; canvasElement.width = video.videoWidth;
         canvasContext.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
-        
         let imageData = canvasContext.getImageData(0, 0, canvasElement.width, canvasElement.height);
         let code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
-
-        if (code && code.data) {
-          onScanSuccess(code.data);
-          return; 
-        }
+        if (code && code.data) { onScanSuccess(code.data); return; }
       }
       requestAnimationFrame(scanVideoFrame);
     }
-
-    window.onload = function() {
-      loadDatabase();
-
-      const iosBtn = document.getElementById('ios-start-btn');
-      if (isMobile) {
-        iosBtn.style.display = "block";
-        document.getElementById('status-msg').innerText = "Ready to initialize.";
-        iosBtn.onclick = function() {
-          iosBtn.style.display = "none"; 
-          document.getElementById('status-msg').innerText = "Starting video feed...";
-
-          navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-            .then(function(stream) {
-              video.srcObject = stream;
-              video.setAttribute("playsinline", true);
-              video.play();
-              video.style.display = "block";
-              document.getElementById('status-msg').innerText = "Camera active. Ready to scan.";
-              requestAnimationFrame(scanVideoFrame);
-            })
-            .catch(function(err) {
-              document.getElementById('status-msg').innerText = "Native Camera Error.";
-              document.getElementById('error-log').innerText = err;
-              iosBtn.style.display = "block";
-            });
-        };
-      } else {
-        document.getElementById('reader').style.display = "block";
-        document.getElementById('status-msg').innerText = "Camera active. Ready to scan.";
-        scanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: {width: 250, height: 250} }, false);
-        scanner.render(onScanSuccess);
-      }
-    };
   </script>
-
 </body>
 </html>
