@@ -120,7 +120,16 @@
 
       <div class="grid-2-col">
         <div class="form-group"><label>CAS No.</label><input type="text" id="f-casNo"></div>
-        <div class="form-group"><label>Manufacturer</label><input type="text" id="f-mfg"></div>
+        <div class="form-group">
+  <label>Manufacturer</label>
+  <input type="text" id="f-mfg" list="mfg-options" placeholder="Select or type...">
+  <datalist id="mfg-options">
+    <option value="Flinn Scientific">
+    <option value="Ward's">
+    <option value="Fisher Scientific">
+    <option value="Science Kit & Boreal Laboratories">
+  </datalist>
+</div>
       </div>
       <div class="grid-2-col">
         <div class="form-group"><label>Receipt Date</label><input type="date" id="f-receipt"></div>
