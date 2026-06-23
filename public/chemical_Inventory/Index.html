@@ -125,6 +125,8 @@
   <input type="text" id="f-mfg" list="mfg-options" placeholder="Select or type...">
   <datalist id="mfg-options">
     <option value="Flinn Scientific">
+    <option value="Damon">
+    <option value="Sargent-Welch">
     <option value="Ward's">
     <option value="Fisher Scientific">
     <option value="Science Kit & Boreal Laboratories">
@@ -138,9 +140,16 @@
       <div class="grid-2-col">
         <div class="form-group">
           <label>Container Material</label>
-          <select id="f-container">
-            <option value="plastic">Plastic</option><option value="glass">Glass</option><option value="can">Can</option><option value="bag">Bag</option>
-          </select>
+
+          <input type="text" id="f-container" list="container-options" placeholder="Select or type...">
+          <datalist id="container-options">
+            <option value="plastic">Plastic</option>
+            <option value="glass">Glass</option>
+            <option value="can">Can</option>
+            <option value="bag">Bag</option>
+          </datalist>
+
+
         </div>
         <div class="form-group">
           <label>Form</label>
