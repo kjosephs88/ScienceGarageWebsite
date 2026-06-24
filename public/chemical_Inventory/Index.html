@@ -47,6 +47,9 @@
     .btn { padding: 15px; border: none; border-radius: 8px; font-size: 1.1em; font-weight: bold; cursor: pointer; width: 48%; }
     .btn-submit { background-color: #28a745; color: white; }
     .btn-cancel { background-color: #dc3545; color: white; }
+
+    #manual-entry { margin-top: 20px; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .btn-manual { background-color: #6c757d; color: white; padding: 10px 20px; font-size: 1em; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; }
     
     #status-msg { margin-top: 15px; font-weight: bold; font-size: 1.1em;}
     #error-log { margin-top: 10px; color: #dc3545; font-size: 0.9em; font-family: monospace; }
@@ -68,11 +71,17 @@
     <p id="user-display" style="font-size: 0.8em; color: #666; margin-top: -10px; margin-bottom: 20px;"></p>
     
     <div id="scanner-container">
-      <button id="ios-start-btn">📷 Tap to Start Camera</button>
-      <video id="ios-video" playsinline></video>
-      <canvas id="ios-canvas" style="display:none;"></canvas>
-      <div id="reader"></div>
-    </div>
+  <button id="ios-start-btn">📷 Tap to Start Camera</button>
+  <video id="ios-video" playsinline></video>
+  <canvas id="ios-canvas" style="display:none;"></canvas>
+  <div id="reader"></div>
+  
+  <div id="manual-entry">
+    <label style="display:block; font-weight:bold; margin-bottom:5px; font-size:0.9em; color:#333;">Manual Entry / Search</label>
+    <input type="number" id="manual-id-input" placeholder="Enter Inventory #" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box; font-size:1em;" inputmode="numeric">
+    <button class="btn-manual" onclick="submitManualId()">Lookup / Create Item</button>
+  </div>
+</div>
     
     <div id="status-msg">Loading scanner...</div>
     <div id="error-log"></div>
@@ -488,6 +497,30 @@
       isPaused = true; if (!isMobile && scanner) scanner.pause();
       checkRTDB(decodedText);
     }
+
+
+// --- MANUAL ID ENTRY LOGIC ---
+window.submitManualId = function() {
+  const manualInput = document.getElementById('manual-id-input').value;
+  if (!manualInput) {
+    alert("Please enter a valid Inventory Number.");
+    return;
+  }
+  
+  // Pause the camera if it happens to be running
+  isPaused = true; 
+  if (!isMobile && scanner) scanner.pause();
+  
+  // Clear the input box for next time
+  document.getElementById('manual-id-input').value = "";
+  
+  // Fire the exact same database check as if we scanned a QR code!
+  checkRTDB(manualInput);
+}
+
+
+
+
 
     window.resetScanner = function() {
       document.querySelectorAll('#inventory-form input:not([readonly]):not([type="checkbox"]), #inventory-form textarea').forEach(input => input.value = '');
