@@ -41,7 +41,7 @@
 <body>
 
   <div id="upload-section">
-    <h2>🧪 Science Garage Editor</h2>
+    <h2>Chemical Information Database</h2>
     <p>Select your <b>chemical_database.json</b> file to begin.</p>
     <input type="file" id="json-upload" accept=".json">
   </div>
@@ -73,7 +73,8 @@
       <input type="text" id="edit-location" placeholder="e.g. Acid Cabinet">
       
       <label>Hazards (Comma separated)</label>
-      <input type="text" id="edit-hazards" placeholder="Corrosive, Flammable">
+<textarea id="edit-hazards" placeholder="Corrosive, Flammable" rows="4" style="width: 100%; resize: vertical;"></textarea>
+
       
       <input type="hidden" id="edit-original-id">
       
