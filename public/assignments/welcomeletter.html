@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome Letter - Forensics Fall 2026</title>
+  <style>
+    body { background-color: #F0EBF8; font-family: 'Roboto', Arial, sans-serif; margin: 0; padding: 20px; color: #202124; }
+    .form-container { max-width: 640px; margin: 0 auto; }
+    .card { background-color: white; border-radius: 8px; border: 1px solid #dadce0; padding: 24px; margin-bottom: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); position: relative; }
+    .header-card { border-top: 8px solid #673AB7; }
+    h1 { font-size: 32px; font-weight: 400; margin-top: 0; margin-bottom: 12px; }
+    p { font-size: 14px; line-height: 1.5; color: #202124; }
+    .question-title { font-size: 16px; margin-bottom: 16px; }
+    .required { color: #d93025; }
+    input[type="text"], textarea { width: 100%; border: none; border-bottom: 1px solid #dadce0; padding: 8px 0; font-size: 14px; font-family: inherit; outline: none; background-color: transparent; resize: none; }
+    input[type="text"]:focus, textarea:focus { border-bottom: 2px solid #673AB7; }
+    .save-status { position: absolute; top: 24px; right: 24px; font-size: 12px; color: #1e8e3e; display: none; }
+  </style>
+</head>
+<body>
+
+  <div class="form-container">
+    
+    <div class="card header-card">
+      <h1>Welcome Letter - Forensics Fall 2026</h1>
+      <p>Dear Student,</p>
+      <p>Welcome to Mr. Josephs' science classroom! This semester you will learn a whole lot about science. My job is to give you science knowledge and I will try my hardest to give you the very best instruction. This class will be a blast if you put your all into it. Your job is to work hard, do your very best, and enjoy it! This form has several questions to help me to get to know you better. Please answer the questions thoughtfully.</p>
+      <p class="required">* Indicates required question</p>
+    </div>
+
+    <!-- Note the onblur events calling autoSave with the specific question ID -->
+    <form id="welcomeForm">
+      <div class="card">
+        <span class="save-status" id="status-q1">Saved</span>
+        <div class="question-title">1. What would you like me to call you? <span class="required">*</span></div>
+        <input type="text" id="q1" placeholder="Your answer" onblur="autoSave('1')">
+      </div>
+
+      <div class="card">
+        <span class="save-status" id="status-q2">Saved</span>
+        <div class="question-title">2. What pronouns do you use?</div>
+        <input type="text" id="q2" placeholder="Your answer" onblur="autoSave('2')">
+      </div>
+
+      <div class="card">
+        <span class="save-status" id="status-q3">Saved</span>
+        <div class="question-title">3. What is your favorite meal? <span class="required">*</span></div>
+        <input type="text" id="q3" placeholder="Your answer" onblur="autoSave('3')">
+      </div>
+
+      <div class="card">
+        <span class="save-status" id="status-q7">Saved</span>
+        <div class="question-title">7. Think carefully and tell me what you like about science in the space below. <span class="required">*</span></div>
+        <textarea id="q7" rows="2" placeholder="Your answer" onblur="autoSave('7')"></textarea>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    
+    // Replace with your actual Cloud Function URL
+    const PROXY_URL = "https://secureproxy-xbia6drfla-uc.a.run.app";
+
+    function autoSave(questionId) {
+      const studentText = document.getElementById(`q${questionId}`).value;
+      
+      // Do not save if they clicked in and out without typing anything
+      if (!studentText.trim()) return;
+
+      const payload = {
+        token: token,
+        action: "saveAnswer",
+        qId: questionId,
+        textValue: studentText
+      };
+
+      fetch(PROXY_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      })
+      .then(response => {
+        if (response.ok) {
+          // Briefly show a "Saved" indicator on the card
+          const statusIndicator = document.getElementById(`status-q${questionId}`);
+          statusIndicator.style.display = 'block';
+          setTimeout(() => { statusIndicator.style.display = 'none'; }, 2000);
+        } else {
+          console.error("Session may be expired.");
+        }
+      })
+      .catch(error => console.error("Error communicating with proxy:", error));
+    }
+  </script>
+</body>
+</html>

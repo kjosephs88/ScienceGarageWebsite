@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teacher Live Dashboard</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  <!-- KaTeX for Chemistry Math Rendering -->
+  <link rel="stylesheet" href="https://thesciencegarage.com/katexfiles/katex.min.css">
+  <script defer src="https://thesciencegarage.com/katexfiles/katex.min.js"></script>
+  <script defer src="https://thesciencegarage.com/katexfiles/mhchem.js"></script>
+  <script defer src="https://thesciencegarage.com/katexfiles/auto-render.min.js"></script>
+
+  <style>
+    .table-container { overflow-x: auto; background: white; max-width: 100%; height: 100%; }
+    table { width: max-content; border-collapse: collapse; }
+    th, td { border: 1px solid #e5e7eb; padding: 10px; text-align: center; font-size: 13px; }
+    th { background-color: #f9fafb; font-weight: 600; color: #4b5563; position: sticky; top: 0; z-index: 20; border-bottom: 2px solid #e5e7eb; }
+    
+    .score-col { width: 75px; min-width: 75px; max-width: 75px; }
+    .q-col { width: 55px; min-width: 55px; max-width: 55px; }
+    .name-column-width { width: 280px !important; min-width: 280px !important; max-width: 280px !important; }
+    
+    .student-name {
+      position: sticky; left: 0; background-color: inherit; z-index: 15; text-align: left; 
+      padding: 0 !important; border-right: 3px solid #cbd5e1; box-shadow: 3px 0 6px -2px rgba(0, 0, 0, 0.1);
+    }
+    th.student-name { z-index: 30; background-color: #f9fafb; padding: 10px 0 10px 16px !important; top: 0; left: 0; }
+    
+    tr.cleared-row { background-color: #bbf7d0; }
+    tr:hover { filter: brightness(0.96); transition: filter 0.1s ease; }
+    
+    .correct { color: #16a34a; font-size: 1.2em; font-weight: bold; }
+    .incorrect { color: #dc2626; font-size: 1.2em; font-weight: bold; }
+    .empty { color: #9ca3af; font-weight: normal; }
+  </style>
+</head>
+<body class="bg-gray-100 text-gray-800 h-screen overflow-hidden flex flex-col font-sans">
+
+  <!-- Security Gatekeeper -->
+  <div id="gatekeeperUi" class="absolute inset-0 z-50 bg-gray-100 flex flex-col items-center justify-center p-6 text-center">
+    <div class="bg-white p-8 rounded-xl shadow-md max-w-md w-full border border-gray-200 border-t-8 border-purple-600">
+      <h1 class="text-2xl font-bold text-gray-900 mb-2">Teacher Dashboard</h1>
+      <p id="gatekeeperStatus" class="text-gray-500 text-sm mb-6">Checking security context...</p>
+      <button id="loginBtn" type="button" class="hidden w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg shadow transition">
+        Sign in with Google
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Dashboard Header -->
+  <header class="bg-white border-b-4 border-gray-800 px-6 py-4 shrink-0 z-30 relative shadow-sm">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <span class="text-xs font-bold text-purple-700 uppercase tracking-wider bg-purple-100 px-2 py-0.5 rounded border border-purple-200">Teacher Gradebook</span>
+        <h1 id="displayTitle" class="text-xl font-bold text-gray-900 mt-1 truncate">Live Assignment Monitor</h1>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-3">
+        <div class="flex items-center gap-2 bg-gray-50 border border-gray-300 rounded-lg px-2 py-1 shadow-sm">
+          <label class="text-xs font-bold text-gray-500 uppercase">Class:</label>
+          <select id="classSelect" class="bg-transparent text-sm font-bold text-gray-800 focus:outline-none cursor-pointer">
+            <option value="">Loading...</option>
+          </select>
+        </div>
+        <div class="flex items-center gap-2 bg-gray-50 border border-gray-300 rounded-lg px-2 py-1 shadow-sm">
+          <label class="text-xs font-bold text-gray-500 uppercase">Unit:</label>
+          <select id="unitSelect" disabled class="bg-transparent text-sm font-bold text-gray-800 focus:outline-none cursor-pointer w-32 truncate">
+            <option value="">Wait...</option>
+          </select>
+        </div>
+        <div class="flex items-center gap-2 bg-gray-50 border border-gray-300 rounded-lg px-2 py-1 shadow-sm">
+          <label class="text-xs font-bold text-gray-500 uppercase">Assignment:</label>
+          <select id="assignmentSelect" disabled class="bg-transparent text-sm font-bold text-gray-800 focus:outline-none cursor-pointer w-48 truncate">
+            <option value="">Wait...</option>
+          </select>
+        </div>
+        
+        <button id="btn-return-grid" onclick="showGridView()" class="hidden bg-gray-800 text-white hover:bg-black px-4 py-1.5 rounded-lg font-bold text-sm transition whitespace-nowrap shadow-sm">
+          Return to Grid
+        </button>
+        <span id="liveStatus" class="text-xs font-bold px-3 py-1.5 rounded-full border border-gray-200 bg-gray-100 text-gray-500 flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-gray-400"></span> Disconnected
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Application Body -->
+  <div class="flex flex-1 overflow-hidden relative">
+    
+    <!-- Sidebar for Detail View -->
+    <div id="sidebar-container" class="hidden name-column-width bg-white border-r border-gray-200 flex-col shrink-0 z-10 shadow-sm relative">
+      <div id="student-list" class="flex-1 overflow-y-auto p-2"></div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 overflow-hidden bg-gray-100 p-0 md:p-6 relative">
+      
+      <!-- Grid View -->
+      <div id="grid-view" class="bg-white md:rounded-lg shadow-sm border border-gray-200 h-full overflow-hidden flex flex-col">
+        <div class="table-container flex-1 overflow-auto">
+          <table id="dashboard-table" class="w-full">
+            <thead id="table-head">
+              <tr>
+                <th class="student-name name-column-width">Student Name</th>
+                <th class="score-col">Score</th>
+              </tr>
+            </thead>
+            <tbody id="table-body">
+              <tr>
+                <td colspan="2" class="py-12 text-center text-gray-400">Select an assignment above to load records.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Detail View -->
+      <div id="detail-view" class="hidden w-full h-full overflow-y-auto bg-white md:rounded-lg shadow-sm border border-gray-200">
+        <div class="max-w-3xl mx-auto p-6 md:p-10">
+          <div class="mb-6 pb-4 border-b border-gray-300 flex justify-between items-end">
+            <div>
+              <h2 id="detail-name" class="text-3xl font-bold text-gray-900">Student Name</h2>
+              <p class="text-sm font-bold text-gray-500 mt-1 uppercase tracking-wide">Live Answer Feed</p>
+            </div>
+            <div id="detail-score" class="text-2xl font-bold text-purple-700"></div>
+          </div>
+          <div id="detail-questions" class="space-y-4 pb-20"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // --- FIREBASE CONFIGURATION ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyCcpjuH1qv9IUDJJQR_5ms18TBRS8UFaV8",
+      authDomain: "scigarage.firebaseapp.com",
+      databaseURL: "https://scigarage-default-rtdb.firebaseio.com",
+      projectId: "scigarage",
+      storageBucket: "scigarage.firebasestorage.app",
+      messagingSenderId: "768658065204",
+      appId: "1:768658065204:web:31e0386ee9c9edfe3ac761"
+    };
+
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+
+    // --- GLOBAL STATE ---
+    let STUDENT_CONTEXT = null;
+    let gradebookSnapshotCache = {};
+    let currentLiveData = {};
+    let activeListenerRef = null;
+    
+    let currentRubric = {}; 
+    let currentQuestions = [];
+    let currentQCount = 0;
+    
+    let activeStudentHash = null;
+    let activeClassFolder = null;
+
+    const katexConfig = {
+      delimiters: [
+        { left: '$$', right: '$$', display: true },
+        { left: '$', right: '$', display: false },
+        { left: '\\(', right: '\\)', display: false },
+        { left: '\\[', right: '\\]', display: true }
+      ],
+      throwOnError: false
+    };
+
+    // --- SECURITY & INIT ---
+    function initSecurityContext() {
+      const hash = window.location.hash;
+      if (hash && hash.startsWith('#roster=')) {
+        try {
+          const compressed = hash.substring(8);
+          const decompressed = LZString.decompressFromEncodedURIComponent(compressed);
+          STUDENT_CONTEXT = JSON.parse(decompressed);
+          sessionStorage.setItem('SG_ROSTER_CACHE', JSON.stringify(STUDENT_CONTEXT));
+          window.history.replaceState(null, null, window.location.pathname + window.location.search);
+        } catch (e) {
+          console.error("Payload decompression error:", e);
+        }
+      } else {
+        const cached = sessionStorage.getItem('SG_ROSTER_CACHE');
+        if (cached) STUDENT_CONTEXT = JSON.parse(cached);
+      }
+
+      if (!STUDENT_CONTEXT || !STUDENT_CONTEXT.nameMap) {
+        document.getElementById('gatekeeperStatus').innerHTML = `
+          <span class="text-red-600 font-bold">No Roster Found</span><br>
+          <span class="text-xs text-gray-500">Please launch this dashboard from your Google Apps Script portal.</span>
+        `;
+        return false;
+      }
+      return true;
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      if (!initSecurityContext()) return;
+      auth.onAuthStateChanged(user => {
+        if (user) {
+          document.getElementById('gatekeeperUi').classList.add('hidden');
+          setupDashboard();
+        } else {
+          document.getElementById('gatekeeperStatus').innerText = "Please sign in with your authorized teacher account.";
+          document.getElementById('loginBtn').classList.remove('hidden');
+        }
+      });
+      document.getElementById('loginBtn').addEventListener('click', () => {
+        auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(err => alert(err.message));
+      });
+    });
+
+    // --- DROPDOWN NAVIGATION ---
+    async function setupDashboard() {
+      const classSelect = document.getElementById('classSelect');
+      const unitSelect = document.getElementById('unitSelect');
+      const assignmentSelect = document.getElementById('assignmentSelect');
+
+      try {
+        const snapshot = await db.ref('teacherGradebook').once('value');
+        gradebookSnapshotCache = snapshot.val() || {};
+        
+        classSelect.innerHTML = '<option value="">-- Choose Class --</option>';
+        Object.keys(gradebookSnapshotCache).forEach(folder => {
+          const className = gradebookSnapshotCache[folder].className || folder;
+          classSelect.innerHTML += `<option value="${folder}">${className}</option>`;
+        });
+
+        classSelect.addEventListener('change', () => {
+          const folder = classSelect.value;
+          unitSelect.innerHTML = '<option value="">-- Choose Unit --</option>';
+          assignmentSelect.innerHTML = '<option value="">Select unit first</option>';
+          unitSelect.disabled = !folder;
+          assignmentSelect.disabled = true;
+
+          if (!folder || !gradebookSnapshotCache[folder]) return;
+          const unitMap = gradebookSnapshotCache[folder]._unitMap || {};
+          Object.keys(unitMap).forEach(uKey => {
+            unitSelect.innerHTML += `<option value="${uKey}">${unitMap[uKey]}</option>`;
+          });
+        });
+
+        unitSelect.addEventListener('change', () => {
+          const folder = classSelect.value;
+          const unit = unitSelect.value;
+          assignmentSelect.innerHTML = '<option value="">-- Choose Assignment --</option>';
+          assignmentSelect.disabled = !unit;
+
+          if (!unit || !gradebookSnapshotCache[folder]) return;
+          const assignKeys = Object.keys(gradebookSnapshotCache[folder]).filter(k => k !== '_unitMap' && k !== 'className');
+          
+          assignKeys.forEach(aKey => {
+            const parts = aKey.split('_');
+            if (parts.length > 1 && parts[1] === unit) {
+              const title = gradebookSnapshotCache[folder][aKey].title || aKey;
+              assignmentSelect.innerHTML += `<option value="${aKey}">${title}</option>`;
+            }
+          });
+        });
+
+        assignmentSelect.addEventListener('change', () => {
+          const folder = classSelect.value;
+          const aKey = assignmentSelect.value;
+          const title = assignmentSelect.options[assignmentSelect.selectedIndex].text;
+          
+          if (folder && aKey) {
+            document.getElementById('displayTitle').innerText = title;
+            activeClassFolder = folder;
+            fetchRubricAndAttachLiveFeed(folder, aKey);
+          }
+        });
+
+      } catch (err) {
+        alert("Permission Denied: Ensure your Firebase Auth UID/Email is granted access.");
+      }
+    }
+
+    // --- RUBRIC PARSING & LIVE FEED ---
+    async function fetchRubricAndAttachLiveFeed(classFolder, assignmentKey) {
+      if (activeListenerRef) activeListenerRef.off();
+      showGridView();
+      
+      const statusEl = document.getElementById('liveStatus');
+      statusEl.className = "text-xs font-bold px-3 py-1.5 rounded-full border border-yellow-300 bg-yellow-50 text-yellow-700 flex items-center gap-1.5";
+      statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></span> Fetching Data...`;
+
+      // 1. Strip the GC Course ID off the end to get the Base Assignment Code
+      const parts = assignmentKey.split('_');
+      let baseCode = assignmentKey;
+      if (parts.length > 2 && /^\d+$/.test(parts[parts.length - 1])) {
+        baseCode = parts.slice(0, -1).join('_');
+      }
+
+      // 2. Fetch Assignments and Rubrics
+      try {
+        const [rub1, rub2, assignSnap] = await Promise.all([
+          db.ref(`rubrics/${baseCode}`).once('value'),
+          db.ref(`rubrics/rubric_${baseCode}`).once('value'),
+          db.ref(`assignments/${baseCode}`).once('value')
+        ]);
+        
+        // Rubric Normalization
+        const rawRubric = rub1.val() || rub2.val();
+        currentRubric = {};
+        currentQCount = 0;
+
+        if (rawRubric) {
+          if (Array.isArray(rawRubric)) {
+            rawRubric.forEach((ans, idx) => { if (idx > 0 && ans !== null) currentRubric[idx] = ans; });
+            currentQCount = rawRubric.length - 1;
+          } else if (rawRubric.keys && Array.isArray(rawRubric.keys)) {
+            rawRubric.keys.forEach((ans, idx) => { if (idx > 0 && ans !== null) currentRubric[idx] = ans; });
+            currentQCount = rawRubric.keys.length - 1;
+          } else {
+            Object.keys(rawRubric).forEach(k => {
+              if (!isNaN(parseInt(k))) {
+                currentRubric[k] = rawRubric[k];
+              } else if (k.startsWith('q') && rawRubric[k].key !== undefined) {
+                const qNum = k.replace('q', '');
+                currentRubric[qNum] = rawRubric[k].key;
+              }
+            });
+            currentQCount = rawRubric.totalQuestions || rawRubric.maxPoints || Object.keys(currentRubric).length;
+          }
+        }
+
+       // Questions Array Normalization (For Detail View)
+        const rawAssign = assignSnap.val();
+        currentQuestions = [];
+        
+        if (rawAssign) {
+           if (Array.isArray(rawAssign)) {
+             currentQuestions = rawAssign;
+           } else if (rawAssign.questionsByTime) {
+             // Flatten the time-based video clusters into a single 1D array
+             Object.values(rawAssign.questionsByTime).forEach(cluster => {
+               if (Array.isArray(cluster)) currentQuestions.push(...cluster);
+             });
+           } else if (rawAssign.questions) {
+             // Handle standard flat assignments
+             currentQuestions = Array.isArray(rawAssign.questions) ? rawAssign.questions : Object.values(rawAssign.questions);
+           }
+        }
+      } catch(e) { console.error("Database fetch error", e); }
+
+      // 3. Attach Live Listener
+      statusEl.className = "text-xs font-bold px-3 py-1.5 rounded-full border border-green-300 bg-green-50 text-green-700 flex items-center gap-1.5";
+      statusEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> Connected`;
+
+      activeListenerRef = db.ref(`teacherGradebook/${classFolder}/${assignmentKey}`);
+      activeListenerRef.on('value', snapshot => {
+        currentLiveData = snapshot.val() || {};
+        
+        // Fallback Q Count check if rubric was missing
+        if (currentQCount === 0 && currentQuestions.length > 0) {
+            currentQCount = currentQuestions.length;
+        } else if (currentQCount === 0) {
+            Object.keys(currentLiveData).forEach(hash => {
+                if(hash.length < 32) return;
+                Object.keys(currentLiveData[hash]).forEach(k => {
+                    if (k.startsWith('q')) {
+                        const num = parseInt(k.substring(1));
+                        if (num > currentQCount) currentQCount = num;
+                    }
+                });
+            });
+        }
+
+        updateGrid();
+        if (activeStudentHash) {
+          renderSidebar();
+          renderStudentDetail(activeStudentHash);
+        }
+      });
+    }
+
+    // --- GRID RENDERING ---
+    function getSortedRoster() {
+      if (!activeClassFolder) return [];
+      const parts = activeClassFolder.split('_');
+      const cCode = parts[0]; 
+      const cPeriod = parts[1];
+
+      const classRoster = (STUDENT_CONTEXT.roster || []).filter(s => {
+        return s.classes.some(c => c.code === cCode && (c.period === cPeriod || c.period === cPeriod.replace('P', 'Period')));
+      });
+
+      const matched = [];
+      const entries = Object.entries(STUDENT_CONTEXT.nameMap || {});
+      classRoster.forEach(student => {
+        const match = entries.find(([h, name]) => name === student.name);
+        if (match) matched.push({ hash: match[0], name: student.name });
+      });
+      return matched.sort((a,b) => a.name.localeCompare(b.name));
+    }
+
+    function updateGrid() {
+      const sortedStudents = getSortedRoster();
+      const thead = document.getElementById('table-head');
+      const tbody = document.getElementById('table-body');
+
+      let headHtml = `<tr><th class="student-name name-column-width">Student Name</th><th class="score-col">Score</th>`;
+      for(let i = 1; i <= currentQCount; i++) {
+        headHtml += `<th class="q-col text-xs">Q${i}</th>`;
+      }
+      headHtml += `</tr>`;
+      thead.innerHTML = headHtml;
+
+      if (sortedStudents.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="${currentQCount + 2}" class="py-10 text-center text-gray-400">No students found for this class in the payload.</td></tr>`;
+        return;
+      }
+
+      let html = '';
+      sortedStudents.forEach(student => {
+        const record = currentLiveData[student.hash];
+        if (!record) {
+          html += `<tr class="hover:bg-gray-50 transition-colors">
+                     <td class="student-name bg-white h-full border-b-0 border-l-0 border-t-0">
+                       <div class="px-4 py-3 text-sm font-medium text-gray-700">${student.name}</div>
+                     </td>
+                     <td colspan="${currentQCount + 1}" class="text-center text-gray-400 text-xs italic bg-inherit">Not Started</td>
+                   </tr>`;
+          return;
+        }
+
+        const isLocked = Boolean(record.isLocked);
+        let liveScore = 0;
+        let hasAnswers = false;
+        let allCleared = true;
+
+        let rowCells = '';
+        for (let i = 1; i <= currentQCount; i++) {
+          const qData = record[`q${i}`];
+          const hasKey = currentRubric[i] !== undefined;
+          let cellClass = "q-col bg-inherit cursor-pointer hover:bg-blue-50";
+          let cellContent = "-";
+          let isCorrect = false;
+
+          // Process Auto-grading on Incomplete AND Complete assignments
+          if (qData && (qData.selection !== undefined || qData.rawSelection !== undefined || qData.isCorrect !== undefined)) {
+            hasAnswers = true;
+            if (qData.selection !== undefined && hasKey) {
+               isCorrect = (qData.selection == currentRubric[i]);
+               cellClass = isCorrect ? "q-col correct hover:bg-green-100" : "q-col incorrect hover:bg-red-100";
+               cellContent = isCorrect ? "✔" : "✘";
+            } else if (qData.isCorrect !== undefined) {
+               isCorrect = qData.isCorrect;
+               cellClass = isCorrect ? "q-col correct hover:bg-green-100" : "q-col incorrect hover:bg-red-100";
+               cellContent = isCorrect ? "✔" : "✘";
+            } else {
+               cellClass = "q-col text-blue-600 font-bold hover:bg-blue-100";
+               cellContent = "✎"; 
+               allCleared = false; // Requires manual grading
+            }
+          } else {
+            allCleared = false;
+          }
+
+          if (isCorrect) liveScore++;
+          rowCells += `<td class="${cellClass}" onclick="showStudentDetail('${student.hash}')">${cellContent}</td>`;
+        }
+
+        let rowClass = 'bg-white';
+        // Auto-green the row if fully graded and cleared, regardless of submission status (or adjust if you only want it on submission)
+        if (allCleared && hasAnswers) rowClass = 'cleared-row';
+
+        const lockBtn = `<button onclick="event.stopPropagation(); toggleLock('${student.hash}', ${isLocked})" class="ml-auto p-1 rounded transition-colors ${isLocked ? 'text-red-500 hover:bg-red-100' : 'text-gray-300 hover:bg-gray-200'}">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${isLocked ? 'M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z' : 'M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z'}"></path></svg></button>`;
+
+        html += `<tr class="${rowClass} transition-colors">
+                  <td class="student-name bg-inherit h-full border-b-0 border-l-0 border-t-0 cursor-pointer" onclick="showStudentDetail('${student.hash}')">
+                    <div class="px-4 py-3 flex items-center h-full">
+                      <span class="text-sm font-medium text-gray-800 truncate flex-1">${student.name}</span>
+                      ${lockBtn}
+                    </div>
+                  </td>
+                  <td class="score-col font-bold text-gray-800 bg-inherit">${record.submitted ? `${liveScore}/${currentQCount}` : `${liveScore}`}</td>
+                  ${rowCells}
+                </tr>`;
+      });
+
+      tbody.innerHTML = html;
+      
+      // Render Grid KaTeX (if any keys accidentally have math formatting)
+      if (window.renderMathInElement) renderMathInElement(document.getElementById('dashboard-table'), katexConfig);
+    }
+
+    // --- DETAIL & SIDEBAR VIEW ---
+    function showGridView() {
+      activeStudentHash = null;
+      document.getElementById('detail-view').classList.add('hidden');
+      document.getElementById('sidebar-container').classList.add('hidden');
+      document.getElementById('btn-return-grid').classList.add('hidden');
+      document.getElementById('sidebar-container').classList.remove('flex');
+      document.getElementById('grid-view').classList.remove('hidden');
+    }
+
+    function showStudentDetail(hash) {
+      activeStudentHash = hash;
+      document.getElementById('grid-view').classList.add('hidden');
+      document.getElementById('sidebar-container').classList.remove('hidden');
+      document.getElementById('sidebar-container').classList.add('flex');
+      document.getElementById('btn-return-grid').classList.remove('hidden');
+      document.getElementById('detail-view').classList.remove('hidden');
+      
+      renderSidebar();
+      renderStudentDetail(hash);
+    }
+
+    function renderSidebar() {
+      const listContainer = document.getElementById('student-list');
+      const sortedStudents = getSortedRoster();
+      
+      listContainer.innerHTML = sortedStudents.map(student => {
+        const isActive = student.hash === activeStudentHash;
+        const btnClass = isActive ? "w-full text-left px-4 py-3 text-sm text-blue-800 bg-blue-100 font-bold border-l-4 border-blue-600 transition flex items-center gap-2" : "w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 border-l-4 border-transparent transition flex items-center gap-2";
+        return `<button class="${btnClass}" onclick="showStudentDetail('${student.hash}')">
+                  <svg class="w-4 h-4 shrink-0 ${isActive ? 'text-blue-600' : 'text-gray-400'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                  <span class="truncate">${student.name}</span>
+                </button>`;
+      }).join('');
+    }
+
+    function renderStudentDetail(hash) {
+      const sortedStudents = getSortedRoster();
+      const student = sortedStudents.find(s => s.hash === hash);
+      document.getElementById('detail-name').innerText = student ? student.name : "Unknown Student";
+
+      const record = currentLiveData[hash] || {};
+      const container = document.getElementById('detail-questions');
+      let html = '';
+      let liveScore = 0;
+
+      const totalQs = Math.max(currentQCount, currentQuestions.length);
+
+      for(let i = 1; i <= totalQs; i++) {
+        const qData = record[`q${i}`];
+        const hasKey = currentRubric[i] !== undefined;
+        const expectedKey = currentRubric[i];
+        
+        // Find the question definition in the pulled assignments block
+        const qDef = currentQuestions.find(q => q && (q.id == i || q.id == `q${i}`)) || currentQuestions[i-1] || null;
+        
+        const rawAns = qData ? (qData.rawSelection !== undefined ? qData.rawSelection : qData.selection) : null;
+        const isAnswered = rawAns !== null && rawAns !== undefined && rawAns !== "";
+        
+        let cardClass = "bg-white p-6 md:p-8 rounded-lg shadow-sm border border-gray-200 transition-colors mb-4";
+        let statusIcon = `<span class="text-gray-400 italic text-sm">Not answered</span>`;
+        let isCorrect = false;
+
+        if (isAnswered) {
+          if (qData.selection !== undefined && hasKey) {
+            isCorrect = (qData.selection == expectedKey);
+          } else if (qData.isCorrect !== undefined) {
+            isCorrect = qData.isCorrect;
+          }
+
+          if (isCorrect === true) {
+            liveScore++;
+            cardClass = "bg-green-50 p-6 md:p-8 rounded-lg shadow-sm border-2 border-green-400 mb-4"; 
+            statusIcon = `<span class="text-green-600 font-bold ml-2">✓ Correct</span>`;
+          } else if (isCorrect === false && (hasKey || qData.isCorrect === false)) {
+            cardClass = "bg-red-50 p-6 md:p-8 rounded-lg shadow-sm border-2 border-red-400 mb-4"; 
+            statusIcon = `<span class="text-red-600 font-bold ml-2">✗ Incorrect</span>`;
+          } else {
+            cardClass = "bg-blue-50 p-6 md:p-8 rounded-lg shadow-sm border-2 border-blue-400 mb-4"; 
+            statusIcon = `<span class="text-blue-600 font-bold ml-2">Needs Review</span>`;
+          }
+        }
+
+        let questionBodyHtml = '';
+
+        // Render Multiple Choice with Options from DB
+        if (qDef && qDef.options && qDef.options.length > 0) {
+           let optionsHtml = qDef.options.map((opt, optIdx) => {
+             const isChecked = (rawAns == optIdx);
+             const isExpected = (hasKey && expectedKey == optIdx);
+             
+             let labelClass = "flex items-start gap-3 py-2 px-2 -ml-2 rounded opacity-80 cursor-not-allowed";
+             
+             if (isExpected) {
+               labelClass += " border-l-4 border-green-500 bg-white font-medium shadow-sm"; // Highlight Actual Key
+             } else if (isChecked && !isExpected && hasKey) {
+               labelClass += " border-l-4 border-red-500 bg-red-50 font-medium shadow-sm";  // Wrong Selection
+             } else if (isChecked && !hasKey) {
+               labelClass += " border-l-4 border-blue-500 bg-white font-medium shadow-sm"; // Unknown Selection
+             }
+
+             return `<label class="${labelClass}">
+                       <input type="radio" disabled ${isChecked ? 'checked' : ''} class="mt-1 w-4 h-4 text-gray-400 bg-gray-100 border-gray-300 flex-shrink-0">
+                       <span class="text-sm md:text-base leading-relaxed break-words">${opt}</span>
+                     </label>`;
+           }).join('');
+
+           questionBodyHtml = `
+             <div class="mb-4 text-base font-normal leading-relaxed text-gray-900">${qDef.text || `Question ${i}`}</div>
+             <div class="flex flex-col gap-2 pl-2">${optionsHtml}</div>
+           `;
+        } else {
+           // Render Text Question or Fallback if options missing
+           const qText = qDef ? (qDef.text || `Question ${i}`) : `Question ${i}`;
+           questionBodyHtml = `
+             <div class="mb-2 text-base font-normal leading-relaxed text-gray-900">${qText}</div>
+             <div class="text-gray-900 font-medium whitespace-pre-wrap p-3 bg-white/60 border border-gray-300 rounded">
+               ${isAnswered ? String(rawAns) : '<span class="text-gray-400 font-normal italic">No answer provided</span>'}
+             </div>
+             ${(hasKey && !qDef) ? `<div class="mt-2 text-sm text-gray-500">Expected Key: <span class="font-bold text-gray-700">${expectedKey}</span></div>` : ''}
+           `;
+        }
+
+        let manualGradingBtns = '';
+        if (isAnswered && !hasKey) {
+           const isCorr = qData.isCorrect === true;
+           const isIncorr = qData.isCorrect === false;
+           manualGradingBtns = `
+             <div class="flex gap-2 ml-4">
+               <button onclick="gradeQuestion('${hash}', ${i}, true)" class="p-1 rounded transition hover:bg-green-200 ${isCorr ? 'bg-green-200 text-green-700' : 'bg-gray-100 text-gray-500'}" title="Mark Correct">
+                 <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+               </button>
+               <button onclick="gradeQuestion('${hash}', ${i}, false)" class="p-1 rounded transition hover:bg-red-200 ${isIncorr ? 'bg-red-200 text-red-700' : 'bg-gray-100 text-gray-500'}" title="Mark Incorrect">
+                 <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+               </button>
+             </div>
+           `;
+        }
+
+        html += `
+          <div class="${cardClass}">
+            <div class="flex flex-col md:flex-row justify-between items-start gap-4 mb-2 border-b border-gray-200/50 pb-2">
+              <div class="font-bold text-gray-800 text-lg">Question ${i}</div>
+              <div class="flex items-center shrink-0 bg-white/50 px-2 py-1 rounded">
+                 ${statusIcon}
+                 ${manualGradingBtns}
+              </div>
+            </div>
+            <div>
+              ${questionBodyHtml}
+            </div>
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+      
+      const totalScoreText = record.submitted ? `${liveScore} / ${totalQs}` : `<span class="text-gray-400 text-lg">In Progress (${liveScore} correct so far)</span>`;
+      document.getElementById('detail-score').innerHTML = totalScoreText;
+
+      // Render KaTeX for the newly inserted questions
+      if (window.renderMathInElement) renderMathInElement(container, katexConfig);
+    }
+
+    // --- ACTIONS ---
+    window.toggleLock = function(studentHash, currentStatus) {
+      const assignmentKey = document.getElementById('assignmentSelect').value;
+      db.ref(`teacherGradebook/${activeClassFolder}/${assignmentKey}/${studentHash}/isLocked`).set(!currentStatus)
+        .catch(err => alert("Error updating lock status: " + err.message));
+    };
+
+    window.gradeQuestion = function(studentHash, qId, isCorrect) {
+      const assignmentKey = document.getElementById('assignmentSelect').value;
+      const ref = db.ref(`teacherGradebook/${activeClassFolder}/${assignmentKey}/${studentHash}/q${qId}`);
+      ref.update({ isCorrect: isCorrect, score: isCorrect ? 1 : 0 }).catch(err => alert(err.message));
+    };
+
+  </script>
+</body>
+</html>

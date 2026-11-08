@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body, canvas {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+    
+    #canvas {
+      border: 1px solid #ccc;
+    }
+    
+    #ball {
+      position: absolute;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas" width="400" height="400" style="background-color: #f0f0f0"></canvas>
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const ball = document.getElementById('ball');
+    
+    // Define ball properties
+    let x = canvas.width / 2;
+    let y = canvas.height / 2;
+    let vx = 5;
+    let vy = 3;
+    let r = 20;
+    let g = 100;
+    let b = 100;
+    
+    // Animation loop
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw ball
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, 2 * Math.PI);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = `rgb(${g},${b},${b})`;
+      ctx.stroke();
+      
+      // Update ball position
+      x += vx;
+      y += vy;
+      
+      // Bounce ball off edges
+      if (x + r > canvas.width || x - r < 0) {
+        vx = -vx;
+      }
+      if (y + r > canvas.height || y - r < 0) {
+        vy = -vy;
+      }
+      
+      // Update ball color
+      g += Math.random() * 20 - 10;
+      b += Math.random() * 20 - 10;
+      
+      // Repeat animation
+      requestAnimationFrame(animate);
+    }
+    
+    animate();
+  </script>
+</body>
+</html>

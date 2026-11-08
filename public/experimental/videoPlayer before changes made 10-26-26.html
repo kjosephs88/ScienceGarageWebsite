@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="origin-when-cross-origin">
+  <title>Forensic Science: Fibers &amp; Textiles</title>
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --card-bg: #1e293b;
+      --text-main: #f8fafc;
+      --accent-blue: #38bdf8;
+      --accent-blue-hover: #0284c7;
+      --border-color: #334155;
+      --input-bg: #0f172a;
+      --error-color: #f87171;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 1.5rem 1rem;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 480px;
+      background: var(--card-bg);
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+    }
+
+    .header {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .header h1 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .video-wrapper {
+      position: relative;
+      width: 100%;
+      background-color: #000;
+      aspect-ratio: 16 / 10;
+    }
+
+    video {
+      width: 100%;
+      height: 100%;
+      display: block;
+      outline: none;
+    }
+
+    video::cue {
+      background-color: rgba(15, 23, 42, 0.85);
+      color: #f8fafc;
+      font-family: inherit;
+      font-size: 0.85rem;
+      line-height: 1.3;
+      border-radius: 3px;
+    }
+
+    /* Checkpoint Card Underneath Video */
+    .checkpoint-card {
+      display: none;
+      padding: 1rem;
+      background-color: #1e293b;
+      border-top: 1px solid var(--border-color);
+      animation: fadeIn 0.2s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .checkpoint-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--accent-blue);
+      margin-bottom: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .question-group {
+      margin-bottom: 0.75rem;
+    }
+
+    .question-label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 500;
+      margin-bottom: 0.35rem;
+      color: var(--text-main);
+    }
+
+    .response-input {
+      width: 100%;
+      padding: 0.5rem 0.65rem;
+      font-size: 0.85rem;
+      color: var(--text-main);
+      background-color: var(--input-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+
+    .response-input:focus {
+      border-color: var(--accent-blue);
+    }
+
+    .error-msg {
+      font-size: 0.75rem;
+      color: var(--error-color);
+      margin-top: 0.25rem;
+      display: none;
+    }
+
+    .submit-btn {
+      width: 100%;
+      margin-top: 0.5rem;
+      padding: 0.55rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #0f172a;
+      background-color: var(--accent-blue);
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.15s ease;
+    }
+
+    .submit-btn:hover {
+      background-color: var(--accent-blue-hover);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="header">
+      <h1>Chapter 4: Fibers &amp; Textiles Analysis</h1>
+    </div>
+
+    <div class="video-wrapper">
+      <video 
+        id="forensicPlayer" 
+        controls 
+        playsinline
+        crossorigin="anonymous"
+        controlslist="nodownload noplaybackrate" 
+        disablePictureInPicture
+        oncontextmenu="return false;"
+        referrerpolicy="origin-when-cross-origin">
+        
+        <source src="https://media.thesciencegarage.com/forensicsOfFibers.mp4?v=7" type="video/mp4">
+        
+        <track 
+          id="captionTrack"
+          label="English" 
+          kind="captions" 
+          srclang="en" 
+          src="https://media.thesciencegarage.com/forensicsOfFibers.vtt?v=7">
+        
+        Your browser does not support the video tag.
+      </video>
+    </div>
+
+    <!-- Question Card Underneath Player -->
+    <div id="checkpointCard" class="checkpoint-card">
+      <div class="checkpoint-title">Checkpoint Assessment (0:10)</div>
+      
+      <div class="question-group">
+        <label class="question-label" for="q1Input">1. Is this working?</label>
+        <input type="text" id="q1Input" class="response-input" placeholder="Type your response here..." autocomplete="off">
+      </div>
+
+      <div class="question-group">
+        <label class="question-label" for="q2Input">2. Confirm observation or notes:</label>
+        <input type="text" id="q2Input" class="response-input" placeholder="Enter notes to continue..." autocomplete="off">
+      </div>
+
+      <div id="errorText" class="error-msg">Please answer both questions before proceeding.</div>
+      
+      <button id="submitCheckpointBtn" class="submit-btn" type="button">Submit &amp; Continue</button>
+    </div>
+  </div>
+
+  <script>
+    const player = document.getElementById('forensicPlayer');
+    const checkpointCard = document.getElementById('checkpointCard');
+    const q1Input = document.getElementById('q1Input');
+    const q2Input = document.getElementById('q2Input');
+    const errorText = document.getElementById('errorText');
+    const submitBtn = document.getElementById('submitCheckpointBtn');
+
+    let maxWatchedTime = 0;
+    let checkpointCompleted = false;
+    const CHECKPOINT_TIMESTAMP = 10.0;
+
+    // Maintain caption track initialization
+    player.addEventListener('loadedmetadata', () => {
+      if (player.textTracks && player.textTracks[0]) {
+        player.textTracks[0].mode = 'hidden';
+      }
+    });
+
+    // Helper: returns the furthest allowed time based on completion state
+    function getAllowedLimit() {
+      return checkpointCompleted ? maxWatchedTime : Math.min(maxWatchedTime, CHECKPOINT_TIMESTAMP);
+    }
+
+    // Guard time updates against forward jumps/clicks
+    player.addEventListener('timeupdate', () => {
+      const allowed = getAllowedLimit();
+
+      // Enforce lock at the 10-second barrier if not answered
+      if (!checkpointCompleted && player.currentTime >= CHECKPOINT_TIMESTAMP) {
+        player.pause();
+        player.currentTime = CHECKPOINT_TIMESTAMP;
+        checkpointCard.style.display = 'block';
+        return;
+      }
+
+      // Check if progress jumped abnormally (> 0.5s) ahead of maxWatchedTime (progress bar clicks)
+      if (player.currentTime > maxWatchedTime) {
+        if (player.currentTime - maxWatchedTime <= 0.5) {
+          // Legitimate continuous playback: advance the boundary
+          maxWatchedTime = player.currentTime;
+        } else {
+          // Click ahead detected: snap back immediately
+          player.currentTime = allowed;
+        }
+      }
+    });
+
+    // Enforce anti-seek on drag or click
+    player.addEventListener('seeking', () => {
+      const allowed = getAllowedLimit();
+      if (player.currentTime > allowed) {
+        player.currentTime = allowed;
+      }
+    });
+
+    // Prevent bypassing checkpoint by re-pressing play while overdue
+    player.addEventListener('play', () => {
+      if (!checkpointCompleted && player.currentTime >= CHECKPOINT_TIMESTAMP) {
+        player.pause();
+        player.currentTime = CHECKPOINT_TIMESTAMP;
+        checkpointCard.style.display = 'block';
+      }
+    });
+
+    // Process submission and release the checkpoint lock
+    submitBtn.addEventListener('click', () => {
+      const q1Val = q1Input.value.trim();
+      const q2Val = q2Input.value.trim();
+
+      if (!q1Val || !q2Val) {
+        errorText.style.display = 'block';
+        return;
+      }
+
+      errorText.style.display = 'none';
+      checkpointCompleted = true;
+      checkpointCard.style.display = 'none';
+      player.play();
+    });
+  </script>
+</body>
+</html>

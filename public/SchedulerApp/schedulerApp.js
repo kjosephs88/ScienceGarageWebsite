@@ -68,8 +68,8 @@ window.updateMasterCalendarState = async function(periodsToUpdate = [activePerio
             configToUpdate = snap.exists() ? snap.val() : {};
         }
 
-        let currDate = new Date('2025-07-01T12:00:00'); 
-        let endDate = new Date('2026-06-30T12:00:00'); 
+        let currDate = new Date('2026-08-01T12:00:00'); 
+        let endDate = new Date('2027-06-30T12:00:00'); 
         let isDouble = true; 
 
         while (currDate <= endDate) {
@@ -444,6 +444,7 @@ window.placeAssignments = function() {
         }
         
         let itemHTML = '';
+        let materialClass = assignment.workType === 'MATERIAL' ? ' material-item' : '';
 
         if (assignment.isCustomNote) {
             itemHTML = `
@@ -460,7 +461,7 @@ window.placeAssignments = function() {
             const titleAttr = assignment.encodedUrl ? `title="Click to open in Google Classroom, drag to move"` : `title="Drag to schedule"`;
             
             itemHTML = `
-                <div class="assignment-item" data-db-key="${dbKey}" ${urlAttr} ${titleAttr} style="${assignment.encodedUrl ? 'cursor: pointer;' : ''}">
+                <div class="assignment-item${materialClass}" data-db-key="${dbKey}" ${urlAttr} ${titleAttr} style="${assignment.encodedUrl ? 'cursor: pointer;' : ''}">
                     <span class="item-prefix">Complete assignment:</span>
                     <span class="item-title">${assignment.title}</span>
                     <span class="item-note" style="display: none;"></span> 
@@ -609,6 +610,7 @@ window.updatePrefixes = function(dbKey) {
     if (!assignment || assignment.isCustomNote) return;
 
     let dates = (assignment.scheduledDates || []).filter(d => d !== "unassigned").sort();
+    const isMaterial = assignment.workType === 'MATERIAL';
     
     const instances = document.querySelectorAll(`.assignment-item[data-db-key="${dbKey}"]`);
     instances.forEach(inst => {
@@ -619,17 +621,21 @@ window.updatePrefixes = function(dbKey) {
         const dupBtn = inst.querySelector('.duplicate-btn');
         
         if (listId === 'holding-tank') {
-            prefixSpan.innerText = 'Complete assignment:';
+            prefixSpan.innerText = isMaterial ? 'Grab a copy of:' : 'Complete assignment:';
             if (dupBtn) dupBtn.disabled = true; 
         } else {
-            if (dates.length <= 1) {
-                prefixSpan.innerText = 'Complete assignment:';
-            } else if (listId === dates[0]) {
-                prefixSpan.innerText = 'Begin assignment:';
-            } else if (listId === dates[dates.length - 1]) {
-                prefixSpan.innerText = 'Finish assignment:';
+            if (isMaterial) {
+                prefixSpan.innerText = 'Grab a copy of:';
             } else {
-                prefixSpan.innerText = 'Continue assignment:';
+                if (dates.length <= 1) {
+                    prefixSpan.innerText = 'Complete assignment:';
+                } else if (listId === dates[0]) {
+                    prefixSpan.innerText = 'Begin assignment:';
+                } else if (listId === dates[dates.length - 1]) {
+                    prefixSpan.innerText = 'Finish assignment:';
+                } else {
+                    prefixSpan.innerText = 'Continue assignment:';
+                }
             }
             
             if (dupBtn) {
@@ -871,7 +877,7 @@ window.saveCalendarConfig = async function() {
     let endDateObj = new Date(endStr + 'T12:00:00');
     if (currDate > endDateObj) return alert("End Date must be after Start Date.");
 
-    const oldValidDays = window.getValidDaysArray(currentCalendarConfig, "2024-07-01", 800);
+    const oldValidDays = window.getValidDaysArray(currentCalendarConfig, "2026-07-01", 800);
     const configUpdates = {};
     const newlyCreatedOffDays = []; 
     const targetPeriods = applyAll ? ['P1', 'P3', 'P6', 'P8'] : [activePeriod];
@@ -899,7 +905,7 @@ window.saveCalendarConfig = async function() {
         await update(ref(db), configUpdates);
         
         if (newlyCreatedOffDays.length > 0) {
-            const newValidDays = window.getValidDaysArray(currentCalendarConfig, "2024-07-01", 800);
+            const newValidDays = window.getValidDaysArray(currentCalendarConfig, "2026-07-01", 800);
             const shiftResult = window.shiftAssignments(oldValidDays, newValidDays, startStr);
 
             if (shiftResult.shifted) {
@@ -920,7 +926,7 @@ window.saveCalendarConfig = async function() {
 window.deleteConfig = async function(dateStr) {
     const wasDayOff = currentCalendarConfig[dateStr] && currentCalendarConfig[dateStr].isDayOff;
     
-    const oldValidDays = window.getValidDaysArray(currentCalendarConfig, "2024-07-01", 800);
+    const oldValidDays = window.getValidDaysArray(currentCalendarConfig, "2026-07-01", 800);
 
     try {
         const targetPeriods = ['P1', 'P3', 'P6', 'P8'];
@@ -933,7 +939,7 @@ window.deleteConfig = async function(dateStr) {
         delete currentCalendarConfig[dateStr];
 
         if (wasDayOff) {
-            const newValidDays = window.getValidDaysArray(currentCalendarConfig, "2024-07-01", 800);
+            const newValidDays = window.getValidDaysArray(currentCalendarConfig, "2026-07-01", 800);
             const shiftResult = window.shiftAssignments(oldValidDays, newValidDays, dateStr);
 
             if (shiftResult.shifted) {

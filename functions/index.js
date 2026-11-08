@@ -127,10 +127,52 @@ exports.cleanupSessions = onSchedule("every 1 hours", async (event) => {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /**
- * THE SCIENCE GARAGE: SECURE PROXY (v1.0)
+ * THE SCIENCE GARAGE: SECURE PROXY (Unified v1.2)
  * Acts as a middleman to hide SaltedHashes from student browsers.
- * Validates SessionTokens and maps them to permanent RTDB nodes.
+ * Handles Flashcards, dynamic Gradebook mapping (pre/post Classroom posting),
+ * live SSE sync, and Video Guide security states.
  */
 exports.secureProxy = onRequest({ cors: true, maxInstances: 10 }, async (req, res) => {
     const { token, qId, selection, textValue, action } = req.body;
@@ -153,78 +195,207 @@ exports.secureProxy = onRequest({ cors: true, maxInstances: 10 }, async (req, re
             return res.status(403).send("Session Expired");
         }
 
-      // =====================================================================
+        // =====================================================================
         // FLASHCARD ACTIONS (NO APPS SCRIPT BANDWIDTH)
         // =====================================================================
         if (action === "initFlashcards") {
-            // Fetch the massive master question bank via admin privileges
             const bankSnap = await admin.database().ref("mcQuestionBank").get();
             const bankData = bankSnap.exists() ? Object.values(bankSnap.val()) : [];
 
-            // Securely fetch the student's private history node using the mapped realHash
             const historySnap = await admin.database().ref(`chemReview2026/${realHash}`).get();
             const historyData = historySnap.exists() ? historySnap.val() : {};
 
-            // Stream the unified payload directly back to the client viewport
-            return res.status(200).json({
-                bank: bankData,
-                history: historyData
-            });
+            return res.status(200).json({ bank: bankData, history: historyData });
 
         } else if (action === "saveFlashcardProgress") {
             const { deckId, unseenIds, masteredIds, learningIds, deckMetadata, isFinished } = req.body;
-            
-            // Build the update payload targeting the chemReview2026 node directly
             const basePath = `chemReview2026/${realHash}/${deckId}`;
             const updates = {
-                [`${basePath}/state`]: { 
-                    unseen: unseenIds || [], 
-                    mastered: masteredIds || [], 
-                    learning: learningIds || [] 
-                },
+                [`${basePath}/state`]: { unseen: unseenIds || [], mastered: masteredIds || [], learning: learningIds || [] },
                 [`${basePath}/score`]: (masteredIds || []).length,
                 [`${basePath}/lastUpdated`]: Date.now()
             };
-            
             if (deckMetadata) updates[`${basePath}/metadata`] = deckMetadata;
             if (isFinished) updates[`${basePath}/completed`] = true;
-            
             await admin.database().ref().update(updates);
             return res.status(200).send("Progress Saved");
 
         } else if (action === "deleteFlashcardDeck") {
-            const { deckId } = req.body;
-            // Instantly wipe the deck from the database
-            await admin.database().ref(`chemReview2026/${realHash}/${deckId}`).remove();
+            await admin.database().ref(`chemReview2026/${realHash}/${req.body.deckId}`).remove();
             return res.status(200).send("Deck Deleted");
         }
 
-        // Permanent reference path for Graded Assignments
-        const studentRef = admin.database().ref(`teacherGradebook/${periodFolder}/${assignmentFolder}/${realHash}`);
+        // =====================================================================
+        // GRADED ASSIGNMENT & VIDEO PLAYER ACTIONS
+        // =====================================================================
+        
+        // 3. Dynamically Resolve Exact Gradebook Path
+        let exactStudentPath = sessionData.exactStudentPath;
+        const isRawFolder = exactStudentPath && exactStudentPath.includes(`/${assignmentFolder}/${realHash}`);
 
-        // 3. Handle Graded Assignment Actions
-        if (action === "saveAnswer") {
-            const updateData = {
-                needsGrading: true,
-                lastUpdated: Date.now(),
-                [`q${qId}/selection`]: (selection !== undefined) ? selection : textValue
-            };
+        if (!exactStudentPath || isRawFolder) {
+            const classSubject = assignmentFolder.substring(0, 2); 
+            const periodNum = periodFolder.replace("Period", "");
+            const classPrefix = `${classSubject}_P${periodNum}`; // e.g. "FS_P6"
+            
+            const gradebookSnap = await admin.database().ref('teacherGradebook')
+                .orderByKey().startAt(classPrefix).endAt(classPrefix + "\uf8ff").once('value');
+            
+            if (gradebookSnap.exists()) {
+                const exactClassFolder = Object.keys(gradebookSnap.val())[0]; // e.g. FS_P6_876562785599
+                const classAssignments = gradebookSnap.val()[exactClassFolder] || {};
 
-            // 📝 Grade Reset: If text answer is edited, clear the old isCorrect status
-            if (textValue !== undefined) {
-                updateData[`q${qId}/isCorrect`] = null;
-                updateData[`q${qId}/score`] = null;
+                // 1. Matches posted Classroom folder (e.g. FS_U03_A03_895932117550)
+                // 2. Falls back to base code if testing before posting
+                const matchedAssignmentKey = Object.keys(classAssignments).find(k => k.startsWith(`${assignmentFolder}_`)) 
+                    || Object.keys(classAssignments).find(k => k === assignmentFolder) 
+                    || assignmentFolder;
+
+                exactStudentPath = `teacherGradebook/${exactClassFolder}/${matchedAssignmentKey}/${realHash}`;
+                await sessionRef.update({ exactStudentPath: exactStudentPath });
+            } else {
+                return res.status(500).json({ error: "Class folder not found in gradebook." });
             }
-            await studentRef.update(updateData);
-        } else if (action === "submit") {
-            await studentRef.update({ 
-                submitted: true, 
-                needsGrading: true, 
-                lastSubmitted: Date.now() 
+        }
+
+        const livePath = `sessionBridge/${token}`;
+
+        // Initialize Video Player & establish SSE live session
+        if (action === "initVideo") {
+            const studentSnap = await admin.database().ref(exactStudentPath).once('value');
+            const savedState = studentSnap.val() || {}; 
+            
+            await admin.database().ref(livePath).set(savedState);
+            
+            return res.status(200).json({
+                sessionToken: token,
+                livePath: livePath,
+                savedState: savedState
             });
+        }
+
+        // Save progress tracker max watched time
+        if (action === "saveVideoProgress") {
+            const updates = {};
+            updates[`${exactStudentPath}/maxWatchedTime`] = req.body.time;
+            updates[`${livePath}/maxWatchedTime`] = req.body.time;
+            await admin.database().ref().update(updates);
+            return res.status(200).send({ success: true });
+        }
+
+        // Save tab leave & lockout security state
+        if (action === "saveSecurityState") {
+            const updates = {};
+            if (req.body.tabLeaves !== undefined) {
+                updates[`${exactStudentPath}/tabLeaves`] = req.body.tabLeaves;
+                updates[`${livePath}/tabLeaves`] = req.body.tabLeaves;
+            }
+            if (req.body.isLocked !== undefined) {
+                updates[`${exactStudentPath}/isLocked`] = req.body.isLocked;
+                updates[`${livePath}/isLocked`] = req.body.isLocked;
+            }
+            await admin.database().ref().update(updates);
+            return res.status(200).send({ success: true });
+        }
+
+        // End session: Permanently saves strikes/lockout and immediately revokes the session token
+        if (action === "endSession") {
+            const updates = {};
+            if (req.body.tabLeaves !== undefined) {
+                updates[`${exactStudentPath}/tabLeaves`] = req.body.tabLeaves;
+            }
+            if (req.body.isLocked !== undefined) {
+                updates[`${exactStudentPath}/isLocked`] = req.body.isLocked;
+            }
+
+            // Revoke the token and clean up the live session bridge
+            updates[`ActiveSessions/${token}`] = null;
+            updates[`sessionBridge/${token}`] = null;
+
+            await admin.database().ref().update(updates);
+            return res.status(200).send({ success: true, revoked: true });
+        }
+
+        // Process standard assignment answers
+        if (action === "saveAnswer") {
+            const updates = {};
+            const qKey = `q${qId}`;
+            const ans = (selection !== undefined) ? selection : textValue;
+            
+            updates[`${exactStudentPath}/needsGrading`] = true;
+            updates[`${exactStudentPath}/lastUpdated`] = Date.now();
+            updates[`${exactStudentPath}/${qKey}/selection`] = ans;
+            updates[`${livePath}/${qKey}/selection`] = ans;
+
+            if (textValue !== undefined) {
+                updates[`${exactStudentPath}/${qKey}/isCorrect`] = null;
+                updates[`${exactStudentPath}/${qKey}/score`] = null;
+                updates[`${livePath}/${qKey}/isCorrect`] = null;
+                updates[`${livePath}/${qKey}/score`] = null;
+            }
+            await admin.database().ref().update(updates);
+
+        } else if (action === "submit") {
+            // Strip off Google Classroom numeric suffix if present (e.g., FS_U04_A01_895932117550 -> FS_U04_A01)
+            const parts = assignmentFolder.split('_');
+            const rubricCode = /^\d+$/.test(parts[parts.length - 1]) 
+                ? parts.slice(0, -1).join('_') 
+                : assignmentFolder;
+
+            // Target the standardized rubric node
+            const rubricSnap = await admin.database().ref(`rubrics/rubric_${rubricCode}/keys`).once('value');
+            const answerKeys = rubricSnap.val() || {};
+
+            // Fetch student's current recorded selections
+            const studentSnap = await admin.database().ref(exactStudentPath).once('value');
+            const studentData = studentSnap.val() || {};
+
+            let totalCorrect = 0;
+            const totalQuestions = Object.keys(answerKeys).length;
+            const incorrectQs = [];
+            const updates = {};
+
+            // Compare each question against rubric keys
+            Object.keys(answerKeys).forEach(k => {
+                const qKey = `q${k}`;
+                const correctAns = answerKeys[k];
+                const studentAns = studentData[qKey]?.selection;
+
+                const isCorrect = (studentAns !== undefined && studentAns !== null && studentAns == correctAns);
+                updates[`${exactStudentPath}/${qKey}/isCorrect`] = isCorrect;
+                updates[`${livePath}/${qKey}/isCorrect`] = isCorrect;
+
+                if (isCorrect) {
+                    totalCorrect++;
+                } else {
+                    incorrectQs.push(k);
+                }
+            });
+
+            // Decrement remaining submission attempts (defaults to 3 on first run)
+            const currentAttempts = studentData.attemptsLeft !== undefined ? studentData.attemptsLeft : 3;
+            const attemptsLeft = Math.max(0, currentAttempts - 1);
+
+            updates[`${exactStudentPath}/submitted`] = true;
+            updates[`${exactStudentPath}/score`] = totalCorrect;
+            updates[`${exactStudentPath}/attemptsLeft`] = attemptsLeft;
+            updates[`${exactStudentPath}/lastSubmitted`] = Date.now();
+            updates[`${livePath}/submitted`] = true;
+
+            await admin.database().ref().update(updates);
+
+            // Instant return to frontend
+            return res.status(200).json({
+                score: totalCorrect,
+                total: totalQuestions,
+                incorrect: incorrectQs,
+                attemptsLeft: attemptsLeft
+            });
+
         } else if (action === "markRead") {
             if (qId) {
-                await studentRef.child(`q${qId}`).update({ commentUnread: false });
+                await admin.database().ref(`${exactStudentPath}/q${qId}`).update({ commentUnread: false });
+                await admin.database().ref(`${livePath}/q${qId}`).update({ commentUnread: false });
             }
         }
 
@@ -242,19 +413,6 @@ exports.secureProxy = onRequest({ cors: true, maxInstances: 10 }, async (req, re
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 /**
  * THE SCIENCE GARAGE: STUDENT ACTIVITY TRIGGER (v3.1)
  * Handles Secure MC Grading and Mastery Tracking
@@ -265,32 +423,23 @@ exports.onStudentActivityTrigger = onValueUpdated({
     memory: "512MiB",
     timeoutSeconds: 30
 }, async (event) => {
-
     const afterData = event.data.after.val();
-
-    // 1. EXIT CHECK: Proceed only if grading is requested
     if (!afterData || afterData.needsGrading !== true) return null;
 
     const { assignmentFolder, studentUid } = event.params;
-    
-    // Clean assignmentFolder to get the base code
     const assignmentCode = assignmentFolder.includes('_') 
         ? assignmentFolder.split('_').slice(0, -1).join('_') 
         : assignmentFolder;
 
-    console.log(`Processing Activity: ${assignmentCode} for ${studentUid}`);
-
     try {
         const updates = {};
         const assignmentKey = MASTER_KEYS[assignmentCode];
-        
         let totalCorrect = 0;
         let totalQuestions = 0;
 
         if (assignmentKey) {
             const masterQIds = Object.keys(assignmentKey);
             totalQuestions = masterQIds.length;
-            
             masterQIds.forEach(qId => {
                 const qKey = `q${qId}`;
                 const qRubric = assignmentKey[qId];
@@ -312,7 +461,6 @@ exports.onStudentActivityTrigger = onValueUpdated({
 
         const totalThreshold = Math.ceil(totalQuestions * 0.8);
         const isUnlockedNow = totalCorrect >= totalThreshold;
-        // THE GATE: Only unlock if already unlocked OR (Submit was pressed AND current grade >= 80%)
         const shouldBeUnlocked = (afterData.unlocked === true) || (afterData.submitted === true && isUnlockedNow);
 
         const finalUpdates = {
@@ -324,10 +472,7 @@ exports.onStudentActivityTrigger = onValueUpdated({
         };
 
         await event.data.after.ref.update(finalUpdates);
-
         return null;
-
-
     } catch (error) {
         console.error("TRIGGER ERROR:", error);
         return event.data.after.ref.update({ needsGrading: false });

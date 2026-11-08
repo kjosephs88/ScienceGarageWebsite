@@ -298,3 +298,12 @@ select {
 .hide-for-forensics .day-footer {
     display: none !important;
 }
+
+/* --- Material Items --- */
+.material-item {
+    background-color: #f4effa !important; 
+    border-left: 5px solid #8e44ad !important; /* Classroom Purple */
+}
+.material-item .item-prefix {
+    color: #6c3483; 
+}

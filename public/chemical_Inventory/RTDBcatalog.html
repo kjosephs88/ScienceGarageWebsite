@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cloud Chemical Editor</title>
+  <style>
+    body { font-family: -apple-system, sans-serif; background-color: #f4f4f9; padding: 20px; max-width: 700px; margin: 0 auto; }
+    
+    /* Login Screen */
+    #login-screen { margin-top: 100px; text-align: center; }
+    .btn-google { background-color: #4285F4; color: white; padding: 15px 30px; font-size: 1.2em; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
+    #auth-error { color: red; margin-top: 15px; font-weight: bold; }
+    
+    /* Main App Interface */
+    #app-interface { display: none; }
+    .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    input[type="text"] { width: 100%; padding: 15px; font-size: 1.2em; border: 2px solid #ccc; border-radius: 8px; box-sizing: border-box; margin-bottom: 20px; }
+    
+    .btn { padding: 10px 15px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; }
+    .btn-add { background-color: #28a745; font-size: 1.1em; padding: 12px 20px; }
+    .btn-edit { background-color: #6c757d; font-size: 0.9em; float: right; }
+    .btn-delete { background-color: #dc3545; font-size: 0.9em; float: right; margin-right: 10px;}
+    
+    /* Result Cards */
+    .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 15px; text-align: left; position: relative;}
+    .card h3 { margin: 0 0 10px 0; color: #333; }
+    .badge { display: inline-block; padding: 5px 10px; border-radius: 5px; font-weight: bold; font-size: 0.9em; margin-right: 5px; margin-top: 5px; }
+    .flinn-badge { background: #0056b3; color: white; }
+    .loc-badge { background: #17a2b8; color: white; }
+    .hazard-text { color: #dc3545; font-size: 0.9em; font-weight: bold; margin-top: 10px;}
+    
+    /* Editor Modal */
+    #editor-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; }
+    .modal-content { background: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 400px; text-align: left; max-height: 90vh; overflow-y: auto;}
+    .modal-content label { font-weight: bold; display: block; margin-top: 15px; }
+    .modal-content input { width: 100%; padding: 10px; font-size: 1em; border: 1px solid #ccc; border-radius: 6px; margin-top: 5px; box-sizing: border-box;}
+    .modal-actions { margin-top: 25px; display: flex; justify-content: space-between; }
+    .btn-save { background-color: #28a745; width: 48%; }
+    .btn-cancel { background-color: #6c757d; width: 48%; }
+  </style>
+</head>
+<body>
+
+  <!-- Login Screen -->
+  <div id="login-screen">
+    <h2>🧪 Master Chemical Catalog</h2>
+    <p>Restricted Access. Please authenticate.</p>
+    <button class="btn-google" id="btn-login">Sign in with Google</button>
+    <div id="auth-error"></div>
+  </div>
+
+  <div id="app-interface">
+    <div class="header-bar">
+      <h2>Database Editor</h2>
+      <button class="btn btn-add" onclick="openEditor()">+ Add Chemical</button>
+    </div>
+    
+    <input type="text" id="searchInput" placeholder="Search CAS # or Chemical Name..." onkeyup="searchCatalog()">
+    <div id="results"><p>Loading database from cloud...</p></div>
+  </div>
+
+  <div id="editor-modal">
+    <div class="modal-content">
+      <h3 id="modal-title">Edit Chemical</h3>
+      
+      <label>Chemical Name</label>
+      <input type="text" id="edit-name" placeholder="e.g. Acetic Acid">
+      
+      <label>CAS Number (Acts as ID)</label>
+      <input type="text" id="edit-cas" placeholder="e.g. 64-19-7">
+      
+      <label>Flinn Category</label>
+      <input type="text" id="edit-flinn" placeholder="e.g. Organic 1">
+      
+      <label>Storage Location</label>
+      <input type="text" id="edit-location" placeholder="e.g. Acid Cabinet">
+      
+      <label>Hazards (Comma separated)</label>
+      <textarea id="edit-hazards" placeholder="Signal word: DANGER, H225: Highly flammable..." rows="4" style="width: 100%; resize: vertical; margin-top: 5px; border-radius: 6px; border: 1px solid #ccc; padding: 10px; box-sizing: border-box;"></textarea>
+      
+      <button class="btn" onclick="fetchPubChemHazards()" style="width: 100%; margin-top: 5px; font-size: 0.9em; background-color: #17a2b8;">
+        ⚡ Auto-Fetch Hazards from PubChem
+      </button>
+
+      <input type="hidden" id="edit-original-id">
+      
+      <div class="modal-actions">
+        <button class="btn btn-cancel" onclick="closeEditor()">Cancel</button>
+        <button class="btn btn-save" id="btn-save-entry" onclick="saveEntry()">Save Entry</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+    import { getDatabase, ref as dbRef, get, set, remove } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+    // 🔴 INSERT YOUR FIREBASE CONFIG HERE 🔴
+    const firebaseConfig = {
+      apiKey: "AIzaSyCcpjuH1qv9IUDJJQR_5ms18TBRS8UFaV8",
+      authDomain: "scigarage.firebaseapp.com",
+      databaseURL: "https://scigarage-default-rtdb.firebaseio.com",
+      projectId: "scigarage",
+      storageBucket: "scigarage.firebasestorage.app",
+      messagingSenderId: "768658065204",
+      appId: "1:768658065204:web:31e0386ee9c9edfe3ac761"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+
+    const allowedEmails = ['pianodemon88@gmail.com', 'kjosephs@ocsdny.org'];
+    let catalogData = {};
+
+    // --- AUTHENTICATION ---
+    document.getElementById('btn-login').addEventListener('click', () => {
+      signInWithPopup(auth, new GoogleAuthProvider()).catch(err => {
+        document.getElementById('auth-error').innerText = err.message;
+      });
+    });
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        if (allowedEmails.includes(user.email)) {
+          document.getElementById('login-screen').style.display = "none";
+          document.getElementById('app-interface').style.display = "block";
+          fetchDatabase(); 
+        } else {
+          document.getElementById('auth-error').innerText = `Access Denied.`;
+          auth.signOut();
+        }
+      } else {
+        document.getElementById('login-screen').style.display = "block";
+        document.getElementById('app-interface').style.display = "none";
+      }
+    });
+
+    // --- FETCH FROM FIREBASE ---
+    async function fetchDatabase() {
+      try {
+        const snapshot = await get(dbRef(db, 'chemicalDatabase'));
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          catalogData = data.master_catalog ? data.master_catalog : data;
+        } else {
+          catalogData = {};
+        }
+        searchCatalog();
+      } catch (error) {
+        console.error(error);
+        document.getElementById('results').innerHTML = "<p style='color:red;'>Error loading database.</p>";
+      }
+    }
+
+    // --- SEARCH & DISPLAY ---
+    window.searchCatalog = function() {
+      const query = document.getElementById('searchInput').value.toLowerCase();
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.innerHTML = "";
+      let htmlOutput = "";
+      let count = 0;
+
+      for (const [key, chem] of Object.entries(catalogData)) {
+        if (query === "" || key.toLowerCase().includes(query) || (chem.name && chem.name.toLowerCase().includes(query))) {
+          
+          let hazardString = (chem.hazards && chem.hazards.length > 0 && chem.hazards[0] !== "") 
+                             ? `Hazards: ${chem.hazards.join(', ')}` 
+                             : "No hazards listed";
+
+          htmlOutput += `
+            <div class="card">
+              <button class="btn btn-edit" onclick="openEditor('${key}')">Edit</button>
+              <button class="btn btn-delete" onclick="deleteEntry('${key}')">Delete</button>
+              <h3>${chem.name} <span style="font-size:0.6em; color:#666;">(${chem.cas || "No CAS"})</span></h3>
+              <div>
+                <span class="badge flinn-badge">${chem.flinn_family || "N/A"}</span>
+                <span class="badge loc-badge">${chem.storage_requirements || "N/A"}</span>
+              </div>
+              <div class="hazard-text">${hazardString}</div>
+            </div>
+          `;
+          count++;
+          if (count >= 50 && query !== "") break; 
+        }
+      }
+      
+      resultsDiv.innerHTML = htmlOutput || "<p>No matches found.</p>";
+    }
+
+    // --- EDITOR LOGIC ---
+    window.openEditor = function(id = null) {
+      if (id && catalogData[id]) {
+        document.getElementById('modal-title').innerText = "Edit Chemical";
+        let chem = catalogData[id];
+        document.getElementById('edit-name').value = chem.name || "";
+        document.getElementById('edit-cas').value = chem.cas || "";
+        document.getElementById('edit-flinn').value = chem.flinn_family || "";
+        document.getElementById('edit-location').value = chem.storage_requirements || "";
+        document.getElementById('edit-hazards').value = chem.hazards ? chem.hazards.join(", ") : "";
+        document.getElementById('edit-original-id').value = id;
+      } else {
+        document.getElementById('modal-title').innerText = "Add New Chemical";
+        document.getElementById('edit-name').value = "";
+        document.getElementById('edit-cas').value = "";
+        document.getElementById('edit-flinn').value = "";
+        document.getElementById('edit-location').value = "";
+        document.getElementById('edit-hazards').value = "";
+        document.getElementById('edit-original-id').value = "";
+      }
+      document.getElementById('editor-modal').style.display = "flex";
+    }
+
+    window.closeEditor = function() {
+      document.getElementById('editor-modal').style.display = "none";
+    }
+
+    window.saveEntry = async function() {
+      const originalId = document.getElementById('edit-original-id').value;
+      const cas = document.getElementById('edit-cas').value.trim();
+      let name = document.getElementById('edit-name').value.trim();
+      const btn = document.getElementById('btn-save-entry');
+      
+      if (!name) {
+        alert("Chemical Name is required.");
+        return;
+      }
+
+      // Restrict forbidden Firebase characters ONLY from the Chemical Name (because it is the Key)
+      const sanitizedName = name.replace(/[.$#\[\]\/]/g, "").trim();
+      
+      if (name !== sanitizedName) {
+        alert(`Note: The characters . $ # [ ] / are not allowed in the Chemical Name field. It has been automatically updated to "${sanitizedName}".`);
+        name = sanitizedName;
+      }
+
+      btn.disabled = true;
+      btn.innerText = "Saving...";
+
+      const newId = name;
+
+      const payload = {
+        name: name, // This is now safely stripped of illegal characters
+        cas: cas,
+        flinn_family: document.getElementById('edit-flinn').value.trim(), // Values are left completely untouched!
+        storage_requirements: document.getElementById('edit-location').value.trim(),
+        hazards: document.getElementById('edit-hazards').value.split(',').map(h => h.trim()).filter(h => h !== "")
+      };
+
+      try {
+        // If we changed the name/key, delete the old node in Firebase
+        if (originalId !== "" && originalId !== newId) {
+          await remove(dbRef(db, `chemicalDatabase/${originalId}`));
+          delete catalogData[originalId];
+        }
+
+        // Save exactly as typed to Firebase
+        await set(dbRef(db, `chemicalDatabase/${newId}`), payload);
+        
+        // Update local state
+        catalogData[newId] = payload;
+
+        closeEditor();
+        document.getElementById('searchInput').value = "";
+        searchCatalog(); 
+
+      } catch (error) {
+        console.error("Save Error:", error);
+        alert("Failed to save to cloud.");
+      }
+
+      btn.disabled = false;
+      btn.innerText = "Save Entry";
+    }
+
+    window.deleteEntry = async function(id) {
+        if(confirm(`Are you sure you want to delete ${catalogData[id].name}?`)) {
+            try {
+                await remove(dbRef(db, `chemicalDatabase/${id}`));
+                delete catalogData[id];
+                searchCatalog();
+            } catch(e) {
+                alert("Failed to delete from cloud.");
+            }
+        }
+    }
+
+    // --- PUBCHEM AUTO-FETCH LOGIC ---
+    window.fetchPubChemHazards = async function() {
+      const casInput = document.getElementById('edit-cas');
+      const nameInput = document.getElementById('edit-name');
+      const hazardBox = document.getElementById('edit-hazards');
+      
+      const cas = casInput.value.trim();
+      const name = nameInput.value.trim();
+      const query = cas || name;
+
+      if (!query) {
+        alert("Please enter a CAS number or Chemical Name first to search PubChem.");
+        return;
+      }
+
+      hazardBox.value = "Fetching from PubChem... Please wait.";
+
+      try {
+        const cidRes = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(query)}/cids/JSON`);
+        if (!cidRes.ok) throw new Error("Chemical not found in PubChem.");
+        const cidData = await cidRes.json();
+        const cid = cidData.IdentifierList.CID[0];
+
+        if (!cas) {
+          try {
+            const synRes = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/synonyms/JSON`);
+            if (synRes.ok) {
+              const synData = await synRes.json();
+              const synonyms = synData.InformationList.Information[0].Synonym || [];
+              const casMatch = synonyms.find(s => /^\d{2,7}-\d{2}-\d$/.test(s));
+              if (casMatch) casInput.value = casMatch;
+            }
+          } catch (e) {
+            console.log("Could not automatically fetch CAS number.");
+          }
+        }
+
+        const ghsRes = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/${cid}/JSON?heading=GHS+Classification`);
+        if (!ghsRes.ok) throw new Error("No GHS data found for this chemical.");
+        const ghsData = await ghsRes.json();
+
+        let hazardMap = new Map();
+        let formattedSignalWord = "";
+        
+        function extractHazards(obj) {
+          if (typeof obj !== 'object' || obj === null) return;
+          if (Array.isArray(obj)) {
+            obj.forEach(extractHazards);
+          } else {
+            if (obj.String) {
+              let s = obj.String.trim();
+              if (s === "Danger" || s === "Warning") {
+                formattedSignalWord = `Signal word: ${s.toUpperCase()}`;
+              } else if (/^H\d{3}/.test(s)) {
+                let match = s.match(/^(H[\d\+a-zA-Z]+)/);
+                if (match) {
+                  let baseCode = match[1];
+                  let hasPercentage = s.includes('%');
+                  if (!hazardMap.has(baseCode)) {
+                    hazardMap.set(baseCode, s);
+                  } else {
+                    let existingString = hazardMap.get(baseCode);
+                    if (hasPercentage && !existingString.includes('%')) {
+                      hazardMap.set(baseCode, s); 
+                    }
+                  }
+                }
+              }
+            }
+            Object.values(obj).forEach(extractHazards);
+          }
+        }
+        
+        extractHazards(ghsData);
+
+        if (hazardMap.size === 0 && !formattedSignalWord) {
+          hazardBox.value = "No specific GHS hazards found on PubChem.";
+        } else {
+          let finalHazardsArray = [];
+          if (formattedSignalWord) finalHazardsArray.push(formattedSignalWord);
+          let codes = Array.from(hazardMap.values()).sort();
+          finalHazardsArray = finalHazardsArray.concat(codes);
+          hazardBox.value = finalHazardsArray.join(", ");
+        }
+      } catch (error) {
+        hazardBox.value = "";
+        alert(error.message);
+      }
+    }
+  </script>
+
+</body>
+</html>

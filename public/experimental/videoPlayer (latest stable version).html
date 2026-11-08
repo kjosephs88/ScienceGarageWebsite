@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="origin-when-cross-origin">
+  <title>Forensic Science: Fibers &amp; Textiles</title>
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --card-bg: #1e293b;
+      --text-main: #f8fafc;
+      --border-color: #334155;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 1.5rem 1rem;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 480px;
+      background: var(--card-bg);
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+    }
+
+    .header {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .header h1 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .video-wrapper {
+      position: relative;
+      width: 100%;
+      background-color: #000;
+      aspect-ratio: 16 / 10;
+    }
+
+    video {
+      width: 100%;
+      height: 100%;
+      display: block;
+      outline: none;
+    }
+
+    video::cue {
+      background-color: rgba(15, 23, 42, 0.85);
+      color: #f8fafc;
+      font-family: inherit;
+      font-size: 0.85rem;
+      line-height: 1.3;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="header">
+      <h1>Chapter 4: Fibers &amp; Textiles Analysis</h1>
+    </div>
+
+    <div class="video-wrapper">
+      <video 
+        id="forensicPlayer" 
+        controls 
+        playsinline
+        crossorigin="anonymous"
+        controlslist="nodownload noplaybackrate" 
+        disablePictureInPicture
+        oncontextmenu="return false;"
+        referrerpolicy="origin-when-cross-origin">
+        
+        <source src="https://media.thesciencegarage.com/forensicsOfFibers.mp4?v=5" type="video/mp4">
+        
+        <!-- Setting kind="captions" and mode via JS resolves Safari track suppression -->
+        <track 
+          id="captionTrack"
+          label="English" 
+          kind="captions" 
+          srclang="en" 
+          src="https://media.thesciencegarage.com/forensicsOfFibers.vtt?v=5">
+        
+        Your browser does not support the video tag.
+      </video>
+    </div>
+  </div>
+
+  <script>
+    const player = document.getElementById('forensicPlayer');
+    
+    // Forces Safari and Chrome to recognize the track without forcing it visible on startup
+    player.addEventListener('loadedmetadata', () => {
+      if (player.textTracks && player.textTracks[0]) {
+        player.textTracks[0].mode = 'hidden'; // 'hidden' loads the cues in memory so the toggle works; 'showing' turns it on
+      }
+    });
+  </script>
+</body>
+</html>

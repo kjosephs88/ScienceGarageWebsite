@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rounding & Significant Figures Explorer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9; /* Tailwind slate-100 */
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 320px;
+            cursor: default;
+            touch-action: none;
+        }
+        .btn-circle {
+            transition: all 0.2s ease;
+        }
+        .btn-circle:active:not(:disabled) {
+            transform: scale(0.95);
+        }
+        .btn-circle:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="w-full max-w-6xl bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col">
+        
+        <!-- Header & Input Section -->
+        <div class="p-6 bg-slate-800 text-white flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div>
+                <h1 class="text-2xl font-bold">Rounding Explorer</h1>
+                <p class="text-slate-400 text-sm mt-1">Visualize precision and significant figures</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <input type="text" id="measurementInput" value="0.3542 m" 
+                    class="px-4 py-2 rounded-lg text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 w-56 text-center shadow-inner"
+                    placeholder="e.g. 0.3542 m" />
+                <button id="displayBtn" class="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2 rounded-lg font-semibold transition-colors shadow-md">
+                    Display
+                </button>
+            </div>
+        </div>
+
+        <!-- Expanded Instructions Section -->
+        <div class="bg-blue-50 border-b border-blue-100 p-4 px-8 text-blue-800 text-sm leading-relaxed">
+            <strong>How to use this tool:</strong> Enter a measurement (e.g., "0.3542 m" or "3.4E5 s") with its units in the input box above and click "Display". The number line visualizes where your measurement falls exactly between two rounded values. Numbers exceeding 10 digits are automatically displayed in scientific notation. Use the <strong>(+)</strong> and <strong>(-)</strong> buttons below to zoom in (increase precision) or zoom out (decrease precision) to see how the number rounds at different levels of significant figures!
+        </div>
+
+        <div class="p-8 flex flex-col items-center">
+            
+            <!-- Dynamic Title -->
+            <div class="mb-6 text-center h-8 flex items-center justify-center">
+                <h2 id="roundingTitle" class="text-xl sm:text-2xl font-semibold text-slate-700 transition-opacity duration-300">
+                    Rounded to the nearest thousandth
+                </h2>
+            </div>
+
+            <!-- Canvas Container -->
+            <div class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl overflow-hidden relative shadow-inner">
+                <canvas id="numberline"></canvas>
+            </div>
+
+            <!-- Controls -->
+            <div class="mt-8 flex gap-8">
+                <!-- Zoom Out (-) -->
+                <button id="zoomOutBtn" class="btn-circle flex items-center justify-center w-16 h-16 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-700 shadow-md border border-slate-300" title="Zoom Out (Less Precise)">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4" />
+                    </svg>
+                </button>
+
+                <!-- Zoom In (+) -->
+                <button id="zoomInBtn" class="btn-circle flex items-center justify-center w-16 h-16 rounded-full bg-emerald-100 hover:bg-emerald-200 text-emerald-700 shadow-md border border-emerald-200" title="Zoom In (More Precise)">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('numberline');
+        const ctx = canvas.getContext('2d');
+        const dpr = window.devicePixelRatio || 1;
+        
+        let canvasW = 0;
+        let canvasH = 320;
+
+        // Core State
+        let inputValue = 0;
+        let inputUnit = '';
+        let inputRawStr = '';
+        
+        let exactP = 0; 
+        let minAllowedP = 0; 
+        
+        let currentP = 0;
+        let targetP = 0;
+        
+        // Animation Viewport State
+        let viewMin = 0;
+        let viewMax = 1;
+        let startMin = 0;
+        let startMax = 1;
+        let targetMin = 0;
+        let targetMax = 1;
+        
+        let isAnimating = false;
+        let animStartTime = null;
+        
+        // Slower transition timings
+        const moveDuration = 1200;
+        const fadeDuration = 1050;
+        const highlightDuration = 750;
+        let animDuration = 0; 
+        
+        let zoomDirection = 0; // 1 for out, -1 for in
+        let fadeAlpha = 0;
+        let highlightProgress = 0; 
+        let morphProgress = 0; 
+
+        // UI Elements
+        const titleEl = document.getElementById('roundingTitle');
+        const zoomInBtn = document.getElementById('zoomInBtn');
+        const zoomOutBtn = document.getElementById('zoomOutBtn');
+        const inputEl = document.getElementById('measurementInput');
+        const displayBtn = document.getElementById('displayBtn');
+
+        /**
+         * Calculates the interval bounds for a value at precision 'p'
+         */
+        function getBounds(val, p) {
+            if (p < 0) {
+                let m = Math.round(Math.pow(10, -p));
+                let min = Math.floor(val * m + 1e-9) / m;
+                let max = Math.round((min * m + 1)) / m;
+                return [min, max];
+            } else {
+                let d = Math.round(Math.pow(10, p));
+                let min = Math.floor(val / d + 1e-9) * d;
+                let max = Math.round((min / d + 1)) * d;
+                return [min, max];
+            }
+        }
+
+        function formatNumber(v, p) {
+            if (v === 0) return "0";
+            
+            let absV = Math.abs(v);
+            let resultStr = "";
+            let forceENotation = false;
+            
+            if (p < 0) {
+                // For decimal places (tenths, hundredths, etc.), use standard fixed notation
+                resultStr = v.toFixed(-p);
+            } else {
+                // For larger place values including ones (ones, tens, hundreds, etc.)
+                let roundedScaled = Math.round(absV / Math.pow(10, p));
+                let digitAtP = roundedScaled % 10;
+                
+                if (digitAtP !== 0) {
+                    // Non-zero digit naturally indicates significance; use standard notation
+                    resultStr = Math.round(v).toString();
+                } else {
+                    // Ambiguous trailing zero(s); use E notation to prove significance
+                    forceENotation = true;
+                }
+            }
+            
+            // Enforce a 10-character limit to prevent UI overflow
+            if (!forceENotation && (resultStr.length > 10 || resultStr.toLowerCase().includes('e'))) {
+                forceENotation = true;
+            }
+            
+            if (forceENotation) {
+                let exponent = Math.floor(Math.log10(absV));
+                let decPlaces = exponent - p;
+                
+                // Fallback to 0 decimals if place value exceeds magnitude
+                if (decPlaces < 0) decPlaces = 0;
+                
+                let sign = v < 0 ? "-" : "";
+                let mantissa = absV / Math.pow(10, exponent);
+                resultStr = sign + mantissa.toFixed(decPlaces) + 'E' + exponent;
+            }
+            
+            return resultStr;
+        }
+
+        function getPlaceValueName(p) {
+            const names = {
+                15: 'quadrillion',
+                12: 'trillion',
+                9: 'billion',
+                6: 'million',
+                5: 'hundred-thousand',
+                4: 'ten-thousand',
+                3: 'thousand',
+                2: 'hundred',
+                1: 'ten',
+                0: 'one',
+                [-1]: 'tenth',
+                [-2]: 'hundredth',
+                [-3]: 'thousandth',
+                [-4]: 'ten-thousandth',
+                [-5]: 'hundred-thousandth',
+                [-6]: 'millionth',
+                [-9]: 'billionth'
+            };
+            return names[p] || `10^${p} place`;
+        }
+
+        function parseInput() {
+            const raw = inputEl.value.trim();
+            // Supports standard and scientific notation (e.g. 3.4E5)
+            const match = raw.match(/^([\-\+]?\d*\.?\d+(?:[eE][\-\+]?\d+)?)\s*(.*)$/);
+            
+            if (!match) {
+                inputEl.value = "3.25E14 m";
+                return parseInput();
+            }
+            
+            inputRawStr = match[1];
+            inputValue = parseFloat(inputRawStr);
+            inputUnit = match[2].trim();
+            
+            // Calculate precision handling both decimals and scientific exponents
+            let sciMatch = inputRawStr.match(/^([\-\+]?\d*\.?\d+)(?:[eE]([\-\+]?\d+))?$/);
+            let mantissaStr = sciMatch[1];
+            let expStr = sciMatch[2];
+            
+            let decMatch = mantissaStr.match(/\.(\d+)/);
+            let decPlaces = decMatch ? decMatch[1].length : 0;
+            let exponent = expStr ? parseInt(expStr, 10) : 0;
+            
+            exactP = exponent - decPlaces;
+            minAllowedP = exactP + 1; 
+            
+            currentP = minAllowedP;
+            targetP = currentP;
+            
+            let bounds = getBounds(inputValue, currentP);
+            viewMin = targetMin = startMin = bounds[0];
+            viewMax = targetMax = startMax = bounds[1];
+            
+            fadeAlpha = 0;
+            zoomDirection = 0;
+            isAnimating = false;
+            titleEl.style.transition = '';
+            titleEl.style.opacity = 1;
+            
+            updateUI();
+            draw();
+        }
+
+        function updateUI() {
+            if (!isAnimating) {
+                titleEl.textContent = `Rounded to the nearest ${getPlaceValueName(targetP)}`;
+            }
+            zoomInBtn.disabled = targetP <= minAllowedP;
+            // Dynamically allow zooming out based on the magnitude of the number
+            zoomOutBtn.disabled = targetP >= Math.max(6, exactP + 6); 
+        }
+
+        function easeInOutCubic(x) {
+            return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+        }
+
+        function triggerZoom(direction) {
+            if (isAnimating) return;
+            
+            zoomDirection = direction;
+            targetP = currentP + direction; 
+            
+            let bounds = getBounds(inputValue, targetP);
+            targetMin = bounds[0];
+            targetMax = bounds[1];
+            
+            startMin = viewMin;
+            startMax = viewMax;
+            
+            animDuration = direction === -1 
+                ? (fadeDuration + moveDuration + highlightDuration) 
+                : (moveDuration + fadeDuration);
+            
+            animStartTime = performance.now();
+            isAnimating = true;
+            titleEl.style.transition = 'none'; 
+            updateUI();
+            requestAnimationFrame(animate);
+        }
+
+        function animate(time) {
+            if (!animStartTime) animStartTime = time;
+            let elapsed = time - animStartTime;
+            
+            let t_move = 0, t_fade = 0, t_title = 0;
+
+            if (zoomDirection === 1) { 
+                // Zoom Out Phase Mapping
+                t_move = Math.min(1, Math.max(0, elapsed / moveDuration));
+                t_fade = Math.min(1, Math.max(0, (elapsed - moveDuration) / fadeDuration));
+                fadeAlpha = 1.0 - easeInOutCubic(t_fade);
+                
+                t_title = t_move;
+                highlightProgress = easeInOutCubic(t_move); 
+                // Morph from coarse (1) back to fine (0) as they squash together
+                morphProgress = 1.0 - easeInOutCubic(t_move); 
+            } else { 
+                // Zoom In Phase Mapping
+                t_fade = Math.min(1, Math.max(0, elapsed / fadeDuration));
+                t_move = Math.min(1, Math.max(0, (elapsed - fadeDuration) / moveDuration));
+                let t_highlight = Math.min(1, Math.max(0, (elapsed - fadeDuration - moveDuration) / highlightDuration));
+                
+                fadeAlpha = easeInOutCubic(t_fade);
+                t_title = t_move; 
+                highlightProgress = easeInOutCubic(t_highlight); 
+                morphProgress = easeInOutCubic(t_move); 
+            }
+            
+            // Frame-by-frame text crossfade synced perfectly with movement
+            if (t_title < 0.5) {
+                titleEl.style.opacity = 1 - (t_title * 2);
+                titleEl.textContent = `Rounded to the nearest ${getPlaceValueName(currentP)}`;
+            } else {
+                titleEl.style.opacity = (t_title - 0.5) * 2;
+                titleEl.textContent = `Rounded to the nearest ${getPlaceValueName(targetP)}`;
+            }
+            
+            let easedMove = easeInOutCubic(t_move);
+            viewMin = startMin + (targetMin - startMin) * easedMove;
+            viewMax = startMax + (targetMax - startMax) * easedMove;
+            
+            draw();
+            
+            if (elapsed < animDuration) {
+                requestAnimationFrame(animate);
+            } else {
+                isAnimating = false;
+                currentP = targetP;
+                startMin = viewMin;
+                startMax = viewMax;
+                zoomDirection = 0;
+                fadeAlpha = 0; 
+                highlightProgress = 0;
+                morphProgress = 0;
+                titleEl.style.transition = ''; 
+                titleEl.style.opacity = 1;
+                updateUI();
+                draw();
+            }
+        }
+
+        /** 
+         * Generates tick values. Fixed to use strict Math.ceil and Math.floor
+         * to guarantee no ticks are generated outside the [minBound, maxBound] range.
+         */
+        function getTicks(pLevel, minBound, maxBound) {
+            let ticks = [];
+            if (pLevel < 0) {
+                let mult = Math.round(Math.pow(10, -pLevel));
+                let startI = Math.ceil(minBound * mult - 1e-9);
+                let endI = Math.floor(maxBound * mult + 1e-9);
+                for (let i = startI; i <= endI; i++) {
+                    ticks.push(i / mult);
+                }
+            } else {
+                let div = Math.round(Math.pow(10, pLevel));
+                let startI = Math.ceil(minBound / div - 1e-9);
+                let endI = Math.floor(maxBound / div + 1e-9);
+                for (let i = startI; i <= endI; i++) {
+                    ticks.push(i * div);
+                }
+            }
+            return ticks;
+        }
+
+        function isCoarseTick(val, pCoarse) {
+            let mult = Math.pow(10, pCoarse);
+            let ratio = val / mult;
+            return Math.abs(ratio - Math.round(ratio)) < 1e-5;
+        }
+
+        function getRoundedValue(val, p) {
+            if (p < 0) {
+                let m = Math.round(Math.pow(10, -p));
+                return Math.round(val * m) / m;
+            } else {
+                let d = Math.round(Math.pow(10, p));
+                return Math.round(val / d) * d;
+            }
+        }
+
+        function lerpColor(hex1, hex2, t) {
+            const r1 = parseInt(hex1.slice(1, 3), 16), g1 = parseInt(hex1.slice(3, 5), 16), b1 = parseInt(hex1.slice(5, 7), 16);
+            const r2 = parseInt(hex2.slice(1, 3), 16), g2 = parseInt(hex2.slice(3, 5), 16), b2 = parseInt(hex2.slice(5, 7), 16);
+            const r = Math.round(r1 + (r2 - r1) * t);
+            const g = Math.round(g1 + (g2 - g1) * t);
+            const b = Math.round(b1 + (b2 - b1) * t);
+            return `#${(1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1).padStart(6, '0')}`;
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const W = canvasW;
+            const H = canvasH;
+            const textMargin = 100; // Ensures text doesn't truncate
+            const drawW = W - textMargin * 2;
+            const range = viewMax - viewMin;
+            
+            if (range <= 0) return;
+
+            // X coordinate interpolator
+            const getX = (v) => textMargin + ((v - viewMin) / range) * drawW;
+
+            // Draw Wide Main Axis Line
+            ctx.beginPath();
+            ctx.moveTo(25, H / 2);
+            ctx.lineTo(W - 25, H / 2);
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = '#cbd5e1'; // slate-300
+            ctx.lineCap = 'round';
+            ctx.stroke();
+
+            // Establish a clip mask so sliding texts disappear cleanly instead of popping out
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(20, 0, W - 40, H);
+            ctx.clip();
+
+            let p_c = Math.max(currentP, targetP); 
+            let coverMin = Math.min(startMin, targetMin);
+            let coverMax = Math.max(startMax, targetMax);
+
+            let coarseTicks = getTicks(p_c, coverMin, coverMax);
+            let fineTicks = getTicks(p_c - 1, coverMin, coverMax);
+            
+            let targetRounded = getRoundedValue(inputValue, targetP);
+            let currentRounded = getRoundedValue(inputValue, currentP);
+
+            // Draw Fine Ticks
+            ctx.globalAlpha = fadeAlpha;
+            for (let val of fineTicks) {
+                if (isCoarseTick(val, p_c)) continue; 
+                
+                let x = getX(val);
+                let isTarget = Math.abs(val - targetRounded) < 1e-9;
+                let isCurrent = Math.abs(val - currentRounded) < 1e-9;
+                
+                let hLevel = 0;
+                if (isAnimating) {
+                    if (isTarget) hLevel = highlightProgress;
+                    else if (isCurrent) hLevel = 1 - highlightProgress;
+                } else if (isTarget) {
+                    hLevel = 1;
+                }
+
+                let baseTickL = 10 + 2 * hLevel;
+                let targetTickL = 18 + 4 * hLevel;
+                let tickL = baseTickL + (targetTickL - baseTickL) * morphProgress;
+                
+                let baseTickW = 2 + 1 * hLevel;
+                let targetTickW = 3 + 1 * hLevel;
+                let tickW = baseTickW + (targetTickW - baseTickW) * morphProgress;
+                
+                ctx.beginPath();
+                ctx.moveTo(x, H / 2 - tickL);
+                ctx.lineTo(x, H / 2 + tickL);
+                ctx.lineWidth = tickW;
+                
+                let fineStroke = lerpColor('#94a3b8', '#3b82f6', hLevel); 
+                let coarseStroke = lerpColor('#475569', '#2563eb', hLevel); 
+                ctx.strokeStyle = morphProgress > 0 ? lerpColor(fineStroke, coarseStroke, morphProgress) : fineStroke;
+                ctx.stroke();
+
+                // Fine Tick Text (Slanted & Morphing)
+                let fineFill = lerpColor('#64748b', '#2563eb', hLevel); 
+                let coarseFill = lerpColor('#334155', '#1d4ed8', hLevel); 
+                ctx.fillStyle = morphProgress > 0 ? lerpColor(fineFill, coarseFill, morphProgress) : fineFill;
+                
+                let fineWeight = hLevel > 0.5 ? 600 : 500;
+                let coarseWeight = hLevel > 0.5 ? 800 : 700;
+                let weight = Math.round(fineWeight + (coarseWeight - fineWeight) * morphProgress);
+                
+                let fineSize = 14;
+                let coarseSize = 16;
+                let size = fineSize + (coarseSize - fineSize) * morphProgress;
+                
+                ctx.font = `${weight} ${size}px Inter`;
+                let text = formatNumber(val, p_c - 1) + (inputUnit ? ' ' + inputUnit : '');
+                
+                let fineY = 20;
+                let coarseY = 28;
+                let yOffset = fineY + (coarseY - fineY) * morphProgress;
+                
+                ctx.save();
+                ctx.translate(x, H / 2 + yOffset);
+                
+                // Slant exactly 45 degrees downward, gracefully morphing to 0 when it acts as a main tick
+                let angle = (Math.PI / 4) * (1 - morphProgress);
+                ctx.rotate(angle);
+                
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'top'; // Matches the coarse tick alignment perfectly
+                
+                let textW = ctx.measureText(text).width;
+                // Shift text to center it when angle is 0, otherwise let it flow naturally to the right
+                let xShift = (morphProgress * -textW / 2) + ((1 - morphProgress) * 4);
+                
+                ctx.fillText(text, xShift, 0);
+                
+                // Highlight Label (Also Slanted)
+                if (hLevel > 0.01) {
+                    ctx.globalAlpha = fadeAlpha * hLevel;
+                    
+                    let fineLabelSize = 11;
+                    let coarseLabelSize = 12;
+                    let labelSize = fineLabelSize + (coarseLabelSize - fineLabelSize) * morphProgress;
+                    let labelWeight = Math.round(500 + 100 * morphProgress);
+                    ctx.font = `${labelWeight} ${labelSize}px Inter`;
+                    
+                    let labelText = "Closer rounded value";
+                    let labelW = ctx.measureText(labelText).width;
+                    let labelXShift = (morphProgress * -labelW / 2) + ((1 - morphProgress) * 4);
+                    
+                    // Maintain proportional spacing below the number text
+                    let fineLabelY = 20;
+                    let coarseLabelY = 22; 
+                    let labelRelY = fineLabelY + (coarseLabelY - fineLabelY) * morphProgress;
+                    
+                    ctx.fillText(labelText, labelXShift, labelRelY);
+                    ctx.globalAlpha = fadeAlpha; 
+                }
+                
+                ctx.restore();
+            }
+
+            // Draw Coarse Ticks
+            ctx.globalAlpha = 1;
+            for (let val of coarseTicks) {
+                let x = getX(val);
+                
+                let isTarget = Math.abs(val - targetRounded) < 1e-9;
+                let isCurrent = Math.abs(val - currentRounded) < 1e-9;
+                
+                let hLevel = 0;
+                if (isAnimating) {
+                    if (isTarget) hLevel = highlightProgress;
+                    else if (isCurrent) hLevel = 1 - highlightProgress;
+                } else if (isTarget) {
+                    hLevel = 1;
+                }
+
+                let tickL = 18 + 4 * hLevel;
+                let tickW = 3 + 1 * hLevel;
+                ctx.beginPath();
+                ctx.moveTo(x, H / 2 - tickL);
+                ctx.lineTo(x, H / 2 + tickL);
+                ctx.lineWidth = tickW;
+                ctx.strokeStyle = lerpColor('#475569', '#2563eb', hLevel); 
+                ctx.stroke();
+
+                ctx.fillStyle = lerpColor('#334155', '#1d4ed8', hLevel); 
+                ctx.font = hLevel > 0.5 ? '800 16px Inter' : '700 16px Inter';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'top';
+                let text = formatNumber(val, p_c) + (inputUnit ? ' ' + inputUnit : '');
+                ctx.fillText(text, x, H / 2 + 28);
+                
+                if (hLevel > 0.01) {
+                    ctx.globalAlpha = hLevel;
+                    ctx.font = '600 12px Inter';
+                    ctx.fillText("Closer rounded value", x, H / 2 + 50);
+                    ctx.globalAlpha = 1; 
+                }
+            }
+
+            // Draw Student's Measurement Marker
+            let studentX = getX(inputValue);
+            
+            // Marker line
+            ctx.beginPath();
+            ctx.moveTo(studentX, H / 2 - 45);
+            ctx.lineTo(studentX, H / 2 - 5);
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#10b981'; 
+            ctx.stroke();
+
+            // Marker dot
+            ctx.beginPath();
+            ctx.arc(studentX, H / 2 - 5, 5, 0, Math.PI * 2);
+            ctx.fillStyle = '#10b981';
+            ctx.fill();
+
+            // Marker Bubble
+            let displayRawStr = inputRawStr;
+            if (inputRawStr.length > 10 && !inputRawStr.toLowerCase().includes('e')) {
+                displayRawStr = formatNumber(inputValue, exactP);
+            }
+            let text = displayRawStr + (inputUnit ? ' ' + inputUnit : '');
+            ctx.font = 'bold 16px Inter';
+            let textW = ctx.measureText(text).width;
+            
+            ctx.fillStyle = '#10b981';
+            ctx.beginPath();
+            ctx.roundRect(studentX - textW/2 - 12, H / 2 - 75, textW + 24, 30, 8);
+            ctx.fill();
+            
+            // Bubble pointer
+            ctx.beginPath();
+            ctx.moveTo(studentX - 6, H / 2 - 46);
+            ctx.lineTo(studentX + 6, H / 2 - 46);
+            ctx.lineTo(studentX, H / 2 - 40);
+            ctx.fill();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, studentX, H / 2 - 60);
+
+            // Remove clip mask
+            ctx.restore();
+        }
+
+        function resize() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvasW = rect.width;
+            
+            canvas.width = canvasW * dpr;
+            canvas.height = canvasH * dpr;
+            
+            ctx.scale(dpr, dpr);
+            if (!isAnimating) draw();
+        }
+
+        window.addEventListener('resize', resize);
+        
+        displayBtn.addEventListener('click', parseInput);
+        inputEl.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') parseInput();
+        });
+
+        zoomInBtn.addEventListener('click', () => triggerZoom(-1));
+        zoomOutBtn.addEventListener('click', () => triggerZoom(1));
+
+        window.onload = () => {
+            resize();
+            parseInput(); 
+        };
+    </script>
+</body>
+</html>

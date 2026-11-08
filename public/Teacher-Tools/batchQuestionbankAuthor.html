@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Databank JSON Editor & Importer</title>
+
+    <!-- Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+
+    <!-- KaTeX for Math -->
+    <link rel="stylesheet" href="https://thesciencegarage.com/katexfiles/katex.min.css">
+    <script src="https://thesciencegarage.com/katexfiles/katex.min.js"></script>
+    <script src="https://thesciencegarage.com/katexfiles/mhchem.js"></script>
+    <script src="https://thesciencegarage.com/katexfiles/auto-render.min.js"></script>
+
+    <!-- Quill Editor -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quill-image-resize-module@3.0.0/image-resize.min.js"></script>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
+
+    <style>
+        /* BASE STYLES */
+        body { 
+            font-family: 'Aptos', Calibri, Arial, sans-serif; 
+            font-size: 11pt; line-height: 1.3;
+            background-color: #f4f6f8; color: #000; 
+            margin: 0; padding: 0; box-sizing: border-box; 
+        }
+
+        .ql-container .ql-editor { font-family: 'Aptos', Calibri, Arial, sans-serif !important; font-size: inherit; }
+        img { max-width: 100%; height: auto; }
+        .ql-editor img { max-width: 100% !important; height: auto !important; margin: 5px; cursor: pointer; }
+
+        /* KaTeX Tooltip Fix */
+        .ql-snow .ql-tooltip { z-index: 10000 !important; left: 0 !important; max-width: 100%; white-space: normal; }
+
+        .app-container { display: flex; min-height: 100vh; }
+
+        /* Left Sidebar */
+        .sidebar { width: 260px; background-color: #fff; border-right: 2px solid #000; padding: 20px; display: flex; flex-direction: column; gap: 30px; position: sticky; top: 0; height: 100vh; box-shadow: 2px 0 5px rgba(0,0,0,0.05); }
+        .sidebar h2 { margin-top: 0; margin-bottom: 15px; font-size: 14pt; border-bottom: 1px solid #000; padding-bottom: 5px; }
+        .sidebar-section { display: flex; flex-direction: column; gap: 10px; }
+        .sidebar-btn { padding: 12px; background-color: #fff; border: 1px solid #000; border-radius: 4px; cursor: pointer; text-align: left; font-weight: bold; font-size: 11pt; transition: background-color 0.2s; }
+        .sidebar-btn:hover:not(:disabled) { background-color: #e0e0e0; }
+        .sidebar-btn.action-btn { background-color: #f0f0f0; text-align: center; }
+        .sidebar-btn:disabled { background-color: #e6e6e6; color: #aaa; border-color: #ccc; cursor: not-allowed; }
+
+        /* Main Workspace */
+        .main-content { flex: 1; padding: 30px 50px; max-width: 900px; }
+        .auth-bar { display: flex; justify-content: space-between; align-items: center; background: #eef7fa; padding: 10px 15px; border-radius: 4px; margin-bottom: 20px; border: 1px solid #bce8f1; }
+        
+        .header-title { font-size: 20pt; font-weight: bold; margin-bottom: 5px; }
+        .header-subtitle { color: #666; margin-bottom: 25px; border-bottom: 2px solid #000; padding-bottom: 15px; }
+
+        /* QUESTION LAYOUT */
+        .question-card { padding: 15px; margin-bottom: 1.5em; border: 1px solid #ccc; border-radius: 6px; background-color: #fff; cursor: pointer; transition: box-shadow 0.2s; display: flex; flex-direction: column; }
+        .question-card:hover { box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-color: #999; }
+        
+        .narrative-group { margin-bottom: 1.5em; border: 2px solid #000; border-radius: 6px; background: #fff; padding: 15px; }
+        .narrative-content { margin-bottom: 0.5em; padding-bottom: 10px; border-bottom: 1px dashed #ccc; cursor: pointer; }
+        .narrative-content:hover { background-color: #f9f9f9; }
+        .linked-questions-container { padding-left: 20px; border-left: 2px dotted #ccc; margin-top: 15px; }
+        
+        .q-text-container p { margin-top: 0; margin-bottom: 0.2em; } 
+        .narrative-link-badge { font-size: 9pt; color: #666; margin-bottom: 0.5em; font-style: italic; background: #eee; display: inline-block; padding: 2px 6px; border-radius: 3px; }
+        .badge { font-size: 8pt; padding: 2px 6px; border-radius: 3px; font-weight: bold; text-transform: uppercase; float: right; }
+        .badge-mc { background: #d1ecf1; color: #0c5460; }
+        .badge-extended { background: #d4edda; color: #155724; }
+        .badge-narrative { background: #fff3cd; color: #856404; }
+
+        .mc-options { margin-top: 0.5em; list-style-type: none; padding-left: 30px; display: grid; grid-template-columns: 1fr; gap: 0.5em; }
+        .mc-option-item { display: flex; align-items: baseline; gap: 8px; }
+
+        .card-actions { display: flex; justify-content: flex-end; align-items: center; margin-top: 10px; gap: 5px; border-top: 1px solid #eee; padding-top: 10px; }
+        .action-btn-small { background: #f0f0f0; border: 1px solid #ccc; padding: 4px 8px; font-size: 9pt; cursor: pointer; border-radius: 3px; }
+        .action-btn-small:hover { background: #e0e0e0; }
+
+        /* Modal Styles */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); display: none; justify-content: center; align-items: flex-start; overflow-y: auto; padding: 40px 0; z-index: 1000; box-sizing: border-box; }
+        .modal-content { background: #fff; padding: 30px; border-radius: 8px; width: 800px; margin: auto; border: 2px solid #000; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .modal-header { font-size: 16pt; font-weight: bold; margin-bottom: 20px; border-bottom: 1px solid #ccc; padding-bottom: 10px; }
+        .input-group { margin-bottom: 20px; }
+        .input-group label { display: block; font-weight: bold; margin-bottom: 5px; }
+        .input-group select, .input-group input[type="text"] { width: 100%; padding: 8px; border: 1px solid #ccc; box-sizing: border-box; font-family: inherit; font-size: inherit; }
+        
+        #quill-question-container, #quill-reasoning-container { height: 150px; background: #fff; }
+        .mc-quill-editor { height: 80px; background: #fff; }
+        
+        #mc-fields { display: none; background: #f9f9f9; padding: 15px; border: 1px solid #ddd; margin-bottom: 20px; }
+        .mc-input-row { display: flex; align-items: flex-start; margin-bottom: 20px; gap: 15px; }
+        
+        .modal-actions { display: flex; margin-top: 20px; gap: 10px; }
+        .btn-delete { background: #d9534f; color: #fff; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; margin-right: auto; border-radius:4px; }
+        .btn-delete:hover { background: #c9302c; }
+        .btn-cancel { background: #fff; border: 1px solid #000; padding: 10px 20px; cursor: pointer; border-radius:4px; }
+        .btn-save { background: #000; color: #fff; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; border-radius:4px; }
+        .btn-save:hover { background: #333; }
+        
+        .drag-ghost { opacity: 0.4; background-color: #f0f0f0; }
+    </style>
+</head>
+<body>
+
+    <input type="file" id="import-json" accept=".json" style="display:none" onchange="importJSON(event)">
+    
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-section">
+                <h2>File Tools</h2>
+                <button class="sidebar-btn action-btn" onclick="document.getElementById('import-json').click()">📂 Load JSON File</button>
+                <button class="sidebar-btn action-btn" onclick="clearWorkspace()" style="background: #fff0f0; border-color: #ffcccc;">🗑️ Clear Workspace</button>
+            </div>
+
+            <div class="sidebar-section">
+                <h2>Add to Batch</h2>
+                <button class="sidebar-btn" onclick="openModal('narrative')">+ Add Narrative</button>
+                <button class="sidebar-btn" onclick="openModal('mc')">+ Add Multiple Choice</button>
+                <button class="sidebar-btn" onclick="openModal('extended')">+ Add Ext. Response</button>
+            </div>
+            
+            <div class="sidebar-section" style="margin-top: auto;">
+                <h2>Firebase RTDB</h2>
+                <button class="sidebar-btn action-btn" id="btn-upload" onclick="uploadBatch()" disabled style="background: #000; color: #fff;">☁️ Upload Batch to RTDB</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="auth-bar">
+                <span>Status: <strong id="auth-status">Checking...</strong></span>
+                <button id="login-btn" class="sidebar-btn" style="display:none; padding:6px 14px; margin:0;" onclick="login()">Sign In with Google</button>
+            </div>
+
+            <div class="header-title">Review & Edit Items</div>
+            <div class="header-subtitle">Loaded items appear below. Click any card to edit it before uploading.</div>
+
+            <div id="test-container">
+                <p style="color: #888; text-align: center; margin-top: 50px;"><em>No data loaded. Load a JSON file to begin.</em></p>
+            </div>
+        </main>
+    </div>
+
+    <!-- Edit/Creation Modal -->
+    <div id="creation-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header" id="modal-title">Edit Question</div>
+            
+            <div class="input-group" id="narrative-link-group">
+                <label>Link to Narrative (Optional):</label>
+                <select id="narrative-link-select"><option value="">-- None --</option></select>
+            </div>
+
+            <div class="input-group" id="narrative-name-group" style="display:none;">
+                <label>Narrative Reference Name:</label>
+                <input type="text" id="narrative-name" placeholder="e.g. Passage: Kinetic Energy">
+            </div>
+
+            <div class="input-group">
+                <label id="main-editor-label">Question Text:</label>
+                <div id="quill-question-container"></div>
+            </div>
+
+            <div id="mc-fields">
+                <label>Answer Choices (Select radio button for correct answer):</label>
+                <div id="mc-options-container"></div>
+                <button class="action-btn-small" style="margin-top:10px;" onclick="addMCOption()">+ Add Option</button>
+                <button class="action-btn-small" style="margin-top:10px;" onclick="removeMCOption()">- Remove Option</button>
+            </div>
+
+            <div class="input-group" id="reasoning-group">
+                <label>Correct Answer / Reasoning / Rubric:</label>
+                <div id="quill-reasoning-container"></div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-delete" id="btn-delete" onclick="deleteData()">Delete Item</button>
+                <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+                <button class="btn-save" onclick="saveData()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    // --- 1. FIREBASE SETUP ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyCcpjuH1qv9IUDJJQR_5ms18TBRS8UFaV8",
+        authDomain: "scigarage.firebaseapp.com",
+        databaseURL: "https://scigarage-default-rtdb.firebaseio.com",
+        projectId: "scigarage",
+        storageBucket: "scigarage.firebasestorage.app",
+        messagingSenderId: "768658065204",
+        appId: "1:768658065204:web:31e0386ee9c9edfe3ac761"
+    };
+
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const auth = firebase.auth();
+    let authenticated = false;
+
+    auth.onAuthStateChanged(user => {
+        if (user) {
+            authenticated = true;
+            document.getElementById('auth-status').innerText = `Logged in as ${user.email}`;
+            document.getElementById('auth-status').style.color = "green";
+            document.getElementById('login-btn').style.display = "none";
+            if (testData.length > 0) document.getElementById('btn-upload').disabled = false;
+        } else {
+            authenticated = false;
+            document.getElementById('auth-status').innerText = "Not Authenticated";
+            document.getElementById('auth-status').style.color = "red";
+            document.getElementById('login-btn').style.display = "block";
+            document.getElementById('btn-upload').disabled = true;
+        }
+    });
+
+    function login() {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
+        auth.signInWithPopup(provider).catch(err => alert("Login failed: " + err.message));
+    }
+
+    // --- 2. QUILL EDITOR SETUP ---
+    const Size = Quill.import('attributors/style/size');
+    Size.whitelist = ['8pt', '10pt', '11pt', '12pt', '14pt', '18pt', '24pt'];
+    Quill.register(Size, true);
+    
+    function getQuillModules() {
+        return {
+            toolbar: [
+                [{ 'size': Size.whitelist }],
+                ['bold', 'italic', 'underline', 'strike'],
+                [{ 'script': 'sub'}, { 'script': 'super' }],
+                ['formula', 'image', 'clean']
+            ],
+            imageResize: { displaySize: true }
+        };
+    }
+
+    let quillQuestion, quillReasoning;
+    let mcQuills = [];
+    let currentMCOptionsCount = 4;
+
+    window.onload = function() {
+        quillQuestion = new Quill('#quill-question-container', { theme: 'snow', modules: getQuillModules() });
+        quillReasoning = new Quill('#quill-reasoning-container', { theme: 'snow', modules: getQuillModules() });
+        quillQuestion.root.style.fontFamily = "'Aptos', Calibri, Arial, sans-serif";
+        quillReasoning.root.style.fontFamily = "'Aptos', Calibri, Arial, sans-serif"; 
+    };
+
+    // --- 3. STATE MANAGEMENT ---
+    let testData = [];
+    let questionIdCounter = 1;
+    let currentModalMode = ''; 
+    let editingId = null;
+
+    function clearWorkspace() {
+        if(confirm("Clear all items? Make sure you have uploaded them to Firebase first!")) {
+            testData = [];
+            document.getElementById('test-container').innerHTML = '<p style="color: #888; text-align: center; margin-top: 50px;"><em>Workspace cleared. Load a JSON file to begin.</em></p>';
+            document.getElementById('btn-upload').disabled = true;
+        }
+    }
+
+    // --- 4. JSON PARSER ---
+    function importJSON(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = event => {
+            try {
+                const parsed = JSON.parse(event.target.result);
+                let rawItems = Array.isArray(parsed) ? parsed : (parsed.data || Object.values(parsed));
+                
+                // Reset State
+                testData = [];
+                questionIdCounter = 1;
+
+                rawItems.forEach(item => {
+                    let normalized = {
+                        id: questionIdCounter++, // Local UI ID
+                        uuid: item.uuid || crypto.randomUUID(), // Permanent DB ID
+                        type: (item.type || 'extended').toLowerCase(),
+                        question: item.question || item.passageText || '',
+                        linkedNarrativeId: item.linkedNarrativeId || null
+                    };
+
+                    if (normalized.type === 'narrative') {
+                        normalized.narrativeName = item.narrativeName || `Imported Narrative`;
+                    } else {
+                        normalized.reasoning = item.reasoning || item.rubric || '';
+                        if (normalized.type === 'mc') {
+                            normalized.options = Array.isArray(item.options) ? item.options : [];
+                            normalized.correctAnswer = item.correctAnswer || (normalized.options[0] || '');
+                        }
+                    }
+                    testData.push(normalized);
+                });
+
+                // Fix linkedNarrativeIds from UUIDs to local integer IDs (if JSON used UUIDs for links)
+                testData.forEach(item => {
+                    if (item.linkedNarrativeId && typeof item.linkedNarrativeId === 'string') {
+                        let linkedNar = testData.find(n => n.uuid === item.linkedNarrativeId);
+                        if(linkedNar) item.linkedNarrativeId = linkedNar.id;
+                    }
+                });
+
+                renderApp();
+                if(authenticated) document.getElementById('btn-upload').disabled = false;
+            } catch (err) {
+                alert("Error parsing JSON: " + err.message);
+            }
+        };
+        reader.readAsText(file);
+        e.target.value = ''; // Reset input
+    }
+
+    // --- 5. RENDER ENGINE ---
+    function renderApp() {
+        const testContainer = document.getElementById('test-container');
+        testContainer.innerHTML = '';
+        if(testData.length === 0) {
+            testContainer.innerHTML = '<p style="color: #888; text-align: center; margin-top: 50px;"><em>Workspace empty. Load a JSON file to begin.</em></p>';
+            return;
+        }
+
+        let currentNarrativeGroup = null;
+        let currentLinkedContainer = null;
+        let visualNum = 1;
+
+        // Populate Narratives first to ensure they exist before children append to them
+        testData.forEach((item) => {
+            if (currentNarrativeGroup && item.linkedNarrativeId !== parseInt(currentNarrativeGroup.dataset.id)) {
+                testContainer.appendChild(currentNarrativeGroup); 
+                currentNarrativeGroup = null;
+            }
+
+            if (item.type === 'narrative') {
+                currentNarrativeGroup = document.createElement('div');
+                currentNarrativeGroup.className = 'narrative-group'; 
+                currentNarrativeGroup.dataset.id = item.id;
+
+                const narContent = document.createElement('div');
+                narContent.className = 'narrative-content'; 
+                narContent.ondblclick = () => openModal(item.type, item.id);
+                narContent.innerHTML = `<span class="badge badge-narrative">Narrative</span><div class="q-text-container"><strong>${item.narrativeName}</strong><br>${item.question}</div><div class="card-actions"><button class="action-btn-small" onclick="event.stopPropagation(); openModal('${item.type}', ${item.id});">✏️ Edit</button></div>`;
+                
+                currentLinkedContainer = document.createElement('div'); 
+                currentLinkedContainer.className = 'linked-questions-container';
+                currentNarrativeGroup.appendChild(narContent); 
+                currentNarrativeGroup.appendChild(currentLinkedContainer);
+            } else {
+                if(item.linkedNarrativeId && !currentNarrativeGroup) return; 
+
+                const qCard = createQuestionElement(item, visualNum++);
+                if (item.linkedNarrativeId) currentLinkedContainer.appendChild(qCard);
+                else testContainer.appendChild(qCard); 
+            }
+        });
+        if (currentNarrativeGroup) testContainer.appendChild(currentNarrativeGroup);
+        
+        // Initialize Sortable to allow drag/drop reordering within the workspace
+        new Sortable(testContainer, { animation: 150, ghostClass: 'drag-ghost', onEnd: updateDataArrayFromDOM });
+        document.querySelectorAll('.linked-questions-container').forEach(c => new Sortable(c, { animation: 150, ghostClass: 'drag-ghost', onEnd: updateDataArrayFromDOM }));
+    }
+
+    function createQuestionElement(item, num) {
+        const div = document.createElement('div');
+        div.className = 'question-card'; 
+        div.dataset.id = item.id; 
+        div.ondblclick = () => openModal(item.type, item.id);
+
+        let badge = item.type === 'mc' ? '<span class="badge badge-mc">Multiple Choice</span>' : '<span class="badge badge-extended">Extended Response</span>';
+        let linkedBadge = item.linkedNarrativeId ? `<div class="narrative-link-badge">Linked to: ${testData.find(n => n.id === item.linkedNarrativeId)?.narrativeName}</div>` : "";
+
+        let html = `${badge}${linkedBadge}<div style="display:flex; gap:10px;"><div><strong>${num}.</strong></div><div class="q-text-container" style="flex:1;">${item.question}</div></div>`;
+
+        if (item.type === 'mc') {
+            html += `<ul class="mc-options">`;
+            item.options.forEach((opt, idx) => {
+                let isCorrect = (opt === item.correctAnswer) ? 'font-weight:bold; color:green;' : '';
+                html += `<li class="mc-option-item" style="${isCorrect}">(${idx + 1}) ${opt}</li>`;
+            });
+            html += `</ul>`;
+        }
+        
+        html += `<div class="card-actions"><button class="action-btn-small" onclick="event.stopPropagation(); duplicateItem(${item.id});">📋 Duplicate</button><button class="action-btn-small" onclick="event.stopPropagation(); openModal('${item.type}', ${item.id});">✏️ Edit</button></div>`;
+        div.innerHTML = html;
+        return div;
+    }
+
+    function updateDataArrayFromDOM() {
+        let newData = [];
+        const mainNodes = document.getElementById('test-container').children;
+        
+        for (let node of mainNodes) {
+            if (node.classList.contains('narrative-group')) {
+                const narId = parseInt(node.dataset.id);
+                let nar = testData.find(q => q.id === narId); 
+                if(nar) newData.push(nar);
+                
+                for (let lNode of node.querySelectorAll('.question-card')) {
+                    const qId = parseInt(lNode.dataset.id);
+                    let q = testData.find(x => x.id === qId); 
+                    if(q) { q.linkedNarrativeId = narId; newData.push(q); }
+                }
+            } else if (node.classList.contains('question-card')) {
+                const qId = parseInt(node.dataset.id);
+                let q = testData.find(x => x.id === qId); 
+                if(q) { q.linkedNarrativeId = null; newData.push(q); } 
+            }
+        }
+        testData = newData; 
+    }
+
+    // --- 6. MODAL & EDITING LOGIC ---
+    function renderMCOptionInputs(count, existingData = []) {
+        const container = document.getElementById('mc-options-container'); container.innerHTML = '';
+        mcQuills = []; currentMCOptionsCount = count;
+
+        for(let i = 0; i < count; i++) {
+            let isChecked = false;
+            if (existingData.length > 0 && editingId) {
+                const item = testData.find(q => q.id === editingId); 
+                if (item && item.correctAnswer === existingData[i]) isChecked = true;
+            } else if (i === 0) isChecked = true; 
+
+            container.innerHTML += `
+                <div class="mc-input-row">
+                    <div style="display: flex; align-items: center; gap: 5px; margin-top: 30px;">
+                        <input type="radio" name="correct-answer" value="${i}" ${isChecked ? 'checked' : ''}>
+                        <span style="font-weight: bold;">(${i + 1})</span> 
+                    </div>
+                    <div style="flex: 1; min-width: 0;">
+                        <div id="mc-quill-${i}" class="mc-quill-editor"></div>
+                    </div>
+                </div>`;
+        }
+
+        for(let i = 0; i < count; i++) {
+            let q = new Quill(`#mc-quill-${i}`, { theme: 'snow', modules: getQuillModules() });
+            q.root.style.fontFamily = "'Aptos', Calibri, Arial, sans-serif"; 
+            if (existingData[i]) q.root.innerHTML = existingData[i]; 
+            mcQuills.push(q);
+        }
+    }
+
+    function addMCOption() { renderMCOptionInputs(currentMCOptionsCount + 1, mcQuills.map(q => q.root.innerHTML)); }
+    function removeMCOption() { if (currentMCOptionsCount > 2) { let vals = mcQuills.map(q => q.root.innerHTML); vals.pop(); renderMCOptionInputs(currentMCOptionsCount - 1, vals); } }
+
+    function openModal(type, idToEdit = null) {
+        currentModalMode = type; editingId = idToEdit; 
+        const linkSelect = document.getElementById('narrative-link-select');
+        
+        linkSelect.innerHTML = '<option value="">-- None --</option>';
+        testData.filter(i => i.type === 'narrative').forEach(n => { linkSelect.innerHTML += `<option value="${n.id}">${n.narrativeName}</option>`; });
+
+        if (editingId) {
+            const item = testData.find(q => q.id === editingId);
+            document.getElementById('btn-delete').style.display = "block";
+            document.getElementById('modal-title').innerText = "Edit Item";
+            
+            quillQuestion.root.innerHTML = item.question;
+            quillReasoning.root.innerHTML = item.reasoning || '';
+            
+            if (type === 'narrative') document.getElementById('narrative-name').value = item.narrativeName || '';
+            else linkSelect.value = item.linkedNarrativeId || ''; 
+            
+            if (type === 'mc') renderMCOptionInputs(item.options.length, item.options);
+        } else {
+            document.getElementById('btn-delete').style.display = "none";
+            document.getElementById('modal-title').innerText = "Add New Item";
+            
+            quillQuestion.setContents([]); quillReasoning.setContents([]);
+            linkSelect.value = '';
+            if (type === 'mc') renderMCOptionInputs(4); 
+        }
+
+        document.getElementById('narrative-name-group').style.display = (type === 'narrative') ? "block" : "none";
+        document.getElementById('narrative-link-group').style.display = (type !== 'narrative') ? "block" : "none";
+        document.getElementById('mc-fields').style.display = (type === 'mc') ? "block" : "none";
+        document.getElementById('reasoning-group').style.display = (type === 'narrative') ? "none" : "block";
+        document.getElementById('main-editor-label').innerText = (type === 'narrative') ? "Passage Text:" : "Question Text:";
+        
+        document.getElementById('creation-modal').style.display = "flex";
+    }
+
+    function closeModal() { document.getElementById('creation-modal').style.display = "none"; editingId = null; }
+
+    function saveData() {
+        const qHTML = quillQuestion.root.innerHTML;
+        const rHTML = quillReasoning.root.innerHTML;
+        const narNameVal = document.getElementById('narrative-name').value;
+        const linkedNarIdVal = document.getElementById('narrative-link-select').value ? parseInt(document.getElementById('narrative-link-select').value) : null;
+        
+        let extractedOptions = []; let correctAns = "";
+        if (currentModalMode === 'mc') {
+            const radios = document.getElementsByName('correct-answer'); let selectedIndex = 0;
+            for (let i = 0; i < currentMCOptionsCount; i++) {
+                extractedOptions.push(mcQuills[i].root.innerHTML);
+                if (radios[i].checked) selectedIndex = i;
+            }
+            correctAns = extractedOptions[selectedIndex];
+        }
+
+        if (editingId) {
+            let item = testData.find(q => q.id === editingId);
+            item.question = qHTML; item.reasoning = rHTML;
+            if (currentModalMode === 'narrative') item.narrativeName = narNameVal;
+            if (currentModalMode === 'mc') { item.options = extractedOptions; item.correctAnswer = correctAns; }
+            if (currentModalMode !== 'narrative') item.linkedNarrativeId = linkedNarIdVal;
+        } else {
+            let newItem = { 
+                id: questionIdCounter++, 
+                uuid: crypto.randomUUID(),
+                type: currentModalMode, 
+                question: qHTML, 
+                reasoning: rHTML,
+                linkedNarrativeId: linkedNarIdVal
+            };
+            if (currentModalMode === 'narrative') newItem.narrativeName = narNameVal;
+            if (currentModalMode === 'mc') { newItem.options = extractedOptions; newItem.correctAnswer = correctAns; }
+            testData.push(newItem);
+        }
+        
+        renderApp(); closeModal();
+    }
+
+    function deleteData() {
+        if (!editingId) return;
+        if (confirm("Are you sure you want to delete this item?")) {
+            const item = testData.find(q => q.id === editingId);
+            if (item && item.type === 'narrative') testData.forEach(q => { if (q.linkedNarrativeId === editingId) q.linkedNarrativeId = null; });
+            testData = testData.filter(q => q.id !== editingId);
+            renderApp(); closeModal();
+        }
+    }
+
+    function duplicateItem(id) {
+        const itemToCopy = testData.find(q => q.id === id);
+        if(!itemToCopy) return;
+
+        const newItem = JSON.parse(JSON.stringify(itemToCopy));
+        newItem.id = questionIdCounter++; 
+        newItem.uuid = crypto.randomUUID(); // Give duplicate a fresh UUID for the DB
+        if (newItem.type === 'narrative') newItem.narrativeName = newItem.narrativeName + " (Copy)";
+
+        let insertIndex = testData.findIndex(q => q.id === id);
+        testData.splice(insertIndex + 1, 0, newItem); 
+        renderApp(); 
+    }
+
+    // --- 7. FIREBASE BATCH UPLOAD ---
+    async function uploadBatch() {
+        if (!authenticated) { alert("Please sign in first."); return; }
+        if (testData.length === 0) { alert("No items to upload."); return; }
+
+        const btn = document.getElementById('btn-upload');
+        btn.innerText = `⏳ Uploading ${testData.length} items...`;
+        btn.disabled = true;
+
+        const updates = {};
+        testData.forEach(item => {
+            let payload = {
+                uuid: item.uuid,
+                type: item.type,
+                question: item.question,
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            };
+
+            if (item.type === 'narrative') {
+                payload.narrativeName = item.narrativeName;
+            } else {
+                // If the narrative was a newly generated UUID instead of an int, handle that conversion here.
+                if (item.linkedNarrativeId) {
+                    const nar = testData.find(n => n.id === item.linkedNarrativeId);
+                    payload.linkedNarrativeId = nar ? nar.uuid : null;
+                } else {
+                    payload.linkedNarrativeId = null;
+                }
+                
+                payload.reasoning = item.reasoning;
+                if (item.type === 'mc') {
+                    payload.options = item.options;
+                    payload.correctAnswer = item.correctAnswer;
+                }
+            }
+            updates[`questionDatabase/${item.uuid}`] = payload;
+        });
+
+        try {
+            await db.ref().update(updates);
+            btn.innerText = `✅ Success! Uploaded ${testData.length} items.`;
+            setTimeout(() => {
+                btn.innerText = "☁️ Upload Batch to RTDB";
+                btn.disabled = false;
+            }, 3000);
+        } catch (error) {
+            console.error(error);
+            alert("Upload failed: " + error.message);
+            btn.innerText = "☁️ Upload Batch to RTDB";
+            btn.disabled = false;
+        }
+    }
+</script>
+</body>
+</html>

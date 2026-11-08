@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teacher Video Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --gf-purple: #673ab7;
+      --gf-bg: #f0ebf8;
+      --gf-card-bg: #ffffff;
+      --gf-text-main: #202124;
+      --gf-border: #dadce0;
+      --gf-marker: #fb8c00;
+    }
+    body { font-family: 'Roboto', ui-sans-serif, system-ui, sans-serif; background-color: var(--gf-bg); color: var(--gf-text-main); margin: 0; padding: 0; }
+    
+    /* Login Overlay */
+    #auth-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 200; }
+    .auth-card { background: white; padding: 40px; border-radius: 8px; text-align: center; max-width: 400px; width: 90%; }
+    
+    /* Main App Layout */
+    #app-content { display: none; padding: 1.5rem; }
+    .top-bar { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    
+    /* Player & Editor Styles */
+    .player-card { background: #000; border-radius: 8px; border: 1px solid var(--gf-border); overflow: hidden; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12); position: relative; }
+    .video-viewport { position: relative; width: 100%; aspect-ratio: 16 / 10; background: #000; }
+    video { width: 100%; height: 100%; display: block; outline: none; }
+    video::cue { background-color: rgba(15, 23, 42, 0.88); color: #ffffff; font-size: 0.95rem; border-radius: 4px; }
+    video::-webkit-media-text-track-container { bottom: 58px !important; }
+    .custom-controls { background: linear-gradient(180deg, rgba(20,20,20,0.85) 0%, #141414 100%); padding: 8px 14px 10px 14px; display: flex; flex-direction: column; gap: 8px; }
+    .timeline-container { position: relative; width: 100%; height: 18px; display: flex; align-items: center; cursor: pointer; }
+    .timeline-track { position: relative; width: 100%; height: 6px; background: rgba(255, 255, 255, 0.28); border-radius: 3px; }
+    .timeline-progress { position: absolute; left: 0; top: 0; height: 100%; width: 0%; background: var(--gf-purple); border-radius: 3px; pointer-events: none; }
+    .timeline-thumb { position: absolute; top: 50%; left: 0%; width: 14px; height: 14px; background: #ffffff; border: 2px solid var(--gf-purple); border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; }
+    .timeline-marker { position: absolute; top: 50%; width: 12px; height: 12px; background: var(--gf-marker); border: 2px solid #ffffff; border-radius: 50%; transform: translate(-50%, -50%); z-index: 5; cursor: pointer; }
+    .timeline-marker:hover { transform: translate(-50%, -50%) scale(1.5); }
+    .controls-row { display: flex; align-items: center; justify-content: space-between; color: #ffffff; }
+    .controls-left, .controls-right { display: flex; align-items: center; gap: 12px; }
+    .ctrl-btn { background: none; border: none; color: #ffffff; cursor: pointer; display: flex; padding: 4px; border-radius: 4px; transition: background 0.15s ease; }
+    .ctrl-btn:hover { background: rgba(255, 255, 255, 0.15); }
+    .ctrl-btn svg { width: 20px; height: 20px; fill: currentColor; }
+    .time-display { font-size: 0.8rem; font-family: monospace; color: #e0e0e0; }
+    .checkpoint-card { display: none; position: absolute; top: 10%; left: 10%; width: 80%; max-height: 80%; overflow-y: auto; background: var(--gf-card-bg); border-radius: 8px; border-left: 6px solid var(--gf-purple); padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); z-index: 50; }
+  </style>
+</head>
+<body>
+
+<!-- Login Gate -->
+<div id="auth-overlay">
+  <div class="auth-card">
+    <h2 class="text-2xl font-bold text-gray-800 mb-2">Teacher Dashboard</h2>
+    <p id="auth-status" class="text-sm text-gray-500 mb-6">Verifying authentication...</p>
+    <button id="auth-btn" onclick="window.loginTeacher()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded transition-colors hidden">Log In with Google</button>
+  </div>
+</div>
+
+<div id="app-content">
+  <!-- Top Control Bar -->
+  <div class="top-bar">
+    <div class="flex items-center gap-4 flex-1">
+      <label class="font-bold text-gray-700 text-sm">Select Assignment:</label>
+      <select id="assignmentDropdown" class="border border-gray-300 rounded p-2 text-sm w-80 focus:outline-none focus:border-purple-500">
+        <option value="">Loading assignments...</option>
+      </select>
+      <button onclick="window.loadAssignmentData()" class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded text-sm font-bold shadow transition-colors">Load Video & Rubric</button>
+    </div>
+    <div class="flex items-center gap-4 border-l pl-4 border-gray-200">
+      <span id="user-display" class="text-sm font-bold text-gray-600"></span>
+      <button onclick="window.logoutTeacher()" class="text-red-500 hover:text-red-700 text-sm font-bold">Log Out</button>
+    </div>
+  </div>
+
+  <div class="max-w-screen-2xl mx-auto flex flex-col lg:flex-row gap-8">
+    
+    <!-- LEFT COLUMN: Testing Player -->
+    <div class="w-full lg:w-1/2 flex flex-col gap-4">
+      <div class="bg-white p-4 rounded-lg shadow border-t-4 border-purple-600">
+        <h2 class="text-xl font-bold text-gray-800">1. Assignment Title</h2>
+        <input type="text" id="editTitle" class="mt-2 w-full p-2 border border-gray-300 rounded focus:outline-none focus:border-purple-500 font-medium" placeholder="Assignment Title">
+      </div>
+
+      <div class="bg-white p-4 rounded-lg shadow">
+        <div class="flex justify-between items-center mb-2">
+          <h2 class="text-xl font-bold text-gray-800">2. Video Preview & Testing</h2>
+          <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded uppercase font-bold">Unrestricted</span>
+        </div>
+        <p class="text-xs text-gray-500 mb-4">Scrub freely. The video will pause and display questions when crossing timestamps.</p>
+        
+        <div id="playerCard" class="player-card">
+          <div class="video-viewport">
+            <video id="forensicPlayer" playsinline crossorigin="anonymous"></video>
+          </div>
+
+          <div class="custom-controls">
+            <div id="timelineContainer" class="timeline-container">
+              <div class="timeline-track" id="timelineTrack">
+                <div id="timelineProgress" class="timeline-progress"></div>
+                <div id="timelineThumb" class="timeline-thumb"></div>
+              </div>
+            </div>
+            <div class="controls-row">
+              <div class="controls-left">
+                <button id="playBtn" class="ctrl-btn" type="button">
+                  <svg id="playIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                  <svg id="pauseIcon" viewBox="0 0 24 24" style="display: none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                </button>
+                <div class="time-display"><span id="currentTimeDisplay">0:00</span> / <span id="durationDisplay">0:00</span></div>
+              </div>
+              <div class="controls-right">
+                <button id="ccBtn" class="ctrl-btn" type="button">
+                  <svg viewBox="0 0 24 24"><path d="M19 4H5c-1.11 0-2 .9-2 2v12c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-8 7H9.5v-.5h-2v3h2V13H11v1c0 .55-.45 1-1 1H7c-.55 0-1-.45-1-1v-4c0-.55.45-1 1-1h3c.55 0 1 .45 1 1v1zm7 0h-1.5v-.5h-2v3h2V13H18v1c0 .55-.45 1-1 1h-3c-.55 0-1-.45-1-1v-4c0-.55.45-1 1-1h3c.55 0 1 .45 1 1v1z"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div id="checkpointCard" class="checkpoint-card">
+            <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-200">
+              <h2 class="text-lg font-medium text-gray-900">Student View Preview</h2>
+              <span id="checkpointBadge" class="text-xs bg-purple-100 text-purple-700 font-bold px-2 py-1 rounded uppercase"></span>
+            </div>
+            <div id="dynamic-questions"></div>
+            <div class="flex justify-end mt-4">
+              <button id="submitTestBtn" class="bg-gray-800 hover:bg-gray-900 text-white font-bold py-2 px-4 rounded transition-colors text-sm" type="button">Resume Video</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN: Question Editor -->
+    <div class="w-full lg:w-1/2 flex flex-col gap-4">
+      <div class="bg-white p-4 rounded-lg shadow flex justify-between items-center border-t-4 border-orange-500">
+        <div>
+          <h2 class="text-xl font-bold text-gray-800">3. Question Clusters & Rubrics</h2>
+          <p class="text-xs text-gray-500">Select the radio button next to an option to set the answer key.</p>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="window.addCluster()" class="bg-orange-100 text-orange-800 hover:bg-orange-200 font-bold py-2 px-4 rounded text-sm transition-colors">+ Add Timestamp</button>
+          <button onclick="window.saveToRTDB()" id="saveBtn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded text-sm shadow transition-colors" style="display: none;">Save to Database</button>
+        </div>
+      </div>
+
+      <div id="editorContainer" class="flex flex-col gap-4 overflow-y-auto" style="max-height: 75vh;">
+        <div class="text-center py-12 text-gray-500">Select an Assignment and click Load to begin.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+  import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+  import { getDatabase, ref, get, update } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+  const firebaseConfig = {
+      apiKey: "AIzaSyCcpjuH1qv9IUDJJQR_5ms18TBRS8UFaV8",
+      authDomain: "scigarage.firebaseapp.com",
+      databaseURL: "https://scigarage-default-rtdb.firebaseio.com",
+      projectId: "scigarage",
+      storageBucket: "scigarage.firebasestorage.app",
+      messagingSenderId: "768658065204",
+      appId: "1:768658065204:web:31e0386ee9c9edfe3ac761",
+      measurementId: "G-SJ48L43TZ2"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getDatabase(app);
+  const provider = new GoogleAuthProvider();
+
+  const allowedAdmins = ['pianodemon88@gmail.com', 'kjosephs@ocsdny.org'];
+
+  // --- UNSAVED CHANGES TRACKER ---
+  let hasUnsavedChanges = false;
+  function markDirty() {
+    hasUnsavedChanges = true;
+  }
+
+  // Intercept window/tab close or reload
+  window.addEventListener('beforeunload', (e) => {
+    if (hasUnsavedChanges) {
+      e.preventDefault();
+      e.returnValue = ''; // Standard trigger for modern browsers to prompt user
+    }
+  });
+
+  window.loginTeacher = function() {
+    signInWithPopup(auth, provider).catch((error) => alert("Login failed: " + error.message));
+  };
+
+  window.logoutTeacher = function() {
+    if (hasUnsavedChanges && !confirm("You have unsaved changes. Are you sure you want to log out and discard them?")) {
+      return;
+    }
+    hasUnsavedChanges = false;
+    signOut(auth).catch((error) => console.error("Logout error:", error));
+  };
+
+  window.populateDropdown = async function() {
+    const dropdown = document.getElementById('assignmentDropdown');
+    dropdown.innerHTML = '<option value="">Loading assignments...</option>';
+    
+    try {
+      const snap = await get(ref(db, 'assignments'));
+      if (snap.exists()) {
+        dropdown.innerHTML = '<option value="">Select an assignment...</option>';
+        const assignmentsData = snap.val();
+        
+        Object.keys(assignmentsData).forEach(code => {
+          const title = assignmentsData[code].title || code;
+          const opt = document.createElement('option');
+          opt.value = code;
+          opt.innerText = title;
+          dropdown.appendChild(opt);
+        });
+      } else {
+        dropdown.innerHTML = '<option value="">No assignments found</option>';
+      }
+    } catch (e) {
+      console.error(e);
+      dropdown.innerHTML = '<option value="">Error loading assignments (Check Rules)</option>';
+    }
+  };
+
+  onAuthStateChanged(auth, (user) => {
+    const overlay = document.getElementById('auth-overlay');
+    const appContent = document.getElementById('app-content');
+    const authStatus = document.getElementById('auth-status');
+    const authBtn = document.getElementById('auth-btn');
+
+    if (user) {
+      if (allowedAdmins.includes(user.email)) {
+        overlay.style.display = "none";
+        appContent.style.display = "block";
+        document.getElementById('user-display').innerText = user.email;
+        window.populateDropdown();
+      } else {
+        alert(`Access Denied: The account (${user.email}) does not have admin privileges.`);
+        window.logoutTeacher(); 
+      }
+    } else {
+      overlay.style.display = "flex";
+      appContent.style.display = "none";
+      authStatus.innerText = "Please log in to edit assignments.";
+      authBtn.style.display = "block";
+      window.assignmentData = null;
+      window.rubricData = null;
+      hasUnsavedChanges = false;
+      document.getElementById('editorContainer').innerHTML = `<div class="text-center py-12 text-gray-500">Select an Assignment and click Load to begin.</div>`;
+    }
+  });
+
+  window.currentAssignmentCode = null;
+  window.assignmentData = null;
+  window.rubricData = { keys: {} };
+  let testedCheckpoints = new Set();
+  let activeCheckpointTime = null;
+
+  const player = document.getElementById('forensicPlayer');
+  const timelineContainer = document.getElementById('timelineContainer');
+  const timelineTrack = document.getElementById('timelineTrack');
+  const timelineProgress = document.getElementById('timelineProgress');
+  const timelineThumb = document.getElementById('timelineThumb');
+  const currentTimeDisplay = document.getElementById('currentTimeDisplay');
+  const durationDisplay = document.getElementById('durationDisplay');
+  let isDraggingTimeline = false;
+
+  // Track title input modifications
+  document.getElementById('editTitle').addEventListener('input', markDirty);
+
+  function formatTime(sec) {
+    if (isNaN(sec) || sec === null) return "0:00";
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  }
+  
+  function getMinSec(sec) { return { m: Math.floor(sec / 60), s: Math.floor(sec % 60) }; }
+  function genId() { return Math.floor(Math.random() * 1000000); }
+
+  window.loadAssignmentData = async function() {
+    if (hasUnsavedChanges && !confirm("You have unsaved changes. Discard and switch assignments?")) {
+      return;
+    }
+
+    const codeInput = document.getElementById('assignmentDropdown').value;
+    if (!codeInput) return alert("Please select an assignment from the dropdown.");
+    
+    window.currentAssignmentCode = codeInput;
+    const container = document.getElementById('editorContainer');
+    container.innerHTML = `<div class="text-center py-8 text-purple-600 font-bold">Connecting to Database...</div>`;
+    
+    try {
+      const snap = await get(ref(db, `assignments/${window.currentAssignmentCode}`));
+      if (!snap.exists()) {
+        container.innerHTML = `<div class="text-red-500 font-bold p-4 text-center">Assignment ID not found in database.</div>`;
+        document.getElementById('saveBtn').style.display = "none";
+        return;
+      }
+
+      window.assignmentData = snap.val();
+      if (!window.assignmentData.questionsByTime) window.assignmentData.questionsByTime = {};
+      document.getElementById('editTitle').value = window.assignmentData.title || window.currentAssignmentCode;
+
+      const rubricSnap = await get(ref(db, `rubrics/rubric_${window.currentAssignmentCode}`));
+      if (rubricSnap.exists()) {
+        window.rubricData = rubricSnap.val();
+        if (!window.rubricData.keys) window.rubricData.keys = {};
+      } else {
+        window.rubricData = { assignmentCode: window.currentAssignmentCode, keys: {} };
+      }
+
+      player.innerHTML = `
+        <source src="${window.assignmentData.videoUrl || 'https://media.thesciencegarage.com/video/FS/Chapter_9_Toxocology_web_ready.mp4'}" type="video/mp4">
+        <track id="captionTrack" label="English" kind="captions" srclang="en" src="${window.assignmentData.vttUrl || 'https://media.thesciencegarage.com/video/FS/Chapter_9_Toxocology_web_ready.vtt'}">
+      `;
+      player.load();
+      
+      document.getElementById('saveBtn').style.display = "block";
+      hasUnsavedChanges = false;
+      window.renderEditor();
+      window.drawMarkers();
+    } catch (e) {
+      console.error(e);
+      container.innerHTML = `<div class="text-red-500 font-bold p-4 text-center">Error reading data. Check rules and permissions.</div>`;
+    }
+  };
+
+  window.saveToRTDB = async function() {
+    if (!window.assignmentData || !window.currentAssignmentCode) return;
+    const btn = document.getElementById('saveBtn');
+    btn.innerText = "Saving...";
+    
+    window.assignmentData.title = document.getElementById('editTitle').value;
+    
+    const newTimeline = [];
+    Object.keys(window.assignmentData.questionsByTime).forEach(timeStr => {
+      const qIds = window.assignmentData.questionsByTime[timeStr].map(q => q.id);
+      newTimeline.push({ time: Number(timeStr), qIds: qIds });
+    });
+    window.assignmentData.timeline = newTimeline.sort((a, b) => a.time - b.time);
+
+    window.rubricData.assignmentCode = window.currentAssignmentCode;
+    window.rubricData.title = window.assignmentData.title;
+
+    try {
+      const updates = {};
+      updates[`/assignments/${window.currentAssignmentCode}`] = window.assignmentData;
+      updates[`/rubrics/rubric_${window.currentAssignmentCode}`] = window.rubricData;
+      
+      await update(ref(db), updates);
+
+      hasUnsavedChanges = false;
+      btn.innerText = "Saved!";
+      
+      const dropdown = document.getElementById('assignmentDropdown');
+      const selectedOption = dropdown.options[dropdown.selectedIndex];
+      if (selectedOption) selectedOption.innerText = window.assignmentData.title;
+
+      setTimeout(() => btn.innerText = "Save to Database", 2000);
+      window.drawMarkers();
+      testedCheckpoints.clear();
+    } catch (e) {
+      console.error(e);
+      alert("Failed to save. Check your Firebase Rules.");
+      btn.innerText = "Error";
+    }
+  };
+
+  window.renderEditor = function() {
+    const container = document.getElementById('editorContainer');
+    container.innerHTML = '';
+    const times = Object.keys(window.assignmentData.questionsByTime).sort((a, b) => Number(a) - Number(b));
+
+    if (times.length === 0) {
+      container.innerHTML = `<div class="text-center py-8 text-gray-500">No questions yet. Click Add Timestamp.</div>`;
+      return;
+    }
+
+    times.forEach(timeStr => {
+      const timeNum = Number(timeStr);
+      const { m, s } = getMinSec(timeNum);
+      const questions = window.assignmentData.questionsByTime[timeStr];
+
+      const card = document.createElement('div');
+      card.className = "bg-white border border-gray-200 rounded-lg p-4 shadow-sm";
+      
+      let html = `
+        <div class="flex justify-between items-center mb-4 bg-gray-50 p-2 rounded border border-gray-100">
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-gray-700">Timestamp:</span>
+            <input type="number" min="0" value="${m}" id="min-${timeNum}" class="w-16 p-1 border rounded text-center" onchange="window.updateTime(${timeNum})"> <span class="font-bold">:</span>
+            <input type="number" min="0" max="59" value="${s < 10 ? '0'+s : s}" id="sec-${timeNum}" class="w-16 p-1 border rounded text-center" onchange="window.updateTime(${timeNum})">
+          </div>
+          <div>
+            <button onclick="window.addQuestion(${timeNum})" class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 font-bold mr-2">+ Add Q</button>
+            <button onclick="window.deleteCluster(${timeNum})" class="text-xs bg-red-100 text-red-700 px-2 py-1 rounded hover:bg-red-200 font-bold">Delete Group</button>
+          </div>
+        </div>
+        <div class="flex flex-col gap-4">
+      `;
+
+      questions.forEach((q, qIndex) => {
+        const correctOpt = window.rubricData.keys[String(q.id)];
+
+        html += `
+          <div class="border-l-4 border-purple-400 pl-4 py-2 relative">
+            <button onclick="window.deleteQuestion(${timeNum}, ${qIndex})" class="absolute top-0 right-0 text-red-400 hover:text-red-600" title="Delete Question">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+            </button>
+            <div class="flex justify-between items-center mb-1">
+              <label class="block text-xs font-bold text-gray-500">Question Text (ID: ${q.id})</label>
+              <span class="text-xs font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded border border-green-200">Answer Key: Option ${correctOpt !== undefined ? Number(correctOpt) + 1 : 'Not Set'}</span>
+            </div>
+            <textarea class="w-full p-2 border border-gray-300 rounded mb-2 text-sm" onchange="window.updateQText(${timeNum}, ${qIndex}, this.value)">${q.text}</textarea>
+            
+            <label class="block text-xs font-bold text-gray-500 mb-1">Options (Select radio for answer key)</label>
+            <div class="flex flex-col gap-1">
+        `;
+        
+        q.options.forEach((opt, optIndex) => {
+          const isKey = (correctOpt === optIndex);
+          html += `
+            <div class="flex items-center gap-2 p-1 rounded ${isKey ? 'bg-green-50 border border-green-300' : ''}">
+              <input type="radio" name="key_q_${q.id}" ${isKey ? 'checked' : ''} onchange="window.setAnswerKey('${q.id}', ${optIndex})" title="Mark as correct answer">
+              <input type="text" class="flex-1 p-1 border border-gray-300 rounded text-sm bg-white" value="${opt.replace(/"/g, '&quot;')}" onchange="window.updateOption(${timeNum}, ${qIndex}, ${optIndex}, this.value)">
+              <button onclick="window.removeOption(${timeNum}, ${qIndex}, ${optIndex})" class="text-red-400 hover:text-red-600 p-1 font-bold text-xs" title="Remove Option">X</button>
+            </div>
+          `;
+        });
+
+        html += `<button onclick="window.addOption(${timeNum}, ${qIndex})" class="text-xs text-gray-500 hover:text-gray-800 self-start mt-1">+ Add Option</button></div></div>`;
+      });
+
+      html += `</div>`;
+      card.innerHTML = html;
+      container.appendChild(card);
+    });
+  };
+
+  window.setAnswerKey = function(qId, optIndex) {
+    window.rubricData.keys[String(qId)] = optIndex;
+    markDirty();
+    window.renderEditor();
+  };
+
+  window.updateTime = function(oldTime) {
+    const m = parseInt(document.getElementById(`min-${oldTime}`).value) || 0;
+    const s = parseInt(document.getElementById(`sec-${oldTime}`).value) || 0;
+    const newTime = (m * 60) + s;
+    if (oldTime === newTime) return;
+    if (window.assignmentData.questionsByTime[newTime]) {
+      alert("A cluster already exists at this exact second. Merge them or pick a different time.");
+      window.renderEditor();
+      return;
+    }
+    window.assignmentData.questionsByTime[newTime] = window.assignmentData.questionsByTime[oldTime];
+    delete window.assignmentData.questionsByTime[oldTime];
+    markDirty();
+    window.drawMarkers();
+    window.renderEditor();
+  };
+
+  window.updateQText = function(time, qIdx, val) { 
+    window.assignmentData.questionsByTime[time][qIdx].text = val; 
+    markDirty();
+  };
+  
+  window.updateOption = function(time, qIdx, optIdx, val) { 
+    window.assignmentData.questionsByTime[time][qIdx].options[optIdx] = val; 
+    markDirty();
+  };
+  
+  window.addOption = function(time, qIdx) { 
+    window.assignmentData.questionsByTime[time][qIdx].options.push("New Option"); 
+    markDirty();
+    window.renderEditor(); 
+  };
+  
+  window.removeOption = function(time, qIdx, optIdx) { 
+    window.assignmentData.questionsByTime[time][qIdx].options.splice(optIdx, 1); 
+    markDirty();
+    window.renderEditor(); 
+  };
+  
+  window.addQuestion = function(time) {
+    const newId = genId();
+    window.assignmentData.questionsByTime[time].push({ id: newId, text: "New Question", options: ["Option 1", "Option 2"] });
+    window.rubricData.keys[String(newId)] = 0;
+    markDirty();
+    window.renderEditor();
+  };
+  
+  window.deleteQuestion = function(time, qIdx) {
+    if(confirm("Delete this question?")) {
+      const q = window.assignmentData.questionsByTime[time][qIdx];
+      delete window.rubricData.keys[String(q.id)];
+      window.assignmentData.questionsByTime[time].splice(qIdx, 1);
+      markDirty();
+      if(window.assignmentData.questionsByTime[time].length === 0) window.deleteCluster(time);
+      else window.renderEditor();
+    }
+  };
+
+  window.addCluster = function() {
+    if (!window.assignmentData) return alert("Load an assignment first.");
+    let newTime = 0; 
+    while(window.assignmentData.questionsByTime[newTime]) newTime++;
+    const newId = genId();
+    window.assignmentData.questionsByTime[newTime] = [{ id: newId, text: "New Question", options: ["Option A"] }];
+    window.rubricData.keys[String(newId)] = 0;
+    markDirty();
+    window.renderEditor();
+    window.drawMarkers();
+  };
+
+  window.deleteCluster = function(time) {
+    if(confirm("Delete this entire timestamp cluster?")) {
+      (window.assignmentData.questionsByTime[time] || []).forEach(q => delete window.rubricData.keys[String(q.id)]);
+      delete window.assignmentData.questionsByTime[time];
+      markDirty();
+      window.renderEditor();
+      window.drawMarkers();
+    }
+  };
+
+  function updateProgressUI(time) {
+    if (!player.duration || isNaN(player.duration)) return;
+    const pct = Math.min(100, Math.max(0, (time / player.duration) * 100));
+    timelineProgress.style.width = `${pct}%`;
+    timelineThumb.style.left = `${pct}%`;
+    currentTimeDisplay.textContent = formatTime(time);
+  }
+
+  window.drawMarkers = function() {
+    if (!player.duration || isNaN(player.duration)) return;
+    document.querySelectorAll('.timeline-marker').forEach(m => m.remove());
+    const times = Object.keys(window.assignmentData?.questionsByTime || {});
+    times.forEach(tStr => {
+      const tNum = Number(tStr);
+      const pct = (tNum / player.duration) * 100;
+      const marker = document.createElement('div');
+      marker.className = 'timeline-marker';
+      marker.style.left = `${pct}%`;
+      marker.addEventListener('click', (e) => {
+        e.stopPropagation(); 
+        player.currentTime = tNum;
+        updateProgressUI(tNum);
+        triggerTestPopup(tNum);
+      });
+      timelineTrack.appendChild(marker);
+    });
+    durationDisplay.textContent = formatTime(player.duration);
+  };
+
+  function triggerTestPopup(timeKey) {
+    if (activeCheckpointTime === timeKey) return; 
+    activeCheckpointTime = timeKey;
+    player.pause();
+    
+    const card = document.getElementById('checkpointCard');
+    const container = document.getElementById('dynamic-questions');
+    document.getElementById('checkpointBadge').textContent = `Testing Time: ${formatTime(timeKey)}`;
+    
+    const questions = window.assignmentData.questionsByTime[timeKey] || [];
+    let html = '';
+    questions.forEach(q => {
+      const correctIndex = window.rubricData.keys[String(q.id)];
+      html += `<div class="mb-4"><div class="font-medium text-gray-900 mb-2">${q.text}</div><div class="flex flex-col gap-1 pl-2">`;
+      q.options.forEach((opt, idx) => {
+        const isKey = (correctIndex === idx);
+        html += `
+          <label class="flex items-start gap-2 cursor-pointer hover:bg-gray-50 rounded p-1 ${isKey ? 'font-bold text-green-700' : ''}">
+            <input type="radio" name="testQ${q.id}" class="mt-1">
+            <span class="text-sm">${opt} ${isKey ? '(Key)' : ''}</span>
+          </label>
+        `;
+      });
+      html += `</div></div>`;
+    });
+    container.innerHTML = html;
+    card.style.display = 'block';
+  }
+
+  document.getElementById('submitTestBtn').addEventListener('click', () => {
+    document.getElementById('checkpointCard').style.display = 'none';
+    testedCheckpoints.add(activeCheckpointTime);
+    activeCheckpointTime = null; 
+    player.play();
+  });
+
+  player.addEventListener('loadedmetadata', window.drawMarkers);
+  
+  player.addEventListener('timeupdate', () => {
+    if (isDraggingTimeline) return;
+    updateProgressUI(player.currentTime);
+    const times = Object.keys(window.assignmentData?.questionsByTime || {}).map(Number);
+    for (let t of times) {
+      if (player.currentTime >= t && player.currentTime < t + 0.5 && !testedCheckpoints.has(t)) {
+        player.currentTime = t;
+        updateProgressUI(t);
+        triggerTestPopup(t);
+        break;
+      }
+    }
+  });
+
+  function seekFromEvent(e) {
+    const rect = timelineContainer.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    let percent = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    if (!player.duration || isNaN(player.duration)) return;
+    const targetTime = percent * player.duration;
+    player.currentTime = targetTime;
+    updateProgressUI(targetTime);
+    testedCheckpoints.forEach(t => { if (t > targetTime) testedCheckpoints.delete(t); });
+  }
+
+  timelineContainer.addEventListener('mousedown', (e) => {
+    isDraggingTimeline = true;
+    seekFromEvent(e);
+    function onMouseMove(me) { if (isDraggingTimeline) seekFromEvent(me); }
+    function onMouseUp() { isDraggingTimeline = false; document.removeEventListener('mousemove', onMouseMove); document.removeEventListener('mouseup', onMouseUp); }
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  });
+
+  document.getElementById('playBtn').addEventListener('click', () => { player.paused ? player.play() : player.pause(); });
+  player.addEventListener('click', () => { if (document.getElementById('checkpointCard').style.display !== 'block') player.paused ? player.play() : player.pause(); });
+  player.addEventListener('play', () => { document.getElementById('playIcon').style.display = 'none'; document.getElementById('pauseIcon').style.display = 'block'; });
+  player.addEventListener('pause', () => { document.getElementById('playIcon').style.display = 'block'; document.getElementById('pauseIcon').style.display = 'none'; });
+
+  document.getElementById('ccBtn').addEventListener('click', () => {
+    if (!player.textTracks || !player.textTracks[0]) return;
+    player.textTracks[0].mode = (player.textTracks[0].mode === 'showing') ? 'hidden' : 'showing';
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SciGarage Presentations</title>
+    <style>
+        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { margin: 0; display: flex; flex-direction: column; height: 100vh; background-color: #f0f0f0; }
+        
+        /* Toolbar */
+        #toolbar { height: 60px; background: #333; color: white; display: flex; align-items: center; padding: 0 20px; gap: 15px; }
+        
+        /* Editable Title */
+        #presentation-title {
+            background: transparent;
+            border: 1px solid transparent;
+            color: white;
+            font-size: 1.2rem;
+            font-weight: 600;
+            padding: 5px 10px;
+            border-radius: 4px;
+            outline: none;
+            width: 250px;
+        }
+        #presentation-title:hover, #presentation-title:focus { background: #444; border-color: #666; }
+
+        button { padding: 8px 12px; cursor: pointer; border-radius: 4px; border: none; background: #555; color: white; }
+        button:hover { background: #777; }
+        input[type="color"] { cursor: pointer; }
+        
+        /* Push the login button to the right */
+        .spacer { flex: 1; }
+        #btn-login { background: #007bff; font-weight: bold; }
+        #btn-login:hover { background: #0056b3; }
+        #btn-login.logged-in { background: #28a745; cursor: default; pointer-events: none; }
+        
+        /* Main Layout */
+        #workspace { display: flex; flex: 1; overflow: hidden; }
+        
+        /* Left Panel - Thumbnails */
+        #thumbnail-panel { width: 200px; background: #e0e0e0; border-right: 1px solid #ccc; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+        .thumbnail { width: 100%; aspect-ratio: 16 / 9; background: white; border: 2px solid #bbb; border-radius: 4px; cursor: pointer; }
+        .thumbnail.active { border-color: #007bff; }
+        
+        /* Center Panel - Main Slide */
+        #main-panel { flex: 1; display: flex; justify-content: center; align-items: center; padding: 20px; overflow: hidden; }
+        #slide-container {
+            width: 100%;
+            max-height: 100%;
+            aspect-ratio: 16 / 9;
+            background: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        
+        /* Canvas for Apple Pencil Drawing */
+        #drawing-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 10;
+            touch-action: none; /* Prevents iPad from scrolling when drawing */
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Toolbar -->
+    <div id="toolbar">
+        <input type="text" id="presentation-title" value="Unknown Presentation" disabled>
+        
+        <div style="width: 1px; height: 30px; background: #555; margin: 0 10px;"></div>
+        
+        <button id="btn-add-text">Add Text</button>
+        <button id="btn-add-image">Add Image</button>
+        <button id="btn-add-shape">Add Shape</button>
+        
+        <div style="width: 1px; height: 30px; background: #555; margin: 0 10px;"></div>
+        
+        <label>Pen Color:</label>
+        <input type="color" id="pen-color" value="#000000">
+        
+        <div class="spacer"></div>
+        <button id="btn-login">Login</button>
+    </div>
+
+    <!-- Workspace -->
+    <div id="workspace">
+        <div id="thumbnail-panel">
+            <button id="btn-add-slide" style="margin-bottom: 10px;">+ New Slide</button>
+            <div class="thumbnail active"></div>
+        </div>
+        
+        <div id="main-panel">
+            <div id="slide-container">
+                <canvas id="drawing-layer"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, set, push, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        
+        // Import perfect-freehand via ESM
+        import { getStroke } from "https://esm.sh/perfect-freehand@1.2.0";
+
+        // TODO: Replace with your actual Firebase config object
+        const firebaseConfig = {
+  apiKey: "AIzaSyCcpjuH1qv9IUDJJQR_5ms18TBRS8UFaV8",
+  authDomain: "scigarage.firebaseapp.com",
+  databaseURL: "https://scigarage-default-rtdb.firebaseio.com",
+  projectId: "scigarage",
+  storageBucket: "scigarage.firebasestorage.app",
+  messagingSenderId: "768658065204",
+  appId: "1:768658065204:web:31e0386ee9c9edfe3ac761"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const auth = getAuth(app);
+
+        // State Variables
+        let presentationId = null;
+        let activeSlideId = 'slide_1';
+        let allStrokes = []; // Stores all completed strokes
+        let currentStrokePoints = []; // Stores points for the stroke currently being drawn
+        let isDrawing = false;
+
+        // UI Elements
+        const titleInput = document.getElementById('presentation-title');
+        const loginBtn = document.getElementById('btn-login');
+        const canvas = document.getElementById('drawing-layer');
+        const ctx = canvas.getContext('2d');
+        const colorPicker = document.getElementById('pen-color');
+
+        // --- AUTHENTICATION & AUTO-SAVE SETUP ---
+        loginBtn.addEventListener('click', () => {
+            const provider = new GoogleAuthProvider();
+            signInWithPopup(auth, provider).catch(err => console.error("Login failed", err));
+        });
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                loginBtn.innerText = user.email;
+                loginBtn.classList.add('logged-in');
+                titleInput.disabled = false;
+
+                // Create a new presentation in the database if one doesn't exist in our state yet
+                if (!presentationId) {
+                    const newPresRef = push(ref(db, 'presentations'));
+                    presentationId = newPresRef.key;
+                    await set(newPresRef, {
+                        metadata: { 
+                            title: titleInput.value, 
+                            createdAt: Date.now(), 
+                            owner: user.email 
+                        }
+                    });
+                }
+            } else {
+                loginBtn.innerText = 'Login';
+                loginBtn.classList.remove('logged-in');
+                titleInput.disabled = true;
+            }
+        });
+
+        // Auto-save Title changes
+        titleInput.addEventListener('change', () => {
+            if (presentationId && auth.currentUser) {
+                update(ref(db, `presentations/${presentationId}/metadata`), { title: titleInput.value });
+            }
+        });
+
+        // Auto-save Strokes to Firebase
+        function autoSaveStrokes() {
+            if (presentationId && auth.currentUser) {
+                // Save the array of strokes directly to the current slide
+                set(ref(db, `presentations/${presentationId}/slides/${activeSlideId}/strokes`), allStrokes);
+            }
+        }
+
+        // --- DRAWING LOGIC (Perfect Freehand & Bézier Curves) ---
+        
+        function resizeCanvas() {
+            // High-DPI support for crisp iPad Pro rendering
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = rect.height * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            canvas.style.width = `${rect.width}px`;
+            canvas.style.height = `${rect.height}px`;
+            renderCanvas();
+        }
+        window.addEventListener('resize', resizeCanvas);
+        setTimeout(resizeCanvas, 100);
+
+        // Helper: Converts perfect-freehand points into a Quadratic Bézier SVG Path
+        function getSvgPathFromStroke(stroke) {
+            if (!stroke.length) return "";
+            const d = stroke.reduce((acc, [x0, y0], i, arr) => {
+                const [x1, y1] = arr[(i + 1) % arr.length];
+                acc.push(x0, y0, (x0 + x1) / 2, (y0 + y1) / 2);
+                return acc;
+            }, ["M", ...stroke[0], "Q"]);
+            d.push("Z");
+            return d.join(" ");
+        }
+
+        // Renders all saved strokes and the current active stroke
+        function renderCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw completed strokes
+            allStrokes.forEach(strokeData => {
+                const strokeOutline = getStroke(strokeData.points, { size: 6, thinning: 0.5, smoothing: 0.5, streamline: 0.5 });
+                const pathData = getSvgPathFromStroke(strokeOutline);
+                const path = new Path2D(pathData);
+                ctx.fillStyle = strokeData.color;
+                ctx.fill(path);
+            });
+
+            // Draw the active stroke currently being drawn
+            if (currentStrokePoints.length > 0) {
+                const strokeOutline = getStroke(currentStrokePoints, { size: 6, thinning: 0.5, smoothing: 0.5, streamline: 0.5 });
+                const pathData = getSvgPathFromStroke(strokeOutline);
+                const path = new Path2D(pathData);
+                ctx.fillStyle = colorPicker.value;
+                ctx.fill(path);
+            }
+        }
+
+        // Pointer Events (Handles Apple Pencil)
+        canvas.addEventListener('pointerdown', (e) => {
+            isDrawing = true;
+            // Capture x, y, and pressure (default to 0.5 if using a mouse)
+            currentStrokePoints = [[e.offsetX, e.offsetY, e.pressure || 0.5]];
+            renderCanvas();
+        });
+
+        canvas.addEventListener('pointermove', (e) => {
+            if (!isDrawing) return;
+            // e.buttons !== 1 ensures we stop drawing if the pencil/finger is lifted
+            if (e.buttons !== 1) {
+                isDrawing = false;
+                return;
+            }
+            // Coalesced events capture in-between points for super smooth iPad drawing
+            const events = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+            events.forEach(event => {
+                currentStrokePoints.push([event.offsetX, event.offsetY, event.pressure || 0.5]);
+            });
+            renderCanvas();
+        });
+
+        window.addEventListener('pointerup', () => {
+            if (!isDrawing) return;
+            isDrawing = false;
+            
+            // Save the finished stroke to our array
+            if (currentStrokePoints.length > 0) {
+                allStrokes.push({
+                    color: colorPicker.value,
+                    points: currentStrokePoints
+                });
+            }
+            currentStrokePoints = [];
+            renderCanvas();
+            autoSaveStrokes(); // Trigger Firebase save
+        });
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Firebase JSON Importer</title>
+  <style>
+    body { font-family: -apple-system, sans-serif; text-align: center; background-color: #f4f4f9; padding: 40px; }
+    .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 500px; margin: 0 auto; text-align: left; }
+    h2 { margin-top: 0; color: #333; text-align: center; }
+    .btn { padding: 12px 20px; border: none; border-radius: 6px; font-weight: bold; font-size: 1em; cursor: pointer; color: white; width: 100%; margin-top: 15px; }
+    .btn-google { background-color: #4285F4; }
+    .btn-import { background-color: #28a745; display: none; }
+    input[type="file"] { margin-top: 15px; width: 100%; }
+    #log-window { margin-top: 20px; background: #2c3e50; color: #4ade80; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 0.85em; height: 250px; overflow-y: auto; display: none; }
+    .log-error { color: #ff6b6b; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>Database Importer</h2>
+    
+    <!-- Login Section -->
+    <div id="login-section" style="text-align: center;">
+      <p>Please authenticate to access Firebase.</p>
+      <button class="btn btn-google" id="btn-login">Sign in with Google</button>
+      <div id="auth-error" style="color:red; margin-top:10px; font-weight:bold;"></div>
+    </div>
+
+    <!-- Upload Section -->
+    <div id="upload-section" style="display: none;">
+      <p><b>Status:</b> Logged in.</p>
+      <p>Select your <code>chemical_database.json</code> file. The tool will automatically sanitize the keys and push the data to the cloud.</p>
+      <input type="file" id="json-upload" accept=".json">
+      <button class="btn btn-import" id="btn-import">Start Import to Firebase</button>
+    </div>
+
+    <!-- Console Log -->
+    <div id="log-window"></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+    import { getDatabase, ref as dbRef, set } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+    // 🔴 FIREBASE CONFIG 🔴
+    const firebaseConfig = {
+      apiKey: "AIzaSyCcpjuH1qv9IUDJJQR_5ms18TBRS8UFaV8",
+      authDomain: "scigarage.firebaseapp.com",
+      databaseURL: "https://scigarage-default-rtdb.firebaseio.com",
+      projectId: "scigarage",
+      storageBucket: "scigarage.firebasestorage.app",
+      messagingSenderId: "768658065204",
+      appId: "1:768658065204:web:31e0386ee9c9edfe3ac761"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+    const allowedEmails = ['pianodemon88@gmail.com', 'kjosephs@ocsdny.org'];
+
+    let parsedData = null;
+    const logWindow = document.getElementById('log-window');
+
+    function log(message, isError = false) {
+      logWindow.style.display = "block";
+      const div = document.createElement('div');
+      div.innerText = `> ${message}`;
+      if (isError) div.className = "log-error";
+      logWindow.appendChild(div);
+      logWindow.scrollTop = logWindow.scrollHeight; // Auto-scroll to bottom
+    }
+
+    // --- AUTHENTICATION ---
+    document.getElementById('btn-login').addEventListener('click', () => {
+      signInWithPopup(auth, new GoogleAuthProvider()).catch(err => {
+        document.getElementById('auth-error').innerText = err.message;
+      });
+    });
+
+    onAuthStateChanged(auth, (user) => {
+      if (user && allowedEmails.includes(user.email)) {
+        document.getElementById('login-section').style.display = "none";
+        document.getElementById('upload-section').style.display = "block";
+      } else if (user) {
+        document.getElementById('auth-error').innerText = "Unauthorized email.";
+        auth.signOut();
+      }
+    });
+
+    // --- FILE PARSING ---
+    document.getElementById('json-upload').addEventListener('change', function(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const rawJSON = JSON.parse(e.target.result);
+          // Handle the format if it's nested inside 'master_catalog'
+          parsedData = rawJSON.master_catalog ? rawJSON.master_catalog : rawJSON;
+          document.getElementById('btn-import').style.display = "block";
+          log(`Successfully loaded file containing ${Object.keys(parsedData).length} items.`);
+        } catch (error) {
+          log("Failed to parse JSON file. Ensure it is valid.", true);
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    // --- IMPORT LOGIC ---
+    document.getElementById('btn-import').addEventListener('click', async function() {
+      if (!parsedData) return;
+      this.disabled = true;
+      this.innerText = "Importing...";
+      
+      log("Starting database upload...");
+
+      const entries = Object.entries(parsedData);
+      let successCount = 0;
+
+      for (const [originalKey, chemicalPayload] of entries) {
+        // Here we sanitize the KEY ONLY so Firebase accepts it. 
+        // The values inside 'chemicalPayload' (like Inorganic #2) remain untouched!
+        const sanitizedKey = originalKey.replace(/[.$#\[\]\/]/g, "").trim().toLowerCase();
+
+        try {
+          await set(dbRef(db, `chemicalDatabase/${sanitizedKey}`), chemicalPayload);
+          log(`Pushed: ${sanitizedKey}`);
+          successCount++;
+        } catch (err) {
+          log(`FAILED to push ${originalKey}: ${err.message}`, true);
+        }
+      }
+
+      log("=======================");
+      log(`IMPORT COMPLETE! Successfully uploaded ${successCount} out of ${entries.length} items.`);
+      this.innerText = "Import Complete";
+    });
+
+  </script>
+</body>
+</html>

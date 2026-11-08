@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Question Databank Authoring Tool</title>
+
+    <!-- KaTeX for Math -->
+    <link rel="stylesheet" href="https://thesciencegarage.com/katexfiles/katex.min.css">
+    <script src="https://thesciencegarage.com/katexfiles/katex.min.js"></script>
+    <script src="https://thesciencegarage.com/katexfiles/mhchem.js"></script>
+    <script src="https://thesciencegarage.com/katexfiles/auto-render.min.js"></script>
+
+    <!-- Quill Editor -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quill-image-resize-module@3.0.0/image-resize.min.js"></script>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-storage-compat.js"></script>
+
+    <style>
+        body { font-family: 'Aptos', Calibri, Arial, sans-serif; background-color: #f4f6f8; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h1 { margin-top: 0; border-bottom: 2px solid #000; padding-bottom: 10px; }
+        .auth-bar { display: flex; justify-content: space-between; align-items: center; background: #eef7fa; padding: 10px 15px; border-radius: 4px; margin-bottom: 20px; border: 1px solid #bce8f1; }
+        
+        .input-group { margin-bottom: 20px; }
+        .input-group label { display: block; font-weight: bold; margin-bottom: 5px; }
+        .input-group select, .input-group input[type="text"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 11pt; font-family: inherit;}
+        
+        /* Editors */
+        .editor-wrapper { background: #fff; }
+        .ql-container { height: 150px; font-family: 'Aptos', Calibri, Arial, sans-serif !important; font-size: 11pt !important; }
+        .mc-quill .ql-container { height: 80px; }
+        
+        .mc-row { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 15px; }
+        .mc-row .option-label { font-weight: bold; margin-top: 45px; display: flex; align-items: center; gap: 5px; }
+        
+        .btn { padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 11pt; }
+        .btn-primary { background: #000; color: #fff; width: 100%; margin-top: 20px; }
+        .btn-primary:hover { background: #333; }
+        
+        /* FIX: Snap the formula editor tooltip to the box */
+        .ql-snow .ql-tooltip { z-index: 10000 !important; left: 0 !important; max-width: 100%; white-space: normal; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="auth-bar" id="auth-bar">
+        <span>Status: <strong id="auth-status">Checking...</strong></span>
+        <button id="login-btn" style="display:none;" onclick="login()">Sign In with Google</button>
+    </div>
+
+    <h1>Add to Databank</h1>
+
+    <div class="input-group">
+        <label>Item Type:</label>
+        <select id="item-type" onchange="toggleUI()">
+            <option value="mc">Multiple Choice Question</option>
+            <option value="extended">Extended Response Question</option>
+            <option value="narrative">Narrative / Reading Passage</option>
+        </select>
+    </div>
+
+    <div id="narrative-meta" class="input-group" style="display: none; background:#f9f9f9; padding:15px; border:1px dashed #ccc;">
+        <label>Narrative Reference Name (e.g., "Passage: Lab Analysis 1"):</label>
+        <input type="text" id="narrative-name" placeholder="Enter a descriptive name so you can find it later...">
+    </div>
+
+    <div id="question-meta" class="input-group" style="background:#f9f9f9; padding:15px; border:1px dashed #ccc;">
+        <label>Link to Narrative (Optional):</label>
+        <select id="narrative-link">
+            <option value="">-- No Narrative (Standalone Question) --</option>
+        </select>
+    </div>
+
+    <div class="input-group">
+        <label id="main-text-label">Question Text:</label>
+        <div class="editor-wrapper"><div id="main-editor"></div></div>
+    </div>
+
+    <!-- Multiple Choice Options -->
+    <div id="mc-options-container" class="input-group">
+        <label>Answer Choices (Select radio button for the correct answer):</label>
+        <div id="mc-list"></div>
+        <button class="btn" style="background:#eee; border:1px solid #ccc; padding:6px 12px; font-size:9pt; margin-top:10px;" onclick="addMCOption()">+ Add Option</button>
+    </div>
+
+    <!-- Correct Answer / Rubric -->
+    <div id="rubric-container" class="input-group">
+        <label id="rubric-label">Correct Answer / Reasoning / Rubric:</label>
+        <div class="editor-wrapper"><div id="rubric-editor"></div></div>
+    </div>
+
+    <button class="btn btn-primary" onclick="saveToDatabase()" id="save-btn" disabled>Save to Global Databank</button>
+</div>
+
+<script>
+    // --- 1. FIREBASE INITIALIZATION ---
+const firebaseConfig = {
+  apiKey: "AIzaSyCcpjuH1qv9IUDJJQR_5ms18TBRS8UFaV8",
+  authDomain: "scigarage.firebaseapp.com",
+  databaseURL: "https://scigarage-default-rtdb.firebaseio.com",
+  projectId: "scigarage",
+  storageBucket: "scigarage.firebasestorage.app",
+  messagingSenderId: "768658065204",
+  appId: "1:768658065204:web:31e0386ee9c9edfe3ac761"
+    };
+
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const auth = firebase.auth();
+    const storage = firebase.storage();
+
+    // --- 2. AUTHENTICATION ---
+    auth.onAuthStateChanged(user => {
+        if (user) {
+            document.getElementById('auth-status').innerText = `Logged in as ${user.email}`;
+            document.getElementById('auth-status').style.color = "green";
+            document.getElementById('login-btn').style.display = "none";
+            document.getElementById('save-btn').disabled = false;
+            fetchNarratives(); // Load narratives once authed
+        } else {
+            document.getElementById('auth-status').innerText = "Not Authenticated";
+            document.getElementById('auth-status').style.color = "red";
+            document.getElementById('login-btn').style.display = "block";
+            document.getElementById('save-btn').disabled = true;
+        }
+    });
+
+    function login() {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
+        auth.signInWithPopup(provider).catch(err => alert("Login failed: " + err.message));
+    }
+
+  // --- 3. QUILL EDITOR WITH FIREBASE STORAGE IMAGE UPLOAD ---
+    
+    // Master upload function that handles all images
+    async function uploadImageToFirebase(file, quillInstance, index) {
+        quillInstance.insertText(index, '⏳ Uploading image to Storage...', 'user');
+        try {
+            const fileRef = storage.ref(`questionDatabase/${crypto.randomUUID()}_${file.name}`);
+            await fileRef.put(file);
+            const url = await fileRef.getDownloadURL();
+            
+            // Replace loading text with actual live image URL
+            quillInstance.deleteText(index, 31); 
+            quillInstance.insertEmbed(index, 'image', url);
+        } catch (e) {
+            console.error("Upload failed", e);
+            alert("Image upload failed: " + e.message);
+            quillInstance.deleteText(index, 31);
+        }
+    }
+
+    // Intercepts the Toolbar Button
+    function customImageHandler() {
+        const quillInstance = this.quill;
+        const input = document.createElement('input');
+        input.setAttribute('type', 'file');
+        input.setAttribute('accept', 'image/*');
+        input.click();
+
+        input.onchange = () => {
+            const file = input.files[0];
+            if (file) {
+                const range = quillInstance.getSelection(true) || { index: quillInstance.getLength() };
+                uploadImageToFirebase(file, quillInstance, range.index);
+            }
+        };
+    }
+
+    const Size = Quill.import('attributors/style/size');
+    Size.whitelist = ['8pt', '10pt', '11pt', '12pt', '14pt', '18pt', '24pt'];
+    Quill.register(Size, true);
+
+    function getQuillConfig() {
+        return {
+            theme: 'snow',
+            modules: {
+                toolbar: {
+                    container: [
+                        [{ 'size': Size.whitelist }],
+                        ['bold', 'italic', 'underline', 'strike'],
+                        [{ 'script': 'sub'}, { 'script': 'super' }],
+                        ['formula', 'image', 'clean']
+                    ],
+                    handlers: {
+                        image: customImageHandler // Use our custom toolbar handler
+                    }
+                },
+                imageResize: { displaySize: true }
+                // Notice we removed the default imageDrop module entirely because it forces Base64
+            }
+        };
+    }
+
+    // Intercepts Pasting and Drag & Drop
+    function preventBase64(quillInstance) {
+        quillInstance.root.addEventListener('drop', e => {
+            e.preventDefault(); // Stop Quill's default Base64 drop behavior
+            if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
+                const file = e.dataTransfer.files[0];
+                if (file.type.startsWith('image/')) {
+                    const range = quillInstance.getSelection(true) || { index: quillInstance.getLength() };
+                    uploadImageToFirebase(file, quillInstance, range.index);
+                }
+            }
+        });
+
+        quillInstance.root.addEventListener('paste', e => {
+            if (e.clipboardData && e.clipboardData.items) {
+                const items = e.clipboardData.items;
+                for (let i = 0; i < items.length; i++) {
+                    if (items[i].type.startsWith('image/')) {
+                        e.preventDefault(); // Stop Quill's default Base64 paste behavior
+                        const file = items[i].getAsFile();
+                        const range = quillInstance.getSelection(true) || { index: quillInstance.getLength() };
+                        uploadImageToFirebase(file, quillInstance, range.index);
+                        return;
+                    }
+                }
+            }
+        });
+    }
+
+    // Initialize Editors and Attach Interceptors
+    let mainEditor = new Quill('#main-editor', getQuillConfig());
+    let rubricEditor = new Quill('#rubric-editor', getQuillConfig());
+    
+    preventBase64(mainEditor);
+    preventBase64(rubricEditor);
+
+    let mcQuills = [];
+    let optionCount = 0;
+
+    // --- 4. MULTIPLE CHOICE LOGIC ---
+    function addMCOption() {
+        const container = document.getElementById('mc-list');
+        const i = optionCount++;
+        
+        const row = document.createElement('div');
+        row.className = 'mc-row';
+        row.innerHTML = `
+            <div class="option-label">
+                <input type="radio" name="mc-correct" value="${i}" ${i===0 ? 'checked':''}>
+                <span>(${i + 1})</span>
+            </div>
+            <div style="flex:1;" class="editor-wrapper mc-quill"><div id="mc-editor-${i}"></div></div>
+        `;
+        container.appendChild(row);
+
+        let q = new Quill(`#mc-editor-${i}`, getQuillConfig());
+        preventBase64(q);
+        mcQuills.push(q);
+    }
+
+    // Initialize with 4 options
+    for(let i=0; i<4; i++) addMCOption();
+
+    // --- 5. UI TOGGLES ---
+    function toggleUI() {
+        const type = document.getElementById('item-type').value;
+        const isMC = type === 'mc';
+        const isNarrative = type === 'narrative';
+
+        document.getElementById('narrative-meta').style.display = isNarrative ? 'block' : 'none';
+        document.getElementById('question-meta').style.display = isNarrative ? 'none' : 'block';
+        document.getElementById('mc-options-container').style.display = isMC ? 'block' : 'none';
+        document.getElementById('rubric-container').style.display = isNarrative ? 'none' : 'block';
+        
+        document.getElementById('main-text-label').innerText = isNarrative ? "Narrative Passage Text:" : "Question Text:";
+    }
+
+    // --- 6. LIVE NARRATIVE FETCHING ---
+    function fetchNarratives() {
+        // Listen to the questionDatabase for anything tagged as "narrative"
+        db.ref('questionDatabase').orderByChild('type').equalTo('narrative').on('value', snapshot => {
+            const select = document.getElementById('narrative-link');
+            // Keep the current selection if possible
+            const currentSelection = select.value;
+            
+            select.innerHTML = '<option value="">-- No Narrative (Standalone Question) --</option>';
+            
+            if (snapshot.exists()) {
+                snapshot.forEach(child => {
+                    const nar = child.val();
+                    select.innerHTML += `<option value="${nar.uuid}">${nar.narrativeName}</option>`;
+                });
+                select.value = currentSelection; // Restore selection
+            }
+        });
+    }
+
+    // --- 7. SAVE LOGIC ---
+    async function saveToDatabase() {
+        const btn = document.getElementById('save-btn');
+        const type = document.getElementById('item-type').value;
+        
+        // Build payload
+        let payload = {
+            uuid: crypto.randomUUID(), // Industry standard Unique ID
+            type: type,
+            question: mainEditor.root.innerHTML,
+            timestamp: firebase.database.ServerValue.TIMESTAMP
+        };
+
+        if (type === 'narrative') {
+            const name = document.getElementById('narrative-name').value.trim();
+            if (!name) return alert("Please provide a Narrative Reference Name.");
+            payload.narrativeName = name;
+        } else {
+            payload.linkedNarrativeId = document.getElementById('narrative-link').value || null;
+            payload.reasoning = rubricEditor.root.innerHTML;
+
+            if (type === 'mc') {
+                payload.options = mcQuills.map(q => q.root.innerHTML);
+                const selectedRadio = document.querySelector('input[name="mc-correct"]:checked');
+                if (!selectedRadio) return alert("Please select a correct multiple choice option.");
+                payload.correctAnswer = payload.options[parseInt(selectedRadio.value)];
+            }
+        }
+
+        try {
+            btn.innerText = "⏳ Saving..."; btn.disabled = true;
+            await db.ref('questionDatabase/' + payload.uuid).set(payload);
+            
+            // Reset UI on success
+            btn.innerText = "✅ Saved to Databank!";
+            setTimeout(() => {
+                mainEditor.setContents([]);
+                rubricEditor.setContents([]);
+                if(type === 'mc') mcQuills.forEach(q => q.setContents([]));
+                document.getElementById('narrative-name').value = '';
+                btn.innerText = "Save to Global Databank";
+                btn.disabled = false;
+            }, 2000);
+
+        } catch (error) {
+            console.error(error);
+            alert("Error saving: " + error.message);
+            btn.innerText = "Save to Global Databank"; btn.disabled = false;
+        }
+    }
+</script>
+</body>
+</html>

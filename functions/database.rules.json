@@ -3,30 +3,50 @@
     "ActiveSessions": {
       ".indexOn": ["expires"]
     },
+
     "teacherGradebook": {
       ".read": "auth != null && (auth.token.email === 'pianodemon88@gmail.com' || auth.token.email === 'kjosephs@ocsdny.org')",
       ".write": "auth != null && (auth.token.email === 'pianodemon88@gmail.com' || auth.token.email === 'kjosephs@ocsdny.org')",
       "$periodFolder": {
         "$assignmentFolder": {
           "$studentHash": {
-            // Students can only read their OWN data if they have the right Salted Hash
+            // Students can read their own graded state via Salted Hash
             ".read": "true",
-            // Students CANNOT write directly to the Gradebook.
-            // Your Cloud Function and Dashboard will bypass this and still work!
-            "isCorrect": {
-              ".write": "false"
-            },
-            "score": {
-              ".write": "false"
-            },
-            "unlocked": {
-              ".write": "false"
-            },
-            "teacherComment": {
-              ".write": "false"
-            }
+            // Direct student browser writes are locked; Cloud Function/Admin SDK handles all updates
+            "isCorrect": { ".write": "false" },
+            "score": { ".write": "false" },
+            "unlocked": { ".write": "false" },
+            "teacherComment": { ".write": "false" }
           }
         }
+      }
+    },
+
+    // Teacher Scheduler & Student Schedule Viewer Rules
+    "schedulerAssignments": {
+      ".read": "true",
+      ".write": "auth != null && (auth.token.email === 'pianodemon88@gmail.com' || auth.token.email === 'kjosephs@ocsdny.org')"
+    },
+    "calendarConfig": {
+      ".read": "true",
+      ".write": "auth != null && (auth.token.email === 'pianodemon88@gmail.com' || auth.token.email === 'kjosephs@ocsdny.org')"
+    },
+    "bellringers": {
+      ".read": "true",
+      ".write": "auth != null && (auth.token.email === 'pianodemon88@gmail.com' || auth.token.email === 'kjosephs@ocsdny.org')"
+    },
+
+    // Video Guides Public Questions Node
+    "FS_Video_Guides": {
+      ".read": "true",
+      ".write": "auth != null && (auth.token.email === 'pianodemon88@gmail.com' || auth.token.email === 'kjosephs@ocsdny.org')"
+    },
+
+    // Live SSE Syncing Bridges for Video Guides & Worksheets
+    "sessionBridge": {
+      "$sessionToken": {
+        ".read": "true",
+        ".write": "false"
       }
     },
     "liveUpdates": {
@@ -35,6 +55,7 @@
         ".write": "false"
       }
     },
+
     "StudentReportCards": {
       ".read": "auth != null && (auth.token.email === 'pianodemon88@gmail.com' || auth.token.email === 'kjosephs@ocsdny.org')",
       ".write": "auth != null && (auth.token.email === 'pianodemon88@gmail.com' || auth.token.email === 'kjosephs@ocsdny.org')",

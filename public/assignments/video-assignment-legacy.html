@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="origin-when-cross-origin">
+  <title>Loading Assignment...</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --gf-purple: #673ab7;
+      --gf-purple-dark: #5e35b1;
+      --gf-purple-light: #ede7f6;
+      --gf-bg: #f0ebf8;
+      --gf-card-bg: #ffffff;
+      --gf-text-main: #202124;
+      --gf-border: #dadce0;
+      --gf-marker: #fb8c00;
+      --gf-marker-done: #0f9d58;
+      --gf-error: #d93025;
+    }
+
+    /* ANTI-COPY & HIGHLIGHT PROTECTION */
+    .no-select {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+
+    body {
+      font-family: 'Roboto', ui-sans-serif, system-ui, -apple-system, sans-serif;
+      background-color: var(--gf-bg);
+      color: var(--gf-text-main);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    .form-wrapper { width: 100%; max-width: 760px; display: flex; flex-direction: column; gap: 16px; }
+    
+    .header-card {
+      background: var(--gf-card-bg); border-radius: 8px; border: 1px solid var(--gf-border);
+      border-top: 10px solid var(--gf-purple); padding: 24px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    }
+
+    .player-card {
+      background: #000; border-radius: 8px; border: 1px solid var(--gf-border);
+      overflow: hidden; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12); position: relative; user-select: none;
+      transition: all 0.2s ease-in-out;
+    }
+
+    .video-viewport { position: relative; width: 100%; aspect-ratio: 16 / 10; background: #000; }
+    video { width: 100%; height: 100%; display: block; outline: none; }
+
+    /* Closed Caption Elevation */
+    video::cue {
+      background-color: rgba(15, 23, 42, 0.88);
+      color: #ffffff;
+      font-size: 0.95rem;
+      line-height: 1.35;
+      border-radius: 4px;
+    }
+
+    video::-webkit-media-text-track-container {
+      bottom: 58px !important;
+    }
+
+    /* --- THEATER / MAXIMIZED VIDEO MODE (No OS Fullscreen Exit) --- */
+    .player-card.video-maximized {
+      position: fixed !important;
+      inset: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      max-width: none !important;
+      z-index: 120 !important;
+      border-radius: 0 !important;
+      border: none !important;
+      display: flex !important;
+      flex-direction: column !important;
+      background: #000 !important;
+    }
+
+    .player-card.video-maximized .video-viewport {
+      flex: 1 1 auto !important;
+      height: calc(100vh - 65px) !important;
+      aspect-ratio: auto !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
+
+    .player-card.video-maximized video {
+      max-width: 100% !important;
+      max-height: 100% !important;
+      object-fit: contain !important;
+    }
+
+    .player-card.video-maximized .custom-controls {
+      flex: 0 0 auto !important;
+      padding: 10px 24px 14px 24px !important;
+      background: rgba(15, 23, 42, 0.95) !important;
+    }
+
+    .player-card.video-maximized video::-webkit-media-text-track-container {
+      bottom: 75px !important;
+    }
+
+    /* Controls Bar */
+    .custom-controls { background: linear-gradient(180deg, rgba(20,20,20,0.85) 0%, #141414 100%); padding: 8px 14px 10px 14px; display: flex; flex-direction: column; gap: 8px; }
+    
+    .timeline-container { position: relative; width: 100%; height: 18px; display: flex; align-items: center; cursor: pointer; }
+    .timeline-track { position: relative; width: 100%; height: 6px; background: rgba(255, 255, 255, 0.28); border-radius: 3px; }
+    .timeline-progress { position: absolute; left: 0; top: 0; height: 100%; width: 0%; background: var(--gf-purple); border-radius: 3px; pointer-events: none; }
+    .timeline-thumb { position: absolute; top: 50%; left: 0%; width: 14px; height: 14px; background: #ffffff; border: 2px solid var(--gf-purple); border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; transition: transform 0.1s ease; z-index: 10; }
+    .timeline-container:hover .timeline-thumb { transform: translate(-50%, -50%) scale(1.25); }
+    
+    .timeline-marker { position: absolute; top: 50%; width: 10px; height: 10px; background: var(--gf-marker); border: 1.5px solid #ffffff; border-radius: 50%; transform: translate(-50%, -50%); z-index: 5; transition: all 0.2s ease; pointer-events: auto; cursor: pointer; }
+    .timeline-marker:hover { transform: translate(-50%, -50%) scale(1.5); }
+    .timeline-marker.completed { background: var(--gf-marker-done); }
+
+    .controls-row { display: flex; align-items: center; justify-content: space-between; color: #ffffff; }
+    .controls-left, .controls-right { display: flex; align-items: center; gap: 12px; }
+    .ctrl-btn { background: none; border: none; color: #ffffff; cursor: pointer; display: flex; padding: 4px; border-radius: 4px; transition: background 0.15s ease, color 0.15s ease; }
+    .ctrl-btn:hover { background: rgba(255, 255, 255, 0.15); }
+    .ctrl-btn svg { width: 20px; height: 20px; fill: currentColor; }
+    .ctrl-btn.active { color: #b388ff; }
+    .time-display { font-size: 0.8rem; font-family: monospace; color: #e0e0e0; }
+
+    /* Checkpoint Card */
+    .checkpoint-card { display: none; background: var(--gf-card-bg); border-radius: 8px; border: 1px solid var(--gf-border); border-left: 6px solid var(--gf-purple); padding: 24px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12); animation: formSlideIn 0.25s ease-out; }
+    @keyframes formSlideIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+    .question-block { margin-bottom: 24px; padding: 12px; border-radius: 6px; transition: background-color 0.2s; }
+    .question-block.q-correct { background-color: #f0fdf4; border-left: 4px solid #16a34a; }
+    .question-block.q-incorrect { background-color: #fef2f2; border-left: 4px solid #dc2626; }
+    .question-title { font-size: 0.95rem; font-weight: 500; margin-bottom: 12px; color: var(--gf-text-main); }
+    .required-star { color: var(--gf-error); margin-left: 4px; }
+    .error-banner { display: none; color: var(--gf-error); font-size: 0.85rem; margin-bottom: 16px; font-weight: 500; }
+
+    /* Answer Review Tinting */
+    .ans-correct { background-color: #d1fae5 !important; border: 1px solid #34d399 !important; font-weight: 500; }
+    .ans-incorrect { background-color: #fee2e2 !important; border: 1px solid #f87171 !important; font-weight: 500; }
+
+    /* Floating Resubmit Button */
+    #floatingResubmitBtn {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      z-index: 1000;
+      display: none;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+<body class="no-select">
+
+  <!-- Floating Resubmit Button -->
+  <button id="floatingResubmitBtn" type="button" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-full transition-transform transform active:scale-95 flex items-center gap-2">
+    <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+    <span>Resubmit Answers</span>
+  </button>
+
+  <!-- Lockout Overlay -->
+  <div id="lockoutModal" class="fixed inset-0 bg-white hidden flex flex-col items-center justify-center z-[200] p-6 text-center">
+    <div class="bg-white rounded-xl p-8 max-w-md shadow-xl border border-gray-200 border-t-8 border-red-600">
+      <h2 class="text-3xl font-bold text-gray-900 mb-4">Assignment Locked</h2>
+      <p id="lockoutMessage" class="text-gray-600 text-base mb-6 leading-relaxed">You have reached the maximum allowed sessions (3). Your assignment has been locked.</p>
+      <p class="text-gray-800 font-bold">Please contact your teacher for assistance.</p>
+    </div>
+  </div>
+
+  <!-- Gatekeeper: Fullscreen Startup & Continue Modal -->
+  <div id="startModal" class="fixed inset-0 bg-white flex flex-col items-center justify-center z-[150] p-6 text-center">
+    <div id="startCard" class="hidden bg-white rounded-xl p-8 max-w-md shadow-xl border border-gray-200 border-t-8 border-purple-600">
+      <h2 id="startModalHeading" class="text-2xl font-bold text-gray-900 mb-4">Loading...</h2>
+      <p id="startModalDesc" class="text-gray-600 text-sm mb-8 leading-relaxed">
+        This video guide requires <strong>Full Screen Mode</strong>. You are allowed three sessions to complete this assignment. If you exit the assignment by exiting the tab or switching windows, this will count as one session.
+      </p>
+      <button id="enterFullscreenBtn" type="button" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-colors text-base">
+        Begin Assignment (Enter Fullscreen)
+      </button>
+    </div>
+  </div>
+
+  <!-- Warning Modal: Shown when pressing Esc to exit browser fullscreen -->
+  <div id="fullscreenWarningModal" class="fixed inset-0 bg-white hidden flex flex-col items-center justify-center z-[140] p-6 text-center">
+    <div class="bg-white rounded-xl p-8 max-w-md shadow-xl border border-gray-200 border-t-8 border-purple-600 text-center">
+      <h3 class="text-2xl font-bold text-gray-900 mb-4">Session Paused</h3>
+      <p id="fullscreenWarningText" class="text-gray-600 text-base mb-8 leading-relaxed">
+        Do you want to end this session? You will have only 2 more session(s) after this if you choose to leave.
+      </p>
+      <div class="flex flex-col sm:flex-row gap-4">
+        <button id="resumeFullscreenBtn" type="button" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition-colors text-sm text-center">
+          Return to Assignment
+        </button>
+        <button id="confirmLeaveBtn" type="button" class="flex-1 bg-gray-100 hover:bg-red-50 hover:text-red-700 text-gray-700 font-bold py-3 px-4 rounded-lg transition-colors text-sm text-center border border-gray-300 shadow-sm">
+          Leave Assignment
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-wrapper">
+    <div class="header-card">
+      <div class="mb-4 flex items-center justify-between">
+        <div class="bg-gray-200 text-gray-800 text-xs font-bold tracking-wider uppercase px-2 py-1 rounded-sm">Video Guide</div>
+        <div id="loader" class="text-xs font-bold text-gray-500 bg-gray-100 px-3 py-1 rounded-full border border-gray-200">Connecting...</div>
+      </div>
+      <h1 id="assignmentTitle" class="text-3xl font-normal text-gray-900 mb-4">Loading...</h1>
+      <div class="bg-purple-50 border-l-4 border-purple-500 p-4 rounded text-sm text-purple-900 font-medium">
+        <p>You must complete this assignment in full-screen mode. You are allowed 3 sessions to complete it. Exiting fullscreen, switching windows, or clicking away will count as one session.</p>
+      </div>
+    </div>
+
+    <!-- Video Card -->
+    <div id="playerCard" class="player-card">
+      <div class="video-viewport">
+        <video id="forensicPlayer" playsinline crossorigin="anonymous" disablePictureInPicture oncontextmenu="return false;" referrerpolicy="origin-when-cross-origin">
+  <track id="captionTrack" label="English" kind="captions" srclang="en" src="">
+</video>
+      </div>
+
+      <div class="custom-controls" oncontextmenu="return false;">
+        <div id="timelineContainer" class="timeline-container">
+          <div class="timeline-track" id="timelineTrack">
+            <div id="timelineProgress" class="timeline-progress"></div>
+            <div id="timelineThumb" class="timeline-thumb"></div>
+          </div>
+        </div>
+
+        <div class="controls-row">
+          <div class="controls-left">
+            <button id="playBtn" class="ctrl-btn" type="button" aria-label="Play">
+              <svg id="playIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+              <svg id="pauseIcon" viewBox="0 0 24 24" style="display: none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+            </button>
+            <div class="time-display"><span id="currentTimeDisplay">0:00</span> / <span id="durationDisplay">0:00</span></div>
+          </div>
+          <div class="controls-right">
+            <button id="ccBtn" class="ctrl-btn" type="button" aria-label="Closed Captions">
+              <svg viewBox="0 0 24 24"><path d="M19 4H5c-1.11 0-2 .9-2 2v12c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-8 7H9.5v-.5h-2v3h2V13H11v1c0 .55-.45 1-1 1H7c-.55 0-1-.45-1-1v-4c0-.55.45-1 1-1h3c.55 0 1 .45 1 1v1zm7 0h-1.5v-.5h-2v3h2V13H18v1c0 .55-.45 1-1 1h-3c-.55 0-1-.45-1-1v-4c0-.55.45-1 1-1h3c.55 0 1 .45 1 1v1z"/></svg>
+            </button>
+            <button id="fullscreenBtn" class="ctrl-btn" type="button" aria-label="Expand Video">
+              <svg id="expandIcon" viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+              <svg id="compressIcon" viewBox="0 0 24 24" style="display: none;"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Review Navigation Bar: Jump directly to question sections -->
+    <div id="sectionNavCard" class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm hidden">
+      <div class="flex items-center justify-between mb-3 border-b border-gray-100 pb-2">
+        <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Review Checkpoints</span>
+        <span class="text-xs text-purple-700 font-medium">Click any section to review questions</span>
+      </div>
+      <div id="sectionNavButtons" class="flex flex-wrap gap-2"></div>
+    </div>
+
+    <!-- Results Score Card Container -->
+    <div id="resultsCard" class="header-card text-center hidden"></div>
+
+    <!-- Dynamic JIT Question Card -->
+    <div id="checkpointCard" class="checkpoint-card">
+      <div class="flex justify-between items-center mb-6 pb-2 border-b border-gray-200">
+        <h2 class="text-lg font-medium text-gray-900">Checkpoint Assignment</h2>
+        <span id="checkpointBadge" class="text-xs bg-purple-100 text-purple-700 font-bold px-2 py-1 rounded uppercase"></span>
+      </div>
+
+      <div id="dynamic-questions"></div>
+
+      <div id="errorText" class="error-banner">Please select an answer for all questions before proceeding.</div>
+      
+      <!-- Footer: Submit & Continue is hidden during review mode -->
+      <div id="checkpointFooter" class="flex justify-between items-center mt-4">
+        <span id="reviewModeNotice" class="text-xs text-gray-500 font-medium hidden">Changes saved automatically. Use the floating button below to submit.</span>
+        <button id="submitCheckpointBtn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded shadow transition-colors ml-auto" type="button">Submit &amp; Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const RTDB_URL = "https://scigarage-default-rtdb.firebaseio.com";
+    const PROXY_URL = "https://us-central1-scigarage.cloudfunctions.net/secureProxy";
+    const PORTAL_BASE_URL = "https://script.google.com/a/macros/ocsdny.org/s/AKfycbyGERzWuMoN9x4cP1WWY25P5EqQJlnQMagSOdUvSS2kVtrCx7h1BEsdcc3wmUJSZeSu/exec";
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    const assignmentCode = urlParams.get('assignment');
+
+    let studentConfig = null;
+    let localState = {};
+    let timelineMeta = []; 
+    let activeCheckpointTime = null;
+    let activeQuestions = [];
+    let isDraggingTimeline = false;
+    let lastSavedTime = 0;
+    let markersDrawn = false;
+    
+    // Grading State Variables
+    let isGradedMode = false;
+    let currentIncorrect = [];
+    let gradedScore = 0;
+    let gradedTotal = 0;
+    let attemptsRemaining = 3;
+
+    // Security tracking
+    let tabLeaves = 0;
+    let isLocked = false;
+    let hasStarted = false;
+    let isSessionEnded = false;
+    let isHandlingFullscreen = false;
+
+    const playerCard = document.getElementById('playerCard');
+    const player = document.getElementById('forensicPlayer');
+    const resultsCard = document.getElementById('resultsCard');
+    const sectionNavCard = document.getElementById('sectionNavCard');
+    const sectionNavButtons = document.getElementById('sectionNavButtons');
+    const floatingResubmitBtn = document.getElementById('floatingResubmitBtn');
+    const submitCheckpointBtn = document.getElementById('submitCheckpointBtn');
+    const reviewModeNotice = document.getElementById('reviewModeNotice');
+    const timelineContainer = document.getElementById('timelineContainer');
+    const timelineTrack = document.getElementById('timelineTrack');
+    const timelineProgress = document.getElementById('timelineProgress');
+    const timelineThumb = document.getElementById('timelineThumb');
+    const currentTimeDisplay = document.getElementById('currentTimeDisplay');
+    const durationDisplay = document.getElementById('durationDisplay');
+    const expandIcon = document.getElementById('expandIcon');
+    const compressIcon = document.getElementById('compressIcon');
+    let maxWatchedTime = 0;
+
+    // --- ANTI-COPY RESTRICTIONS ---
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('copy', e => {
+      e.clipboardData.setData('text/plain', 'Copying is disabled for security purposes.');
+      e.preventDefault();
+    });
+
+    // --- BROWSER FULLSCREEN CONTROLS ---
+    async function requestAppFullscreen() {
+      try {
+        if (document.documentElement.requestFullscreen) {
+          await document.documentElement.requestFullscreen();
+        } else if (document.documentElement.webkitRequestFullscreen) {
+          await document.documentElement.webkitRequestFullscreen();
+        }
+      } catch (err) {
+        console.warn("Fullscreen request bypassed:", err);
+      }
+    }
+
+    document.getElementById('enterFullscreenBtn').addEventListener('click', async () => {
+      await requestAppFullscreen();
+      document.getElementById('startModal').classList.add('hidden');
+      hasStarted = true;
+    });
+
+    document.getElementById('resumeFullscreenBtn').addEventListener('click', async () => {
+      document.getElementById('fullscreenWarningModal').classList.add('hidden');
+      isHandlingFullscreen = true;
+      setTimeout(() => { isHandlingFullscreen = false; }, 600);
+      await requestAppFullscreen();
+    });
+
+    document.getElementById('confirmLeaveBtn').addEventListener('click', () => {
+      endSessionPermanently('User clicked Leave', true);
+    });
+
+    // --- VIDEO THEATER / MAXIMIZE TOGGLE ---
+    function toggleVideoMaximized() {
+      const isMax = playerCard.classList.toggle('video-maximized');
+      if (isMax) {
+        expandIcon.style.display = 'none';
+        compressIcon.style.display = 'block';
+      } else {
+        expandIcon.style.display = 'block';
+        compressIcon.style.display = 'none';
+      }
+    }
+    document.getElementById('fullscreenBtn').addEventListener('click', toggleVideoMaximized);
+
+    function syncSecurityState() {
+      fetch(PROXY_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token: studentConfig.sessionToken,
+          action: "saveSecurityState",
+          tabLeaves: tabLeaves,
+          isLocked: isLocked
+        }),
+        keepalive: true
+      }).catch(err => console.error("Security sync failed:", err));
+    }
+
+    function endSessionPermanently(reason, attemptClose = false) {
+      if (!hasStarted || isLocked || isSessionEnded) return;
+
+      isSessionEnded = true;
+      player.pause();
+      tabLeaves++;
+
+      document.getElementById('fullscreenWarningModal').classList.add('hidden');
+
+      if (tabLeaves >= 3) {
+        isLocked = true;
+      }
+
+      fetch(PROXY_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token: studentConfig.sessionToken,
+          action: "endSession",
+          tabLeaves: tabLeaves,
+          isLocked: isLocked
+        }),
+        keepalive: true
+      }).catch(err => console.error("Session revocation failed:", err));
+
+      syncProgress(true);
+
+      if (isLocked) {
+        document.getElementById('lockoutModal').classList.remove('hidden');
+        return;
+      }
+
+      if (attemptClose) {
+        window.close();
+      }
+
+      const remaining = Math.max(0, 3 - tabLeaves);
+      const restartUrl = `${PORTAL_BASE_URL}?page=video-assignment&assignment=${encodeURIComponent(assignmentCode)}`;
+
+      document.body.innerHTML = `
+        <div class="min-h-screen w-full flex flex-col items-center justify-center bg-white p-6 text-center">
+          <div class="bg-white rounded-xl p-8 max-w-md shadow-xl border border-gray-200 border-t-8 border-purple-600">
+            <h2 class="text-3xl font-bold text-gray-900 mb-3">Session Ended</h2>
+            <p class="text-gray-600 text-sm mb-6 leading-relaxed">
+              Because you left the assignment window, this session has ended. Your progress has been saved.<br><br>
+              You have <strong>${remaining} session(s) remaining</strong>.
+            </p>
+            <a href="${restartUrl}" class="inline-block w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition-colors text-sm mb-4">
+              Click HERE to Restart Assignment
+            </a>
+            <p class="text-xs text-gray-400">Or close this browser tab if you are done for now.</p>
+          </div>
+        </div>`;
+    }
+
+    function handleFullscreenChange() {
+      isHandlingFullscreen = true;
+      setTimeout(() => { isHandlingFullscreen = false; }, 600);
+
+      const isFullscreen = Boolean(document.fullscreenElement || document.webkitFullscreenElement);
+      if (!isFullscreen && hasStarted && !isLocked && !isSessionEnded) {
+        if (playerCard.classList.contains('video-maximized')) {
+          playerCard.classList.remove('video-maximized');
+          expandIcon.style.display = 'block';
+          compressIcon.style.display = 'none';
+        }
+        player.pause();
+
+        const remainingAfter = Math.max(0, 2 - tabLeaves);
+        document.getElementById('fullscreenWarningText').innerHTML = 
+          `Do you want to end this session? You will have <strong>${remainingAfter} more session(s)</strong> after this if you choose to leave.<br><br>` +
+          `<span class="text-xs text-gray-500">If you leave this tab or enter another program, you will lose this session as well.</span>`;
+        document.getElementById('fullscreenWarningModal').classList.remove('hidden');
+      }
+    }
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && hasStarted && !isLocked && !isSessionEnded) {
+        endSessionPermanently('Switched Tabs', false);
+      }
+    });
+
+    window.addEventListener('blur', () => {
+      if (!isHandlingFullscreen && hasStarted && !isLocked && !isSessionEnded) {
+        endSessionPermanently('Window Blurred', false);
+      }
+    });
+
+    window.addEventListener('beforeunload', () => {
+      syncProgress(true);
+    });
+
+    function formatTime(sec) {
+      if (isNaN(sec) || sec === null) return "0:00";
+      const m = Math.floor(sec / 60);
+      const s = Math.floor(sec % 60);
+      return `${m}:${s < 10 ? '0' : ''}${s}`;
+    }
+
+    function isCheckpointComplete(time) {
+      const entry = timelineMeta.find(item => item.time === Number(time));
+      if (!entry || !entry.qIds) return false;
+      return entry.qIds.every(id => {
+        const qData = localState[`q${id}`] || localState[id];
+        return qData && qData.selection !== null && qData.selection !== undefined;
+      });
+    }
+
+    function getNextIncompleteCheckpoint() {
+      for (let item of timelineMeta) {
+        if (!isCheckpointComplete(item.time)) return item.time;
+      }
+      return Infinity;
+    }
+
+    function getAllowedScrubLimit() {
+      // In review mode, unlock the entire timeline for free movement
+      if (isGradedMode) return player.duration || Infinity;
+      const nextBarrier = getNextIncompleteCheckpoint();
+      return Math.min(maxWatchedTime, nextBarrier);
+    }
+
+    function updateProgressUI(time) {
+      if (!player.duration || isNaN(player.duration)) return;
+      const pct = Math.min(100, Math.max(0, (time / player.duration) * 100));
+      timelineProgress.style.width = `${pct}%`;
+      timelineThumb.style.left = `${pct}%`;
+      currentTimeDisplay.textContent = formatTime(time);
+    }
+
+    function drawMarkers() {
+      if (!player.duration || isNaN(player.duration) || timelineMeta.length === 0) return;
+      document.querySelectorAll('.timeline-marker').forEach(m => m.remove());
+
+      timelineMeta.forEach(item => {
+        const pct = (item.time / player.duration) * 100;
+        const marker = document.createElement('div');
+        marker.className = 'timeline-marker';
+        marker.id = `marker-${item.time}`;
+        marker.style.left = `${pct}%`;
+        
+        marker.addEventListener('click', (e) => {
+          e.stopPropagation(); 
+          const allowed = getAllowedScrubLimit();
+          if (item.time <= allowed || isGradedMode) {
+            player.currentTime = item.time;
+            updateProgressUI(item.time);
+            triggerCheckpoint(item.time, true);
+          }
+        });
+
+        if (isCheckpointComplete(item.time)) marker.classList.add('completed');
+        timelineTrack.appendChild(marker);
+      });
+
+      durationDisplay.textContent = formatTime(player.duration);
+      markersDrawn = true;
+    }
+
+    function refreshMarkers() {
+      timelineMeta.forEach(item => {
+        const m = document.getElementById(`marker-${item.time}`);
+        if (m && isCheckpointComplete(item.time)) m.classList.add('completed');
+      });
+    }
+
+    // --- SECTION NAVIGATION BAR IN REVIEW MODE ---
+    function renderSectionNav() {
+      if (!sectionNavButtons || timelineMeta.length === 0) return;
+      sectionNavButtons.innerHTML = '';
+
+      const threshold = Math.ceil(gradedTotal * 0.8);
+      const showColors = isGradedMode && (gradedScore >= threshold);
+
+      timelineMeta.forEach((item, idx) => {
+        let label = `Section ${idx + 1}`;
+        if (item.qIds && item.qIds.length > 0) {
+          const numericIds = item.qIds.map(Number).filter(n => !isNaN(n)).sort((a, b) => a - b);
+          if (numericIds.length === 1) {
+            label = `Question ${numericIds[0]}`;
+          } else if (numericIds.length > 1) {
+            label = `Q${numericIds[0]}–Q${numericIds[numericIds.length - 1]}`;
+          }
+        }
+
+        let statusIndicator = '';
+        if (showColors && item.qIds) {
+          const hasWrong = item.qIds.some(id => currentIncorrect.includes(id.toString()));
+          if (hasWrong) {
+            statusIndicator = `<span class="w-2 h-2 rounded-full bg-red-500 inline-block"></span>`;
+          } else {
+            statusIndicator = `<span class="w-2 h-2 rounded-full bg-green-500 inline-block"></span>`;
+          }
+        }
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.id = `nav-sec-${item.time}`;
+        btn.className = getNavButtonClass(activeCheckpointTime === item.time);
+        btn.innerHTML = `${statusIndicator}<span>${label}</span>`;
+
+        btn.addEventListener('click', () => {
+          player.currentTime = item.time;
+          updateProgressUI(item.time);
+          triggerCheckpoint(item.time, true);
+        });
+
+        sectionNavButtons.appendChild(btn);
+      });
+    }
+
+    function getNavButtonClass(isActive) {
+      if (isActive) {
+        return "px-3.5 py-2 rounded-lg text-xs md:text-sm font-bold bg-purple-600 text-white shadow-sm flex items-center gap-2 transition-all transform scale-105";
+      }
+      return "px-3.5 py-2 rounded-lg text-xs md:text-sm font-bold bg-purple-50 text-purple-800 hover:bg-purple-100 border border-purple-200 flex items-center gap-2 transition-all";
+    }
+
+    function updateActiveNavButton(time) {
+      timelineMeta.forEach(item => {
+        const btn = document.getElementById(`nav-sec-${item.time}`);
+        if (btn) {
+          btn.className = getNavButtonClass(item.time === time);
+        }
+      });
+    }
+
+    async function init() {
+      const loader = document.getElementById('loader');
+
+      if (!token || !assignmentCode) {
+        loader.innerText = "Error: Missing Gateway Token";
+        loader.className = "text-xs font-bold text-red-600 bg-red-50 px-3 py-1 rounded-full border border-red-200";
+        return;
+      }
+
+      try {
+        const guideRes = await fetch(`${RTDB_URL}/assignments/${assignmentCode}.json`);
+        const guideData = await guideRes.json();
+
+        if (!guideData) throw new Error("Assignment not found in RTDB");
+
+if (guideData.mediaSources) {
+  player.src = guideData.mediaSources.mp4;
+  document.getElementById('captionTrack').src = guideData.mediaSources.vtt;
+  player.load(); 
+}        
+
+document.title = guideData.title || assignmentCode;
+document.getElementById('assignmentTitle').innerText = guideData.title || assignmentCode;
+
+        if (guideData.timeline) {
+          timelineMeta = guideData.timeline.sort((a, b) => a.time - b.time);
+        } else if (guideData.questions) {
+          const map = {};
+          guideData.questions.forEach(q => {
+            if (!map[q.time]) map[q.time] = [];
+            map[q.time].push(q.id);
+          });
+          timelineMeta = Object.keys(map).map(t => ({ time: Number(t), qIds: map[t] })).sort((a,b) => a.time - b.time);
+        }
+
+        const sRes = await fetch(PROXY_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: "initVideo", token: token, assignment: assignmentCode })
+        });
+
+        if (!sRes.ok) throw new Error("Proxy Authentication Failed");
+        const sData = await sRes.json();
+
+        studentConfig = sData;
+        localState = sData.savedState || {};
+        maxWatchedTime = localState.maxWatchedTime || 0;
+        
+        tabLeaves = Number(localState.tabLeaves) || 0;
+        isLocked = Boolean(localState.isLocked) || false;
+        attemptsRemaining = (localState.attemptsLeft !== undefined) ? localState.attemptsLeft : 3;
+
+        loader.classList.add('hidden');
+
+        if (isLocked || tabLeaves >= 3 || attemptsRemaining <= 0) {
+          document.getElementById('startModal').classList.add('hidden');
+          if (attemptsRemaining <= 0) {
+            document.getElementById('lockoutMessage').innerText = "You have used all of your submission attempts. This assignment is now locked.";
+          }
+          document.getElementById('lockoutModal').classList.remove('hidden');
+          return;
+        }
+
+        if (maxWatchedTime > 0) {
+  const currentSessionNum = tabLeaves + 1;
+  document.getElementById('startModalHeading').innerText = `Resume ${guideData.title || assignmentCode}`;
+  document.getElementById('startModalDesc').innerHTML = 
+    `Welcome back! Your previous progress has been saved. You are about to begin <strong>Session ${currentSessionNum} of 3</strong>.<br><br>This video guide requires <strong>Full Screen Mode</strong>. If you exit the assignment by closing the tab or switching windows, this will end your current session.`;
+  document.getElementById('enterFullscreenBtn').innerText = "Continue Assignment (Enter Fullscreen)";
+} else {
+  document.getElementById('startModalHeading').innerText = guideData.title || assignmentCode;
+  document.getElementById('startModalDesc').innerHTML = 
+    `This video guide requires <strong>Full Screen Mode</strong>. You are allowed three sessions to complete this assignment. If you exit the assignment by exiting the tab or switching windows, this will count as one session.`;
+  document.getElementById('enterFullscreenBtn').innerText = "Begin Assignment (Enter Fullscreen)";
+}
+
+        document.getElementById('startCard').classList.remove('hidden');
+
+        if (player.readyState >= 1) {
+          drawMarkers();
+          if (maxWatchedTime > 0) {
+            player.currentTime = Math.min(maxWatchedTime, getNextIncompleteCheckpoint());
+            updateProgressUI(player.currentTime);
+          }
+        } else {
+          player.addEventListener('loadedmetadata', () => {
+            drawMarkers();
+            if (maxWatchedTime > 0) {
+              player.currentTime = Math.min(maxWatchedTime, getNextIncompleteCheckpoint());
+              updateProgressUI(player.currentTime);
+            }
+          });
+        }
+
+        startSSEListener();
+      } catch (err) {
+        console.error("Authentication Error:", err);
+        document.getElementById('startModal').classList.add('hidden');
+        
+        const restartUrl = `${PORTAL_BASE_URL}?page=video-assignment&assignment=${encodeURIComponent(assignmentCode)}`;
+
+        document.body.innerHTML = `
+          <div class="min-h-screen w-full flex flex-col items-center justify-center bg-white p-6 text-center">
+            <div class="bg-white rounded-xl p-8 max-w-md shadow-xl border border-gray-200 border-t-8 border-yellow-500">
+              <h2 class="text-2xl font-bold text-gray-900 mb-3">Session Expired</h2>
+              <p class="text-gray-600 text-sm mb-6 leading-relaxed">
+                This assignment session has ended or expired.
+              </p>
+              <a href="${restartUrl}" class="inline-block w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition-colors text-sm mb-3">
+                Click HERE to Restart Assignment
+              </a>
+            </div>
+          </div>`;
+      }
+    }
+
+    async function triggerCheckpoint(timeKey, forceOpen = false) {
+      if (isCheckpointComplete(timeKey) && !forceOpen) return;
+      if (activeCheckpointTime === timeKey) return; 
+
+      activeCheckpointTime = timeKey;
+      player.pause();
+      player.currentTime = timeKey;
+      updateProgressUI(timeKey);
+      updateActiveNavButton(timeKey);
+
+      if (playerCard.classList.contains('video-maximized')) {
+        playerCard.classList.remove('video-maximized');
+        expandIcon.style.display = 'block';
+        compressIcon.style.display = 'none';
+      }
+
+      // Configure checkpoint buttons based on review state
+      if (isGradedMode) {
+        submitCheckpointBtn.style.display = 'none';
+        reviewModeNotice.classList.remove('hidden');
+      } else {
+        submitCheckpointBtn.style.display = 'block';
+        reviewModeNotice.classList.add('hidden');
+      }
+
+      const card = document.getElementById('checkpointCard');
+      const container = document.getElementById('dynamic-questions');
+      document.getElementById('checkpointBadge').textContent = `Timestamp: ${formatTime(timeKey)}`;
+      container.innerHTML = `<div class="py-8 text-center text-gray-500 font-medium">Loading checkpoint questions from database...</div>`;
+      card.style.display = 'block';
+
+      try {
+        const res = await fetch(`${RTDB_URL}/assignments/${assignmentCode}/questionsByTime/${timeKey}.json`);
+        activeQuestions = await res.json();
+
+        if (!activeQuestions) throw new Error("Cluster not found");
+
+        const threshold = Math.ceil(gradedTotal * 0.8);
+        const showColors = isGradedMode && (gradedScore >= threshold);
+
+        let html = '';
+        activeQuestions.forEach(q => {
+          const savedData = localState[`q${q.id}`] || localState[q.id];
+          const savedAns = (savedData && savedData.selection !== undefined) ? savedData.selection : null;
+          const isQIncorrect = currentIncorrect.includes(q.id.toString());
+
+          let blockClass = "question-block";
+          if (showColors) {
+            blockClass += isQIncorrect ? " q-incorrect" : " q-correct";
+          }
+
+          html += `
+            <div class="${blockClass}">
+              <div class="question-title">${q.text}<span class="required-star">*</span></div>
+              <div class="flex flex-col gap-1 mt-2">
+          `;
+
+          q.options.forEach((opt, idx) => {
+            const isChecked = (savedAns === idx) ? 'checked' : '';
+            let labelClass = "flex items-start gap-3 py-2 cursor-pointer hover:bg-gray-50 rounded px-2";
+
+            if (showColors && savedAns === idx) {
+              labelClass += isQIncorrect ? " ans-incorrect" : " ans-correct";
+            }
+
+            html += `
+              <label class="${labelClass}">
+                <input type="radio" name="q${q.id}" value="${idx}" ${isChecked} onchange="saveAnswer(${q.id}, ${idx})" class="w-5 h-5 text-purple-600 mt-1">
+                <span class="text-sm md:text-base">${opt}</span>
+              </label>
+            `;
+          });
+
+          html += `</div></div>`;
+        });
+
+        container.innerHTML = html;
+        document.getElementById('errorText').style.display = 'none';
+        setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+      } catch (e) {
+        container.innerHTML = `<div class="py-4 text-center text-red-500 font-bold">Failed to load questions. Please check your connection.</div>`;
+      }
+    }
+
+    async function saveAnswer(qId, selection) {
+      if (!localState[`q${qId}`]) localState[`q${qId}`] = {};
+      localState[`q${qId}`].selection = selection;
+
+      // Reveal floating resubmit button immediately when answers are edited in review mode
+      if (isGradedMode && attemptsRemaining > 0) {
+        floatingResubmitBtn.style.display = 'flex';
+      }
+
+      try {
+        await fetch(PROXY_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            token: studentConfig.sessionToken,
+            action: "saveAnswer",
+            qId: qId,
+            selection: selection
+          }),
+          keepalive: true
+        });
+      } catch (err) {
+        console.error("Save answer failed:", err);
+      }
+    }
+
+    function syncProgress(force = false) {
+      if (!studentConfig || maxWatchedTime === 0) return;
+      if (force || maxWatchedTime - lastSavedTime >= 5) {
+        fetch(PROXY_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            token: studentConfig.sessionToken,
+            action: "saveVideoProgress",
+            time: Math.round(maxWatchedTime)
+          }),
+          keepalive: true
+        }).catch(err => console.error(err));
+        lastSavedTime = maxWatchedTime;
+      }
+    }
+
+    player.addEventListener('timeupdate', () => {
+      if (isDraggingTimeline) return;
+
+      if (!markersDrawn && player.duration > 0) {
+        drawMarkers();
+      }
+
+      const nextBarrier = getNextIncompleteCheckpoint();
+
+      if (player.currentTime >= nextBarrier && nextBarrier !== Infinity && !isGradedMode) {
+        player.pause();
+        player.currentTime = nextBarrier;
+        updateProgressUI(nextBarrier);
+        triggerCheckpoint(nextBarrier);
+        return;
+      }
+
+      if (player.currentTime > maxWatchedTime) {
+        maxWatchedTime = player.currentTime;
+        syncProgress(false);
+      }
+
+      updateProgressUI(player.currentTime);
+    });
+
+    function seekFromEvent(e) {
+      const rect = timelineContainer.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      let percent = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+
+      if (!player.duration || isNaN(player.duration)) return;
+      const targetTime = percent * player.duration;
+      const allowed = getAllowedScrubLimit();
+
+      const clampedTime = Math.min(targetTime, allowed);
+      player.currentTime = clampedTime;
+      updateProgressUI(clampedTime);
+
+      const nextBarrier = getNextIncompleteCheckpoint();
+      if (clampedTime >= nextBarrier && nextBarrier !== Infinity && !isGradedMode) {
+        triggerCheckpoint(nextBarrier);
+      }
+    }
+
+    timelineContainer.addEventListener('mousedown', (e) => {
+      isDraggingTimeline = true;
+      seekFromEvent(e);
+      function onMouseMove(me) { if (isDraggingTimeline) seekFromEvent(me); }
+      function onMouseUp() { isDraggingTimeline = false; document.removeEventListener('mousemove', onMouseMove); document.removeEventListener('mouseup', onMouseUp); }
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
+    });
+
+    timelineContainer.addEventListener('touchstart', (e) => {
+      isDraggingTimeline = true;
+      seekFromEvent(e);
+      function onTouchMove(te) { if (isDraggingTimeline) seekFromEvent(te); }
+      function onTouchEnd() { isDraggingTimeline = false; document.removeEventListener('touchmove', onTouchMove); document.removeEventListener('touchend', onTouchEnd); }
+      document.addEventListener('touchmove', onTouchMove, { passive: true });
+      document.addEventListener('touchend', onTouchEnd);
+    });
+
+    // Synchronous grading submission
+    async function executeGradingSubmission() {
+      floatingResubmitBtn.style.display = 'none';
+      document.getElementById('checkpointCard').style.display = 'none';
+      playerCard.style.display = 'none';
+      sectionNavCard.classList.add('hidden');
+      player.pause();
+
+      resultsCard.innerHTML = `<div class="py-12 text-gray-500 font-bold">Grading your responses with rubric...</div>`;
+      resultsCard.classList.remove('hidden');
+
+      try {
+        const res = await fetch(PROXY_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: studentConfig.sessionToken, action: "submit" })
+        });
+
+        const data = await res.json();
+        isGradedMode = true;
+        currentIncorrect = data.incorrect || [];
+        gradedScore = data.score;
+        gradedTotal = data.total;
+        attemptsRemaining = data.attemptsLeft;
+
+        const threshold = Math.ceil(data.total * 0.8);
+        let messageHtml = `<h2 class="text-3xl font-bold text-gray-900 mb-4">You received ${data.score} out of ${data.total} correct.</h2>`;
+
+        if (data.score === data.total) {
+          messageHtml += `<p class="text-lg text-green-700 font-bold">Congratulations on a job well done!</p>`;
+        } else if (data.score >= threshold) {
+          const incorrectStr = currentIncorrect.length > 0 ? currentIncorrect.join(', ') : 'None';
+          messageHtml += `
+            <p class="text-gray-700 mb-2">You may go back and check your responses. You got questions <strong>${incorrectStr}</strong> incorrect.</p>
+            <p class="text-gray-700 font-bold mb-6">You have ${data.attemptsLeft} more submission(s) to make your corrections.</p>
+            ${data.attemptsLeft > 0 ? '<button onclick="returnToVideo()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded shadow">Review Questions</button>' : '<p class="text-red-600 font-bold">No submissions remaining. Final score recorded.</p>'}
+          `;
+        } else {
+          messageHtml += `
+            <p class="text-gray-700 mb-2">You must receive <strong>${threshold}</strong> questions correct in order to know which questions you got wrong.</p>
+            <p class="text-gray-700 font-bold mb-6">You have ${data.attemptsLeft} more submission(s) to make your corrections.</p>
+            ${data.attemptsLeft > 0 ? '<button onclick="returnToVideo()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded shadow">Review Questions</button>' : '<p class="text-red-600 font-bold">No submissions remaining. Final score recorded.</p>'}
+          `;
+        }
+
+        resultsCard.innerHTML = messageHtml;
+      } catch (err) {
+        console.error("Grading failed:", err);
+        resultsCard.innerHTML = `<div class="py-8 text-red-600 font-bold">Grading request failed. Please check your connection and try again.</div>`;
+      }
+    }
+
+    // Submit & Continue: Handled only during the initial playthrough
+    submitCheckpointBtn.addEventListener('click', () => {
+      if (!activeQuestions || activeQuestions.length === 0) return;
+
+      const allAnswered = activeQuestions.every(q => {
+        const sel = document.querySelector(`input[name="q${q.id}"]:checked`);
+        return sel !== null;
+      });
+
+      if (!allAnswered) {
+        document.getElementById('errorText').style.display = 'block';
+        return;
+      }
+
+      document.getElementById('errorText').style.display = 'none';
+
+      const isLastCheckpoint = (activeCheckpointTime === timelineMeta[timelineMeta.length - 1].time);
+      if (isLastCheckpoint) {
+        executeGradingSubmission();
+      } else {
+        document.getElementById('checkpointCard').style.display = 'none';
+        activeCheckpointTime = null; 
+        refreshMarkers();
+        syncProgress(true);
+        player.play();
+      }
+    });
+
+    // Floating Resubmit Button Listener
+    floatingResubmitBtn.addEventListener('click', () => {
+      executeGradingSubmission();
+    });
+
+    // Return to video to make corrections
+    window.returnToVideo = function() {
+      resultsCard.classList.add('hidden');
+      playerCard.style.display = 'block';
+      sectionNavCard.classList.remove('hidden');
+      renderSectionNav();
+      refreshMarkers();
+
+      // Automatically jump to the first section that contains an incorrect response
+      let targetItem = timelineMeta[0];
+      const firstWrongSection = timelineMeta.find(item => 
+        item.qIds && item.qIds.some(id => currentIncorrect.includes(id.toString()))
+      );
+      if (firstWrongSection) targetItem = firstWrongSection;
+
+      if (targetItem) {
+        player.currentTime = targetItem.time;
+        updateProgressUI(targetItem.time);
+        triggerCheckpoint(targetItem.time, true);
+      }
+    };
+
+    function togglePlay() { player.paused ? player.play() : player.pause(); }
+    document.getElementById('playBtn').addEventListener('click', togglePlay);
+    player.addEventListener('click', togglePlay);
+    player.addEventListener('play', () => {
+      document.getElementById('playIcon').style.display = 'none';
+      document.getElementById('pauseIcon').style.display = 'block';
+    });
+    player.addEventListener('pause', () => {
+      document.getElementById('playIcon').style.display = 'block';
+      document.getElementById('pauseIcon').style.display = 'none';
+    });
+
+    document.getElementById('ccBtn').addEventListener('click', (e) => {
+      if (!player.textTracks || !player.textTracks[0]) return;
+      const track = player.textTracks[0];
+      if (track.mode === 'showing') {
+        track.mode = 'hidden';
+        e.currentTarget.classList.remove('active');
+      } else {
+        track.mode = 'showing';
+        e.currentTarget.classList.add('active');
+      }
+    });
+
+    function startSSEListener() {
+      if (!studentConfig || !studentConfig.livePath) return;
+      const eventSource = new EventSource(`${RTDB_URL}/${studentConfig.livePath}.json`);
+      eventSource.addEventListener('put', (e) => {
+        const payload = JSON.parse(e.data);
+        const data = payload.data || {};
+        if (data.maxWatchedTime && data.maxWatchedTime > maxWatchedTime) {
+          maxWatchedTime = data.maxWatchedTime;
+          refreshMarkers();
+        }
+      });
+    }
+
+    window.onload = init;
+  </script>
+</body>
+</html>

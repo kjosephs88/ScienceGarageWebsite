@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classroom Handout Creator</title>
+    <style>
+        :root {
+            --bg-color: #f0f2f5;
+            --page-bg: #ffffff;
+            --toolbar-bg: #ffffff;
+            --border-color: #d1d5db;
+            --primary: #1a73e8;
+            --primary-hover: #1557b0;
+            --danger: #d93025;
+            --sidebar-width: 220px;
+
+            /* Dynamic Document Formatting Variables */
+            --page-padding: 0.75in;
+            --doc-line-height: 1.4;
+            --doc-para-spacing: 8pt;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- Top Command Toolbar --- */
+        #toolbar {
+            background-color: var(--toolbar-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 8px 16px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            z-index: 1000;
+            min-height: 48px;
+        }
+
+        .toolbar-group {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            border-right: 1px solid var(--border-color);
+            padding-right: 8px;
+        }
+
+        button, select {
+            padding: 6px 10px;
+            background-color: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            color: #333;
+            outline: none;
+            transition: all 0.15s ease-in-out;
+        }
+
+        button:hover, select:hover {
+            background-color: #f8f9fa;
+            border-color: #9aa0a6;
+        }
+
+        button:active {
+            background-color: #e8eaed;
+        }
+
+        .btn-primary {
+            background-color: var(--primary) !important;
+            color: #fff !important;
+            border-color: var(--primary) !important;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover) !important;
+        }
+
+        .btn-danger {
+            background-color: var(--danger) !important;
+            color: #fff !important;
+            border-color: var(--danger) !important;
+        }
+
+        .btn-accent {
+            background-color: #0d9488 !important;
+            color: #fff !important;
+            border-color: #0d9488 !important;
+            font-weight: 500;
+        }
+
+        .btn-accent:hover {
+            background-color: #0f766e !important;
+        }
+
+        .right-actions {
+            margin-left: auto;
+            display: flex;
+            gap: 8px;
+        }
+
+        /* --- Main Layout Container --- */
+        #main-container {
+            display: flex;
+            flex-grow: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* --- Left Page Thumbnail Sidebar --- */
+        #sidebar {
+            width: var(--sidebar-width);
+            background-color: #ffffff;
+            border-right: 1px solid var(--border-color);
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            transition: margin-left 0.25s ease;
+            flex-shrink: 0;
+        }
+
+        #sidebar.collapsed {
+            margin-left: calc(var(--sidebar-width) * -1);
+        }
+
+        .thumbnail-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+        }
+
+        .thumbnail-box {
+            width: 140px;
+            height: 181px;
+            background-color: white;
+            border: 2px solid var(--border-color);
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 600;
+            color: #9aa0a6;
+            transition: all 0.2s;
+        }
+
+        .thumbnail-card:hover .thumbnail-box,
+        .thumbnail-card.active .thumbnail-box {
+            border-color: var(--primary);
+            color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(26,115,232,0.2);
+        }
+
+        .thumbnail-label {
+            font-size: 11px;
+            color: #5f6368;
+        }
+
+        /* --- Document Scrollable Workspace --- */
+        #workspace {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 32px;
+            background-color: var(--bg-color);
+        }
+
+        /* --- Physical 8.5in x 11in Page Container --- */
+        .page {
+            width: 8.5in;
+            height: 11in;
+            background-color: var(--page-bg);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            padding: var(--page-padding);
+            box-sizing: border-box;
+            position: relative;
+            outline: none;
+            line-height: var(--doc-line-height);
+            flex-shrink: 0;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-size: 11pt;
+            color: #202124;
+            transition: outline 0.15s;
+        }
+
+        .page:focus {
+            box-shadow: 0 0 0 2px var(--primary), 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        .page.overflow-alert {
+            outline: 3px solid var(--danger) !important;
+        }
+
+        .page p {
+            margin-top: 0;
+            margin-bottom: var(--doc-para-spacing);
+        }
+
+        /* --- Assignment Header Layout --- */
+        .assignment-header {
+            position: relative; /* Anchors the absolutely positioned QR code */
+            width: 100%;
+            margin-bottom: 18px;
+            user-select: none;
+            cursor: pointer;
+            border: 1px dashed transparent;
+            border-radius: 4px;
+            padding: 4px 0;
+            transition: border-color 0.2s, background-color 0.2s;
+            box-sizing: border-box;
+        }
+
+        .assignment-header:hover {
+            border-color: #cbd5e1;
+            background-color: #f8fafc;
+        }
+
+        /* Top-Right QR Code (Absolute Positioning derived from old template) */
+        .header-qr-wrapper {
+            position: absolute;
+            top: 4px;
+            right: 0;
+            width: 48px; /* 0.5 inches */
+            height: 48px;
+            background: #ffffff;
+            z-index: 10;
+        }
+
+        .header-qr-wrapper img {
+            width: 48px !important;
+            height: 48px !important;
+            display: block;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Top Row Flexbox for Meta and Name Box (QR code is absolutely outside of this) */
+        .header-top-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            width: 100%;
+            padding-right: 64px; /* Prevents center block from sliding under the absolute QR code */
+            box-sizing: border-box;
+        }
+
+        /* Top-Left Meta Info */
+        .header-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            align-items: flex-start;
+            flex-shrink: 0;
+        }
+
+        .assignment-type-badge {
+            background-color: #dbe0e6;
+            color: #111827;
+            font-size: 13.5px;
+            font-weight: 500;
+            padding: 2.5px 8px;
+            border-radius: 3px;
+            display: inline-block;
+            letter-spacing: -0.1px;
+            white-space: nowrap;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .unit-assignment-text {
+            font-size: 14.5px;
+            font-weight: 400;
+            color: #111827;
+            letter-spacing: -0.1px;
+            margin-left: 8px;
+            white-space: nowrap;
+        }
+
+        /* Name Box Column */
+        .header-name-col {
+            flex: 1;
+            max-width: 362px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .student-name-box {
+            width: 100%;
+            height: 57px; 
+            border: 1.5px solid #111827;
+            border-radius: 2px;
+            background: #ffffff;
+            margin: 0;
+        }
+
+        .name-box-caption {
+            font-size: 8pt;
+            color: #64748b;
+            margin-top: 3px;
+            text-align: center;
+            font-weight: normal;
+            white-space: nowrap;
+        }
+
+        /* Large Centered Title (Below Top Row) */
+        .assignment-title-display {
+            font-size: 24pt;
+            font-weight: 800;
+            color: #000000;
+            text-align: center;
+            margin-top: 10px;
+            line-height: 1.2;
+            letter-spacing: -0.5px;
+            width: 100%;
+        }
+
+        /* --- Image Resizer & Selection --- */
+        .image-resize-handle {
+            position: fixed;
+            width: 12px;
+            height: 12px;
+            background: #ffffff;
+            border: 2px solid var(--primary);
+            border-radius: 50%;
+            cursor: nwse-resize;
+            display: none;
+            z-index: 10000;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            user-select: none;
+        }
+
+        .img-selected-for-resize {
+            outline: 2px dashed var(--primary);
+            outline-offset: 1px;
+        }
+
+        /* Tables & Float Wrapping */
+        .doc-table-wrapper {
+            margin-bottom: 12pt;
+            background: #ffffff;
+            break-inside: avoid;
+            user-select: none;
+        }
+
+        .doc-table-wrapper.float-right {
+            float: right;
+            margin-left: 16pt;
+            max-width: 50%;
+        }
+
+        .doc-table-wrapper.float-left {
+            float: left;
+            margin-right: 16pt;
+            max-width: 50%;
+        }
+
+        .doc-table-wrapper.full-width {
+            clear: both;
+            width: 100%;
+        }
+
+        .doc-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 9.5pt;
+        }
+
+        .doc-table th, .doc-table td {
+            border: 1px solid #777;
+            padding: 4pt 8pt;
+            text-align: left;
+        }
+
+        .doc-table th {
+            background-color: #f3f4f6;
+            font-weight: 600;
+        }
+
+        .table-caption {
+            font-size: 8.5pt;
+            color: #666;
+            margin-top: 4pt;
+            text-align: center;
+        }
+
+        /* --- Settings Modal --- */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(2px);
+            z-index: 5000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-card {
+            background: #ffffff;
+            width: 480px;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 16px;
+            color: #111827;
+        }
+
+        .form-row {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-row label {
+            font-size: 12.5px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .radio-pills {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .radio-pill {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 12.5px;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.15s;
+        }
+
+        .radio-pill:has(input:checked) {
+            background-color: #e8f0fe;
+            border-color: var(--primary);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .radio-pill input {
+            cursor: pointer;
+            margin: 0;
+        }
+
+        .form-grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 13.5px;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+
+        .form-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(26,115,232,0.15);
+        }
+
+        .qr-preview-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            overflow: hidden;
+        }
+
+        .qr-string-code {
+            font-family: ui-monospace, Menlo, Consolas, monospace;
+            font-size: 12px;
+            color: #0f172a;
+            word-break: break-all;
+            font-weight: 600;
+        }
+
+        #modalQrMiniImg {
+            width: 54px;
+            height: 54px;
+            display: block;
+            border-radius: 4px;
+            object-fit: contain;
+            background: #ffffff;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        /* --- View Only / Print Preview Controls --- */
+        #preview-bar {
+            display: none;
+            position: fixed;
+            top: 16px;
+            right: 24px;
+            gap: 12px;
+            z-index: 2000;
+        }
+
+        body.view-only #toolbar { display: none; }
+        body.view-only #sidebar { display: none; }
+        body.view-only #preview-bar { display: flex; }
+        body.view-only #workspace {
+            background-color: #374151;
+            padding-top: 70px;
+        }
+        body.view-only .page {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        /* --- Safari/WebKit Native Print Layout --- */
+        @page {
+            size: letter portrait;
+            margin: 0;
+        }
+
+        @media print {
+            html, body {
+                height: auto !important;
+                overflow: visible !important;
+                margin: 0;
+                padding: 0;
+                background: transparent !important;
+            }
+
+            #toolbar, #sidebar, #preview-bar, .modal-overlay, .image-resize-handle, .no-print {
+                display: none !important;
+            }
+
+            #main-container {
+                display: block !important;
+                overflow: visible !important;
+            }
+
+            #workspace {
+                padding: 0 !important;
+                background: transparent !important;
+                display: block !important;
+                overflow: visible !important;
+                gap: 0 !important;
+            }
+
+            .page {
+                width: 8.5in !important;
+                height: 11in !important;
+                margin: 0 !important;
+                padding: var(--page-padding) !important;
+                box-shadow: none !important;
+                page-break-after: always;
+                break-after: page;
+                overflow: hidden !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            .page:last-of-type {
+                page-break-after: auto;
+                break-after: auto;
+            }
+
+            .assignment-header {
+                border: none !important;
+                background: transparent !important;
+                padding: 0 !important;
+            }
+
+            .assignment-type-badge {
+                background-color: #dbe0e6 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            .page.overflow-alert {
+                outline: none !important;
+            }
+            
+            .img-selected-for-resize {
+                outline: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- UI Action Bar -->
+    <div id="toolbar">
+        <div class="toolbar-group">
+            <button onclick="toggleSidebar()" title="Toggle Sidebar">☰</button>
+            <button onclick="addNewPage()" class="btn-primary">+ Add Page</button>
+        </div>
+
+        <div class="toolbar-group">
+            <button onclick="openHeaderModal()" class="btn-accent" title="Customize Assignment Header & QR Code">⚙ Assignment Header</button>
+        </div>
+
+        <div class="toolbar-group">
+            <select id="fontSelect" onchange="applyFont(this.value)">
+                <option value="" disabled selected>Font Family</option>
+                <option value="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif">Default Sans</option>
+                <option value="'Times New Roman', Times, serif">Times New Roman</option>
+                <option value="Georgia, serif">Georgia</option>
+                <option value="Arial, Helvetica, sans-serif">Arial</option>
+                <option value="'Courier New', Courier, monospace">Courier New</option>
+                <option value="Trebuchet MS, sans-serif">Trebuchet MS</option>
+            </select>
+
+            <button onclick="format('bold')" title="Bold"><b>B</b></button>
+            <button onclick="format('italic')" title="Italic"><i>I</i></button>
+            <button onclick="format('underline')" title="Underline"><u>U</u></button>
+        </div>
+
+        <div class="toolbar-group">
+            <select id="marginSelect" onchange="updateMargins(this.value)" title="Page Margins">
+                <option value="0.5">Margins: Narrow (0.5 in)</option>
+                <option value="0.75" selected>Margins: Normal (0.75 in)</option>
+                <option value="1.0">Margins: Wide (1.0 in)</option>
+            </select>
+
+            <select id="lineSpacingSelect" onchange="updateLineSpacing(this.value)" title="Line Spacing">
+                <option value="1.15">Line Space: Tight</option>
+                <option value="1.4" selected>Line Space: Normal</option>
+                <option value="1.8">Line Space: 1.5x</option>
+                <option value="2.0">Line Space: Double</option>
+            </select>
+
+            <select id="paraSpacingSelect" onchange="updateParaSpacing(this.value)" title="Paragraph Spacing">
+                <option value="4">Para Gap: 4pt</option>
+                <option value="8" selected>Para Gap: 8pt</option>
+                <option value="12">Para Gap: 12pt</option>
+            </select>
+        </div>
+
+        <div class="toolbar-group" id="imageToolbar" style="display: none; background-color: #fef08a; border-radius: 4px; padding: 2px 6px;">
+            <span style="font-size:12px; font-weight:600; margin-right:4px; color: #854d0e;">Image Wrap:</span>
+            <button onclick="setImageWrap('left')" title="Float Left">🡄 Left</button>
+            <button onclick="setImageWrap('none')" title="Inline">Inline</button>
+            <button onclick="setImageWrap('right')" title="Float Right">Right 🡆</button>
+        </div>
+
+        <div class="toolbar-group">
+            <button onclick="insertTable('float-right')">+ Table (Float R)</button>
+            <button onclick="insertTable('float-left')">+ Table (Float L)</button>
+            <button onclick="insertTable('full-width')">+ Table (Full)</button>
+        </div>
+
+        <div class="right-actions">
+            <button onclick="toggleViewOnly()" class="btn-primary">Preview</button>
+            <button onclick="exportToPDF()" class="btn-primary">Export PDF</button>
+        </div>
+    </div>
+
+    <!-- Main Workspace -->
+    <div id="main-container">
+        <div id="sidebar"></div>
+        <div id="workspace"></div>
+    </div>
+
+    <!-- Resizer Node -->
+    <div id="imgResizeHandle" class="image-resize-handle"></div>
+
+    <!-- Assignment Settings Modal -->
+    <div id="headerModal" class="modal-overlay" onclick="closeModalOnBackdrop(event)">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Assignment Header & QR Code Settings</h3>
+                <button onclick="closeHeaderModal()" style="border:none; background:transparent; font-size:18px; cursor:pointer;">✕</button>
+            </div>
+
+            <div class="form-row">
+                <label>Course Code</label>
+                <div class="radio-pills">
+                    <label class="radio-pill">
+                        <input type="radio" name="courseCode" value="CH" onchange="syncHeaderFromModal()">
+                        Chemistry (CH)
+                    </label>
+                    <label class="radio-pill">
+                        <input type="radio" name="courseCode" value="PH" checked onchange="syncHeaderFromModal()">
+                        Physics (PH)
+                    </label>
+                    <label class="radio-pill">
+                        <input type="radio" name="courseCode" value="FS" onchange="syncHeaderFromModal()">
+                        Forensics (FS)
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <label>Assignment Type</label>
+                <div class="radio-pills">
+                    <label class="radio-pill">
+                        <input type="radio" name="assignType" value="Practice" data-code="P" onchange="syncHeaderFromModal()">
+                        Practice (P)
+                    </label>
+                    <label class="radio-pill">
+                        <input type="radio" name="assignType" value="Graded" data-code="G" checked onchange="syncHeaderFromModal()">
+                        Graded (G)
+                    </label>
+                    <label class="radio-pill">
+                        <input type="radio" name="assignType" value="Ungraded" data-code="U" onchange="syncHeaderFromModal()">
+                        Ungraded (U)
+                    </label>
+                    <label class="radio-pill">
+                        <input type="radio" name="assignType" value="Review" data-code="R" onchange="syncHeaderFromModal()">
+                        Review (R)
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-grid-2">
+                <div class="form-row">
+                    <label for="inputUnitNum">Unit Number</label>
+                    <input type="text" id="inputUnitNum" class="form-input" value="4" placeholder="e.g. 3" oninput="syncHeaderFromModal()">
+                </div>
+                <div class="form-row">
+                    <label for="inputAssignNum">Assignment Number</label>
+                    <input type="text" id="inputAssignNum" class="form-input" value="6" placeholder="e.g. 8" oninput="syncHeaderFromModal()">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <label for="inputTitle">Assignment Title</label>
+                <input type="text" id="inputTitle" class="form-input" value="Kirchoff's Current Law" placeholder="e.g. The Combined Gas Law" oninput="syncHeaderFromModal()">
+            </div>
+
+            <div class="form-row">
+                <label>Dynamic QR Encoded Data</label>
+                <div class="qr-preview-box">
+                    <span id="qrStringPreview" class="qr-string-code">PH•U04•A06•G Kirchoff's Current Law</span>
+                    <img id="modalQrMiniImg" alt="QR Preview">
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button onclick="closeHeaderModal()" class="btn-primary" style="padding: 8px 16px;">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="preview-bar">
+        <button onclick="exportToPDF()" class="btn-primary">Download / Save PDF</button>
+        <button onclick="toggleViewOnly()" class="btn-danger">Exit Preview</button>
+    </div>
+
+    <script>
+        let totalPages = 0;
+        let activePageNumber = 1;
+
+        const assignmentConfig = {
+            courseCode: "PH",
+            typeName: "Graded",
+            typeCode: "G",
+            unitNum: "4",
+            assignNum: "6",
+            title: "Kirchoff's Current Law"
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            addNewPage(`
+                <p>Ensure all pressure values are converted to atmospheres and temperatures to Kelvin before solving. Calculations must reflect appropriate significant figures throughout your work.</p>
+            `, true);
+            updateAllHeaders();
+        });
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('collapsed');
+        }
+
+        function format(command, value = null) {
+            document.execCommand(command, false, value);
+        }
+
+        function applyFont(fontFamily) {
+            if (!fontFamily) return;
+            document.execCommand('fontName', false, fontFamily);
+            document.getElementById('fontSelect').selectedIndex = 0;
+        }
+
+        function updateMargins(value) {
+            document.documentElement.style.setProperty('--page-padding', `${value}in`);
+            validateAllPagesOverflow();
+            updateResizeHandlePosition();
+        }
+
+        function updateLineSpacing(value) {
+            document.documentElement.style.setProperty('--doc-line-height', value);
+            validateAllPagesOverflow();
+            updateResizeHandlePosition();
+        }
+
+        function updateParaSpacing(value) {
+            document.documentElement.style.setProperty('--doc-para-spacing', `${value}pt`);
+            validateAllPagesOverflow();
+            updateResizeHandlePosition();
+        }
+
+        function getFormattedQRData() {
+            const rawUnit = assignmentConfig.unitNum.toString().trim().replace(/^U/i, '');
+            const rawAssign = assignmentConfig.assignNum.toString().trim().replace(/^A/i, '');
+
+            const uPad = rawUnit ? 'U' + rawUnit.padStart(2, '0') : 'U01';
+            const aPad = rawAssign ? 'A' + rawAssign.padStart(2, '0') : 'A01';
+            const title = (assignmentConfig.title || '').trim();
+
+            return `${assignmentConfig.courseCode}•${uPad}•${aPad}•${assignmentConfig.typeCode} ${title}`;
+        }
+
+        function createHeaderHTML() {
+            return `
+                <div class="assignment-header" contenteditable="false" onclick="openHeaderModal()" title="Click to edit assignment header & QR code">
+                    <!-- Absolutely Positioned QR Code Image -->
+                    <div class="header-qr-wrapper">
+                        <img id="hdrQrImg" alt="QR Code">
+                    </div>
+                    
+                    <div class="header-top-row">
+                        <div class="header-meta">
+                            <span class="assignment-type-badge" id="hdrBadgeType">Assignment Type: ${assignmentConfig.typeName}</span>
+                            <span class="unit-assignment-text" id="hdrUnitAssign">Unit ${assignmentConfig.unitNum} – Assignment #${assignmentConfig.assignNum}</span>
+                        </div>
+                        <div class="header-name-col">
+                            <div class="student-name-box"></div>
+                            <div class="name-box-caption">Please print full name in the above box</div>
+                        </div>
+                    </div>
+                    
+                    <div class="assignment-title-display" id="hdrTitleDisplay">${assignmentConfig.title}</div>
+                </div>
+            `;
+        }
+
+        function updateAllHeaders() {
+            const qrString = getFormattedQRData();
+            
+            // Firewall-proof Google Charts API URL
+            const qrUrl = `https://quickchart.io/qr?text=${encodeURIComponent(qrString)}&size=96&margin=0`;
+
+            const previewLabel = document.getElementById('qrStringPreview');
+            if (previewLabel) previewLabel.innerText = qrString;
+            
+            const modalMini = document.getElementById('modalQrMiniImg');
+            if (modalMini) modalMini.src = qrUrl; 
+
+            const badge = document.getElementById('hdrBadgeType');
+            const unitAssign = document.getElementById('hdrUnitAssign');
+            const titleDisplay = document.getElementById('hdrTitleDisplay');
+            const qrImg = document.getElementById('hdrQrImg');
+
+            if (badge) badge.innerText = `Assignment Type: ${assignmentConfig.typeName}`;
+            if (unitAssign) unitAssign.innerText = `Unit ${assignmentConfig.unitNum} – Assignment #${assignmentConfig.assignNum}`;
+            if (titleDisplay) titleDisplay.innerText = assignmentConfig.title;
+            if (qrImg) qrImg.src = qrUrl;
+
+            validateAllPagesOverflow();
+        }
+
+        function addNewPage(contentHTML = '<p>Continue notes or problem set here...</p>', isFirstPage = false) {
+            totalPages++;
+            const pageNum = totalPages;
+
+            const page = document.createElement('div');
+            page.className = 'page';
+            page.id = `page-${pageNum}`;
+            page.contentEditable = "true";
+
+            if (isFirstPage) {
+                page.innerHTML = createHeaderHTML() + contentHTML;
+            } else {
+                page.innerHTML = contentHTML;
+            }
+
+            page.addEventListener('focus', () => setActivePage(pageNum));
+            page.addEventListener('input', () => checkPageOverflow(page));
+
+            document.getElementById('workspace').appendChild(page);
+
+            const thumbCard = document.createElement('div');
+            thumbCard.className = 'thumbnail-card';
+            thumbCard.id = `thumb-card-${pageNum}`;
+            thumbCard.onclick = () => {
+                page.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                page.focus();
+                setActivePage(pageNum);
+            };
+
+            const thumbBox = document.createElement('div');
+            thumbBox.className = 'thumbnail-box';
+            thumbBox.innerText = `P. ${pageNum}`;
+
+            const thumbLabel = document.createElement('div');
+            thumbLabel.className = 'thumbnail-label';
+            thumbLabel.innerText = `Page ${pageNum}`;
+
+            thumbCard.appendChild(thumbBox);
+            thumbCard.appendChild(thumbLabel);
+            document.getElementById('sidebar').appendChild(thumbCard);
+
+            setActivePage(pageNum);
+            checkPageOverflow(page);
+
+            if (isFirstPage) {
+                updateAllHeaders();
+            }
+        }
+
+        function setActivePage(pageNum) {
+            activePageNumber = pageNum;
+            document.querySelectorAll('.thumbnail-card').forEach(t => t.classList.remove('active'));
+            const activeCard = document.getElementById(`thumb-card-${pageNum}`);
+            if (activeCard) activeCard.classList.add('active');
+        }
+
+        function checkPageOverflow(pageElement) {
+            const isOverflowing = pageElement.scrollHeight > pageElement.clientHeight;
+            if (isOverflowing) {
+                pageElement.classList.add('overflow-alert');
+            } else {
+                pageElement.classList.remove('overflow-alert');
+            }
+        }
+
+        function validateAllPagesOverflow() {
+            document.querySelectorAll('.page').forEach(page => checkPageOverflow(page));
+        }
+
+        function insertTable(floatClass) {
+            const page = document.getElementById(`page-${activePageNumber}`) || document.querySelector('.page');
+            if (!page) return;
+
+            const tableHTML = `
+                <div class="doc-table-wrapper ${floatClass}" contenteditable="false">
+                    <table class="doc-table">
+                        <thead>
+                            <tr><th>Variable</th><th>Value</th><th>Units</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Initial Pressure ($P_1$)</td><td>1.25</td><td>atm</td></tr>
+                            <tr><td>Initial Volume ($V_1$)</td><td>450</td><td>mL</td></tr>
+                            <tr><td>Temperature ($T$)</td><td>298.15</td><td>K</td></tr>
+                        </tbody>
+                    </table>
+                    <div class="table-caption">Table 1. Thermodynamic State</div>
+                </div>
+            `;
+            document.execCommand('insertHTML', false, tableHTML);
+            checkPageOverflow(page);
+        }
+
+        /* --- Image Wrapping and Resizing Logic --- */
+        let activeImage = null;
+        let isResizing = false;
+        let startX, startY, startWidth, startHeight;
+        const resizeHandle = document.getElementById('imgResizeHandle');
+        const imageToolbar = document.getElementById('imageToolbar');
+
+        function setImageWrap(wrapType) {
+            if (!activeImage) return;
+            
+            if (wrapType === 'left') {
+                activeImage.style.float = 'left';
+                activeImage.style.margin = '4px 16px 12px 0';
+                activeImage.style.display = 'inline-block';
+            } else if (wrapType === 'right') {
+                activeImage.style.float = 'right';
+                activeImage.style.margin = '4px 0 12px 16px';
+                activeImage.style.display = 'inline-block';
+            } else {
+                activeImage.style.float = 'none';
+                activeImage.style.margin = '0';
+                activeImage.style.display = 'inline-block';
+            }
+            updateResizeHandlePosition();
+        }
+
+        document.addEventListener('mousedown', (e) => {
+            if (e.target.tagName === 'IMG' && e.target.closest('.page') && !e.target.closest('.header-qr-wrapper')) {
+                if (activeImage) activeImage.classList.remove('img-selected-for-resize');
+                activeImage = e.target;
+                activeImage.classList.add('img-selected-for-resize');
+                updateResizeHandlePosition();
+                imageToolbar.style.display = 'flex';
+            } 
+            else if (e.target === resizeHandle || e.target.closest('#imageToolbar')) {
+                if (e.target === resizeHandle) {
+                    isResizing = true;
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    startWidth = activeImage.clientWidth;
+                    startHeight = activeImage.clientHeight;
+                    e.preventDefault(); 
+                }
+            } 
+            else {
+                if (activeImage) activeImage.classList.remove('img-selected-for-resize');
+                activeImage = null;
+                resizeHandle.style.display = 'none';
+                imageToolbar.style.display = 'none';
+            }
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (isResizing && activeImage) {
+                const dx = e.clientX - startX;
+                const newWidth = Math.max(30, startWidth + dx);
+                activeImage.style.width = newWidth + 'px';
+                activeImage.style.height = 'auto';
+                updateResizeHandlePosition();
+                validateAllPagesOverflow(); 
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            isResizing = false;
+        });
+
+        document.getElementById('workspace').addEventListener('scroll', updateResizeHandlePosition);
+        window.addEventListener('resize', updateResizeHandlePosition);
+        document.addEventListener('input', updateResizeHandlePosition);
+
+        function updateResizeHandlePosition() {
+            if (!activeImage) {
+                resizeHandle.style.display = 'none';
+                return;
+            }
+            const rect = activeImage.getBoundingClientRect();
+            resizeHandle.style.left = (rect.right - 6) + 'px';
+            resizeHandle.style.top = (rect.bottom - 6) + 'px';
+            resizeHandle.style.display = 'block';
+        }
+
+        /* --- Modal Operations --- */
+        function openHeaderModal() {
+            const courseRadio = document.querySelector(`input[name="courseCode"][value="${assignmentConfig.courseCode}"]`);
+            if (courseRadio) courseRadio.checked = true;
+
+            const typeRadio = document.querySelector(`input[name="assignType"][data-code="${assignmentConfig.typeCode}"]`);
+            if (typeRadio) typeRadio.checked = true;
+
+            document.getElementById('inputUnitNum').value = assignmentConfig.unitNum;
+            document.getElementById('inputAssignNum').value = assignmentConfig.assignNum;
+            document.getElementById('inputTitle').value = assignmentConfig.title;
+
+            document.getElementById('headerModal').style.display = 'flex';
+            updateAllHeaders();
+        }
+
+        function closeHeaderModal() {
+            document.getElementById('headerModal').style.display = 'none';
+        }
+
+        function closeModalOnBackdrop(e) {
+            if (e.target.id === 'headerModal') {
+                closeHeaderModal();
+            }
+        }
+
+        function syncHeaderFromModal() {
+            const selectedCourse = document.querySelector('input[name="courseCode"]:checked');
+            if (selectedCourse) assignmentConfig.courseCode = selectedCourse.value;
+
+            const selectedType = document.querySelector('input[name="assignType"]:checked');
+            if (selectedType) {
+                assignmentConfig.typeName = selectedType.value;
+                assignmentConfig.typeCode = selectedType.getAttribute('data-code');
+            }
+
+            assignmentConfig.unitNum = document.getElementById('inputUnitNum').value || "1";
+            assignmentConfig.assignNum = document.getElementById('inputAssignNum').value || "1";
+            assignmentConfig.title = document.getElementById('inputTitle').value || "";
+
+            updateAllHeaders();
+        }
+
+        function toggleViewOnly() {
+            const body = document.body;
+            body.classList.toggle('view-only');
+            const isViewOnly = body.classList.contains('view-only');
+
+            document.querySelectorAll('.page').forEach(p => {
+                p.setAttribute('contenteditable', isViewOnly ? 'false' : 'true');
+            });
+            
+            if (isViewOnly && activeImage) {
+                activeImage.classList.remove('img-selected-for-resize');
+                activeImage = null;
+                resizeHandle.style.display = 'none';
+                imageToolbar.style.display = 'none';
+            }
+        }
+
+        function exportToPDF() {
+            if (activeImage) {
+                activeImage.classList.remove('img-selected-for-resize');
+                activeImage = null;
+                resizeHandle.style.display = 'none';
+                imageToolbar.style.display = 'none';
+            }
+            window.print();
+        }
+    </script>
+</body>
+</html>

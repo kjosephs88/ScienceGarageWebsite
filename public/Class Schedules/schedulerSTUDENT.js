@@ -80,7 +80,8 @@ function formatDateLocal(dateObj) {
 async function fetchStudentData() {
     const scaledContent = document.getElementById('scaled-content');
 
-    if (CONFIG.period === 'P1' || CONFIG.subject === 'Forensics') {
+    // UPDATED: Added Computer Graphics to hide the bellringer and period footer
+    if (CONFIG.period === 'P1' || CONFIG.subject === 'Forensics' || CONFIG.subject === 'Computer Graphics') {
         scaledContent.classList.add('hide-for-forensics');
     }
 
@@ -99,35 +100,36 @@ async function fetchStudentData() {
         });
 
         // 3. LIVE PIPELINE: Assignments (Reading from the NEW architecture)
-const assignmentsRef = ref(db, 'schedulerAssignments');
-onValue(assignmentsRef, (assigSnap) => {
-    currentClassData = {};
-    if (assigSnap.exists()) {
-        const allFolders = assigSnap.val();
+        const assignmentsRef = ref(db, 'schedulerAssignments');
+        onValue(assignmentsRef, (assigSnap) => {
+            currentClassData = {};
+            if (assigSnap.exists()) {
+                const allFolders = assigSnap.val();
 
-        let subj = "ZZ";
-        let lowerSubj = CONFIG.subject.toLowerCase();
-        if (lowerSubj.includes("chemistry")) subj = "CH";
-        else if (lowerSubj.includes("physics")) subj = "PH";
-        else if (lowerSubj.includes("forensic")) subj = "FS";
+                let subj = "ZZ";
+                let lowerSubj = CONFIG.subject.toLowerCase();
+                if (lowerSubj.includes("chemistry")) subj = "CH";
+                else if (lowerSubj.includes("physics")) subj = "PH";
+                else if (lowerSubj.includes("forensic")) subj = "FS";
+                else if (lowerSubj.includes("computer graphics")) subj = "ZZ"; // UPDATED: Added Computer Graphics routing
 
-        const targetPrefix = `${subj}_${CONFIG.period}_`;
+                const targetPrefix = `${subj}_${CONFIG.period}_`;
 
-        Object.keys(allFolders).forEach(folderName => {
-            if (folderName.startsWith(targetPrefix)) {
-                const classAssignments = allFolders[folderName];
+                Object.keys(allFolders).forEach(folderName => {
+                    if (folderName.startsWith(targetPrefix)) {
+                        const classAssignments = allFolders[folderName];
 
-                // Map the data uniquely, using the Firebase key as a fallback for notes
-                Object.keys(classAssignments).forEach(fbKey => {
-                    let assig = classAssignments[fbKey];
-                    const uniqueKey = assig.assignmentId || fbKey; // Use push ID if assignmentId is missing
-                    currentClassData[uniqueKey] = assig;
+                        // Map the data uniquely, using the Firebase key as a fallback for notes
+                        Object.keys(classAssignments).forEach(fbKey => {
+                            let assig = classAssignments[fbKey];
+                            const uniqueKey = assig.assignmentId || fbKey; // Use push ID if assignmentId is missing
+                            currentClassData[uniqueKey] = assig;
+                        });
+                    }
                 });
             }
+            window.renderCalendar();
         });
-    }
-    window.renderCalendar();
-});
 
     } catch (error) {
         console.error("Error fetching data:", error);
@@ -226,6 +228,7 @@ function placeAssignments() {
         if (dates.length === 0 || (dates.length === 1 && dates[0] === "unassigned")) return;
 
         let itemHTML = '';
+        let materialClass = assignment.workType === 'MATERIAL' ? ' material-item' : '';
 
         if (assignment.isCustomNote) {
             itemHTML = `
@@ -238,7 +241,7 @@ function placeAssignments() {
             const titleAttr = assignment.encodedUrl ? `title="Click to open in Google Classroom"` : '';
 
             itemHTML = `
-                <div class="assignment-item" data-db-key="${dbKey}" ${urlAttr} ${titleAttr} style="${assignment.encodedUrl ? 'cursor: pointer;' : ''}">
+                <div class="assignment-item${materialClass}" data-db-key="${dbKey}" ${urlAttr} ${titleAttr} style="${assignment.encodedUrl ? 'cursor: pointer;' : ''}">
                     <span class="item-prefix">Complete assignment:</span>
                     <span class="item-title">${assignment.title}</span>
                     <span class="item-note" style="display: none;"></span> 
@@ -280,6 +283,7 @@ function updatePrefixes(dbKey) {
     if (!assignment || assignment.isCustomNote) return;
 
     let dates = (assignment.scheduledDates || []).filter(d => d !== "unassigned").sort();
+    const isMaterial = assignment.workType === 'MATERIAL';
 
     const instances = document.querySelectorAll(`.assignment-item[data-db-key="${dbKey}"]`);
     instances.forEach(inst => {
@@ -288,14 +292,18 @@ function updatePrefixes(dbKey) {
         const listId = list.id;
         const prefixSpan = inst.querySelector('.item-prefix');
 
-        if (dates.length <= 1) {
-            prefixSpan.innerText = 'Complete assignment:';
-        } else if (listId === dates[0]) {
-            prefixSpan.innerText = 'Begin assignment:';
-        } else if (listId === dates[dates.length - 1]) {
-            prefixSpan.innerText = 'Finish assignment:';
+        if (isMaterial) {
+            prefixSpan.innerText = 'Grab a copy of:';
         } else {
-            prefixSpan.innerText = 'Continue assignment:';
+            if (dates.length <= 1) {
+                prefixSpan.innerText = 'Complete assignment:';
+            } else if (listId === dates[0]) {
+                prefixSpan.innerText = 'Begin assignment:';
+            } else if (listId === dates[dates.length - 1]) {
+                prefixSpan.innerText = 'Finish assignment:';
+            } else {
+                prefixSpan.innerText = 'Continue assignment:';
+            }
         }
     });
 }

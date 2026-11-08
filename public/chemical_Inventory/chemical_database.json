@@ -1,6 +1,6 @@
 {
   "master_catalog": {
-    "7429-90-5": {
+    "aluminum": {
       "name": "aluminum",
       "cas": "7429-90-5",
       "flinn_family": "inorganic 1",
@@ -14,7 +14,7 @@
         "H250 (34.2%): Catches fire spontaneously if exposed to air"
       ]
     },
-    "13473-90-0": {
+    "aluminum nitrate": {
       "name": "aluminum nitrate",
       "cas": "13473-90-0",
       "flinn_family": "Unclassified",
@@ -28,8 +28,8 @@
         "H361 (31.2%): Suspected of damaging fertility or the unborn child"
       ]
     },
-    "aluminum potassium sulfate (alum)": {
-      "name": "aluminum potassium sulfate (alum)",
+    "aluminum potassium sulfate": {
+      "name": "aluminum potassium sulfate",
       "cas": "",
       "flinn_family": "inorganic 2",
       "storage_requirements": "TBD",
@@ -37,7 +37,7 @@
         "Not found in online registry"
       ]
     },
-    "506-87-6": {
+    "ammonium carbonate": {
       "name": "ammonium carbonate",
       "cas": "506-87-6",
       "flinn_family": "inorganic 4",
@@ -49,7 +49,7 @@
         "H412 (22.6%): Harmful to aquatic life with long lasting effects"
       ]
     },
-    "12125-02-09": {
+    "ammonium chloride": {
       "name": "ammonium chloride",
       "cas": "12125-02-09",
       "flinn_family": "inorganic 2",
@@ -63,7 +63,7 @@
         "H402: Harmful to aquatic life"
       ]
     },
-    "6484-52-2": {
+    "ammonium nitrate": {
       "name": "ammonium nitrate",
       "cas": "6484-52-2",
       "flinn_family": "inorganic 8",
@@ -77,7 +77,7 @@
         "H319: Causes serious eye irritation"
       ]
     },
-    "50-81-7": {
+    "ascorbic acid": {
       "name": "ascorbic acid",
       "cas": "50-81-7",
       "flinn_family": "organic 1",
@@ -86,7 +86,7 @@
         "No known GHS hazards logged"
       ]
     },
-    "17194-00-2": {
+    "barium hydroxide": {
       "name": "barium hydroxide",
       "cas": "17194-00-2",
       "flinn_family": "inorganic 4",
@@ -100,7 +100,7 @@
         "H314 (76.9%): Causes severe skin burns and eye damage"
       ]
     },
-    "65-85-0": {
+    "benzoic acid": {
       "name": "benzoic acid",
       "cas": "65-85-0",
       "flinn_family": "organic 1",
@@ -123,7 +123,7 @@
         "Not found in online registry"
       ]
     },
-    "12597-71-6": {
+    "brass": {
       "name": "brass",
       "cas": "12597-71-6",
       "flinn_family": "inorganic 1",
@@ -134,14 +134,14 @@
     },
     "bromcresol green indicator solution": {
       "name": "bromcresol green indicator solution",
-      "cas": "",
+      "cas": "bromcresol green 62625-32-5\nethanol 64-17-5",
       "flinn_family": "organic 9",
       "storage_requirements": "TBD",
       "hazards": [
         "Not found in online registry"
       ]
     },
-    "76-59-5": {
+    "bromothymol blue": {
       "name": "bromothymol blue",
       "cas": "76-59-5",
       "flinn_family": "organic 9",
@@ -153,7 +153,7 @@
         "H319 (11.1%): Causes serious eye irritation"
       ]
     },
-    "471-34-1": {
+    "calcium carbonate": {
       "name": "calcium carbonate",
       "cas": "471-34-1",
       "flinn_family": "inorganic 4",
@@ -162,7 +162,7 @@
         "No known GHS hazards logged"
       ]
     },
-    "10043-52-4": {
+    "calcium chloride": {
       "name": "calcium chloride",
       "cas": "10043-52-4",
       "flinn_family": "inorganic 2",
@@ -176,7 +176,7 @@
         "H318: Causes serious eye damage"
       ]
     },
-    "1305-62-0": {
+    "calcium hydroxide": {
       "name": "calcium hydroxide",
       "cas": "1305-62-0",
       "flinn_family": "inorganic 4",
@@ -190,7 +190,7 @@
         "H315: Causes skin irritation"
       ]
     },
-    "7440-70-2": {
+    "calcium metal": {
       "name": "calcium metal",
       "cas": "7440-70-2",
       "flinn_family": "inorganic 1",
@@ -204,7 +204,7 @@
         "H318: Causes serious eye damage"
       ]
     },
-    "7778-18-9": {
+    "calcium sulfate": {
       "name": "calcium sulfate",
       "cas": "7778-18-9",
       "flinn_family": "inorganic 2",
@@ -214,7 +214,7 @@
         "H335: May cause respiratory irritation"
       ]
     },
-    "573-58-0": {
+    "congo red": {
       "name": "congo red",
       "cas": "573-58-0",
       "flinn_family": "organic 9",
@@ -223,7 +223,7 @@
         "GHS profile unavailable"
       ]
     },
-    "7440-50-8": {
+    "copper": {
       "name": "copper",
       "cas": "7440-50-8",
       "flinn_family": "inorganic 1",
@@ -237,7 +237,7 @@
         "H410 (18.8%): Very toxic to aquatic life with long lasting effects"
       ]
     },
-    "1184-64-1": {
+    "copper (II) carbonate": {
       "name": "copper (II) carbonate",
       "cas": "1184-64-1",
       "flinn_family": "inorganic 4",
@@ -260,7 +260,7 @@
         "Not found in online registry"
       ]
     },
-    "3251-23-8": {
+    "copper (II) nitrate": {
       "name": "copper (II) nitrate",
       "cas": "3251-23-8",
       "flinn_family": "inorganic 3",
@@ -274,7 +274,7 @@
         "H314 (52.3%): Causes severe skin burns and eye damage"
       ]
     },
-    "7758-98-7": {
+    "copper (II) sulfate": {
       "name": "copper (II) sulfate",
       "cas": "7758-98-7",
       "flinn_family": "inorganic 2",
@@ -288,7 +288,7 @@
         "H410: Very toxic to aquatic life with long lasting effects"
       ]
     },
-    "50-99-7": {
+    "dextrose": {
       "name": "dextrose",
       "cas": "50-99-7",
       "flinn_family": "organic 2",
@@ -297,7 +297,7 @@
         "No known GHS hazards logged"
       ]
     },
-    "7705-08-0": {
+    "ferric chloride": {
       "name": "ferric chloride",
       "cas": "7705-08-0",
       "flinn_family": "inorganic 2",
@@ -311,7 +311,7 @@
         "H412 (72.4%): Harmful to aquatic life with long lasting effects"
       ]
     },
-    "7758-94-3": {
+    "ferrous chloride": {
       "name": "ferrous chloride",
       "cas": "7758-94-3",
       "flinn_family": "inorganic 2",
@@ -325,7 +325,7 @@
         "H412 (44.7%): Harmful to aquatic life with long lasting effects"
       ]
     },
-    "56-81-5": {
+    "glycerin": {
       "name": "glycerin",
       "cas": "56-81-5",
       "flinn_family": "organic 2",
@@ -334,8 +334,22 @@
         "No known GHS hazards logged"
       ]
     },
-    "7553-56-2": {
+    "iodine": {
       "name": "iodine",
+      "cas": "7553-56-2",
+      "flinn_family": "inorganic 2",
+      "storage_requirements": "TBD",
+      "hazards": [
+        "Warning",
+        "H312: Harmful in contact with skin",
+        "H332: Harmful if inhaled",
+        "H400: Very toxic to aquatic life",
+        "Danger",
+        "H302+H312+H332 (24.1%): Harmful if swallowed, in contact with skin or if inhaled"
+      ]
+    },
+    "iodine tincture": {
+      "name": "iodine tincture",
       "cas": "7553-56-2",
       "flinn_family": "inorganic 2",
       "storage_requirements": "TBD",
@@ -350,14 +364,14 @@
     },
     "iodine tincture 7%": {
       "name": "iodine tincture 7%",
-      "cas": "",
+      "cas": "7553-56-2",
       "flinn_family": "inorganic 2",
       "storage_requirements": "TBD",
       "hazards": [
         "Not found in online registry"
       ]
     },
-    "7439-89-6": {
+    "iron": {
       "name": "iron",
       "cas": "7439-89-6",
       "flinn_family": "inorganic 1",
@@ -371,16 +385,30 @@
         "H335: May cause respiratory irritation"
       ]
     },
+    "iron (III) chloride": {
+      "name": "iron (III) chloride",
+      "cas": "7705-08-0",
+      "flinn_family": "inorganic 2",
+      "storage_requirements": "TBD",
+      "hazards": [
+        "Danger",
+        "H302 (96.6%): Harmful if swallowed",
+        "H314 (75.4%): Causes severe skin burns and eye damage",
+        "H315 (24.4%): Causes skin irritation",
+        "H318 (24.5%): Causes serious eye damage",
+        "H412 (72.4%): Harmful to aquatic life with long lasting effects"
+      ]
+    },
     "iron (III) chloride - (labeled ferric chloride)": {
       "name": "iron (III) chloride - (labeled ferric chloride)",
-      "cas": "",
+      "cas": "7705-08-0",
       "flinn_family": "inorganic 2",
       "storage_requirements": "TBD",
       "hazards": [
         "Not found in online registry"
       ]
     },
-    "0143-07-07": {
+    "lauric acid": {
       "name": "lauric acid",
       "cas": "0143-07-07",
       "flinn_family": "organic 1",
@@ -392,7 +420,7 @@
         "H319 (21.6%): Causes serious eye irritation"
       ]
     },
-    "7439-92-1": {
+    "lead": {
       "name": "lead",
       "cas": "7439-92-1",
       "flinn_family": "inorganic 1",
@@ -406,7 +434,7 @@
         "H302 (36.2%): Harmful if swallowed"
       ]
     },
-    "10099-74-8": {
+    "lead nitrate": {
       "name": "lead nitrate",
       "cas": "10099-74-8",
       "flinn_family": "inorganic 3",
@@ -429,7 +457,7 @@
         "Not found in online registry"
       ]
     },
-    "7447-41-8": {
+    "lithium chloride": {
       "name": "lithium chloride",
       "cas": "7447-41-8",
       "flinn_family": "inorganic 2",
@@ -443,7 +471,7 @@
         "H302: Harmful if swallowed"
       ]
     },
-    "12298-68-9": {
+    "lugol's iodine": {
       "name": "lugol's iodine",
       "cas": "12298-68-9",
       "flinn_family": "inorganic 2",
@@ -452,7 +480,7 @@
         "GHS profile unavailable"
       ]
     },
-    "521-31-3": {
+    "luminol": {
       "name": "luminol",
       "cas": "521-31-3",
       "flinn_family": "organic 2",
@@ -467,14 +495,14 @@
     },
     "lycopodium powder": {
       "name": "lycopodium powder",
-      "cas": "",
+      "cas": "8023-70-9",
       "flinn_family": "organic 2",
       "storage_requirements": "TBD",
       "hazards": [
         "Not found in online registry"
       ]
     },
-    "7439-95-4": {
+    "Magnesium": {
       "name": "Magnesium",
       "cas": "7439-95-4",
       "flinn_family": "Inorganic 1",
@@ -488,7 +516,7 @@
         "H252: Self-heating in large quantities; may catch fire"
       ]
     },
-    "7786-30-3": {
+    "magnesium chloride": {
       "name": "magnesium chloride",
       "cas": "7786-30-3",
       "flinn_family": "inorganic 2",
@@ -502,7 +530,21 @@
         "H319 (11.8%): Causes serious eye irritation"
       ]
     },
-    "1309-48-4": {
+    "Magnesium Metal": {
+      "name": "Magnesium Metal",
+      "cas": "7439-95-4",
+      "flinn_family": "Inorganic 1",
+      "storage_requirements": "TBD",
+      "hazards": [
+        "Danger",
+        "H250: Catches fire spontaneously if exposed to air",
+        "H260: In contact with water releases flammable gases which may ignite spontaneously",
+        "H228 (44.9%): Flammable solid",
+        "H250 (36.5%): Catches fire spontaneously if exposed to air",
+        "H252: Self-heating in large quantities; may catch fire"
+      ]
+    },
+    "magnesium oxide": {
       "name": "magnesium oxide",
       "cas": "1309-48-4",
       "flinn_family": "inorganic 4",
@@ -513,7 +555,7 @@
         "H335: May cause respiratory irritation"
       ]
     },
-    "7487-88-9": {
+    "magnesium sulfate": {
       "name": "magnesium sulfate",
       "cas": "7487-88-9",
       "flinn_family": "inorganic 2",
@@ -525,7 +567,7 @@
         "H332 (57.1%): Harmful if inhaled"
       ]
     },
-    "1313-13-9": {
+    "manganese dioxide": {
       "name": "manganese dioxide",
       "cas": "1313-13-9",
       "flinn_family": "inorganic 4",
@@ -548,7 +590,7 @@
         "Not found in online registry"
       ]
     },
-    "547-58-0": {
+    "methyl orange": {
       "name": "methyl orange",
       "cas": "547-58-0",
       "flinn_family": "organic 9",
@@ -557,7 +599,7 @@
         "GHS profile unavailable"
       ]
     },
-    "61-73-4": {
+    "methylene blue": {
       "name": "methylene blue",
       "cas": "61-73-4",
       "flinn_family": "organic 9",
@@ -573,14 +615,14 @@
     },
     "Mineral Oil": {
       "name": "Mineral Oil",
-      "cas": "",
+      "cas": "8042-47-5",
       "flinn_family": "organic 3",
       "storage_requirements": "TBD",
       "hazards": [
         "Not found in online registry"
       ]
     },
-    "107-92-6": {
+    "n-butyric acid": {
       "name": "n-butyric acid",
       "cas": "107-92-6",
       "flinn_family": "organic 1",
@@ -594,7 +636,7 @@
         "H311: Toxic in contact with skin"
       ]
     },
-    "91-20-3": {
+    "napthalene": {
       "name": "napthalene",
       "cas": "91-20-3",
       "flinn_family": "organic 3",
@@ -617,7 +659,7 @@
         "Not found in online registry"
       ]
     },
-    "7440-02-0": {
+    "nickel": {
       "name": "nickel",
       "cas": "7440-02-0",
       "flinn_family": "inorganic 1",
@@ -642,7 +684,7 @@
     },
     "nutrient agar": {
       "name": "nutrient agar",
-      "cas": "",
+      "cas": "9002-18-0",
       "flinn_family": "organic m",
       "storage_requirements": "TBD",
       "hazards": [
@@ -651,14 +693,14 @@
     },
     "olive oil": {
       "name": "olive oil",
-      "cas": "",
+      "cas": "8001-25-0",
       "flinn_family": "organic 3",
       "storage_requirements": "TBD",
       "hazards": [
         "Not found in online registry"
       ]
     },
-    "144-62-7": {
+    "oxalic acid": {
       "name": "oxalic acid",
       "cas": "144-62-7",
       "flinn_family": "organic 1",
@@ -674,14 +716,14 @@
     },
     "paraffin wax": {
       "name": "paraffin wax",
-      "cas": "",
+      "cas": "8002-74-2",
       "flinn_family": "organic 3",
       "storage_requirements": "TBD",
       "hazards": [
         "Not found in online registry"
       ]
     },
-    "143-74-8": {
+    "phenol red": {
       "name": "phenol red",
       "cas": "143-74-8",
       "flinn_family": "organic 9",
@@ -693,7 +735,7 @@
         "H335 (87.7%): May cause respiratory irritation"
       ]
     },
-    "77-09-8": {
+    "phenolphthalein": {
       "name": "phenolphthalein",
       "cas": "77-09-8",
       "flinn_family": "organic 9",
@@ -707,7 +749,7 @@
         "H350 (99.7%): May cause cancer"
       ]
     },
-    "7758-02-03": {
+    "potassium bromide": {
       "name": "potassium bromide",
       "cas": "7758-02-03",
       "flinn_family": "inorganic 2",
@@ -720,7 +762,7 @@
         "H319: Causes serious eye irritation"
       ]
     },
-    "0584-08-07": {
+    "potassium carbonate": {
       "name": "potassium carbonate",
       "cas": "0584-08-07",
       "flinn_family": "inorganic 4",
@@ -734,7 +776,7 @@
         "Danger"
       ]
     },
-    "3811-04-09": {
+    "potassium chlorate": {
       "name": "potassium chlorate",
       "cas": "3811-04-09",
       "flinn_family": "inorganic 6",
@@ -748,7 +790,7 @@
         "H302: Harmful if swallowed"
       ]
     },
-    "7447-40-7": {
+    "potassium chloride": {
       "name": "potassium chloride",
       "cas": "7447-40-7",
       "flinn_family": "inorganic 2",
@@ -757,7 +799,7 @@
         "No known GHS hazards logged"
       ]
     },
-    "7778-50-9": {
+    "potassium dichromate": {
       "name": "potassium dichromate",
       "cas": "7778-50-9",
       "flinn_family": "inorganic 8",
@@ -771,7 +813,7 @@
         "H317: May cause an allergic skin reaction"
       ]
     },
-    "13943-58-3": {
+    "potassium ferrocyanide": {
       "name": "potassium ferrocyanide",
       "cas": "13943-58-3",
       "flinn_family": "inorganic 7",
@@ -782,7 +824,7 @@
         "H412: Harmful to aquatic life with long lasting effects"
       ]
     },
-    "1310-58-3": {
+    "potassium hydroxide": {
       "name": "potassium hydroxide",
       "cas": "1310-58-3",
       "flinn_family": "inorganic 4",
@@ -796,7 +838,7 @@
         "H314 (99.4%): Causes severe skin burns and eye damage"
       ]
     },
-    "7681-11-0": {
+    "potassium iodide": {
       "name": "potassium iodide",
       "cas": "7681-11-0",
       "flinn_family": "inorganic 2",
@@ -810,7 +852,7 @@
         "H334 (11.7%): May cause allergy or asthma symptoms or breathing difficulties if inhaled"
       ]
     },
-    "7757-79-1": {
+    "potassium nitrate": {
       "name": "potassium nitrate",
       "cas": "7757-79-1",
       "flinn_family": "inorganic 3",
@@ -833,7 +875,7 @@
         "Not found in online registry"
       ]
     },
-    "7722-64-7": {
+    "potassium permanganate": {
       "name": "potassium permanganate",
       "cas": "7722-64-7",
       "flinn_family": "inorganic 8",
@@ -849,14 +891,14 @@
     },
     "potassium permanganate 0.130 M": {
       "name": "potassium permanganate 0.130 M",
-      "cas": "",
+      "cas": "7722-64-7",
       "flinn_family": "inorganic 8",
       "storage_requirements": "TBD",
       "hazards": [
         "Not found in online registry"
       ]
     },
-    "333-20-0": {
+    "potassium thiocyanate": {
       "name": "potassium thiocyanate",
       "cas": "333-20-0",
       "flinn_family": "inorganic 7",
@@ -870,7 +912,7 @@
         "H319 (28.2%): Causes serious eye irritation"
       ]
     },
-    "69-72-7": {
+    "salicylic acid": {
       "name": "salicylic acid",
       "cas": "69-72-7",
       "flinn_family": "organic 1",
@@ -886,14 +928,14 @@
     },
     "sand, white": {
       "name": "sand, white",
-      "cas": "",
+      "cas": "14808-60-7",
       "flinn_family": "inorganic m",
       "storage_requirements": "TBD",
       "hazards": [
         "Not found in online registry"
       ]
     },
-    "7440-22-4": {
+    "silver": {
       "name": "silver",
       "cas": "7440-22-4",
       "flinn_family": "inorganic 1",
@@ -907,7 +949,7 @@
         "H400 (70.4%): Very toxic to aquatic life"
       ]
     },
-    "7761-88-8": {
+    "silver nitrate": {
       "name": "silver nitrate",
       "cas": "7761-88-8",
       "flinn_family": "inorganic 3",
@@ -923,7 +965,7 @@
     },
     "silver nitrate solution": {
       "name": "silver nitrate solution",
-      "cas": "",
+      "cas": "7761-88-8",
       "flinn_family": "inorganic 3",
       "storage_requirements": "TBD",
       "hazards": [
@@ -932,14 +974,14 @@
     },
     "silver oxide": {
       "name": "silver oxide",
-      "cas": "",
+      "cas": "20667-12-3",
       "flinn_family": "inorganic 4",
       "storage_requirements": "TBD",
       "hazards": [
         "Not found in online registry"
       ]
     },
-    "7440-23-5": {
+    "sodium": {
       "name": "sodium",
       "cas": "7440-23-5",
       "flinn_family": "Inorganic 1",
@@ -952,7 +994,7 @@
         "H318: Causes serious eye damage"
       ]
     },
-    "0127-09-03": {
+    "sodium acetate": {
       "name": "sodium acetate",
       "cas": "0127-09-03",
       "flinn_family": "inorganic 2",
@@ -961,7 +1003,7 @@
         "No known GHS hazards logged"
       ]
     },
-    "144-55-8": {
+    "sodium bicarbonate": {
       "name": "sodium bicarbonate",
       "cas": "144-55-8",
       "flinn_family": "inorganic 4",
@@ -970,7 +1012,7 @@
         "No known GHS hazards logged"
       ]
     },
-    "497-19-8": {
+    "sodium carbonate": {
       "name": "sodium carbonate",
       "cas": "497-19-8",
       "flinn_family": "inorganic 4",
@@ -984,7 +1026,7 @@
         "H332: Harmful if inhaled"
       ]
     },
-    "7647-14-5": {
+    "sodium chloride": {
       "name": "sodium chloride",
       "cas": "7647-14-5",
       "flinn_family": "inorganic 2",
@@ -997,7 +1039,7 @@
         "H319 (10.8%): Causes serious eye irritation"
       ]
     },
-    "1310-73-2": {
+    "sodium hydroxide": {
       "name": "sodium hydroxide",
       "cas": "1310-73-2",
       "flinn_family": "inorganic 4",
@@ -1011,7 +1053,7 @@
         "H318 (44.1%): Causes serious eye damage"
       ]
     },
-    "7681-82-5": {
+    "sodium iodide": {
       "name": "sodium iodide",
       "cas": "7681-82-5",
       "flinn_family": "Unclassified",
@@ -1025,7 +1067,7 @@
         "H400 (61.8%): Very toxic to aquatic life"
       ]
     },
-    "7631-99-4": {
+    "sodium nitrate": {
       "name": "sodium nitrate",
       "cas": "7631-99-4",
       "flinn_family": "inorganic 3",
@@ -1041,7 +1083,7 @@
     },
     "sodium phosphate": {
       "name": "sodium phosphate",
-      "cas": "",
+      "cas": "10049-21-5",
       "flinn_family": "inorganic 2",
       "storage_requirements": "TBD",
       "hazards": [
@@ -1057,7 +1099,7 @@
         "Not found in online registry"
       ]
     },
-    "7757-82-6": {
+    "sodium sulfate": {
       "name": "sodium sulfate",
       "cas": "7757-82-6",
       "flinn_family": "inorganic 2",
@@ -1068,7 +1110,7 @@
         "H370: Causes damage to organs"
       ]
     },
-    "7757-83-7": {
+    "sodium sulfite": {
       "name": "sodium sulfite",
       "cas": "7757-83-7",
       "flinn_family": "inorganic 2",
@@ -1082,7 +1124,7 @@
         "H302: Harmful if swallowed"
       ]
     },
-    "7772-98-7": {
+    "sodium thiosulfate": {
       "name": "sodium thiosulfate",
       "cas": "7772-98-7",
       "flinn_family": "inorganic 2",
@@ -1091,7 +1133,7 @@
         "No known GHS hazards logged"
       ]
     },
-    "7772-99-8": {
+    "stannous chloride": {
       "name": "stannous chloride",
       "cas": "7772-99-8",
       "flinn_family": "inorganic 2",
@@ -1123,7 +1165,7 @@
         "Not found in online registry"
       ]
     },
-    "10476-85-4": {
+    "strontium chloride": {
       "name": "strontium chloride",
       "cas": "10476-85-4",
       "flinn_family": "inorganic 2",
@@ -1146,7 +1188,7 @@
         "Not found in online registry"
       ]
     },
-    "7704-34-9": {
+    "sulfur": {
       "name": "sulfur",
       "cas": "7704-34-9",
       "flinn_family": "inorganic 10",
@@ -1178,7 +1220,7 @@
         "Not found in online registry"
       ]
     },
-    "635-76-7": {
+    "thionin": {
       "name": "thionin",
       "cas": "635-76-7",
       "flinn_family": "organic 9",
@@ -1196,7 +1238,7 @@
         "Not found in online registry"
       ]
     },
-    "7440-31-5": {
+    "tin": {
       "name": "tin",
       "cas": "7440-31-5",
       "flinn_family": "inorganic 1",
@@ -1228,7 +1270,7 @@
         "Not found in online registry"
       ]
     },
-    "7440-66-6": {
+    "zinc": {
       "name": "zinc",
       "cas": "7440-66-6",
       "flinn_family": "Inorganic 1",
@@ -1242,7 +1284,7 @@
         "Warning"
       ]
     },
-    "557-34-6": {
+    "zinc acetate": {
       "name": "zinc acetate",
       "cas": "557-34-6",
       "flinn_family": "inorganic 2",
@@ -1256,7 +1298,7 @@
         "H410 (16.4%): Very toxic to aquatic life with long lasting effects"
       ]
     },
-    "7779-88-6": {
+    "zinc nitrate": {
       "name": "zinc nitrate",
       "cas": "7779-88-6",
       "flinn_family": "inorganic 3",
@@ -1268,6 +1310,65 @@
         "H315 (99.1%): Causes skin irritation",
         "H318 (69.5%): Causes serious eye damage",
         "H319 (35.5%): Causes serious eye irritation"
+      ]
+    },
+    "Acetaminophen": {
+      "name": "Acetaminophen",
+      "cas": "103-90-2",
+      "flinn_family": "organic #2",
+      "storage_requirements": "TBD",
+      "hazards": [
+        "Harmful if swallowed. Irritating to skin",
+        "eyes and mucous membranes",
+        "Possible sensitizer. LD₅₀ 1944 mg/kg"
+      ]
+    },
+    "Acetanilide": {
+      "name": "Acetanilide",
+      "cas": "103-84-4",
+      "flinn_family": "Organic #2",
+      "storage_requirements": "",
+      "hazards": [
+        "Body tissue irritant; moderately toxic by ingestion. LD₅₀ 800 mg/kg."
+      ]
+    },
+    "Acetic Acid, Glacial": {
+      "name": "Acetic Acid, Glacial",
+      "cas": "64-19-7",
+      "flinn_family": "Organic #1",
+      "storage_requirements": "Acid Cabinet",
+      "hazards": [
+        "Corrosive to skin and tissue; moderate fire risk (flash point: 39°C); moderately toxic by ingestion and inhalation. LD₅₀ 3310 mg/kg. TLV 25 mg/m³."
+      ]
+    },
+    "Acetone": {
+      "name": "Acetone",
+      "cas": "67-64-1",
+      "flinn_family": "Organic #4",
+      "storage_requirements": "Flammables Cabinet",
+      "hazards": [
+        "Signal Word: DANGER\nH225: Highly flammable liquid and vapor\nP210: Keep away from heat",
+        "sparks",
+        "open flames",
+        "and hot surfaces."
+      ]
+    },
+    "Stearic Acid": {
+      "name": "Stearic Acid",
+      "cas": "57-11-4",
+      "flinn_family": "Organic #1",
+      "storage_requirements": "",
+      "hazards": [
+        "Nonhazardous"
+      ]
+    },
+    "Glucose": {
+      "name": "Glucose",
+      "cas": "192-62-6",
+      "flinn_family": "Organic #2",
+      "storage_requirements": "",
+      "hazards": [
+        "Nonhazardous"
       ]
     }
   }

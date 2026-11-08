@@ -73,9 +73,13 @@
       <input type="text" id="edit-location" placeholder="e.g. Acid Cabinet">
       
       <label>Hazards (Comma separated)</label>
-<textarea id="edit-hazards" placeholder="Corrosive, Flammable" rows="4" style="width: 100%; resize: vertical;"></textarea>
-
+      <textarea id="edit-hazards" placeholder="Corrosive, Flammable" rows="4" style="width: 100%; resize: vertical;"></textarea>
       
+      <!-- NEW AUTO-FETCH BUTTON -->
+      <button class="btn btn-export" onclick="fetchPubChemHazards()" style="width: 100%; margin-top: 5px; font-size: 0.9em; background-color: #17a2b8;">
+        ⚡ Auto-Fetch Hazards from PubChem
+      </button>
+
       <input type="hidden" id="edit-original-id">
       
       <div class="modal-actions">
@@ -185,8 +189,8 @@
         return;
       }
 
-      // The new ID is the CAS if available, otherwise the Name
-      const newId = cas !== "" ? cas : name;
+      // The new ID is ALWAYS the specific Name to allow duplicate CAS numbers
+      const newId = name;
 
       // If the ID changed (e.g. added a missing CAS), delete the old entry
       if (originalId !== "" && originalId !== newId) {
@@ -207,6 +211,122 @@
       // Clear the search bar and refresh the list to show the new/updated item at the top
       document.getElementById('searchInput').value = "";
       searchCatalog(); 
+    }
+
+    // --- PUBCHEM AUTO-FETCH LOGIC ---
+    async function fetchPubChemHazards() {
+      // Grab both inputs to prioritize queries and fill missing data
+      const casInput = document.getElementById('edit-cas');
+      const nameInput = document.getElementById('edit-name');
+      const hazardBox = document.getElementById('edit-hazards');
+      
+      const cas = casInput.value.trim();
+      const name = nameInput.value.trim();
+      const query = cas || name;
+
+      if (!query) {
+        alert("Please enter a CAS number or Chemical Name first to search PubChem.");
+        return;
+      }
+
+      hazardBox.value = "Fetching from PubChem... Please wait.";
+
+      try {
+        // Step 1: Search PubChem to get the unique Compound ID (CID)
+        const cidRes = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(query)}/cids/JSON`);
+        if (!cidRes.ok) throw new Error("Chemical not found in PubChem.");
+        const cidData = await cidRes.json();
+        const cid = cidData.IdentifierList.CID[0];
+
+        // Step 2: Auto-fetch CAS number if the field was left blank
+        if (!cas) {
+          try {
+            const synRes = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/synonyms/JSON`);
+            if (synRes.ok) {
+              const synData = await synRes.json();
+              const synonyms = synData.InformationList.Information[0].Synonym || [];
+              // Hunt for the standard CAS format pattern (e.g., 67-64-1 or 7761-88-8)
+              const casMatch = synonyms.find(s => /^\d{2,7}-\d{2}-\d$/.test(s));
+              if (casMatch) {
+                casInput.value = casMatch;
+              }
+            }
+          } catch (e) {
+            console.log("Could not automatically fetch CAS number.");
+          }
+        }
+
+        // Step 3: Fetch the specific GHS Classification data using the CID
+        const ghsRes = await fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/${cid}/JSON?heading=GHS+Classification`);
+        if (!ghsRes.ok) throw new Error("No GHS data found for this chemical.");
+        const ghsData = await ghsRes.json();
+
+        // Step 4: Parse the highly nested PubChem JSON for Signal Words and H-Codes
+        let hazardMap = new Map();
+        let formattedSignalWord = "";
+        
+        function extractHazards(obj) {
+          if (typeof obj !== 'object' || obj === null) return;
+          if (Array.isArray(obj)) {
+            obj.forEach(extractHazards);
+          } else {
+            if (obj.String) {
+              let s = obj.String.trim();
+              
+              // Intercept the signal word and reformat it immediately
+              if (s === "Danger" || s === "Warning") {
+                formattedSignalWord = `Signal word: ${s.toUpperCase()}`;
+              } 
+              // Grab standard H-codes
+              else if (/^H\d{3}/.test(s)) {
+                // Isolate the base code (e.g., "H228", "H302+H332", or "H360FD")
+                let match = s.match(/^(H[\d\+a-zA-Z]+)/);
+                
+                if (match) {
+                  let baseCode = match[1];
+                  let hasPercentage = s.includes('%');
+                  
+                  if (!hazardMap.has(baseCode)) {
+                    // First time seeing this code, add it
+                    hazardMap.set(baseCode, s);
+                  } else {
+                    // We already have this code. Check if the new one is better (has a percentage)
+                    let existingString = hazardMap.get(baseCode);
+                    if (hasPercentage && !existingString.includes('%')) {
+                      hazardMap.set(baseCode, s); // Overwrite with the detailed percentage version
+                    }
+                  }
+                }
+              }
+            }
+            Object.values(obj).forEach(extractHazards);
+          }
+        }
+        
+        extractHazards(ghsData);
+
+        // Step 5: Format and push to the text box
+        if (hazardMap.size === 0 && !formattedSignalWord) {
+          hazardBox.value = "No specific GHS hazards found on PubChem.";
+        } else {
+          let finalHazardsArray = [];
+          
+          // Ensure the custom Signal Word is the very first item in the list
+          if (formattedSignalWord) {
+            finalHazardsArray.push(formattedSignalWord);
+          }
+          
+          // Pull just the values from our Map (which filters out duplicates), sort them, and add them
+          let codes = Array.from(hazardMap.values()).sort();
+          finalHazardsArray = finalHazardsArray.concat(codes);
+          
+          // Join them with commas to match your database schema expectations
+          hazardBox.value = finalHazardsArray.join(", ");
+        }
+      } catch (error) {
+        hazardBox.value = "";
+        alert(error.message);
+      }
     }
 
     // --- EXPORT LOGIC ---

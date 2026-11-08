@@ -71,17 +71,17 @@
     <p id="user-display" style="font-size: 0.8em; color: #666; margin-top: -10px; margin-bottom: 20px;"></p>
     
     <div id="scanner-container">
-  <button id="ios-start-btn">📷 Tap to Start Camera</button>
-  <video id="ios-video" playsinline></video>
-  <canvas id="ios-canvas" style="display:none;"></canvas>
-  <div id="reader"></div>
-  
-  <div id="manual-entry">
-    <label style="display:block; font-weight:bold; margin-bottom:5px; font-size:0.9em; color:#333;">Manual Entry / Search</label>
-    <input type="number" id="manual-id-input" placeholder="Enter Inventory #" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box; font-size:1em;" inputmode="numeric">
-    <button class="btn-manual" onclick="submitManualId()">Lookup / Create Item</button>
-  </div>
-</div>
+      <button id="ios-start-btn">📷 Tap to Start Camera</button>
+      <video id="ios-video" playsinline></video>
+      <canvas id="ios-canvas" style="display:none;"></canvas>
+      <div id="reader"></div>
+      
+      <div id="manual-entry">
+        <label style="display:block; font-weight:bold; margin-bottom:5px; font-size:0.9em; color:#333;">Manual Entry / Search</label>
+        <input type="number" id="manual-id-input" placeholder="Enter Inventory #" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box; font-size:1em;" inputmode="numeric">
+        <button class="btn-manual" onclick="submitManualId()">Lookup / Create Item</button>
+      </div>
+    </div>
     
     <div id="status-msg">Loading scanner...</div>
     <div id="error-log"></div>
@@ -121,30 +121,43 @@
         </select>
       </div>
 
-      <div class="form-group">
+      <!-- CHEMICAL NAME & MIXTURE TOGGLE -->
+      <div class="form-group" style="position: relative;">
         <label>Chemical Name (Type to search)</label>
         <input type="text" id="f-chemName" placeholder="e.g. Acetone or 67-64-1" autocomplete="off">
         <div id="autocomplete-list" class="autocomplete-items"></div>
+        
+        <div style="margin-top: 8px; text-align: left;">
+          <input type="checkbox" id="mixture-toggle" onchange="toggleMixtureMode()">
+          <label for="mixture-toggle" style="display:inline; font-weight:normal; font-size:0.9em; cursor:pointer;">This is a mixture (Add multiple CAS numbers)</label>
+        </div>
+      </div>
+
+      <!-- COMPONENT SEARCH BAR (HIDDEN BY DEFAULT) -->
+      <div class="form-group" id="component-search-group" style="display:none; background: #e9ecef; padding: 12px; border-radius: 8px; border: 1px dashed #adb5bd; position: relative;">
+        <label>🔍 Search & Add Ingredient</label>
+        <input type="text" id="f-compSearch" placeholder="Type ingredient to add..." autocomplete="off">
+        <div id="comp-autocomplete-list" class="autocomplete-items"></div>
       </div>
 
       <div class="grid-2-col">
-        <div class="form-group"><label>CAS No.</label><input type="text" id="f-casNo"></div>
+        <div class="form-group"><label>CAS No.</label><textarea id="f-casNo" rows="2" style="width: 100%; resize: vertical;"></textarea></div>
         <div class="form-group">
-  <label>Manufacturer</label>
-  <input type="text" id="f-mfg" list="mfg-options" placeholder="Select or type...">
-  <datalist id="mfg-options">
-    <option value="Flinn Scientific">
-    <option value="Damon">
-    <option value="Kemtec">
-    <option value="Cambosco Scientific">
-    <option value="Mallinckrodt">
-    <option value="Sargent-Welch">
-    <option value="Scholar Chemistry">
-    <option value="Ward's">
-    <option value="Fisher Scientific">
-    <option value="Science Kit & Boreal Laboratories">
-  </datalist>
-</div>
+          <label>Manufacturer</label>
+          <input type="text" id="f-mfg" list="mfg-options" placeholder="Select or type...">
+          <datalist id="mfg-options">
+            <option value="Flinn Scientific">
+            <option value="Damon">
+            <option value="Kemtec">
+            <option value="Cambosco Scientific">
+            <option value="Mallinckrodt">
+            <option value="Sargent-Welch">
+            <option value="Scholar Chemistry">
+            <option value="Ward's">
+            <option value="Fisher Scientific">
+            <option value="Science Kit & Boreal Laboratories">
+          </datalist>
+        </div>
       </div>
       <div class="grid-2-col">
         <div class="form-group"><label>Receipt Date</label><input type="date" id="f-receipt"></div>
@@ -152,8 +165,7 @@
       </div>
       <div class="grid-2-col">
         <div class="form-group">
-          <label>Container Material</label>
-
+          <label>Container Type</label>
           <input type="text" id="f-container" list="container-options" placeholder="Select or type...">
           <datalist id="container-options">
             <option value="plastic">Plastic</option>
@@ -161,8 +173,6 @@
             <option value="can">Can</option>
             <option value="bag">Bag</option>
           </datalist>
-
-
         </div>
         <div class="form-group">
           <label>Form</label>
@@ -210,12 +220,12 @@
     // 🔴 INSERT YOUR FIREBASE CONFIG HERE 🔴
     const firebaseConfig = {
       apiKey: "AIzaSyCcpjuH1qv9IUDJJQR_5ms18TBRS8UFaV8",
-  authDomain: "scigarage.firebaseapp.com",
-  databaseURL: "https://scigarage-default-rtdb.firebaseio.com",
-  projectId: "scigarage",
-  storageBucket: "scigarage.firebasestorage.app",
-  messagingSenderId: "768658065204",
-  appId: "1:768658065204:web:31e0386ee9c9edfe3ac761"
+      authDomain: "scigarage.firebaseapp.com",
+      databaseURL: "https://scigarage-default-rtdb.firebaseio.com",
+      projectId: "scigarage",
+      storageBucket: "scigarage.firebasestorage.app",
+      messagingSenderId: "768658065204",
+      appId: "1:768658065204:web:31e0386ee9c9edfe3ac761"
     };
 
     const app = initializeApp(firebaseConfig);
@@ -256,6 +266,12 @@
       document.getElementById('end-id-group').style.display = isBatch ? "block" : "none";
       document.getElementById('lbl-invNum').innerText = isBatch ? "Start Inventory No." : "OHS Inventory No.";
       document.getElementById('f-invNum').readOnly = !isBatch;
+    }
+
+    // --- MIXTURE TOGGLE LOGIC ---
+    window.toggleMixtureMode = function() {
+      const isMixture = document.getElementById('mixture-toggle').checked;
+      document.getElementById('component-search-group').style.display = isMixture ? "block" : "none";
     }
 
     let compressedPhotoBlob = null;
@@ -329,18 +345,11 @@
           finalImageUrl = await getDownloadURL(imgRef);
         }
 
-        // MASS HISTORY LOGIC: Rebuild the array, add new entry if changed
         let updatedMassHistory = existingRecordData && existingRecordData.massHistory ? existingRecordData.massHistory : [];
-        
         if (!isNaN(currentMass)) {
-          // Check if this is the first entry, OR if the mass has actually changed since last time
           let lastRecordedMass = updatedMassHistory.length > 0 ? updatedMassHistory[updatedMassHistory.length - 1].mass : null;
-          
           if (lastRecordedMass !== currentMass) {
-            updatedMassHistory.push({
-              mass: currentMass,
-              date: new Date().toISOString()
-            });
+            updatedMassHistory.push({ mass: currentMass, date: new Date().toISOString() });
           }
         }
 
@@ -365,7 +374,6 @@
           lastVerified: new Date().toISOString()
         };
 
-        // Preserve existing URL if we didn't take a new picture
         if (finalImageUrl) payload.imageUrl = finalImageUrl;
 
         btn.innerText = "Saving to Database...";
@@ -379,7 +387,7 @@
         compressedPhotoBlob = null;
         document.getElementById('photo-preview').style.display = "none";
         document.getElementById('f-photo').value = ""; 
-        existingRecordData = null; // Clear global state
+        existingRecordData = null; 
         
         window.resetScanner();
         document.getElementById('status-msg').innerText = isBatch ? `✅ Batch Saved: ${startNum} to ${endNum}` : `✅ Saved Item #${String(startNum).padStart(5, '0')}`;
@@ -391,15 +399,22 @@
       }
     };
 
-    let scanner, isPaused = false, catalogData = {}, currentFocus = -1;
+    let scanner, isPaused = false, catalogData = {}, currentFocus = -1, compCurrentFocus = -1;
     let isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     const video = document.getElementById("ios-video");
     const canvasElement = document.getElementById("ios-canvas");
     const canvasContext = canvasElement.getContext("2d", { willReadFrequently: true });
 
     function initApp() {
-      fetch('chemical_database.json').then(r => r.json()).then(d => catalogData = d.master_catalog || {}).catch(e => console.error(e));
+      // Pointing directly to Firebase chemicalDatabase instead of local JSON
+      get(dbRef(db, 'chemicalDatabase')).then(snapshot => {
+        if(snapshot.exists()) {
+          const data = snapshot.val();
+          catalogData = data.master_catalog ? data.master_catalog : data;
+        }
+      });
 
+      // 1. PRIMARY CHEMICAL NAME AUTOCOMPLETE
       const nameInput = document.getElementById('f-chemName');
       const autoList = document.getElementById('autocomplete-list');
       nameInput.addEventListener('input', function() {
@@ -410,8 +425,10 @@
             let item = document.createElement("div");
             item.innerHTML = `<strong>${chem.name}</strong> <span style="color:#666; font-size:0.85em;">(${chem.cas || 'No CAS'})</span>`;
             item.addEventListener("click", function() {
-              document.getElementById('f-chemName').value = chem.name; document.getElementById('f-casNo').value = chem.cas || "";
-              document.getElementById('f-flinn').value = chem.flinn_family || ""; document.getElementById('f-ghs').value = (chem.hazards && chem.hazards.length>0) ? chem.hazards.join(", ") : "";
+              document.getElementById('f-chemName').value = chem.name; 
+              document.getElementById('f-casNo').value = chem.cas || "";
+              document.getElementById('f-flinn').value = chem.flinn_family || ""; 
+              document.getElementById('f-ghs').value = (chem.hazards && chem.hazards.length>0) ? chem.hazards.join(", ") : "";
               autoList.innerHTML = '';
               ['f-chemName', 'f-casNo', 'f-flinn', 'f-ghs'].forEach(id => { const el = document.getElementById(id); el.classList.add('autofill-flash'); setTimeout(() => el.classList.remove('autofill-flash'), 600); });
             });
@@ -422,12 +439,61 @@
 
       nameInput.addEventListener("keydown", function(e) {
         let items = autoList.getElementsByTagName("div");
-        if (e.keyCode === 40) { currentFocus++; addActive(items); } else if (e.keyCode === 38) { currentFocus--; addActive(items); } else if (e.keyCode === 13) { e.preventDefault(); if (currentFocus > -1) { if (items) items[currentFocus].click(); } }
+        if (e.keyCode === 40) { currentFocus++; addActive(items, currentFocus); } else if (e.keyCode === 38) { currentFocus--; addActive(items, currentFocus); } else if (e.keyCode === 13) { e.preventDefault(); if (currentFocus > -1) { if (items) items[currentFocus].click(); } }
       });
-      function addActive(x) { if (!x) return false; removeActive(x); if (currentFocus >= x.length) currentFocus = 0; if (currentFocus < 0) currentFocus = (x.length - 1); x[currentFocus].classList.add("autocomplete-active"); x[currentFocus].scrollIntoView({ block: "nearest" }); }
-      function removeActive(x) { for (let i = 0; i < x.length; i++) x[i].classList.remove("autocomplete-active"); }
       document.addEventListener("click", function (e) { if (e.target !== nameInput) autoList.innerHTML = ''; });
 
+      // 2. COMPONENT SEARCH AUTOCOMPLETE (FOR MIXTURES)
+      const compInput = document.getElementById('f-compSearch');
+      const compAutoList = document.getElementById('comp-autocomplete-list');
+      
+      compInput.addEventListener('input', function() {
+        let val = this.value; compAutoList.innerHTML = ''; compCurrentFocus = -1; if (!val) return;
+        let count = 0;
+        for (const [key, chem] of Object.entries(catalogData)) {
+          if (chem.name.toLowerCase().includes(val.toLowerCase()) || (chem.cas && chem.cas.includes(val))) {
+            let item = document.createElement("div");
+            item.innerHTML = `<strong>${chem.name}</strong> <span style="color:#666; font-size:0.85em;">(${chem.cas || 'No CAS'})</span>`;
+            
+            item.addEventListener("click", function() {
+              const casBox = document.getElementById('f-casNo');
+              // Format exactly as you requested
+              const newEntry = `${chem.name}: ${chem.cas || 'No CAS'}`;
+              
+              if (casBox.value.trim() === "") {
+                  casBox.value = newEntry;
+              } else {
+                  casBox.value += `\n${newEntry}`; // Pushes to a new line!
+              }
+              
+              compAutoList.innerHTML = '';
+              compInput.value = '';
+              casBox.classList.add('autofill-flash');
+              setTimeout(() => casBox.classList.remove('autofill-flash'), 600);
+            });
+            compAutoList.appendChild(item); count++; if (count >= 8) break; 
+          }
+        }
+      });
+
+      compInput.addEventListener("keydown", function(e) {
+        let items = compAutoList.getElementsByTagName("div");
+        if (e.keyCode === 40) { compCurrentFocus++; addActive(items, compCurrentFocus); } else if (e.keyCode === 38) { compCurrentFocus--; addActive(items, compCurrentFocus); } else if (e.keyCode === 13) { e.preventDefault(); if (compCurrentFocus > -1) { if (items) items[compCurrentFocus].click(); } }
+      });
+      document.addEventListener("click", function (e) { if (e.target !== compInput) compAutoList.innerHTML = ''; });
+
+      // Helper function for keyboard navigation
+      function addActive(x, focusVar) { 
+        if (!x) return false; 
+        for (let i = 0; i < x.length; i++) x[i].classList.remove("autocomplete-active"); 
+        if (focusVar >= x.length) focusVar = 0; 
+        if (focusVar < 0) focusVar = (x.length - 1); 
+        x[focusVar].classList.add("autocomplete-active"); 
+        x[focusVar].scrollIntoView({ block: "nearest" }); 
+      }
+
+
+      // --- CAMERA INITIALIZATION ---
       const iosBtn = document.getElementById('ios-start-btn');
       if (isMobile) {
         iosBtn.style.display = "block"; document.getElementById('status-msg').innerText = "Ready to initialize.";
@@ -459,7 +525,7 @@
 
         if (snapshot.exists()) {
           const data = snapshot.val();
-          existingRecordData = data; // SAVE TO GLOBAL STATE
+          existingRecordData = data; 
           document.getElementById('edit-warning').style.display = "block";
           
           document.getElementById('f-origin').value = data.containerOrigin || "Manufacturer";
@@ -477,6 +543,14 @@
           document.getElementById('f-flinn').value = data.flinnCat || "";
           document.getElementById('f-ghs').value = data.ghs || "";
           document.getElementById('f-notes').value = data.notes || "";
+
+          // Auto-detect if this is a mixture based on newline breaks or colons and toggle the UI
+          if (data.casNo && (data.casNo.includes('\n') || data.casNo.includes(':'))) {
+            document.getElementById('mixture-toggle').checked = true;
+          } else {
+            document.getElementById('mixture-toggle').checked = false;
+          }
+          toggleMixtureMode();
           
           if(data.imageUrl) {
              const preview = document.getElementById('photo-preview');
@@ -499,37 +573,29 @@
       checkRTDB(decodedText);
     }
 
-
-// --- MANUAL ID ENTRY LOGIC ---
-window.submitManualId = function() {
-  const manualInput = document.getElementById('manual-id-input').value;
-  if (!manualInput) {
-    alert("Please enter a valid Inventory Number.");
-    return;
-  }
-  
-  // Pause the camera if it happens to be running
-  isPaused = true; 
-  if (!isMobile && scanner) scanner.pause();
-  
-  // Clear the input box for next time
-  document.getElementById('manual-id-input').value = "";
-  
-  // Fire the exact same database check as if we scanned a QR code!
-  checkRTDB(manualInput);
-}
-
-
-
-
+    window.submitManualId = function() {
+      const manualInput = document.getElementById('manual-id-input').value;
+      if (!manualInput) {
+        alert("Please enter a valid Inventory Number.");
+        return;
+      }
+      isPaused = true; 
+      if (!isMobile && scanner) scanner.pause();
+      document.getElementById('manual-id-input').value = "";
+      checkRTDB(manualInput);
+    }
 
     window.resetScanner = function() {
       document.querySelectorAll('#inventory-form input:not([readonly]):not([type="checkbox"]), #inventory-form textarea').forEach(input => input.value = '');
       document.querySelectorAll('#inventory-form select').forEach(select => select.selectedIndex = 0);
+      
+      document.getElementById('mixture-toggle').checked = false;
+      toggleMixtureMode();
+
       document.getElementById('photo-preview').style.display = "none";
       document.getElementById('photo-preview').src = "";
       compressedPhotoBlob = null;
-      existingRecordData = null; // CLEAR GLOBAL STATE
+      existingRecordData = null; 
       document.getElementById('error-log').innerText = '';
       
       document.getElementById('inventory-form').style.display = "none";

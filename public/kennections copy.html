@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kennections</title>
+    <style>
+        :root { 
+            --primary: #2c3e50; 
+            --success: #27ae60; 
+            --danger: #e74c3c; 
+            --bg: #f4f7f6; 
+            --highlight: #3498db; 
+            --card-bg: #ffffff;
+        }
+
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            background: var(--bg); 
+            color: var(--primary); 
+            margin: 0; 
+            padding: 20px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .container { 
+            max-width: 900px; 
+            width: 100%; 
+            background: var(--card-bg); 
+            padding: 30px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 18px rgba(0,0,0,0.08); 
+            box-sizing: border-box; 
+        }
+        
+        .header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 2px solid var(--bg); 
+            padding-bottom: 15px; 
+            margin-bottom: 25px; 
+        }
+
+        h1 { margin: 0; font-size: 1.8rem; font-weight: 800; }
+        
+        .user-status {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.9rem;
+        }
+
+        .auth-badge {
+            background: #eef2f7;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .btn { 
+            background: #7f8c8d; 
+            color: white; 
+            border: none; 
+            padding: 9px 18px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-size: 0.95rem; 
+            font-weight: 600; 
+            transition: background 0.2s, transform 0.1s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            text-decoration: none;
+        }
+        .btn:hover { background: #636e72; }
+        .btn:active { transform: translateY(1px); }
+        .btn-nav { background: var(--primary); }
+        .btn-nav:hover { background: #1a252f; }
+        .btn-signout { background: #e74c3c; font-size: 0.85rem; padding: 6px 12px; }
+        .btn-signout:hover { background: #c0392b; }
+
+        .grid-view { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); 
+            gap: 16px; 
+            margin-top: 20px;
+        }
+        /* WITH THIS: */
+        .grid-item { 
+            background: #ecf0f1; 
+            color: var(--primary); 
+            height: 115px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem; 
+            font-weight: 700; 
+            border-radius: 10px; 
+            cursor: pointer; 
+            border: 2px solid #bdc3c7;
+            transition: transform 0.15s, border-color 0.15s, background 0.15s; 
+            position: relative;
+        }
+
+        .card-reset-btn {
+            margin-top: 6px;
+            background: rgba(0, 0, 0, 0.22);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            border-radius: 4px;
+            padding: 3px 10px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: background 0.2s, transform 0.1s;
+        }
+        .card-reset-btn:hover {
+            background: rgba(0, 0, 0, 0.45);
+        }
+        .card-reset-btn:active {
+            transform: scale(0.95);
+        }
+        .grid-item:hover { 
+            transform: translateY(-3px); 
+            border-color: var(--highlight);
+        }
+        .grid-item.completed { 
+            background: var(--success); 
+            color: white; 
+            border-color: var(--success);
+        }
+
+        #puzzle-view { display: none; }
+        .top-bar { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 25px; 
+        }
+        
+        .question-block { 
+            margin-bottom: 24px; 
+            padding: 18px; 
+            background: #fafbfc; 
+            border-radius: 8px; 
+            border: 1px solid #e1e8ed;
+            border-left: 6px solid #bdc3c7; 
+            transition: border-left-color 0.3s, background 0.3s;
+        }
+        .question-block.correct { border-left-color: var(--success); background: #f6fcf8; }
+        .question-block.wrong { border-left-color: var(--danger); background: #fef7f7; }
+        .question-text { font-size: 1.05rem; margin-bottom: 14px; line-height: 1.45; font-weight: 500; }
+        
+        .answer-container { 
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 18px 30px; 
+            align-items: center; 
+        }
+        .word-group { 
+            display: flex; 
+            gap: 5px; 
+        }
+        
+        .letter-input { 
+            width: 34px; 
+            height: 42px; 
+            text-align: center; 
+            font-size: 1.3rem; 
+            text-transform: uppercase; 
+            border: 2px solid #cbd5e1; 
+            border-radius: 6px; 
+            outline: none; 
+            font-weight: 700; 
+            padding: 0; 
+            background: #ffffff;
+            color: #1e293b;
+            transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s; 
+        }
+        .letter-input:focus { border-color: var(--highlight); box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2); }
+        .letter-input.correct { border-color: var(--success); background: #e8f8f5; color: var(--success); }
+        .letter-input.wrong { border-color: var(--danger); background: #fdedec; color: var(--danger); }
+        
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .action-btn { 
+            background: #e67e22; 
+            color: white; 
+            border: none; 
+            padding: 8px 14px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-size: 0.85rem; 
+            font-weight: 600; 
+            transition: opacity 0.2s;
+        }
+        .action-btn:hover { opacity: 0.9; }
+
+        /* Split layout for Discovered Clues & Kennection block */
+        .bottom-section {
+            margin-top: 35px;
+            display: flex;
+            gap: 25px;
+            align-items: stretch;
+        }
+
+        .solved-clues-box {
+            flex: 0 0 240px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 18px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .solved-clues-title {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+            color: #64748b;
+            margin-bottom: 12px;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 6px;
+        }
+
+        .solved-clues-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .solved-clue-item {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #334155;
+            text-align: left;
+            line-height: 1.3;
+        }
+
+        .solved-clue-item.placeholder {
+            color: #94a3b8;
+            font-weight: 500;
+            font-style: italic;
+        }
+
+        .kennection-container {
+            flex: 1;
+            padding: 24px; 
+            background: #fff8f0; 
+            border: 2px dashed #f39c12; 
+            border-radius: 10px; 
+            text-align: center; 
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            box-sizing: border-box;
+            transition: border 0.3s, background 0.3s;
+        }
+        .kennection-container.correct { border-color: var(--success); border-style: solid; background: #e8f8f5; }
+        .kennection-container.wrong { border-color: var(--danger); border-style: solid; background: #fef7f7; }
+        .kennection-title { font-weight: 800; font-size: 1.25rem; margin-bottom: 18px; letter-spacing: 1px; }
+
+        /* Puzzle Navigation Bar */
+        .puzzle-nav-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 35px;
+            padding-top: 25px;
+            border-top: 2px solid var(--bg);
+            gap: 12px;
+        }
+
+        .nav-btn-slot {
+            flex: 1;
+            display: flex;
+        }
+        .nav-btn-slot.left { justify-content: flex-start; }
+        .nav-btn-slot.center { justify-content: center; }
+        .nav-btn-slot.right { justify-content: flex-end; }
+
+        #auth-overlay { 
+            position: fixed; 
+            top: 0; left: 0; 
+            width: 100%; height: 100%; 
+            background: rgba(0, 0, 0, 0.65); 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            z-index: 1000; 
+        }
+        .auth-card { 
+            background: white; 
+            padding: 35px; 
+            border-radius: 14px; 
+            text-align: center; 
+            max-width: 420px; 
+            width: 90%; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+        }
+        .auth-card h2 { margin-top: 0; font-size: 1.6rem; }
+        .auth-card p { color: #64748b; line-height: 1.5; font-size: 0.95rem; margin-bottom: 25px; }
+
+        .auth-card button {
+            background: var(--highlight);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 20px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.2s;
+        }
+        .auth-card button:hover { background: #2980b9; }
+
+        .error-msg {
+            margin-top: 15px;
+            padding: 10px;
+            background: #fde8e8;
+            color: var(--danger);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .container { padding: 18px; }
+            .bottom-section { flex-direction: column; }
+            .solved-clues-box { flex: none; width: 100%; }
+            .letter-input { width: 26px; height: 34px; font-size: 1.1rem; }
+            .answer-container { gap: 12px 16px; }
+            .btn-group { width: 100%; margin-top: 8px; }
+            .action-btn { flex: 1; text-align: center; }
+            .puzzle-nav-bar { flex-direction: row; flex-wrap: wrap; }
+            .nav-btn-slot.center { order: 3; width: 100%; margin-top: 10px; }
+            .nav-btn-slot.center .btn { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="auth-overlay">
+    <div class="auth-card">
+        <h2>Kennections</h2>
+        <p>Sign in with your authorized Google account to access puzzles and synchronize your progress.</p>
+        <button onclick="signIn()">Sign in with Google</button>
+        <div id="auth-error" class="error-msg"></div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="header">
+        <h1>Kennections</h1>
+        <div class="user-status">
+            <span id="user-display" class="auth-badge">Authenticating...</span>
+            <button id="signout-btn" class="btn btn-signout" style="display: none;" onclick="signOutUser()">Sign Out</button>
+        </div>
+    </div>
+    
+    <div id="landing-view">
+        <p style="text-align: center; color: #64748b; margin-bottom: 25px;">Select a puzzle number below to play.</p>
+        <div class="grid-view" id="grid-container"></div>
+    </div>
+    
+    <div id="puzzle-view">
+        <div class="top-bar">
+            <button class="btn" onclick="showGrid()">← All Puzzles</button>
+            <h2 id="puzzle-title" style="margin: 0; font-size: 1.4rem;"></h2>
+        </div>
+        <div id="questions-container"></div>
+        
+        <div class="bottom-section">
+            <div class="solved-clues-box">
+                <div class="solved-clues-title">Discovered Clues</div>
+                <ul class="solved-clues-list" id="solved-clues-list"></ul>
+            </div>
+            
+            <div class="kennection-container" id="kennection-container">
+                <div class="kennection-title">WHAT'S THE KENNECTION?</div>
+                <div class="answer-container" style="justify-content: center;" id="kennection-inputs-container"></div>
+                <div style="margin-top: 20px;">
+                    <button class="action-btn" id="reveal-k-btn" onclick="revealKennection()">Reveal Kennection</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Puzzle Navigation Footer -->
+        <div class="puzzle-nav-bar">
+            <div class="nav-btn-slot left">
+                <button class="btn btn-nav" id="prev-puzzle-btn" onclick="navigatePuzzle(-1)">← Previous</button>
+            </div>
+            <div class="nav-btn-slot center">
+                <button class="btn" onclick="showGrid()">Main Menu</button>
+            </div>
+            <div class="nav-btn-slot right">
+                <button class="btn btn-nav" id="next-puzzle-btn" onclick="navigatePuzzle(1)">Next →</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+    import { 
+        getAuth, 
+        signInWithPopup, 
+        GoogleAuthProvider, 
+        onAuthStateChanged, 
+        signOut 
+    } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+    import { 
+        getDatabase, 
+        ref, 
+        get, 
+        update, 
+        onValue 
+    } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyCcpjuH1qv9IUDJJQR_5ms18TBRS8UFaV8",
+        authDomain: "scigarage.firebaseapp.com",
+        databaseURL: "https://scigarage-default-rtdb.firebaseio.com",
+        projectId: "scigarage",
+        storageBucket: "scigarage.firebasestorage.app",
+        messagingSenderId: "768658065204",
+        appId: "1:768658065204:web:31e0386ee9c9edfe3ac761",
+        measurementId: "G-SJ48L43TZ2"
+    };
+
+    const AUTHORIZED_EMAILS = [
+        "pianodemon88@gmail.com",
+        "kellyhoehn@gmail.com"
+    ];
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+    const provider = new GoogleAuthProvider();
+
+    let userKey = "";
+    let puzzlesData = {};
+    let userProgress = {};
+    let currentPuzzleId = null;
+
+    window.signIn = async function() {
+        const errEl = document.getElementById("auth-error");
+        errEl.style.display = "none";
+        try {
+            await signInWithPopup(auth, provider);
+        } catch (error) {
+            errEl.innerText = error.message;
+            errEl.style.display = "block";
+        }
+    };
+
+    window.signOutUser = function() {
+        signOut(auth).then(() => {
+            location.reload();
+        });
+    };
+
+    onAuthStateChanged(auth, async (user) => {
+        const overlay = document.getElementById("auth-overlay");
+        const userDisplay = document.getElementById("user-display");
+        const signoutBtn = document.getElementById("signout-btn");
+        const errEl = document.getElementById("auth-error");
+
+        if (user && user.email) {
+            const email = user.email.toLowerCase();
+            if (AUTHORIZED_EMAILS.includes(email)) {
+                overlay.style.display = "none";
+                userDisplay.innerText = email;
+                signoutBtn.style.display = "inline-block";
+                
+                userKey = email.replace(/\./g, ',');
+                loadData();
+            } else {
+                overlay.style.display = "flex";
+                errEl.innerText = `Access denied. ${email} is not authorized for this database.`;
+                errEl.style.display = "block";
+                userDisplay.innerText = "Unauthorized";
+                signoutBtn.style.display = "inline-block";
+            }
+        } else {
+            overlay.style.display = "flex";
+            userDisplay.innerText = "Not logged in";
+            signoutBtn.style.display = "none";
+        }
+    });
+
+    async function loadData() {
+        try {
+            const pRef = ref(db, 'kennections');
+            const snap = await get(pRef);
+            
+            if (snap.exists()) {
+                puzzlesData = snap.val();
+                
+                const uRef = ref(db, `kennections_users/${userKey}`);
+                onValue(uRef, (uSnap) => {
+                    userProgress = uSnap.exists() ? uSnap.val() : {};
+                    renderGrid();
+                    if (currentPuzzleId) {
+                        renderPuzzle(currentPuzzleId);
+                    }
+                });
+            } else {
+                alert("Connected to RTDB, but no puzzles found at /kennections.");
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Error loading from RTDB: " + e.message);
+        }
+    }
+
+    // WITH THIS:
+    window.renderGrid = function() {
+        const grid = document.getElementById("grid-container");
+        grid.innerHTML = "";
+        
+        Object.keys(puzzlesData).sort((a,b) => parseInt(a) - parseInt(b)).forEach(id => {
+            const isCompleted = userProgress[`puzzle_${id}_completed`] === true;
+            grid.innerHTML += `
+                <div class="grid-item ${isCompleted ? 'completed' : ''}" onclick="openPuzzle('${id}')">
+                    <span>${id}</span>
+                    ${isCompleted ? `<button class="card-reset-btn" onclick="resetPuzzle(event, '${id}')">Reset</button>` : ''}
+                </div>
+            `;
+        });
+    };
+
+   window.resetPuzzle = async function(event, id) {
+        event.stopPropagation(); // Prevents openPuzzle() from firing
+
+        if (!confirm(`Reset Puzzle #${id}? All saved answers for this puzzle will be cleared.`)) {
+            return;
+        }
+
+        if (!userKey) return;
+
+        // Setting RTDB keys to null removes them from the database
+        await update(ref(db, `kennections_users/${userKey}`), {
+            [id]: null,
+            [`puzzle_${id}_completed`]: null
+        });
+
+        // Clean local state and refresh grid
+        delete userProgress[id];
+        delete userProgress[`puzzle_${id}_completed`];
+        renderGrid();
+    };
+
+    window.showGrid = function() {
+        currentPuzzleId = null;
+        document.getElementById("puzzle-view").style.display = "none";
+        document.getElementById("landing-view").style.display = "block";
+    };
+
+    window.openPuzzle = function(id) {
+        currentPuzzleId = id;
+        document.getElementById("landing-view").style.display = "none";
+        document.getElementById("puzzle-view").style.display = "block";
+        document.getElementById("puzzle-title").innerText = `Puzzle #${id}`;
+        renderPuzzle(id);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    window.navigatePuzzle = function(delta) {
+        const puzzleIds = Object.keys(puzzlesData).sort((a, b) => parseInt(a) - parseInt(b));
+        const currentIndex = puzzleIds.indexOf(String(currentPuzzleId));
+        if (currentIndex === -1) return;
+        
+        const targetIndex = currentIndex + delta;
+        if (targetIndex >= 0 && targetIndex < puzzleIds.length) {
+            openPuzzle(puzzleIds[targetIndex]);
+        }
+    };
+
+    function updateNavButtons(id) {
+        const puzzleIds = Object.keys(puzzlesData).sort((a, b) => parseInt(a) - parseInt(b));
+        const currentIndex = puzzleIds.indexOf(String(id));
+        const prevBtn = document.getElementById("prev-puzzle-btn");
+        const nextBtn = document.getElementById("next-puzzle-btn");
+
+        if (currentIndex > 0) {
+            const prevId = puzzleIds[currentIndex - 1];
+            prevBtn.style.visibility = "visible";
+            prevBtn.innerHTML = `← Puzzle #${prevId}`;
+        } else {
+            prevBtn.style.visibility = "hidden";
+        }
+
+        if (currentIndex >= 0 && currentIndex < puzzleIds.length - 1) {
+            const nextId = puzzleIds[currentIndex + 1];
+            nextBtn.style.visibility = "visible";
+            nextBtn.innerHTML = `Puzzle #${nextId} →`;
+        } else {
+            nextBtn.style.visibility = "hidden";
+        }
+    }
+
+    function updateSolvedCluesList() {
+        const p = puzzlesData[currentPuzzleId];
+        const up = userProgress[currentPuzzleId] || {};
+        const listEl = document.getElementById("solved-clues-list");
+        listEl.innerHTML = "";
+
+        p.questions.forEach((q, qIndex) => {
+            const isSolved = up[`q${qIndex}`] === true;
+            if (isSolved) {
+                listEl.innerHTML += `<li class="solved-clue-item">${qIndex + 1}. ${q.answer}</li>`;
+            } else {
+                listEl.innerHTML += `<li class="solved-clue-item placeholder">${qIndex + 1}. — — — —</li>`;
+            }
+        });
+    }
+
+    function renderPuzzle(id) {
+        const p = puzzlesData[id];
+        const up = userProgress[id] || {};
+        const container = document.getElementById("questions-container");
+        container.innerHTML = "";
+        
+        p.questions.forEach((q, qIndex) => {
+            const isSolved = up[`q${qIndex}`] === true;
+            const words = q.answer.split(' ');
+            
+            let inputsHtml = words.map((w, wIdx) => {
+                let letterInputs = w.split('').map((l, lIdx) => 
+                    `<input type="text" class="letter-input ${isSolved ? 'correct' : ''}" 
+                      maxlength="1" data-q="${qIndex}" data-w="${wIdx}" data-l="${lIdx}" 
+                      value="${isSolved ? l : ''}" ${isSolved ? 'disabled' : ''} autocomplete="off" spellcheck="false">`
+                ).join('');
+                return `<div class="word-group">${letterInputs}</div>`;
+            }).join('');
+            
+            container.innerHTML += `
+                <div class="question-block ${isSolved ? 'correct' : ''}" id="qb-${qIndex}">
+                    <div class="question-text">${q.text}</div>
+                    <div class="answer-container">
+                        ${inputsHtml}
+                        <div class="btn-group">
+                            ${!isSolved ? `<button class="action-btn" onclick="revealAnswer(${qIndex})">Reveal</button>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        // Kennection section
+        const kSolved = up.kennection === true;
+        const kWords = p.kennection.split(' ');
+        let kInputs = kWords.map((w, wIdx) => {
+            let letterInputs = w.split('').map((l, lIdx) => 
+                `<input type="text" class="letter-input kennection-input ${kSolved ? 'correct' : ''}" 
+                  maxlength="1" data-k="true" data-w="${wIdx}" data-l="${lIdx}" 
+                  value="${kSolved ? l : ''}" ${kSolved ? 'disabled' : ''} autocomplete="off" spellcheck="false">`
+            ).join('');
+            return `<div class="word-group">${letterInputs}</div>`;
+        }).join('');
+        
+        const kContainer = document.getElementById("kennection-container");
+        kContainer.className = `kennection-container ${kSolved ? 'correct' : ''}`;
+        document.getElementById("kennection-inputs-container").innerHTML = kInputs;
+        // WITH THIS:
+        const allQuestionsSolved = [0, 1, 2, 3, 4].every(i => up[`q${i}`] === true);
+        document.getElementById("reveal-k-btn").style.display = (!kSolved && allQuestionsSolved) ? 'inline-block' : 'none';
+
+        updateSolvedCluesList();
+        updateNavButtons(id);
+        attachInputListeners();
+    }
+
+    function attachInputListeners() {
+        const p = puzzlesData[currentPuzzleId];
+
+        // Attach listeners per question block
+        p.questions.forEach((_, qIndex) => {
+            const inputs = Array.from(document.querySelectorAll(`input[data-q="${qIndex}"]:not([disabled])`));
+            inputs.forEach((input, i) => {
+                input.addEventListener('input', (e) => {
+                    // Do not forward focus to next question
+                    if (e.target.value.length === 1 && i < inputs.length - 1) {
+                        inputs[i + 1].focus();
+                    }
+                    evaluateQuestionAuto(qIndex);
+                });
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Backspace' && e.target.value === '' && i > 0) {
+                        inputs[i - 1].focus();
+                    }
+                });
+            });
+        });
+
+        // Attach listeners for Kennection inputs
+        const kInputs = Array.from(document.querySelectorAll(`input[data-k="true"]:not([disabled])`));
+        kInputs.forEach((input, i) => {
+            input.addEventListener('input', (e) => {
+                if (e.target.value.length === 1 && i < kInputs.length - 1) {
+                    kInputs[i + 1].focus();
+                }
+                evaluateKennectionAuto();
+            });
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && e.target.value === '' && i > 0) {
+                    kInputs[i - 1].focus();
+                }
+            });
+        });
+    }
+
+    function evaluateQuestionAuto(qIndex) {
+        const p = puzzlesData[currentPuzzleId];
+        const answer = p.questions[qIndex].answer.replace(/[^A-Z0-9]/ig, '').toUpperCase();
+        const inputs = Array.from(document.querySelectorAll(`input[data-q="${qIndex}"]`));
+        const block = document.getElementById(`qb-${qIndex}`);
+
+        const allFilled = inputs.every(inp => inp.value.trim().length === 1);
+
+        if (!allFilled) {
+            inputs.forEach(inp => {
+                inp.classList.remove('correct', 'wrong');
+            });
+            block.classList.remove('correct', 'wrong');
+            return;
+        }
+
+        const guess = inputs.map(i => i.value.trim()).join('').toUpperCase();
+
+        if (guess === answer) {
+            inputs.forEach(inp => {
+                inp.classList.remove('wrong');
+                inp.classList.add('correct');
+                inp.disabled = true;
+            });
+            block.classList.remove('wrong');
+            block.classList.add('correct');
+            block.querySelectorAll('.btn-group').forEach(b => b.style.display = 'none');
+            
+            saveProgress(`q${qIndex}`, true);
+updateSolvedCluesList();
+
+// ADD THIS RIGHT AFTER updateSolvedCluesList():
+const pData = puzzlesData[currentPuzzleId];
+const upNow = userProgress[currentPuzzleId] || {};
+upNow[`q${qIndex}`] = true; // register the latest answer locally
+const allSolvedNow = pData.questions.every((_, idx) => upNow[`q${idx}`] === true);
+const kSolvedNow = upNow.kennection === true;
+
+if (allSolvedNow && !kSolvedNow) {
+    document.getElementById("reveal-k-btn").style.display = "inline-block";
+}
+
+   
+
+        } else {
+            inputs.forEach(inp => {
+                inp.classList.remove('correct');
+                inp.classList.add('wrong');
+            });
+            block.classList.remove('correct');
+            block.classList.add('wrong');
+        }
+    }
+
+    function evaluateKennectionAuto() {
+        const p = puzzlesData[currentPuzzleId];
+        const answer = p.kennection.replace(/[^A-Z0-9]/ig, '').toUpperCase();
+        const inputs = Array.from(document.querySelectorAll(`input[data-k="true"]`));
+        const container = document.getElementById('kennection-container');
+
+        const allFilled = inputs.every(inp => inp.value.trim().length === 1);
+
+        if (!allFilled) {
+            inputs.forEach(inp => {
+                inp.classList.remove('correct', 'wrong');
+            });
+            container.classList.remove('correct', 'wrong');
+            return;
+        }
+
+        const guess = inputs.map(i => i.value.trim()).join('').toUpperCase();
+
+        if (guess === answer) {
+            inputs.forEach(inp => {
+                inp.classList.remove('wrong');
+                inp.classList.add('correct');
+                inp.disabled = true;
+            });
+            container.classList.remove('wrong');
+            container.classList.add('correct');
+            document.getElementById('reveal-k-btn').style.display = 'none';
+
+            saveProgress('kennection', true);
+        } else {
+            inputs.forEach(inp => {
+                inp.classList.remove('correct');
+                inp.classList.add('wrong');
+            });
+            container.classList.remove('correct');
+            container.classList.add('wrong');
+        }
+    }
+
+    window.revealAnswer = function(qIndex) {
+        const p = puzzlesData[currentPuzzleId];
+        const fullAns = p.questions[qIndex].answer.replace(/[^A-Z0-9]/ig, '').toUpperCase();
+        const inputs = document.querySelectorAll(`input[data-q="${qIndex}"]`);
+        
+        inputs.forEach((inp, idx) => {
+            inp.value = fullAns[idx] || '';
+        });
+
+        evaluateQuestionAuto(qIndex);
+    };
+
+    window.revealKennection = function() {
+        const p = puzzlesData[currentPuzzleId];
+        const fullAns = p.kennection.replace(/[^A-Z0-9]/ig, '').toUpperCase();
+        const inputs = document.querySelectorAll(`input[data-k="true"]`);
+        
+        inputs.forEach((inp, idx) => {
+            inp.value = fullAns[idx] || '';
+        });
+
+        evaluateKennectionAuto();
+    };
+
+    async function saveProgress(key, value) {
+        if (!userKey || !currentPuzzleId) return;
+
+        const uRef = ref(db, `kennections_users/${userKey}/${currentPuzzleId}`);
+        await update(uRef, { [key]: value });
+        
+        const pRef = ref(db, `kennections_users/${userKey}/${currentPuzzleId}`);
+        const snap = await get(pRef);
+        if (snap.exists()) {
+            const data = snap.val();
+            if (data.q0 && data.q1 && data.q2 && data.q3 && data.q4 && data.kennection) {
+                await update(ref(db, `kennections_users/${userKey}`), { 
+                    [`puzzle_${currentPuzzleId}_completed`]: true 
+                });
+            }
+        }
+    }
+</script>
+</body>
+</html>

@@ -369,7 +369,9 @@
     const CLASS_CONFIG = {
       'chemistry': { name: 'Chemistry', code: 'CH' },
       'physics': { name: 'Physics', code: 'PH' },
-      'forensics': { name: 'Forensic Science', code: 'FS' }
+      'forensics': { name: 'Forensic Science', code: 'FS' },
+      'computergraphics': { name: 'Computer Graphics', code: 'ZZ' }
+      
     };
 
     const DISPLAY_LIMIT = 40;
@@ -642,41 +644,46 @@
         // Strip out number and space at the beginning (e.g., "01 " or "12 ")
         cleanTitle = cleanTitle.replace(/^\d+\s+/, '');
 
-        let typeChar = 'U'; // Default
+       let typeChar = 'U'; // Default
 
-        // 2. THE NEW REGEX FIX: This matches " - word (word)" specifically at the end of the string
-        // It will ignore "Lab 12 - single replacement" completely.
-        const suffixRegex = /\s*-\s*([A-Za-z0-9\s]+)\s*\([^)]+\)\s*$/i;
-        const match = cleanTitle.match(suffixRegex);
+        if (subjectCode === 'CH' || subjectCode === 'PH') {
+          // 2a. Chemistry & Physics: Extract typeChar from " - Keyword (form)" and truncate
+          const suffixRegex = /\s*-\s*([A-Za-z0-9\s]+)\s*\([^)]+\)\s*$/i;
+          const match = cleanTitle.match(suffixRegex);
 
-        if (match) {
-          const typeWord = match[1].toLowerCase();
-          if (typeWord.includes('practice')) typeChar = 'P';
-          else if (typeWord.includes('graded')) typeChar = 'G';
-          else if (typeWord.includes('review')) typeChar = 'R';
-          else if (typeWord.includes('unassigned')) typeChar = 'U';
+          if (match) {
+            const typeWord = match[1].toLowerCase();
+            let matchedType = true;
 
-          // Remove only the matched suffix (e.g. " - practice (printout)") from the string
-          cleanTitle = cleanTitle.replace(suffixRegex, '').trim();
+            if (typeWord.includes('practice')) typeChar = 'P';
+            else if (typeWord.includes('graded')) typeChar = 'G';
+            else if (typeWord.includes('review')) typeChar = 'R';
+            else if (typeWord.includes('unassigned')) typeChar = 'U';
+            else matchedType = false;
+
+            // Remove only the matched suffix if it was an actual grading tag
+            if (matchedType) {
+              cleanTitle = cleanTitle.replace(suffixRegex, '').trim();
+            }
+          }
+        } else {
+          // 2b. Forensics, Computer Graphics, and others: Only remove trailing parentheses and their contents
+          const trailingParenRegex = /\s*\([^)]+\)\s*$/;
+          cleanTitle = cleanTitle.replace(trailingParenRegex, '').trim();
         }
 
         // 3. Build the bulleted prefix
         let prefix = "";
-        if (subjectCode === 'FS') {
-          // Forensics rule: Drop the type char entirely
-          prefix = `${subjectCode}•${item.uCode}•${item.aCode}`;
-        } else {
-          // Standard rule: Keep the type char
+        if (subjectCode === 'CH' || subjectCode === 'PH') {
+          // Standard rule: Keep the type char for Chemistry and Physics
           prefix = `${subjectCode}•${item.uCode}•${item.aCode}•${typeChar}`;
+        } else {
+          // Non-graded suffix classes: Drop the type char entirely
+          prefix = `${subjectCode}•${item.uCode}•${item.aCode}`;
         }
 
-        // 4. Assemble Final Title (Only inject P# if there are multiple sections)
-        let finalTitle = "";
-        if (isMultiSection) {
-          finalTitle = `${prefix} ${item.period} ${cleanTitle}`;
-        } else {
-          finalTitle = `${prefix} ${cleanTitle}`;
-        }
+        // 4. Assemble Final Title (No period injected)
+        let finalTitle = `${prefix} ${cleanTitle}`;
 
         units[item.unitNum].assignments[item.aCode].data[item.period] = {
           url: finalUrl,
@@ -708,12 +715,8 @@
 
           const finalUrl = item.rawUrl.replace(/details?\/?$/, "submissions/flat/and-sort-last-name/all");
 
-          let finalTitle = "";
-          if (isMultiSection) {
-            finalTitle = `${subjectCode} Bellringer ${item.period} Week ${weekNum}`;
-          } else {
-            finalTitle = `${subjectCode} Bellringer Week ${weekNum}`;
-          }
+          // Assemble Final Title for Bellringers (No period injected)
+          let finalTitle = `${subjectCode} Bellringer Week ${weekNum}`;
 
           brUnit.assignments[wCode].data[item.period] = {
             url: finalUrl,
@@ -762,10 +765,10 @@
 
       let html = '<div class="unit-inner"><div class="unit-title">' + unitObj.unitName + '</div>';
 
-      // 1. Link Grid
+      // 1. Link Grid (Split by period sections from stable version)
       if (unitObj.periods.length > 0) {
         html += "<table class='unit-table'><tr>";
-        unitObj.periods.forEach(p => html += '<th>' + p + '</th>');
+        unitObj.periods.forEach(p => html += '<th>' + p + ' Links</th>');
         html += "</tr><tr>";
 
         unitObj.periods.forEach(p => {
@@ -773,7 +776,6 @@
           unitObj.assignments.forEach(assign => {
             const periodData = assign.data[p];
             if (periodData && periodData.url) {
-              // Inject displayCode here (e.g., "23") instead of code ("A23")
               html += `<a href="${periodData.url}" target="_blank"><div class="grid-item">${assign.displayCode}</div></a>`;
             } else {
               html += `<div class="grid-item" style="background:#ddd; color:#888;">N/A</div>`;
@@ -784,30 +786,26 @@
         html += "</tr></table>";
       }
 
-      // 2. Copy Titles Table
-      if (unitObj.periods.length > 0) {
-        html += '<table class="copy-table"><tr>';
-        unitObj.periods.forEach(p => html += '<th>' + p + ' Titles</th>');
+      // 2. Copy Titles Table (Single Unified Column from new version)
+      html += '<table class="copy-table"><tr><th>Assignment Titles (All Sections)</th></tr>';
+
+      unitObj.assignments.forEach(assign => {
+        // Grab the first available period's data since the Title is now identical across sections
+        const firstPeriod = Object.keys(assign.data)[0];
+        const periodData = assign.data[firstPeriod];
+        
+        html += '<tr>';
+        if (periodData && periodData.title) {
+          const attrText = escapeAttr(periodData.title);
+          const displayText = truncateDisplay(periodData.title);
+          html += `<td><button class="copy-btn" data-copy="${attrText}">${displayText}</button></td>`;
+        } else {
+          html += '<td></td>';
+        }
         html += '</tr>';
-
-        unitObj.assignments.forEach(assign => {
-          html += '<tr>';
-          unitObj.periods.forEach(p => {
-            const periodData = assign.data[p];
-            if (periodData && periodData.title) {
-              const attrText = escapeAttr(periodData.title);
-              const displayText = truncateDisplay(periodData.title);
-              html += `<td><button class="copy-btn" data-copy="${attrText}">${displayText}</button></td>`;
-            } else {
-              html += '<td></td>';
-            }
-          });
-          html += '</tr>';
-        });
-        html += '</table>';
-      }
-
-      html += '</div>';
+      });
+      html += '</table></div>';
+      
       return html;
     }
 
